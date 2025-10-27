@@ -1,0 +1,82 @@
+========================================
+FINAL FIX FOR 403 ERROR - STEP BY STEP
+========================================
+
+YOU ARE STILL GETTING 403 ERROR BECAUSE THE SQL SCRIPT HASN'T BEEN RUN YET.
+
+I CANNOT RUN IT FOR YOU - YOU MUST DO IT MANUALLY.
+
+FOLLOW THESE EXACT STEPS:
+========================================
+
+STEP 1: Open this URL in a new browser tab
+https://***REMOVED_PROJECT_ID***.supabase.co/project/***REMOVED_PROJECT_ID***/sql/new
+
+STEP 2: Copy the SQL below (EVERYTHING between the lines)
+
+----------------------------------------
+ALTER TABLE public.offers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "partners_can_create_their_own_offers" ON public.offers;
+DROP POLICY IF EXISTS "partners_can_view_their_own_offers" ON public.offers;
+DROP POLICY IF EXISTS "anyone_can_view_public_offers" ON public.offers;
+DROP POLICY IF EXISTS "partners_can_update_their_own_offers" ON public.offers;
+DROP POLICY IF EXISTS "partners_can_delete_their_own_offers" ON public.offers;
+DROP POLICY IF EXISTS "Public can view active offers" ON public.offers;
+DROP POLICY IF EXISTS "Partners can view own offers" ON public.offers;
+DROP POLICY IF EXISTS "Partners can create offers" ON public.offers;
+DROP POLICY IF EXISTS "Partners can update own offers" ON public.offers;
+DROP POLICY IF EXISTS "Partners can delete own offers" ON public.offers;
+
+CREATE POLICY "Partners can create offers" ON public.offers FOR INSERT TO authenticated
+WITH CHECK (EXISTS (SELECT 1 FROM public.partners WHERE partners.id = partner_id AND partners.user_id = auth.uid() AND partners.status = 'APPROVED'));
+
+CREATE POLICY "Partners can view own offers" ON public.offers FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.partners WHERE partners.id = offers.partner_id AND partners.user_id = auth.uid()));
+
+CREATE POLICY "Public can view active offers" ON public.offers FOR SELECT TO anon, authenticated
+USING (status = 'ACTIVE' AND expires_at > NOW());
+
+CREATE POLICY "Partners can update own offers" ON public.offers FOR UPDATE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.partners WHERE partners.id = offers.partner_id AND partners.user_id = auth.uid()))
+WITH CHECK (EXISTS (SELECT 1 FROM public.partners WHERE partners.id = partner_id AND partners.user_id = auth.uid()));
+
+CREATE POLICY "Partners can delete own offers" ON public.offers FOR DELETE TO authenticated
+USING (EXISTS (SELECT 1 FROM public.partners WHERE partners.id = offers.partner_id AND partners.user_id = auth.uid()));
+
+SELECT tablename, rowsecurity FROM pg_tables WHERE tablename = 'offers';
+SELECT policyname, cmd FROM pg_policies WHERE tablename = 'offers';
+----------------------------------------
+
+STEP 3: Paste it into the Supabase SQL Editor
+
+STEP 4: Click the green "RUN" button
+
+STEP 5: Check the results at the bottom - you should see:
+- offers table with rowsecurity = true
+- 5 policies listed
+
+STEP 6: Try creating an offer again - the 403 error should be GONE
+
+========================================
+WHY THIS IS NECESSARY:
+========================================
+The 403 error happens because:
+1. Row Level Security (RLS) is enabled on your offers table
+2. But the policies that allow partners to insert data are MISSING
+3. Without these policies, Supabase blocks ALL insert operations
+4. The SQL script creates the missing policies
+
+========================================
+IMPORTANT NOTE:
+========================================
+Your partner account must have status = 'APPROVED' in the database.
+If your partner status is 'PENDING', the policy will still block you.
+
+To check your partner status, run this in Supabase SQL Editor:
+SELECT business_name, status FROM public.partners WHERE user_id = auth.uid();
+
+If status is 'PENDING', change it to 'APPROVED':
+UPDATE public.partners SET status = 'APPROVED' WHERE user_id = auth.uid();
+
+========================================
