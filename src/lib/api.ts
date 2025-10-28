@@ -191,31 +191,46 @@ export const clearPenalty = async (userId: string): Promise<void> => {
 // Offers API
 export const getActiveOffers = async (filters?: OfferFilters): Promise<Offer[]> => {
   if (isDemoMode) {
+    // 🔹 Demo mode: filter mock offers too
     let filtered = [...mockOffers];
     if (filters?.category) {
       filtered = filtered.filter(o => o.category === filters.category);
     }
+
+    // 🔹 Hide sold-out mock offers
+    filtered = filtered.filter(o => (o.quantity_available ?? 0) > 0);
+
     return filtered;
   }
-  
+
+  // 🔹 Build query to get only ACTIVE offers that are not expired AND have stock
   let query = supabase
     .from('offers')
     .select(`
       *,
       partner:partners(*)
     `)
-    .eq('status', 'ACTIVE')
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false });
+    .eq('status', 'ACTIVE')                               // only active offers
+    .gt('expires_at', new Date().toISOString())            // not expired
+    .gt('quantity_available', 0)                           // 🧠 hide sold-out offers
+    .order('created_at', { ascending: false });             // newest first
 
+  // 🔹 Apply category filter if provided
   if (filters?.category) {
     query = query.eq('category', filters.category);
   }
 
   const { data, error } = await query;
-  if (error) throw error;
-  return data as Offer[];
+
+  if (error) {
+    console.error('Error fetching active offers:', error);
+    throw error;
+  }
+
+  // 🔹 Ensure we return an empty array instead of null
+  return (data ?? []) as Offer[];
 };
+
 
 export const getOfferById = async (id: string): Promise<Offer> => {
   if (isDemoMode) {
