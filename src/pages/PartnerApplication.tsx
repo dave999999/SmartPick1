@@ -118,25 +118,30 @@ export default function PartnerApplication() {
   const addressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const [formData, setFormData] = useState({
-    // Account fields
-    email: '',
-    password: '',
-    confirmPassword: '',
-    // Business fields
-    business_name: '',
-    business_type: '',
-    description: '',
-    opening_hours: '',
-    closing_hours: '',
-    pickup_notes: '',
-    address: '',
-    city: 'Tbilisi',
-    latitude: 41.7151,
-    longitude: 44.8271,
-    phone: '',
-    telegram: '',
-    whatsapp: '',
-  });
+  // Account fields
+  email: '',
+  password: '',
+  confirmPassword: '',
+
+  // Business fields
+  business_name: '',
+  business_type: '',
+  description: '',
+  opening_hours: '',
+  closing_hours: '',
+  pickup_notes: '',
+  address: '',
+  city: 'Tbilisi',
+  latitude: 41.7151,
+  longitude: 44.8271,
+  phone: '',
+  telegram: '',
+  whatsapp: '',
+
+  // ✅ add this flag so the validator knows if it's 24h
+  open_24h: false,
+});
+
 
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
@@ -417,94 +422,104 @@ export default function PartnerApplication() {
   };
 
   // Enhanced form validation with field-level error tracking
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    
-    // Email validation
-    if (!formData.email) {
-      errors.email = 'Please fill out this field.';
-    } else if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid email address.';
-    } else if (emailError) {
-      errors.email = emailError;
-    }
-    
-    // Password validation
-    if (!formData.password) {
-      errors.password = 'Please fill out this field.';
-    } else if (!validatePassword(formData.password)) {
-      errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
-    }
-    
-    // Confirm password validation
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please fill out this field.';
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match.';
-    }
-    
-    // Business name validation
-    if (!formData.business_name) {
-      errors.business_name = 'Please fill out this field.';
-    }
-    
-    // Business type validation
-    if (!formData.business_type) {
-      errors.business_type = 'Please fill out this field.';
-    }
-    
-    // Description validation
-    if (!formData.description) {
-      errors.description = 'Please fill out this field.';
-    }
-    
-    // Opening/Closing hours validation (only if not 24h)
-    if (!open24h) {
-      if (!formData.opening_hours) {
-        errors.opening_hours = 'Please fill out this field.';
-      }
-      
-      if (!formData.closing_hours) {
-        errors.closing_hours = 'Please fill out this field.';
-      } else if (formData.opening_hours && formData.closing_hours <= formData.opening_hours) {
-        errors.closing_hours = 'Closing time must be later than opening time.';
-      }
-    }
-    
-    // Address validation
-    if (!formData.address) {
-      errors.address = 'Please fill out this field.';
-    }
-    
-    // City validation
-    if (!formData.city) {
-      errors.city = 'Please fill out this field.';
-    }
-    
-    // Phone validation
-    if (!formData.phone) {
-      errors.phone = 'Please fill out this field.';
-    }
-    
-    // Latitude/Longitude validation (should always have values from map)
-    if (!formData.latitude || !formData.longitude) {
-      errors.location = 'Please set your location on the map.';
-    }
-    
-    // Terms acceptance
-    if (!acceptedTerms) {
-      errors.terms = 'Please accept the terms and conditions.';
-    }
-    
-    setFieldErrors(errors);
-    
-    if (Object.keys(errors).length > 0) {
-      toast.error('Please complete all required fields before applying.');
-      return false;
-    }
-    
-    return true;
-  };
+const validateForm = (): boolean => {
+  const errors: Record<string, string> = {};
+
+  // Email validation
+  if (!formData.email) {
+    errors.email = 'Please fill out this field.';
+  } else if (!validateEmail(formData.email)) {
+    errors.email = 'Please enter a valid email address.';
+  } else if (emailError) {
+    errors.email = emailError;
+  }
+
+  // Password validation
+  if (!formData.password) {
+    errors.password = 'Please fill out this field.';
+  } else if (!validatePassword(formData.password)) {
+    errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
+  }
+
+  // Confirm password validation
+  if (!formData.confirmPassword) {
+    errors.confirmPassword = 'Please fill out this field.';
+  } else if (formData.password !== formData.confirmPassword) {
+    errors.confirmPassword = 'Passwords do not match.';
+  }
+
+  // Business name validation
+  if (!formData.business_name) {
+    errors.business_name = 'Please fill out this field.';
+  }
+
+  // Business type validation
+  if (!formData.business_type) {
+    errors.business_type = 'Please fill out this field.';
+  }
+
+  // Description validation
+  if (!formData.description) {
+    errors.description = 'Please fill out this field.';
+  }
+
+  // Opening/Closing hours validation (only if not 24h)
+const isOpen24h = open24h === true || formData.open_24h === true;
+
+if (!isOpen24h) {
+  if (!formData.opening_hours) {
+    errors.opening_hours = 'Please select opening hours.';
+  }
+
+  if (!formData.closing_hours) {
+    errors.closing_hours = 'Please select closing hours.';
+  } else if (
+    formData.opening_hours &&
+    formData.closing_hours <= formData.opening_hours
+  ) {
+    errors.closing_hours = 'Closing time must be later than opening time.';
+  }
+} else {
+  // ✅ 24-hour businesses skip validation and set safe defaults
+  formData.opening_hours = '00:00';
+  formData.closing_hours = '23:59';
+}
+
+  // Address validation
+  if (!formData.address) {
+    errors.address = 'Please fill out this field.';
+  }
+
+  // City validation
+  if (!formData.city) {
+    errors.city = 'Please fill out this field.';
+  }
+
+  // Phone validation
+  if (!formData.phone) {
+    errors.phone = 'Please fill out this field.';
+  }
+
+  // Latitude/Longitude validation (should always have values from map)
+  if (!formData.latitude || !formData.longitude) {
+    errors.location = 'Please set your location on the map.';
+  }
+
+  // Terms acceptance
+  if (!acceptedTerms) {
+    errors.terms = 'Please accept the terms and conditions.';
+  }
+
+  setFieldErrors(errors);
+
+  if (Object.keys(errors).length > 0) {
+    toast.error('Please complete all required fields before applying.');
+    return false;
+  }
+
+  return true;
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -977,50 +992,82 @@ export default function PartnerApplication() {
                 </div>
 
                 {/* Business Hours */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="opening_hours" className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
-                      Opening Hours {!open24h && '*'}
-                    </Label>
-                    <Input
-                      id="opening_hours"
-                      type="time"
-                      value={formData.opening_hours}
-                      onChange={(e) => handleChange('opening_hours', e.target.value)}
-                      required={!open24h}
-                      disabled={open24h}
-                      className={fieldErrors.opening_hours ? 'border-red-500' : ''}
-                    />
-                    {fieldErrors.opening_hours && (
-                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {fieldErrors.opening_hours}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="closing_hours" className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
-                      Closing Hours {!open24h && '*'}
-                    </Label>
-                    <Input
-                      id="closing_hours"
-                      type="time"
-                      value={formData.closing_hours}
-                      onChange={(e) => handleChange('closing_hours', e.target.value)}
-                      required={!open24h}
-                      disabled={open24h}
-                      className={fieldErrors.closing_hours ? 'border-red-500' : ''}
-                    />
-                    {fieldErrors.closing_hours && (
-                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {fieldErrors.closing_hours}
-                      </p>
-                    )}
-                  </div>
-                </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  {/* Opening Hours */}
+  <div>
+    <Label htmlFor="opening_hours" className="flex items-center gap-2">
+      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+      Opening Hours {!open24h && '*'}
+    </Label>
+
+    <Select
+      value={formData.opening_hours}
+      onValueChange={(value) => handleChange('opening_hours', value)}
+      disabled={open24h}
+    >
+      <SelectTrigger className={fieldErrors.opening_hours ? 'border-red-500' : ''}>
+        <SelectValue placeholder="Select opening time" />
+      </SelectTrigger>
+      <SelectContent className="max-h-60 overflow-y-auto">
+        {[...Array(48)].map((_, i) => {
+          const hours = Math.floor(i / 2);
+          const minutes = i % 2 === 0 ? '00' : '30';
+          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+          return (
+            <SelectItem key={label} value={label}>
+              {label}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+
+    {fieldErrors.opening_hours && (
+      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" />
+        {fieldErrors.opening_hours}
+      </p>
+    )}
+  </div>
+
+  {/* Closing Hours */}
+  <div>
+    <Label htmlFor="closing_hours" className="flex items-center gap-2">
+      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+      Closing Hours {!open24h && '*'}
+    </Label>
+
+    <Select
+      value={formData.closing_hours}
+      onValueChange={(value) => handleChange('closing_hours', value)}
+      disabled={open24h}
+    >
+      <SelectTrigger className={fieldErrors.closing_hours ? 'border-red-500' : ''}>
+        <SelectValue placeholder="Select closing time" />
+      </SelectTrigger>
+      <SelectContent className="max-h-60 overflow-y-auto">
+        {[...Array(48)].map((_, i) => {
+          const hours = Math.floor(i / 2);
+          const minutes = i % 2 === 0 ? '00' : '30';
+          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+          return (
+            <SelectItem key={label} value={label}>
+              {label}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+
+    {fieldErrors.closing_hours && (
+      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+        <AlertCircle className="w-3 h-3" />
+        {fieldErrors.closing_hours}
+      </p>
+    )}
+  </div>
+</div>
+
 
                 {/* 24-Hour Checkbox */}
                 <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">

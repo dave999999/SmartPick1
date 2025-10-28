@@ -28,40 +28,46 @@ const CATEGORY_COLORS: Record<string, string> = {
   GROCERY: '#10B981',
 };
 
-// Create custom marker icon with count badge
+// Create custom marker icon using emoji for each category
 const createCustomIcon = (category: string, count: number, isHighlighted: boolean = false) => {
-  const color = CATEGORY_COLORS[category] || '#3B82F6';
+  const emojis: Record<string, string> = {
+    BAKERY: "🥐",
+    RESTAURANT: "🍕",
+    CAFE: "☕",
+    GROCERY: "🛒",
+  };
+
+  const emoji = emojis[category] || "📍"; // fallback emoji
   const scale = isHighlighted ? 1.2 : 1;
   const shadow = isHighlighted ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.3)';
-  
+  const background = isHighlighted ? '#2CB97A' : '#ffffff'; // mint green when highlighted
+  const textColor = isHighlighted ? '#ffffff' : '#2CB97A';
+
   return L.divIcon({
     className: 'custom-marker',
     html: `
       <div style="
-        background-color: ${color};
-        width: ${32 * scale}px;
-        height: ${32 * scale}px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
+        width: ${40 * scale}px;
+        height: ${40 * scale}px;
+        border-radius: 50%;
+        background: ${background};
         border: 3px solid white;
         box-shadow: ${shadow};
         display: flex;
         align-items: center;
         justify-content: center;
-        position: relative;
+        font-size: ${22 * scale}px;
+        color: ${textColor};
         transition: all 0.3s ease;
+        transform: translateY(-4px);
+        position: relative;
       ">
-        <div style="
-          transform: rotate(45deg);
-          color: white;
-          font-weight: bold;
-          font-size: ${16 * scale}px;
-        ">📍</div>
+        ${emoji}
         ${count > 1 ? `
           <div style="
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -6px;
+            right: -6px;
             background-color: #EF4444;
             color: white;
             border-radius: 50%;
@@ -73,16 +79,16 @@ const createCustomIcon = (category: string, count: number, isHighlighted: boolea
             font-size: 11px;
             font-weight: bold;
             border: 2px solid white;
-            transform: rotate(45deg);
           ">${count}</div>
         ` : ''}
       </div>
     `,
-    iconSize: [32 * scale, 32 * scale],
-    iconAnchor: [16 * scale, 32 * scale],
-    popupAnchor: [0, -32 * scale],
+    iconSize: [40 * scale, 40 * scale],
+    iconAnchor: [20 * scale, 40 * scale],
+    popupAnchor: [0, -40 * scale],
   });
 };
+
 
 interface OfferMapProps {
   offers: Offer[];

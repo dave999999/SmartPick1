@@ -68,16 +68,7 @@ export default function AdminDashboard() {
         console.error('Error fetching user profile:', error);
         // For testing, allow access even if profile fetch fails
         console.warn('AdminDashboard: Proceeding without role check for testing');
-      } else {
-        const userRole = profile?.role?.toUpperCase();
-        if (userRole !== 'ADMIN') {
-          console.warn('AdminDashboard: User is not admin but allowing access for testing');
-          // For testing purposes, comment out the redirect
-          // toast.error('Admin access required');
-          // navigate('/');
-          // return;
-        }
-      }
+      } 
 
       // User is authenticated, load stats
       await loadStats();
