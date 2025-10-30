@@ -1,0 +1,222 @@
+/* Brand theme adapted to "Modern Confident Minimalism" */
+/* Fonts */
+@import url(https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap);
+@import url(https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap);
+
+:root {
+  /* z layers & spacing */
+  --z-content-low: 10;
+  --z-content: 20;
+  --z-content-high: 30;
+  --z-nav-low: 100;
+  --z-nav: 200;
+  --z-nav-sticky: 300;
+  --z-overlay: 400;
+  --z-spotlight: 1000;
+  --z-critical: 2000;
+
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* Colors / surfaces */
+  --background: #FAFAF8; /* off-white canvas */
+  --foreground: hsl(20 12% 30%);
+
+  --surface: #ffffff;
+  --surface-foreground: hsl(20 12% 30%);
+
+  --card: #ffffff;
+  --card-foreground: hsl(20 12% 30%);
+
+  --popup: #ffffff;
+  --popup-foreground: hsl(20 12% 30%);
+
+  /* Brand colors */
+  /* Coral primary (#FF6F61) */
+  --primary: hsl(5 100% 69%);
+  --primary-foreground: hsl(0 0% 100%);
+
+  /* Mint secondary (#4CC9A8) */
+  --secondary: hsl(164 54% 54%);
+  --secondary-foreground: hsl(0 0% 100%);
+
+  --accent: var(--primary);
+  --accent-foreground: var(--primary-foreground);
+
+  --muted: hsl(30 25% 95%);
+  --muted-foreground: hsl(20 10% 50%);
+
+  --success: hsl(140 55% 55%);
+  --success-foreground: hsl(0 0% 100%);
+
+  --error: hsl(0 65% 65%);
+  --error-foreground: hsl(0 0% 100%);
+
+  --warning: hsl(40 80% 65%);
+  --warning-foreground: hsl(20 14% 20%);
+
+  --info: hsl(210 70% 68%);
+  --info-foreground: hsl(0 0% 100%);
+
+  --border: hsl(30 18% 90%);
+
+  /* State colors */
+  --color-available: var(--secondary);
+  --color-closed: hsl(220 10% 75%);
+  --color-featured: var(--primary);
+
+  /* Glass & gradients */
+  --backdrop-blur: 12px;
+  --glass-background: hsla(0 0% 100% / 0.75);
+  --panel-bg: hsla(0 0% 100% / 0.85);
+  --gradient-hero: linear-gradient(135deg, #FAFAF8 0%, #ffffff 50%, hsla(164,54%,96%,1) 100%);
+
+  /* Fonts */
+  --font-family-base: 'Poppins', 'BPG Arial', 'Noto Sans Georgian', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-family-heading: var(--font-family-base);
+  --font-family-monospace: 'Source Code Pro', monospace;
+
+  /* Shadows (subtle) */
+  --shadow: 0 6px 18px hsl(0 0% 0% / 0.06);
+  --shadow-md: 0 10px 28px hsl(0 0% 0% / 0.08);
+  --shadow-lg: 0 18px 40px hsl(0 0% 0% / 0.10);
+  --shadow-focus: 0 0 0 4px hsl(5 100% 69% / 0.18);
+
+  /* Radii */
+  --radius-sm: 0.5rem; /* 8px */
+  --radius: 0.5rem;    /* 8px base */
+  --radius-md: 0.75rem;  /* 12px */
+  --radius-lg: 1rem;     /* 16px */
+  --radius-full: 9999px;
+
+  /* Animation */
+  --animation-duration-fast: 150ms;
+  --animation-duration-normal: 300ms;
+  --animation-duration-slow: 500ms;
+  --animation-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --animation-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Chart colors */
+  --chart-color-1: var(--primary);
+  --chart-color-2: var(--secondary);
+  --chart-color-3: hsl(35 80% 72%);
+  --chart-color-4: hsl(140 55% 55%);
+  --chart-color-5: hsl(210 70% 68%);
+
+  /* Typographic weights */
+  --fw-base: 500;
+  --fw-heading: 600;
+
+  /* Numeric tokens for utilities (used with hsl(var(--...))) */
+  --mint-50: 164 54% 96%;
+  --mint-100: 164 54% 90%;
+  --mint-200: 164 54% 80%;
+  --mint-500: 164 54% 54%;
+  --mint-600: 164 54% 44%;
+  --mint-700: 164 54% 34%;
+
+  --coral-50: 5 100% 96%;
+  --coral-100: 5 100% 90%;
+  --coral-500: 5 100% 69%;
+  --coral-600: 5 95% 60%;
+}
+
+/* Dark mode adjustments */
+.dark {
+  --background: hsl(20 12% 10%);
+  --foreground: hsl(30 18% 90%);
+
+  --surface: hsl(20 12% 14%);
+  --surface-foreground: hsl(30 18% 90%);
+
+  --card: hsl(20 12% 14%);
+  --card-foreground: hsl(30 18% 90%);
+
+  --popup: hsl(20 12% 14%);
+  --popup-foreground: hsl(30 18% 90%);
+
+  --primary: hsl(5 95% 67%);
+  --secondary: hsl(164 50% 49%);
+
+  --muted: hsl(20 12% 20%);
+  --muted-foreground: hsl(30 12% 62%);
+
+  --border: hsl(20 12% 28%);
+  --gradient-hero: linear-gradient(135deg, hsl(20 12% 12%) 0%, hsl(25 15% 10%) 50%, hsl(167 20% 14%) 100%);
+}
+
+/* Base resets and typography usage */
+@layer base {
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-family-base);
+    font-weight: var(--fw-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.45;
+  }
+
+  h1,h2,h3,h4,h5,h6 {
+    font-family: var(--font-family-heading);
+    font-weight: var(--fw-heading);
+    color: var(--foreground);
+  }
+
+  a { color: inherit; text-decoration: none; }
+  button { border: none; background: none; cursor: pointer; font: inherit; color: inherit; }
+  th, td { display: table-cell !important; }
+}
+
+/* Small, safe utility components to preview brand quickly */
+@layer utilities {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    font-weight: var(--fw-base);
+    transition: transform var(--animation-duration-fast) var(--animation-ease-smooth), box-shadow var(--animation-duration-fast);
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  .btn-secondary {
+    background: hsl(var(--mint-500));
+    color: var(--secondary-foreground);
+  }
+
+  .btn-secondary:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1rem;
+  }
+
+  /* simple helper to quickly apply coral/mint text/background */
+  .text-coral-500 { color: hsl(var(--coral-500)); }
+  .bg-coral-500 { background-color: hsl(var(--coral-500)); }
+  .text-mint-500 { color: hsl(var(--mint-500)); }
+  .bg-mint-500 { background-color: hsl(var(--mint-500)); }
+}

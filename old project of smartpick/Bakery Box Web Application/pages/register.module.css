@@ -1,0 +1,142 @@
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--background);
+  padding: var(--spacing-4);
+}
+
+.registerCard {
+  width: 100%;
+  max-width: 26rem; /* 416px */
+  background-color: var(--card);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Header Section */
+.header {
+  text-align: center;
+  margin-bottom: var(--spacing-8);
+}
+
+.logoLink {
+  display: inline-block;
+  margin-bottom: var(--spacing-4);
+  text-decoration: none;
+}
+
+.logoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-lg);
+  margin: 0 auto;
+  transition: transform var(--animation-duration-fast) ease;
+}
+
+.logoIcon:hover {
+  transform: scale(1.05);
+}
+
+.title {
+  font-family: var(--font-family-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--card-foreground);
+  margin-bottom: var(--spacing-2);
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-family: var(--font-family-base);
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* OAuth Section */
+.oauthSection {
+  margin-bottom: var(--spacing-6);
+}
+
+/* Divider */
+.dividerContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin: var(--spacing-6) 0;
+}
+
+.dividerText {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Form Section */
+.formSection {
+  margin-bottom: var(--spacing-6);
+}
+
+/* Footer Section */
+.footer {
+  margin-top: var(--spacing-8);
+  padding-top: var(--spacing-6);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.footerText {
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+  margin: 0;
+}
+
+.loginLink {
+  font-weight: 500;
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--animation-duration-fast) ease;
+}
+
+.loginLink:hover {
+  color: color-mix(in srgb, var(--primary), black 10%);
+  text-decoration: underline;
+}
+
+/* Mobile Optimization */
+@media (max-width: 480px) {
+  .container {
+    padding: var(--spacing-3);
+  }
+
+  .registerCard {
+    padding: var(--spacing-6);
+  }
+
+  .title {
+    font-size: 1.375rem;
+  }
+
+  .subtitle {
+    font-size: 0.875rem;
+  }
+}
+
+/* Dark mode adjustments */
+:global(.dark) .registerCard {
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border);
+}
+
+:global(.dark) .logoIcon {
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 40%, transparent);
+}

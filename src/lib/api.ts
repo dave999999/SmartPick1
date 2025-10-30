@@ -367,9 +367,12 @@ export const createReservation = async (
   if (error) throw error;
 
   // Update offer quantity
+  const newQuantity = offer.quantity_available - quantity;
+  const updates: Record<string, unknown> = { quantity_available: newQuantity };
+  // Persist updated quantity (frontend will treat quantity 0 as sold out)
   await supabase
     .from('offers')
-    .update({ quantity_available: offer.quantity_available - quantity })
+    .update(updates)
     .eq('id', offerId);
 
   return data as Reservation;
@@ -557,13 +560,42 @@ export const getPartnerOffers = async (partnerId: string): Promise<Offer[]> => {
   return data as Offer[];
 };
 
+export const relistOffer = async (offerId: string) => {
+  try {
+    // Get the original offer
+    const { data: offer, error: getError } = await supabase
+      .from('offers')
+      .select('*')
+      .eq('id', offerId)
+      .single();
+    
+    if (getError) throw getError;
+
+    // Create a new offer with the same details
+    const { data: newOffer, error: createError } = await supabase
+      .from('offers')
+      .insert({
+        ...offer,
+        id: undefined, // Let Supabase generate a new ID
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: 'ACTIVE',
+        quantity_available: offer.quantity_total,
+      })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+    return newOffer;
+  } catch (error) {
+    console.error('Error relisting offer:', error);
+    throw error;
+  }
+};
+
 export const getPartnerStats = async (partnerId: string) => {
   if (isDemoMode) {
-    return {
-      activeOffers: 0,
-      reservationsToday: 0,
-      itemsPickedUp: 0,
-    };
+    return mockStats;
   }
   
   const today = new Date();

@@ -1,0 +1,137 @@
+/* Controls Container */
+.controlsContainer {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-4);
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+/* Table Styles */
+.tableContainer {
+  overflow-x: auto;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.table th,
+.table td {
+  padding: var(--spacing-3) var(--spacing-4);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background-color: var(--muted);
+}
+
+.fraudScoreHeader {
+  background-color: color-mix(in srgb, var(--warning) 10%, var(--muted));
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--primary) 5%, transparent);
+}
+
+.suspiciousRow {
+  background-color: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+
+.suspiciousRow:hover {
+  background-color: color-mix(in srgb, var(--warning) 15%, transparent);
+}
+
+.centeredCell {
+  text-align: center;
+}
+
+.fraudScoreContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+
+/* Tooltip Styles */
+.fraudTooltip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.tooltipTitle {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: var(--spacing-1);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  font-size: 0.8125rem;
+}
+
+.tooltipValue {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.actionButtons {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+/* Error State */
+.errorState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-8);
+  background-color: color-mix(in srgb, var(--error) 10%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-weight: 500;
+}

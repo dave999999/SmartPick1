@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import OfferMap from '@/components/OfferMap';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
-import { MapPin, Clock, ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Leaf, DollarSign, Globe, Footprints, ArrowDown, ChevronDown } from 'lucide-react';
+import { MapPin, Clock, ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Leaf, DollarSign, Globe, Footprints, ArrowDown, ChevronDown, Menu, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -46,6 +47,7 @@ export default function Index() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -260,68 +262,161 @@ export default function Index() {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-6">
-            {/* Logo and Title */}
-            <div className="flex items-center gap-2">
-              <img src="/logo-icon.png" alt="SmartPick Logo" className="h-8 md:h-10 w-auto object-contain" />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold">
-                  <span style={{ color: '#1A1E29' }}>Smart</span>
-                  <span style={{ color: '#2FB673' }}>Pick</span>
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">{t('header.tagline')}</p>
-              </div>
-            </div>
-            
-            {/* Become a Partner Button - Next to Logo */}
-            <div className="flex items-center gap-2">
-              <Button 
-                  size="sm"
-                  onClick={() => navigate('/partner/apply')}
-                  className="bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
-                >
-                  <span className="hidden sm:inline">{t('header.becomePartner')}</span>
-                  <span className="sm:hidden">{t('header.becomePartner')}</span>
-                </Button>
-
-              {/* Language switch: English / Georgian only */}
-              <LanguageButtons />
+          {/* Logo and Title */}
+          <div className="flex items-center gap-2">
+            <img src="/logo-icon.png" alt="SmartPick Logo" className="h-8 md:h-10 w-auto object-contain" />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold">
+                <span style={{ color: '#1A1E29' }}>Smart</span>
+                <span style={{ color: '#2FB673' }}>Pick</span>
+              </h1>
+              <p className="text-xs text-gray-500 hidden sm:block">{t('header.tagline')}</p>
             </div>
           </div>
-          
-          {/* Right Side Navigation */}
-          <div className="flex items-center gap-2 md:gap-3">
+
+          {/* Desktop Navigation - Hidden on Mobile */}
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              onClick={() => navigate('/partner/apply')}
+              className="h-11 bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
+            >
+              {t('header.becomePartner')}
+            </Button>
+            <LanguageButtons />
             {user ? (
               <>
                 <span className="text-sm text-gray-600 hidden lg:inline">Hello, {user.name}</span>
                 {user.role === 'ADMIN' && (
-                  <Button 
-                    variant="outline" 
-                    size="sm"
+                  <Button
+                    variant="outline"
+                    className="h-11"
                     onClick={() => navigate('/admin-dashboard')}
-                    className="border-[#4CC9A8] text-[#4CC9A8] hover:bg-[#4CC9A8] hover:text-white transition-all duration-250 hidden md:flex"
                   >
                     <Shield className="w-4 h-4 mr-2" />
                     {t('header.admin')}
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={() => navigate('/my-picks')} className="hover:scale-105 transition-transform duration-250 hidden sm:flex">
+                <Button variant="outline" className="h-11" onClick={() => navigate('/my-picks')}>
                   {t('header.myPicks')}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => navigate('/partner')} className="hover:scale-105 transition-transform duration-250 hidden sm:flex">
+                <Button variant="outline" className="h-11" onClick={() => navigate('/partner')}>
                   {t('header.partner')}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-250">
-                  <LogOut className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">{t('header.signOut')}</span>
+                <Button variant="outline" className="h-11" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  {t('header.signOut')}
                 </Button>
               </>
             ) : (
-                <Button variant="outline" size="sm" onClick={() => setShowAuthDialog(true)} className="hover:scale-105 transition-transform duration-250">
-                  <LogIn className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">{t('header.signIn')}</span>
-                </Button>
+              <Button variant="outline" className="h-11" onClick={() => setShowAuthDialog(true)}>
+                <LogIn className="w-4 h-4 mr-2" />
+                {t('header.signIn')}
+              </Button>
             )}
+          </div>
+
+          {/* Mobile Navigation - Hamburger Menu */}
+          <div className="flex md:hidden items-center gap-2">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-11 w-11">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px]">
+                <SheetHeader>
+                  <SheetTitle className="text-left">Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-4 mt-6">
+                  {/* Language Buttons in Mobile Menu */}
+                  <div className="flex items-center gap-2 pb-4 border-b">
+                    <span className="text-sm text-gray-600">Language:</span>
+                    <LanguageButtons />
+                  </div>
+
+                  {/* Become a Partner Button */}
+                  <Button
+                    onClick={() => {
+                      navigate('/partner/apply');
+                      setMobileMenuOpen(false);
+                    }}
+                    className="h-11 w-full bg-[#FF6F61] hover:bg-[#ff5545] text-white font-semibold justify-start"
+                  >
+                    {t('header.becomePartner')}
+                  </Button>
+
+                  {user ? (
+                    <>
+                      <div className="text-sm text-gray-600 pb-2 border-b">
+                        Hello, {user.name}
+                      </div>
+
+                      {user.role === 'ADMIN' && (
+                        <Button
+                          variant="outline"
+                          className="h-11 w-full justify-start"
+                          onClick={() => {
+                            navigate('/admin-dashboard');
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <Shield className="w-4 h-4 mr-2" />
+                          {t('header.admin')}
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full justify-start"
+                        onClick={() => {
+                          navigate('/my-picks');
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <ShoppingBag className="w-4 h-4 mr-2" />
+                        {t('header.myPicks')}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full justify-start"
+                        onClick={() => {
+                          navigate('/partner');
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <Globe className="w-4 h-4 mr-2" />
+                        {t('header.partner')}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full justify-start mt-4 border-red-200 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          handleSignOut();
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {t('header.signOut')}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="h-11 w-full justify-start"
+                      onClick={() => {
+                        setShowAuthDialog(true);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogIn className="w-4 h-4 mr-2" />
+                      {t('header.signIn')}
+                    </Button>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
