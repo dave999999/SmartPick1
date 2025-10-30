@@ -7,11 +7,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail } from 'lucide-react';
-import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations } from '@/lib/api';
+import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X } from 'lucide-react';
+import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
+import { useI18n } from '@/lib/i18n';
 
 export default function MyPicks() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,6 +26,7 @@ export default function MyPicks() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [timers, setTimers] = useState<Record<string, string>>({});
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadUserAndReservations();
@@ -59,7 +61,7 @@ export default function MyPicks() {
       const { user: currentUser } = await getCurrentUser();
       
       if (!currentUser) {
-        toast.error('Please sign in to view your picks');
+        toast.error(t('toast.signInToViewPicks'));
         navigate('/');
         return;
       }
@@ -68,7 +70,7 @@ export default function MyPicks() {
       await loadReservations(currentUser.id);
     } catch (error) {
       console.error('Error loading user and reservations:', error);
-      toast.error('Failed to load your picks');
+  toast.error(t('toast.failedLoadPicks'));
     } finally {
       setLoading(false);
     }
@@ -83,7 +85,7 @@ export default function MyPicks() {
       setReservations(reservationsData);
     } catch (error) {
       console.error('Error loading reservations:', error);
-      toast.error('Failed to load reservations');
+  toast.error(t('toast.failedLoadReservations'));
     }
   };
 
@@ -96,14 +98,14 @@ export default function MyPicks() {
         const now = new Date();
         const timeLeft = expiresAt.getTime() - now.getTime();
         
-        if (timeLeft > 0) {
+          if (timeLeft > 0) {
           const hours = Math.floor(timeLeft / (1000 * 60 * 60));
           const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
           const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
           
           newTimers[reservation.id] = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         } else {
-          newTimers[reservation.id] = 'Expired';
+          newTimers[reservation.id] = t('timer.expired');
         }
       }
     });
@@ -113,13 +115,56 @@ export default function MyPicks() {
 
   const handleShowQR = async (reservation: Reservation) => {
     try {
-      const qrData = await generateQRCodeDataURL(reservation.qr_code);
-      setQRCodeData(qrData);
+      const qrUrl = await generateQRCodeDataURL(reservation.qr_code);
+      setQRCodeData(qrUrl);
       setShowQRCode(reservation.id);
     } catch (error) {
       console.error('Error generating QR code:', error);
-      toast.error('Failed to generate QR code');
+      toast.error(t('toast.failedGenerateQr'));
     }
+  };
+
+  const handleCancel = async (reservationId: string) => {
+  if (!confirm(t('confirm.cancelReservation'))) return;
+    
+    try {
+      await cancelReservation(reservationId);
+  toast.success(t('toast.reservationCancelled'));
+      loadReservations(); // Refresh the list
+    } catch (error) {
+      console.error('Error canceling reservation:', error);
+  toast.error(t('toast.failedCancelReservation'));
+    }
+  };
+
+  const handleGetDirections = (reservation: Reservation) => {
+    const lat = reservation.partner?.latitude;
+    const lng = reservation.partner?.longitude;
+    
+    if (!lat || !lng) {
+      toast.error(t('toast.locationNotAvailable'));
+      return;
+    }
+
+    // Open in Google Maps
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+  };
+
+  const handleRemove = async (reservationId: string) => {
+  if (!confirm(t('confirm.removeReservation'))) return;
+    
+    try {
+      await cancelReservation(reservationId);
+  toast.success(t('toast.reservationRemoved'));
+      loadReservations(); // Refresh the list
+    } catch (error) {
+      console.error('Error removing reservation:', error);
+  toast.error(t('toast.failedRemoveReservation'));
+    }
+  };
+
+  const isExpired = (expiresAt: string) => {
+    return new Date(expiresAt).getTime() < new Date().getTime();
   };
 
   const handleRatePartner = async () => {
@@ -133,14 +178,14 @@ export default function MyPicks() {
 
       // Here you would typically save the rating to your database
       // For now, we'll just show a success message
-      toast.success('Thank you for your rating!');
+  toast.success(t('toast.ratingThanks'));
       
       setShowRating(null);
       setRating(5);
       setComment('');
     } catch (error) {
       console.error('Error submitting rating:', error);
-      toast.error('Failed to submit rating');
+  toast.error(t('toast.failedSubmitRating'));
     } finally {
       setSubmittingRating(false);
     }
@@ -150,34 +195,34 @@ export default function MyPicks() {
     try {
       const doc = new jsPDF();
       
-      // Add title
-      doc.setFontSize(20);
-      doc.text('SmartPick Receipt', 20, 30);
+  // Add title
+  doc.setFontSize(20);
+  doc.text(t('receipt.title'), 20, 30);
       
       // Add reservation details
       doc.setFontSize(12);
-      doc.text(`Reservation ID: ${reservation.id}`, 20, 50);
-      doc.text(`Partner: ${reservation.partner?.business_name || 'Unknown'}`, 20, 65);
-      doc.text(`Item: ${reservation.offer?.title || 'Unknown'}`, 20, 80);
-      doc.text(`Quantity: ${reservation.quantity}`, 20, 95);
-      doc.text(`Total Price: $${reservation.total_price?.toFixed(2) || '0.00'}`, 20, 110);
-      doc.text(`Pickup Date: ${reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleDateString() : 'N/A'}`, 20, 125);
-      doc.text(`Status: ${reservation.status}`, 20, 140);
+  doc.text(`${t('receipt.reservationId')}: ${reservation.id}`, 20, 50);
+  doc.text(`${t('receipt.partner')}: ${reservation.partner?.business_name || t('fallback.unknownPartner')}`, 20, 65);
+  doc.text(`${t('receipt.item')}: ${reservation.offer?.title || t('fallback.unknown')}`, 20, 80);
+  doc.text(`${t('receipt.quantity')}: ${reservation.quantity}`, 20, 95);
+  doc.text(`${t('receipt.totalPrice')}: $${reservation.total_price?.toFixed(2) || '0.00'}`, 20, 110);
+  doc.text(`${t('receipt.pickupDate')}: ${reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleDateString() : 'N/A'}`, 20, 125);
+  doc.text(`${t('receipt.status')}: ${reservation.status}`, 20, 140);
       
       // Add partner contact info if available
       if (reservation.partner) {
-        doc.text('Partner Contact:', 20, 160);
+        doc.text(t('receipt.partnerContact'), 20, 160);
         if (reservation.partner.email) {
-          doc.text(`Email: ${reservation.partner.email}`, 20, 175);
+          doc.text(`${t('receipt.email')} ${reservation.partner.email}`, 20, 175);
         }
         if (reservation.partner.phone) {
-          doc.text(`Phone: ${reservation.partner.phone}`, 20, 190);
+          doc.text(`${t('receipt.phone')} ${reservation.partner.phone}`, 20, 190);
         }
       }
       
       // Save the PDF
-      doc.save(`smartpick-receipt-${reservation.id}.pdf`);
-      toast.success('Receipt downloaded successfully!');
+  doc.save(`smartpick-receipt-${reservation.id}.pdf`);
+  toast.success(t('toast.receiptDownloaded'));
     } catch (error) {
       console.error('Error generating receipt:', error);
       toast.error('Failed to generate receipt');
@@ -187,13 +232,13 @@ export default function MyPicks() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+        return <Badge className="bg-green-100 text-green-800">{t('status.ACTIVE')}</Badge>;
       case 'PICKED_UP':
-        return <Badge className="bg-blue-100 text-blue-800">Picked Up</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800">{t('status.PICKED_UP')}</Badge>;
       case 'EXPIRED':
-        return <Badge className="bg-gray-100 text-gray-800">Expired</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800">{t('status.EXPIRED')}</Badge>;
       case 'CANCELLED':
-        return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
+        return <Badge className="bg-red-100 text-red-800">{t('status.CANCELLED')}</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -239,7 +284,7 @@ export default function MyPicks() {
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
-                size="sm"
+                className="h-11"
                 onClick={() => navigate('/')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -284,7 +329,11 @@ export default function MyPicks() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {activeReservations.map((reservation) => (
-                  <Card key={reservation.id} className="relative">
+                  <Card 
+                    key={reservation.id} 
+                    className="relative cursor-pointer transition-all hover:shadow-md active:scale-[0.99]"
+                    onClick={() => navigate(`/reservation/${reservation.id}`)}
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -308,10 +357,10 @@ export default function MyPicks() {
                               <PopoverContent className="w-80">
                                 <div className="space-y-3">
                                   <h4 className="font-semibold">{reservation.partner?.business_name}</h4>
-                                  {reservation.partner?.business_address && (
+                                  {reservation.partner?.address && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                       <MapPin className="h-4 w-4" />
-                                      {reservation.partner.business_address}
+                                      {reservation.partner.address}
                                     </div>
                                   )}
                                   {reservation.partner?.phone && (
@@ -358,14 +407,54 @@ export default function MyPicks() {
                       )}
 
                       <div className="flex gap-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          onClick={() => handleShowQR(reservation)}
-                          className="bg-mint-600 hover:bg-mint-700 flex-1 sm:flex-none"
-                        >
-                          <QrCode className="h-4 w-4 mr-2" />
-                          Show QR
-                        </Button>
+                        {timers[reservation.id] && (
+                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 w-full">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-yellow-600" />
+                              <span className="text-sm font-medium text-yellow-800">
+                                Time remaining: {timers[reservation.id]}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShowQR(reservation);
+                            }}
+                            className="h-11 bg-mint-600 hover:bg-mint-700 flex-1 sm:flex-none"
+                          >
+                            <QrCode className="h-4 w-4 mr-2" />
+                            Show QR
+                          </Button>
+                          {reservation.status === 'ACTIVE' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCancel(reservation.id);
+                                }}
+                                className="h-11 flex-1 sm:flex-none"
+                              >
+                                <XCircle className="h-4 w-4 mr-2" />
+                                Cancel
+                              </Button>
+                              <Button
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleGetDirections(reservation);
+                                }}
+                                className="h-11 flex-1 sm:flex-none"
+                              >
+                                <MapPin className="h-4 w-4 mr-2" />
+                                Get Directions
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -390,8 +479,23 @@ export default function MyPicks() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {historyReservations.map((reservation) => (
-                  <Card key={reservation.id} className="relative">
+                  <Card 
+                    key={reservation.id} 
+                    className="relative cursor-pointer transition-all hover:shadow-md active:scale-[0.99]"
+                    onClick={() => navigate(`/reservation/${reservation.id}`)}
+                  >
                     <CardHeader className="pb-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 hover:bg-red-50 text-red-600 hover:text-red-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(reservation.id);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
                           {reservation.offer?.images?.[0] && (
@@ -410,7 +514,13 @@ export default function MyPicks() {
                             </CardDescription>
                           </div>
                         </div>
-                        {getStatusBadge(reservation.status)}
+                        {isExpired(reservation.expires_at) ? (
+                          <Badge variant="secondary" className="bg-red-100 text-red-800">
+                            Expired
+                          </Badge>
+                        ) : (
+                          getStatusBadge(reservation.status)
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -436,19 +546,17 @@ export default function MyPicks() {
                         {reservation.status === 'PICKED_UP' && (
                           <>
                             <Button
-                              size="sm"
                               variant="outline"
                               onClick={() => setShowRating(reservation.id)}
-                              className="flex-1 sm:flex-none"
+                              className="h-11 flex-1 sm:flex-none"
                             >
                               <Star className="h-4 w-4 mr-2" />
                               Rate
                             </Button>
                             <Button
-                              size="sm"
                               variant="outline"
                               onClick={() => handleDownloadReceipt(reservation)}
-                              className="flex-1 sm:flex-none"
+                              className="h-11 flex-1 sm:flex-none"
                             >
                               <Download className="h-4 w-4 mr-2" />
                               Receipt
@@ -519,14 +627,14 @@ export default function MyPicks() {
               <Button
                 variant="outline"
                 onClick={() => setShowRating(null)}
-                className="flex-1"
+                className="h-11 flex-1"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleRatePartner}
                 disabled={submittingRating}
-                className="flex-1 bg-mint-600 hover:bg-mint-700"
+                className="h-11 flex-1 bg-mint-600 hover:bg-mint-700"
               >
                 {submittingRating ? 'Submitting...' : 'Submit Rating'}
               </Button>

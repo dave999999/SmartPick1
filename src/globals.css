@@ -1,0 +1,4 @@
+/* Global entry that re-exports the main index.css (keeps Next layout import working).
+   This file intentionally imports `index.css` so both React and Next entry points
+   load the same styles. */
+@import './index.css';

@@ -160,13 +160,13 @@ export default function AdminDashboard() {
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                 Admin Panel
               </Badge>
-              <Button variant="outline" onClick={handleRefreshData}>
+              <Button variant="outline" className="h-11" onClick={handleRefreshData}>
                 Refresh Data
               </Button>
-              <Button variant="outline" onClick={() => navigate('/')}>
+              <Button variant="outline" className="h-11" onClick={() => navigate('/')}>
                 Back to Home
               </Button>
-              <Button variant="outline" onClick={handleSignOut}>
+              <Button variant="outline" className="h-11" onClick={handleSignOut}>
                 Sign Out
               </Button>
             </div>

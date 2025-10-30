@@ -360,7 +360,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
       {/* Interactive Map */}
       {showMap && (
-        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[500px]'} rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg`}>
+        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[500px]'} rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function ReserveOffer() {
   const { offerId } = useParams<{ offerId: string }>();
@@ -19,6 +20,7 @@ export default function ReserveOffer() {
   const [penaltyInfo, setPenaltyInfo] = useState<PenaltyInfo | null>(null);
   const [countdown, setCountdown] = useState('');
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadOffer();
@@ -32,7 +34,7 @@ export default function ReserveOffer() {
         const diff = penaltyInfo.penaltyUntil!.getTime() - now.getTime();
         
         if (diff <= 0) {
-          setCountdown('Penalty lifted!');
+          setCountdown(t('penalty.lifted'));
           loadPenaltyInfo(); // Reload to clear penalty
         } else {
           const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -55,7 +57,7 @@ export default function ReserveOffer() {
       setOffer(data);
     } catch (error) {
       console.error('Error loading offer:', error);
-      toast.error('Failed to load offer');
+  toast.error(t('toast.failedLoadOffer'));
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -66,7 +68,7 @@ export default function ReserveOffer() {
     try {
       const { user } = await getCurrentUser();
       if (!user) {
-        toast.error('Please sign in to reserve');
+        toast.error(t('toast.signInToReserve'));
         navigate('/');
         return;
       }
@@ -82,7 +84,7 @@ export default function ReserveOffer() {
     if (!offer) return;
 
     if (penaltyInfo?.isUnderPenalty) {
-      toast.error(`You are under penalty. Time remaining: ${countdown}`);
+      toast.error(`${t('toast.underPenalty')} ${countdown}`);
       return;
     }
 
@@ -90,23 +92,23 @@ export default function ReserveOffer() {
       setIsReserving(true);
       const { user } = await getCurrentUser();
       if (!user) {
-        toast.error('Please sign in to reserve');
+        toast.error(t('toast.signInToReserve'));
         navigate('/');
         return;
       }
 
       if (quantity > offer.quantity_available) {
-        toast.error('Not enough quantity available');
+        toast.error(t('toast.notEnoughQuantity'));
         return;
       }
 
       if (quantity > 3) {
-        toast.error('Maximum 3 units allowed per reservation');
+        toast.error(t('toast.maxUnits'));
         return;
       }
 
       const reservation = await createReservation(offer.id, user.id, quantity);
-      toast.success('Reservation created successfully!');
+  toast.success(t('toast.reservationCreated'));
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
       console.error('Error creating reservation:', error);
@@ -139,7 +141,7 @@ export default function ReserveOffer() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading offer...</p>
+        <p className="text-gray-500">{t('offer.loading')}</p>
       </div>
     );
   }
@@ -147,7 +149,7 @@ export default function ReserveOffer() {
   if (!offer) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Offer not found</p>
+        <p className="text-gray-500">{t('offer.notFound')}</p>
       </div>
     );
   }
@@ -169,9 +171,9 @@ export default function ReserveOffer() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/')}>
+          <Button variant="ghost" onClick={() => navigate('/') }>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Offers
+            {t('header.backToOffers')}
           </Button>
         </div>
       </header>
@@ -221,7 +223,7 @@ export default function ReserveOffer() {
             {/* Pricing */}
             <div className="bg-mint-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Smart Price per unit</span>
+                <span className="text-sm text-gray-600">{t('offer.smartPricePerUnit')}</span>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-mint-600">{offer.smart_price} GEL</span>
                   <span className="text-sm text-gray-400 line-through ml-2">
@@ -237,7 +239,7 @@ export default function ReserveOffer() {
             {/* Quantity Selector */}
             <div>
               <Label htmlFor="quantity" className="text-base font-medium">
-                Select Quantity (Max 3 per offer)
+                {t('offer.selectQuantity')}
               </Label>
               <div className="flex items-center gap-3 mt-2">
                 <Button
