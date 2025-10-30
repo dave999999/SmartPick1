@@ -29,7 +29,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 // Create custom marker icon using emoji for each category
-const createCustomIcon = (category: string, count: number, isHighlighted: boolean = false) => {
+/* const createCustomIcon = (category: string, count: number, isHighlighted: boolean = false) => {
   const emojis: Record<string, string> = {
     BAKERY: "🥐",
     RESTAURANT: "🍕",
@@ -87,7 +87,7 @@ const createCustomIcon = (category: string, count: number, isHighlighted: boolea
     iconAnchor: [20 * scale, 40 * scale],
     popupAnchor: [0, -40 * scale],
   });
-};
+}; */
 
 
 interface OfferMapProps {
@@ -127,6 +127,69 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
+
+  // Safe replacement for corrupted emoji-based icon generator
+  const makeCategoryIcon = (
+    category: string,
+    count: number,
+    isHighlighted: boolean = false
+  ) => {
+    const emojis: Record<string, string> = {
+      BAKERY: '🥐',
+      RESTAURANT: '🍽️',
+      CAFE: '☕',
+      GROCERY: '🛒',
+    };
+    const emoji = emojis[category] || '📍';
+    const scale = isHighlighted ? 1.2 : 1;
+    const shadow = isHighlighted ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.3)';
+    const background = isHighlighted ? '#2CB97A' : '#ffffff';
+    const textColor = isHighlighted ? '#ffffff' : '#2CB97A';
+    return L.divIcon({
+      className: 'custom-marker',
+      html: `
+        <div style="
+          width: ${40 * scale}px;
+          height: ${40 * scale}px;
+          border-radius: 50%;
+          background: ${background};
+          border: 3px solid white;
+          box-shadow: ${shadow};
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: ${22 * scale}px;
+          color: ${textColor};
+          transition: all 0.3s ease;
+          transform: translateY(-4px);
+          position: relative;
+        ">
+          ${emoji}
+          ${count > 1 ? `
+            <div style="
+              position: absolute;
+              top: -6px;
+              right: -6px;
+              background-color: #EF4444;
+              color: white;
+              border-radius: 50%;
+              width: 20px;
+              height: 20px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 11px;
+              font-weight: bold;
+              border: 2px solid white;
+            ">${count}</div>
+          ` : ''}
+        </div>
+      `,
+      iconSize: [40 * scale, 40 * scale],
+      iconAnchor: [20 * scale, 40 * scale],
+      popupAnchor: [0, -40 * scale],
+    });
+  };
 
   // Set up realtime subscription
   useEffect(() => {
@@ -397,7 +460,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                 <Marker
                   key={`${location.partnerId}-${index}`}
                   position={[location.lat, location.lng]}
-                  icon={createCustomIcon(primaryOffer.category, location.offers.length, isHighlighted)}
+                  icon={makeCategoryIcon(primaryOffer.category, location.offers.length, isHighlighted)}
                   eventHandlers={{
                     mouseover: (e) => {
                       e.target.openPopup();

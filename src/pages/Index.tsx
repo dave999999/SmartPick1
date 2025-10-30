@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import OfferMap from '@/components/OfferMap';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
+import HeroSection from '@/components/HeroSection';
 import { MapPin, Clock, ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Leaf, DollarSign, Globe, Footprints, ArrowDown, ChevronDown, Menu, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -148,113 +149,16 @@ export default function Index() {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.03); }
         }
-        
-        @keyframes bounce-pin {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-5px); }
-        }
-        
-        @keyframes bounce-pin-mobile {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-3px); }
-        }
-        
-        @keyframes float-arrow {
-          0%, 100% { transform: translateY(0); opacity: 1; }
-          50% { transform: translateY(8px); opacity: 0.5; }
-        }
-        
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        
-        @keyframes gradient-drift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        
-        @keyframes tap-vibrate {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-2px); }
-          75% { transform: translateX(2px); }
-        }
-        
-        .find-smart-btn {
-          animation: pulse-animation 3s ease-in-out infinite;
-          background: linear-gradient(90deg, #4CC9A8, #3FB08F);
-          background-size: 200% auto;
-          position: relative;
-          overflow: hidden;
-        }
-        
-        .find-smart-btn::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-          transition: left 0.5s;
-        }
-        
-        .find-smart-btn:hover::before,
-        .find-smart-btn:active::before {
-          left: 100%;
-        }
-        
-        .find-smart-btn:active {
-          animation: tap-vibrate 0.3s ease-in-out;
-        }
-        
-        .floating-pin {
-          animation: bounce-pin 1.5s ease-in-out infinite;
-        }
-        
-        @media (max-width: 768px) {
-          .floating-pin {
-            animation: bounce-pin-mobile 1.5s ease-in-out infinite;
-          }
-        }
-        
-        .float-arrow {
-          animation: float-arrow 2s linear infinite;
-        }
-        
-        .hero-bg-animated {
-          background: linear-gradient(135deg, rgba(76, 201, 168, 0.05), rgba(255, 255, 255, 0), rgba(255, 111, 97, 0.03));
-          background-size: 200% 200%;
-          animation: gradient-drift 8s ease infinite;
-        }
-        
+
         .pulse-focus {
           animation: pulse-animation 0.6s ease-in-out;
           box-shadow: 0 0 0 4px rgba(76, 201, 168, 0.3);
           border-radius: 12px;
         }
-        
+
         @media (prefers-reduced-motion: reduce) {
-          .find-smart-btn,
-          .floating-pin,
-          .float-arrow,
-          .hero-bg-animated {
+          .pulse-focus {
             animation: none !important;
-          }
-        }
-        
-        @media (max-height: 700px) {
-          .hero-section-compact {
-            padding-top: 2rem !important;
-            padding-bottom: 2rem !important;
-          }
-          .hero-section-compact h2 {
-            font-size: 2rem !important;
-            margin-bottom: 1rem !important;
-          }
-          .hero-section-compact p {
-            font-size: 1rem !important;
-            margin-bottom: 0.5rem !important;
           }
         }
       `}</style>
@@ -433,127 +337,9 @@ export default function Index() {
         </div>
       )}
 
-      {/* Combined Hero & How It Works Section - Mobile First */}
-      <section className="hero-bg-animated hero-section-compact py-12 md:py-16 lg:py-20 relative overflow-hidden">
-        <div className="container mx-auto px-4">
-          {/* Hero Content */}
-          <div className="text-center mb-16 md:mb-20">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight">
-              {t('hero.title1')}<br className="hidden sm:block" />
-              <span style={{ color: '#1A1E29' }}>{t('hero.title2')}</span>
-            </h2>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-700 mb-2 md:mb-3 max-w-3xl mx-auto font-medium px-2">
-              {t('hero.subtitle')}
-            </p>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-8 md:mb-10 max-w-2xl mx-auto px-2">
-              {t('hero.description')}
-            </p>
-            
-            {/* Enhanced CTA Button */}
-            <div className="flex flex-col items-center gap-4 mb-4 md:mb-6">
-              <div className="relative w-full max-w-md px-4">
-                <Button 
-                  size="lg"
-                  className="find-smart-btn w-full text-white rounded-2xl font-bold text-base md:text-lg shadow-[0_8px_24px_rgba(76,201,168,0.4)] hover:shadow-[0_12px_32px_rgba(76,201,168,0.5)] transition-all duration-300 min-h-[56px] md:min-h-[60px] border-0 relative overflow-hidden group"
-                  onClick={handleFindSmartPicksClick}
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    <MapPin className="w-5 h-5 md:w-6 md:h-6 animate-pulse" />
-                    <span className="tracking-wide">{t('hero.findButton')}</span>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                </Button>
-              </div>
-            </div>
-          </div>
+      {/* Minimalist Hero Section with Integrated How It Works */}
+      <HeroSection onFindPicksClick={handleFindSmartPicksClick} />
 
-          {/* How It Works - Integrated with Visual Flow */}
-          <div className="max-w-6xl mx-auto relative">
-            {/* Decorative gradient background */}
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#4CC9A8]/5 to-transparent rounded-3xl -z-10"></div>
-            
-            <div className="text-center mb-10 md:mb-14">
-              <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-                {t('howItWorks.title')}
-              </h3>
-              <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-                {t('howItWorks.subtitle')}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 relative px-4 md:px-0">
-              {/* Animated Progress Line - Desktop only */}
-              <div className="hidden md:block absolute top-20 left-0 right-0 h-0.5" style={{ left: '20%', right: '20%' }}>
-                <div className="w-full h-full bg-gradient-to-r from-[#4CC9A8] via-[#4CC9A8] to-[#FF6F61] opacity-20 rounded-full"></div>
-              </div>
-
-              {/* Step 1 */}
-              <Card className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-0 relative hover:-translate-y-2 group">
-                <CardContent className="p-6 md:p-8">
-                  <div className="relative">
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#4CC9A8] to-[#3FB08F] text-white rounded-2xl flex items-center justify-center mx-auto mb-5 md:mb-6 font-bold text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      1
-                    </div>
-                    {/* Arrow connector - mobile only */}
-                    <div className="md:hidden flex justify-center my-4">
-                      <div className="w-px h-8 bg-gradient-to-b from-[#4CC9A8] to-transparent"></div>
-                    </div>
-                  </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step1.title')}</h4>
-                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
-                    <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#4CC9A8] inline-block mr-1" />
-                    {t('howItWorks.step1.description')}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Step 2 */}
-              <Card className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-0 relative hover:-translate-y-2 group md:mt-0">
-                <CardContent className="p-6 md:p-8">
-                  <div className="relative">
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#4CC9A8] to-[#3FB08F] text-white rounded-2xl flex items-center justify-center mx-auto mb-5 md:mb-6 font-bold text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                      2
-                    </div>
-                    {/* Arrow connector - mobile only */}
-                    <div className="md:hidden flex justify-center my-4">
-                      <div className="w-px h-8 bg-gradient-to-b from-[#4CC9A8] to-transparent"></div>
-                    </div>
-                  </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step2.title')}</h4>
-                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
-                    <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 text-[#4CC9A8] inline-block mr-1" />
-                    {t('howItWorks.step2.description')}
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Step 3 */}
-              <Card className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-0 relative hover:-translate-y-2 group">
-                <CardContent className="p-6 md:p-8">
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#FF6F61] to-[#ff5545] text-white rounded-2xl flex items-center justify-center mx-auto mb-5 md:mb-6 font-bold text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                    3
-                  </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step3.title')}</h4>
-                  <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
-                    <Footprints className="w-4 h-4 md:w-5 md:h-5 text-[#FF6F61] inline-block mr-1" />
-                    {t('howItWorks.step3.description')}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <div className="flex flex-col items-center gap-3 mt-16 md:mt-20">
-            <p className="text-sm md:text-base text-gray-600 font-medium">
-              {t('howItWorks.explore')}
-            </p>
-            <ChevronDown className="float-arrow w-6 h-6 text-[#4CC9A8] opacity-70" />
-          </div>
-        </div>
-      </section>
-
-      
 
       {/* Category Filters */}
       <section className="container mx-auto px-4 py-6 md:py-8 bg-[#FAFAFA]" id="offers">
