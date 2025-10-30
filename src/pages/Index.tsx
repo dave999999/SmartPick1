@@ -47,6 +47,7 @@ export default function Index() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadOffers();
@@ -263,7 +264,7 @@ export default function Index() {
                   <span style={{ color: '#1A1E29' }}>Smart</span>
                   <span style={{ color: '#2FB673' }}>Pick</span>
                 </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Be Smart. Pick Smart.</p>
+                <p className="text-xs text-gray-500 hidden sm:block">{t('header.tagline')}</p>
               </div>
             </div>
             
@@ -338,15 +339,14 @@ export default function Index() {
           {/* Hero Content */}
           <div className="text-center mb-16 md:mb-20">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 leading-tight">
-              <span style={{ color: '#1A1E29' }}>Smart</span> food. <span style={{ color: '#1A1E29' }}>Smart</span> people.<br className="hidden sm:block" />
-              <span className="sm:hidden"> </span>
-              <span style={{ color: '#1A1E29' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span>.
+              {t('hero.title1')}<br className="hidden sm:block" />
+              <span style={{ color: '#1A1E29' }}>{t('hero.title2')}</span>
             </h2>
             <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-700 mb-2 md:mb-3 max-w-3xl mx-auto font-medium px-2">
-              Fresh meals, ready to go — from the places you love, at the perfect time.
+              {t('hero.subtitle')}
             </p>
             <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-8 md:mb-10 max-w-2xl mx-auto px-2">
-              Your city's freshest finds, for those who know where to look.
+              {t('hero.description')}
             </p>
             
             {/* Enhanced CTA Button */}
@@ -359,7 +359,7 @@ export default function Index() {
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     <MapPin className="w-5 h-5 md:w-6 md:h-6 animate-pulse" />
-                    <span className="tracking-wide">Find <span style={{ color: '#1A1E29' }}>Smart</span> <span style={{ color: '#2FB673' }}>Picks</span> Near You</span>
+                    <span className="tracking-wide">{t('hero.findButton')}</span>
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </Button>
@@ -374,10 +374,10 @@ export default function Index() {
             
             <div className="text-center mb-10 md:mb-14">
               <h3 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-                How It Works
+                {t('howItWorks.title')}
               </h3>
               <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-                Three simple steps to fresh, local meals
+                {t('howItWorks.subtitle')}
               </p>
             </div>
 
@@ -399,10 +399,10 @@ export default function Index() {
                       <div className="w-px h-8 bg-gradient-to-b from-[#4CC9A8] to-transparent"></div>
                     </div>
                   </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">Find Nearby Offers</h4>
+                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step1.title')}</h4>
                   <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#4CC9A8] inline-block mr-1" />
-                    Discover fresh meals around you
+                    {t('howItWorks.step1.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -419,10 +419,10 @@ export default function Index() {
                       <div className="w-px h-8 bg-gradient-to-b from-[#4CC9A8] to-transparent"></div>
                     </div>
                   </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">Reserve Your Pick</h4>
+                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step2.title')}</h4>
                   <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
                     <ShoppingBag className="w-4 h-4 md:w-5 md:h-5 text-[#4CC9A8] inline-block mr-1" />
-                    Secure your meal instantly
+                    {t('howItWorks.step2.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -433,10 +433,10 @@ export default function Index() {
                   <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-[#FF6F61] to-[#ff5545] text-white rounded-2xl flex items-center justify-center mx-auto mb-5 md:mb-6 font-bold text-2xl md:text-3xl shadow-lg group-hover:scale-110 transition-transform duration-300">
                     3
                   </div>
-                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">Walk, Pick, Enjoy</h4>
+                  <h4 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 md:mb-4 text-center">{t('howItWorks.step3.title')}</h4>
                   <p className="text-sm md:text-base text-gray-600 text-center leading-relaxed">
                     <Footprints className="w-4 h-4 md:w-5 md:h-5 text-[#FF6F61] inline-block mr-1" />
-                    Get moving and taste your city
+                    {t('howItWorks.step3.description')}
                   </p>
                 </CardContent>
               </Card>
@@ -446,7 +446,7 @@ export default function Index() {
           {/* Scroll Indicator */}
           <div className="flex flex-col items-center gap-3 mt-16 md:mt-20">
             <p className="text-sm md:text-base text-gray-600 font-medium">
-              Explore what's fresh near you 🍞
+              {t('howItWorks.explore')}
             </p>
             <ChevronDown className="float-arrow w-6 h-6 text-[#4CC9A8] opacity-70" />
           </div>
