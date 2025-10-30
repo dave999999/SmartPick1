@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Offer, Reservation, Partner } from '@/lib/types';
+import { Offer, Reservation, Partner, CreateOfferDTO } from '@/lib/types';
 import {
   getPartnerByUserId,
   getPartnerOffers,
@@ -42,7 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye } from 'lucide-react';
+import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw } from 'lucide-react';
 
 export default function PartnerDashboard() {
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -119,22 +118,6 @@ export default function PartnerDashboard() {
   useEffect(() => {
     loadPartnerData();
   }, []);
-// 🔁 Auto-refresh Active Reservations every 10 seconds
-useEffect(() => {
-  if (!partner) return;
-  if (partner.status?.toUpperCase() !== 'APPROVED') return;
-
-  const interval = setInterval(async () => {
-    try {
-      const reservationsData = await getPartnerReservations(partner.id);
-      setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
-    } catch (error) {
-      console.error('Auto-refresh error:', error);
-    }
-  }, 10000); // every 10 seconds
-
-  return () => clearInterval(interval); // cleanup on unmount
-}, [partner]);
 
   // Auto-fill pickup times when dialog opens
   useEffect(() => {
@@ -371,6 +354,82 @@ useEffect(() => {
     }
   };
 
+  const handleRefreshQuantity = async (offerId: string) => {
+    if (processingIds.has(offerId)) return;
+    
+    try {
+      setProcessingIds(prev => new Set(prev).add(offerId));
+      const offer = offers.find(o => o.id === offerId);
+      
+      await updateOffer(offerId, { 
+        quantity_available: offer?.quantity_total || 0
+      });
+      await loadPartnerData();
+      toast.success('Quantity refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing quantity:', error);
+      toast.error('Failed to refresh quantity');
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(offerId);
+        return next;
+      });
+    }
+  };
+
+  const handleCreateNewFromOld = async (oldOffer: Offer) => {
+    if (processingIds.has(oldOffer.id)) return;
+
+    try {
+      setProcessingIds(prev => new Set(prev).add(oldOffer.id));
+      
+      // Set new pickup window (2 hours from now)
+      const now = new Date();
+      const pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+      // Create new offer with old parameters but new times
+      if (partner) {
+        // First create the offer without images
+        const createData: CreateOfferDTO = {
+          title: oldOffer.title,
+          description: oldOffer.description,
+          category: oldOffer.category,
+          original_price: oldOffer.original_price,
+          smart_price: oldOffer.smart_price,
+          quantity_total: oldOffer.quantity_total,
+          images: [], // Start with empty images array
+          pickup_window: {
+            start: now,
+            end: pickupEnd,
+          }
+        };
+
+        // Create the initial offer
+        const newOffer = await createOffer(createData, partner.id);
+        
+        // If we have images from the old offer, update the new offer with them
+        if (newOffer && oldOffer.images && oldOffer.images.length > 0) {
+          await updateOffer(newOffer.id, {
+            images: oldOffer.images
+          });
+        }
+
+        toast.success('New offer created successfully');
+        await loadPartnerData();
+      }
+    } catch (error) {
+      console.error('Error creating new offer:', error);
+      toast.error('Failed to create new offer');
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(oldOffer.id);
+        return next;
+      });
+    }
+  };
+
   const handleToggleOffer = async (offerId: string, currentStatus: string) => {
     if (processingIds.has(offerId)) return;
 
@@ -402,50 +461,6 @@ useEffect(() => {
       toast.error('Failed to delete offer');
     }
   };
-// 🔄 Refill offer quantity back to total
-const handleReloadOffer = async (offerId: string) => {
-  try {
-    setProcessingIds(prev => new Set(prev).add(offerId));
-    toast.loading('Restocking offer...');
-
-    // 1️⃣ Fetch the current offer
-    const { data: offerData, error: fetchError } = await supabase
-      .from('offers')
-      .select('id, quantity_total, quantity_available')
-      .eq('id', offerId)
-      .single();
-
-    if (fetchError || !offerData) {
-      throw fetchError || new Error('Offer not found');
-    }
-
-    // 2️⃣ Update available quantity to match total
-    const { error: updateError } = await supabase
-      .from('offers')
-      .update({ quantity_available: offerData.quantity_total })
-      .eq('id', offerId);
-
-    if (updateError) throw updateError;
-
-    // 3️⃣ Refresh the offers list in the dashboard
-    const updatedOffers = await getPartnerOffers(partner!.id);
-    setOffers(updatedOffers);
-
-    toast.dismiss();
-    toast.success('Offer refilled successfully!');
-  } catch (error) {
-    console.error('Error reloading offer:', error);
-    toast.dismiss();
-    toast.error('Failed to restock offer');
-  } finally {
-    setProcessingIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(offerId);
-      return newSet;
-    });
-  }
-};
-
 
   const handleMarkAsPickedUp = async (reservation: Reservation) => {
   if (processingIds.has(reservation.id)) return;
@@ -1120,279 +1135,196 @@ const generate24HourOptions = (): string[] => {
         </div>
 
         {/* Active Reservations */}
-<Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      Active Reservations
-      {!isPending && (
-        <span className="text-xs text-gray-400">(auto-refreshes every 10s)</span>
-      )}
-      {isPending && <Lock className="w-4 h-4 text-gray-400" />}
-    </CardTitle>
-    <CardDescription>
-      {isPending
-        ? 'This section will be available after approval'
-        : 'Customers waiting for pickup'}
-    </CardDescription>
-  </CardHeader>
+        <Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Active Reservations
+              {isPending && <Lock className="w-4 h-4 text-gray-400" />}
+            </CardTitle>
+            <CardDescription>
+              {isPending ? 'This section will be available after approval' : 'Customers waiting for pickup'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isPending ? (
+              <div className="text-center py-8">
+                <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2">Reservations will appear here once your account is approved</p>
+                <p className="text-sm text-gray-400">You'll be able to manage customer pickups and validate QR codes</p>
+              </div>
+            ) : reservations.length === 0 ? (
+              <div className="text-center py-8">
+                <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">No active reservations</p>
+                <p className="text-sm text-gray-400">When customers reserve your offers, they'll appear here</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Item</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Pickup Time</TableHead>
+                    <TableHead>QR Code</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {reservations.map((reservation) => (
+                    <TableRow key={reservation.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{reservation.customer?.name || 'Customer'}</div>
+                          <div className="text-sm text-gray-500">{reservation.customer?.email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{reservation.offer?.title}</TableCell>
+                      <TableCell>{reservation.quantity}</TableCell>
+                      <TableCell>
+                        {reservation.offer?.pickup_start && (
+                          <div className="text-sm">
+                            <div>{formatDateTime(reservation.offer.pickup_start)}</div>
+                            <div className="text-gray-500">to {formatDateTime(reservation.offer.pickup_end || reservation.offer.pickup_start)}</div>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{reservation.qr_code}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={() => handleMarkAsPickedUp(reservation)}
+                          disabled={processingIds.has(reservation.id)}
+                          className="bg-mint-600 hover:bg-mint-700"
+                        >
+                          {processingIds.has(reservation.id) ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Picked Up
+                            </>
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
-  <CardContent>
-    {isPending ? (
-      <div className="text-center py-8">
-        <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 mb-2">
-          Reservations will appear here once your account is approved
-        </p>
-        <p className="text-sm text-gray-400">
-          You'll be able to manage customer pickups and validate QR codes
-        </p>
-      </div>
-    ) : reservations.length === 0 ? (
-      <div className="text-center py-8">
-        <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 mb-4">No active reservations</p>
-        <p className="text-sm text-gray-400">
-          When customers reserve your offers, they'll appear here
-        </p>
-      </div>
-    ) : (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Customer</TableHead>
-            <TableHead>Item</TableHead>
-            <TableHead>Quantity</TableHead>
-            <TableHead>Pickup Time</TableHead>
-            <TableHead>QR Code</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {reservations.map((reservation) => (
-            <TableRow key={reservation.id}>
-              <TableCell>
-                <div>
-                  <div className="font-medium">
-                    {reservation.customer?.name || 'Customer'}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    {reservation.customer?.email}
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>{reservation.offer?.title}</TableCell>
-              <TableCell>{reservation.quantity}</TableCell>
-              <TableCell>
-                {reservation.offer?.pickup_start && (
-                  <div className="text-sm">
-                    <div>{formatDateTime(reservation.offer.pickup_start)}</div>
-                    <div className="text-gray-500">
-                      to{' '}
-                      {formatDateTime(
-                        reservation.offer.pickup_end ||
-                          reservation.offer.pickup_start
-                      )}
-                    </div>
-                  </div>
-                )}
-              </TableCell>
-              <TableCell>
-                <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                  {reservation.qr_code}
-                </code>
-              </TableCell>
-              <TableCell>
-                <Button
-                  size="sm"
-                  onClick={() => handleMarkAsPickedUp(reservation)}
-                  disabled={processingIds.has(reservation.id)}
-                  className="bg-mint-600 hover:bg-mint-700"
-                >
-                  {processingIds.has(reservation.id) ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Picked Up
-                    </>
-                  )}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    )}
-  </CardContent>
-</Card>
-
-
-       {/* Your Offers */}
-<Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      Your Offers
-      {isPending && <Lock className="w-4 h-4 text-gray-400" />}
-    </CardTitle>
-    <CardDescription>
-      {isPending
-        ? 'This section will be available after approval'
-        : 'Manage your Smart-Time offers'}
-    </CardDescription>
-  </CardHeader>
-
-  <CardContent>
-    {isPending ? (
-      <div className="text-center py-8">
-        <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 mb-2">
-          You'll be able to create and manage offers once approved
-        </p>
-        <p className="text-sm text-gray-400">
-          Start reducing food waste by offering Smart-Time deals to customers
-        </p>
-      </div>
-    ) : offers.length === 0 ? (
-      <p className="text-gray-500 text-center py-4">
-        No offers yet. Create your first one!
-      </p>
-    ) : (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Price</TableHead>
-            <TableHead>Available</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {offers.map((offer) => (
-            <TableRow key={offer.id}>
-              <TableCell className="font-medium">{offer.title}</TableCell>
-              <TableCell>{offer.category}</TableCell>
-              <TableCell>
-                <div>
-                  <div className="font-medium text-mint-600">
-                    {offer.smart_price} GEL
-                  </div>
-                  <div className="text-sm text-gray-500 line-through">
-                    {offer.original_price} GEL
-                  </div>
-                </div>
-              </TableCell>
-
-              <TableCell>
-                {offer.quantity_available}/{offer.quantity_total}
-              </TableCell>
-
-              <TableCell>
-                <Badge
-                  variant={offer.status === 'ACTIVE' ? 'default' : 'secondary'}
-                  className={
-                    offer.status === 'ACTIVE'
-                      ? 'bg-green-100 text-green-800'
-                      : offer.status === 'PAUSED'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }
-                >
-                  {offer.status}
-                </Badge>
-              </TableCell>
-
-              <TableCell>
-                <div className="flex gap-2">
-                  {/* ▶️ Pause / Play */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      handleToggleOffer(offer.id, offer.status)
-                    }
-                    disabled={processingIds.has(offer.id)}
-                  >
-                    {offer.status === 'ACTIVE' ? (
-                      <Pause className="w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                  </Button>
-
-                  {/* ✏️ Edit */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => openEditDialog(offer)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-
-                  {/* 🗑️ Delete */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleDeleteOffer(offer.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-
-                  {/* 🔄 Reload */}
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    title="Reload Offer"
-                    onClick={() => handleReloadOffer(offer.id)}
-                    disabled={processingIds.has(offer.id)}
-                  >
-                    {processingIds.has(offer.id) ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 animate-spin text-mint-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v6h6M20 20v-6h-6M4 10a9 9 0 0114.9-6.36L20 4M4 14a9 9 0 0014.9 6.36L20 20"
-                        />
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="w-4 h-4 text-mint-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v6h6M20 20v-6h-6M4 10a9 9 0 0114.9-6.36L20 4M4 14a9 9 0 0014.9 6.36L20 20"
-                        />
-                      </svg>
-                    )}
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    )}
-  </CardContent>
-</Card>
-
+        {/* Your Offers */}
+        <Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Your Offers
+              {isPending && <Lock className="w-4 h-4 text-gray-400" />}
+            </CardTitle>
+            <CardDescription>
+              {isPending ? 'This section will be available after approval' : 'Manage your Smart-Time offers'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isPending ? (
+              <div className="text-center py-8">
+                <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2">You'll be able to create and manage offers once approved</p>
+                <p className="text-sm text-gray-400">Start reducing food waste by offering Smart-Time deals to customers</p>
+              </div>
+            ) : offers.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No offers yet. Create your first one!</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Available</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {offers.map((offer) => (
+                    <TableRow key={offer.id}>
+                      <TableCell className="font-medium">{offer.title}</TableCell>
+                      <TableCell>{offer.category}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-mint-600">{offer.smart_price} GEL</div>
+                          <div className="text-sm text-gray-500 line-through">{offer.original_price} GEL</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{offer.quantity_available}/{offer.quantity_total}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={offer.status === 'ACTIVE' ? 'default' : 'secondary'}
+                          className={
+                            offer.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                            offer.status === 'PAUSED' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }
+                        >
+                          {offer.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleToggleOffer(offer.id, offer.status)}
+                            disabled={processingIds.has(offer.id)}
+                          >
+                            {offer.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRefreshQuantity(offer.id)}
+                            disabled={processingIds.has(offer.id)}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                            onClick={() => handleCreateNewFromOld(offer)}
+                            disabled={processingIds.has(offer.id)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditDialog(offer)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteOffer(offer.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Analytics Summary */}
         <Card className={isPending ? 'opacity-60' : ''}>
