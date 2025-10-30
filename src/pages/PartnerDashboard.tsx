@@ -42,38 +42,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw } from 'lucide-react';
-import { useI18n } from '@/lib/i18n';
-
-// Small language switch component used in headers
-function LanguageSwitch() {
-  const { language, setLanguage } = useI18n();
-
-  return (
-    <div className="flex items-center gap-2">
-      <button
-        aria-label="English"
-        onClick={() => setLanguage('en')}
-        className={`px-2 py-1 rounded ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
-      >
-        🇬🇧
-      </button>
-      <button
-        aria-label="Georgian"
-        onClick={() => setLanguage('ka')}
-        className={`px-2 py-1 rounded ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
-      >
-        🇬🇪
-      </button>
-      <button
-        aria-label="Russian"
-        onClick={() => setLanguage('ru')}
-        className={`px-2 py-1 rounded ${language === 'ru' ? 'bg-gray-200' : 'bg-white'}`}
-      >
-        🇷🇺
-      </button>
-    </div>
-  );
-}
+// (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
   const [partner, setPartner] = useState<Partner | null>(null);
@@ -762,8 +731,6 @@ const generate24HourOptions = (): string[] => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Language switch */}
-            <LanguageSwitch />
             
             <Button variant="outline" onClick={() => navigate('/')}>
               Customer View

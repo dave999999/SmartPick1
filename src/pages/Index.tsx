@@ -11,7 +11,30 @@ import OfferMap from '@/components/OfferMap';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import { MapPin, Clock, ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Leaf, DollarSign, Globe, Footprints, ArrowDown, ChevronDown } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
+
+function LanguageButtons() {
+  const { language, setLanguage } = useI18n();
+  return (
+    <div className="flex items-center gap-1">
+      <button
+        aria-label="English"
+        onClick={() => setLanguage('en')}
+        className={`px-2 py-1 rounded text-sm ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
+      >
+        EN
+      </button>
+      <button
+        aria-label="Georgian"
+        onClick={() => setLanguage('ka')}
+        className={`px-2 py-1 rounded text-sm ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
+      >
+        KA
+      </button>
+    </div>
+  );
+}
 
 const CATEGORIES = ['All', 'BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
 
@@ -245,14 +268,19 @@ export default function Index() {
             </div>
             
             {/* Become a Partner Button - Next to Logo */}
-            <Button 
-              size="sm"
-              onClick={() => navigate('/partner/apply')}
-              className="bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
-            >
-              <span className="hidden sm:inline">Become a Partner</span>
-              <span className="sm:hidden">Partner</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm"
+                onClick={() => navigate('/partner/apply')}
+                className="bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
+              >
+                <span className="hidden sm:inline">Become a Partner</span>
+                <span className="sm:hidden">Partner</span>
+              </Button>
+
+              {/* Language switch: English / Georgian only */}
+              <LanguageButtons />
+            </div>
           </div>
           
           {/* Right Side Navigation */}

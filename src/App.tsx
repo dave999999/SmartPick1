@@ -12,7 +12,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import ReserveOffer from './pages/ReserveOffer';
 import NotFound from './pages/NotFound';
 import 'leaflet/dist/leaflet.css';
-import Header from './components/Header';
 
 const queryClient = new QueryClient();
 
@@ -21,7 +20,6 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <BrowserRouter>
-        <Header />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/partner" element={<PartnerDashboard />} />
