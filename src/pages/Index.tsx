@@ -459,9 +459,9 @@ export default function Index() {
       <section className="container mx-auto px-4 py-6 md:py-8 bg-[#FAFAFA]" id="offers">
         <div className="text-center mb-4 md:mb-6">
           <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
-            Browse <span style={{ color: '#1A1E29' }}>Smart</span> <span style={{ color: '#2FB673' }}>Picks</span>
+            {t('browse.title')}
           </h3>
-          <p className="text-sm md:text-base text-gray-600">Filter by category to find exactly what you're looking for</p>
+          <p className="text-sm md:text-base text-gray-600">{t('browse.subtitle')}</p>
         </div>
         <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center">
           {CATEGORIES.map((category) => (
@@ -484,15 +484,15 @@ export default function Index() {
       {/* Offers Map/List */}
       <section id="map-view" className="container mx-auto px-4 pb-12 md:pb-16 bg-[#FAFAFA] transition-all duration-300">
         {isLoading ? (
-          <div className="text-center py-12">
+              <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#4CC9A8] mx-auto mb-4"></div>
-            <p className="text-sm md:text-base text-gray-500">Loading <span style={{ color: '#1A1E29' }}>Smart</span> <span style={{ color: '#2FB673' }}>Picks</span>...</p>
+            <p className="text-sm md:text-base text-gray-500">{t('browse.loading')}</p>
           </div>
         ) : offers.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-base md:text-lg text-gray-500">No offers available at the moment.</p>
-            <p className="text-xs md:text-sm text-gray-400 mt-2">Check back soon for new <span style={{ color: '#1A1E29' }}>Smart</span> <span style={{ color: '#2FB673' }}>Picks</span>!</p>
+            <p className="text-base md:text-lg text-gray-500">{t('browse.noOffers')}</p>
+            <p className="text-xs md:text-sm text-gray-400 mt-2">{t('browse.checkBack')}</p>
           </div>
         ) : (
           <OfferMap
@@ -507,7 +507,7 @@ export default function Index() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h3 className="text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-8 md:mb-12 px-2">
-              When you pick, you make your city smarter.
+              {t('why.title')}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
@@ -515,33 +515,33 @@ export default function Index() {
                 <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <span className="text-white font-bold text-sm">✓</span>
                 </div>
-                <p className="text-base md:text-lg text-gray-700">More freshness shared</p>
+                <p className="text-base md:text-lg text-gray-700">{t('why.point1')}</p>
               </div>
 
               <div className="flex items-start gap-3 text-left">
                 <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <span className="text-white font-bold text-sm">✓</span>
                 </div>
-                <p className="text-base md:text-lg text-gray-700">More people walking</p>
+                <p className="text-base md:text-lg text-gray-700">{t('why.point2')}</p>
               </div>
 
               <div className="flex items-start gap-3 text-left">
                 <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <span className="text-white font-bold text-sm">✓</span>
                 </div>
-                <p className="text-base md:text-lg text-gray-700">Stronger local shops</p>
+                <p className="text-base md:text-lg text-gray-700">{t('why.point3')}</p>
               </div>
 
               <div className="flex items-start gap-3 text-left">
                 <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
                   <span className="text-white font-bold text-sm">✓</span>
                 </div>
-                <p className="text-base md:text-lg text-gray-700">A better rhythm of living</p>
+                <p className="text-base md:text-lg text-gray-700">{t('why.point4')}</p>
               </div>
             </div>
 
             <p className="text-lg md:text-xl text-gray-700 italic font-medium px-2">
-              Every <span style={{ color: '#1A1E29' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span> is a moment of connection — between you, your city, and what's fresh.
+              {t('why.tagline')}
             </p>
           </div>
         </div>
@@ -552,21 +552,21 @@ export default function Index() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h3 className="text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-6 md:mb-8 relative inline-block px-2">
-              We believe in freshness, movement, and mindful living.
+              {t('manifesto.title')}
             </h3>
 
             <div className="space-y-4 md:space-y-6 text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed px-2">
               <p>
-                <span style={{ color: '#1A1E29' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span> isn't just an app — it's a rhythm.
+                {t('manifesto.line1')}
               </p>
               <p>
-                A way to live lighter, walk more, and connect with the real taste of your city.
+                {t('manifesto.line2')}
               </p>
               <p>
-                Every time you walk, pick, and share, you become part of something smarter.
+                {t('manifesto.line3')}
               </p>
               <p className="font-semibold text-[#4CC9A8]">
-                Together, we keep the circle flowing — fresh, simple, and real.
+                {t('manifesto.line4')}
               </p>
             </div>
           </div>
@@ -606,13 +606,13 @@ export default function Index() {
               </h4>
             </div>
             <p className="text-sm md:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
-              <span style={{ color: '#FFFFFF' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span> helps local businesses share more of what they create, and less of it go to waste — naturally.
+              {t('footer.description')}
             </p>
           </div>
           
           <div className="border-t border-gray-800 pt-6 md:pt-8 text-center">
             <p className="text-xs md:text-sm text-gray-500">
-              © 2025 <span style={{ color: '#FFFFFF' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span>. All rights reserved.
+              {t('footer.copyright')}
             </p>
           </div>
         </div>
