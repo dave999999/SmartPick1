@@ -1246,7 +1246,7 @@ if (!isOpen24h) {
                     </AlertDescription>
                   </Alert>
 
-                  <div className="w-full h-[450px] rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
+                  <div className="w-full h-[300px] md:h-[450px] rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
                     <MapContainer
                       center={markerPosition}
                       zoom={14}

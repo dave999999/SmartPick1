@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, Clock, Phone, Mail } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +15,7 @@ export default function ReservationDetail() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [timeRemaining, setTimeRemaining] = useState<string>('');
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadReservation();
@@ -40,7 +42,7 @@ export default function ReservationDetail() {
       const found = reservations.find(r => r.id === id);
       
       if (!found) {
-        toast.error('Reservation not found');
+        toast.error(t('toast.reservationNotFound'));
         navigate('/my-picks');
         return;
       }
@@ -52,7 +54,7 @@ export default function ReservationDetail() {
       setQrCodeUrl(qrUrl);
     } catch (error) {
       console.error('Error loading reservation:', error);
-      toast.error('Failed to load reservation');
+      toast.error(t('toast.failedLoadReservation'));
     }
   };
 
@@ -64,7 +66,7 @@ export default function ReservationDetail() {
     const diff = expires.getTime() - now.getTime();
 
     if (diff <= 0) {
-      setTimeRemaining('Expired');
+      setTimeRemaining(t('timer.expired'));
       return;
     }
 
@@ -74,22 +76,22 @@ export default function ReservationDetail() {
   };
 
   const handleCancel = async () => {
-    if (!reservation) return;
-    if (!confirm('Are you sure you want to cancel this reservation?')) return;
+  if (!reservation) return;
+  if (!confirm(t('confirm.cancelReservation'))) return;
 
     try {
       await cancelReservation(reservation.id);
-      toast.success('Reservation cancelled');
+      toast.success(t('toast.reservationCancelled'));
       navigate('/my-picks');
     } catch (error) {
-      toast.error('Failed to cancel reservation');
+      toast.error(t('toast.failedCancelReservation'));
     }
   };
 
   if (!reservation) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
+        <p className="text-gray-500">{t('offer.loading')}</p>
       </div>
     );
   }
@@ -113,7 +115,7 @@ export default function ReservationDetail() {
         <div className="container mx-auto px-4 py-4">
           <Button variant="ghost" onClick={() => navigate('/my-picks')}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to My Picks
+            {t('button.backToMyPicks')}
           </Button>
         </div>
       </header>
@@ -138,7 +140,7 @@ export default function ReservationDetail() {
             {/* QR Code */}
             {reservation.status === 'ACTIVE' && (
               <div className="bg-white p-6 rounded-lg border-2 border-mint-200 text-center">
-                <p className="text-sm text-gray-600 mb-4">Show this QR code at pickup</p>
+                <p className="text-sm text-gray-600 mb-4">{t('qr.showAtPickup')}</p>
                 {qrCodeUrl && (
                   <img src={qrCodeUrl} alt="QR Code" className="mx-auto w-64 h-64" />
                 )}
@@ -149,24 +151,24 @@ export default function ReservationDetail() {
             {/* Countdown Timer */}
             {reservation.status === 'ACTIVE' && (
               <div className="bg-coral-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-1">Time remaining</p>
+                <p className="text-sm text-gray-600 mb-1">{t('timer.timeRemaining')}</p>
                 <p className="text-4xl font-bold text-coral-600">{timeRemaining}</p>
-                <p className="text-xs text-gray-500 mt-1">Your SmartPick is waiting!</p>
+                <p className="text-xs text-gray-500 mt-1">{t('timer.waiting')}</p>
               </div>
             )}
 
             {/* Reservation Details */}
             <div className="space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Quantity</span>
+                <div className="flex justify-between">
+                <span className="text-gray-600">{t('label.quantity')}</span>
                 <span className="font-medium">{reservation.quantity}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Price</span>
+                <span className="text-gray-600">{t('label.totalPrice')}</span>
                 <span className="font-bold text-mint-600 text-xl">{reservation.total_price} GEL</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Reserved At</span>
+                <span className="text-gray-600">{t('label.reservedAt')}</span>
                 <span className="font-medium">
                   {new Date(reservation.created_at).toLocaleString()}
                 </span>
@@ -178,7 +180,7 @@ export default function ReservationDetail() {
               <div className="border-t pt-4">
                 <div className="flex items-center gap-2 text-gray-700 mb-2">
                   <Clock className="w-5 h-5" />
-                  <span className="font-medium">Pickup Window</span>
+                  <span className="font-medium">{t('label.pickupWindow')}</span>
                 </div>
                 <p className="text-gray-600">
                   {new Date(pickupStart).toLocaleTimeString()} - {new Date(pickupEnd).toLocaleTimeString()}
@@ -191,7 +193,7 @@ export default function ReservationDetail() {
               <div className="border-t pt-4">
                 <div className="flex items-center gap-2 text-gray-700 mb-2">
                   <MapPin className="w-5 h-5" />
-                  <span className="font-medium">Pickup Location</span>
+                  <span className="font-medium">{t('label.pickupLocation')}</span>
                 </div>
                 <p className="font-medium">{reservation.partner.business_name}</p>
                 {partnerAddress && (
@@ -201,7 +203,7 @@ export default function ReservationDetail() {
                   <Button variant="outline" className="mt-3 w-full" onClick={() => {
                     window.open(`https://www.google.com/maps/search/?api=1&query=${partnerLat},${partnerLng}`, '_blank');
                   }}>
-                    Get Directions
+                    {t('button.getDirections')}
                   </Button>
                 )}
               </div>
@@ -210,7 +212,7 @@ export default function ReservationDetail() {
             {/* Contact */}
             {(partnerPhone || partnerEmail) && (
               <div className="border-t pt-4">
-                <p className="font-medium text-gray-700 mb-2">Contact Partner</p>
+                <p className="font-medium text-gray-700 mb-2">{t('contact.partner')}</p>
                 <div className="space-y-2">
                   {partnerPhone && (
                     <div className="flex items-center gap-2 text-gray-600">

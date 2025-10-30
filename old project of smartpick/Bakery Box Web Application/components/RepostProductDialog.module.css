@@ -1,0 +1,42 @@
+@layer base {
+  .dialogContent {
+    max-width: 40rem;
+  }
+
+  .checkboxContainer {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    margin-bottom: var(--spacing-4);
+    padding: var(--spacing-3);
+    background-color: var(--muted);
+    border-radius: var(--radius);
+  }
+
+  .checkboxLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .formGrid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-4);
+  }
+
+  .priceGrid,
+  .quantityGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-4);
+  }
+
+  @media (max-width: 768px) {
+    .priceGrid,
+    .quantityGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

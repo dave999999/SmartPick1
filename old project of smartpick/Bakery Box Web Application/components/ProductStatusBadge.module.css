@@ -1,0 +1,12 @@
+@layer base {
+  .statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    text-transform: capitalize;
+  }
+
+  .icon {
+    flex-shrink: 0;
+  }
+}

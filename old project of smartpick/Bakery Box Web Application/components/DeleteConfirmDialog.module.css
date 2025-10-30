@@ -1,0 +1,32 @@
+.dialogContent {
+  max-width: 28rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-2);
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  background-color: color-mix(in srgb, var(--error) 15%, transparent);
+  margin-bottom: var(--spacing-2);
+}
+
+.icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--error);
+}
+
+.footer {
+  justify-content: center;
+}
