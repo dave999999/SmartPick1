@@ -127,6 +127,11 @@ export default function Index() {
     });
   };
 
+  const displayCategory = (category: string) => {
+    if (category === 'All') return t('browse.all');
+    return t(`category.${category}`) || category;
+  };
+
   // Helper function to safely get pickup times
   const getPickupTimes = (offer: Offer) => {
     const start = offer.pickup_start || offer.pickup_window?.start || '';
@@ -271,13 +276,13 @@ export default function Index() {
             {/* Become a Partner Button - Next to Logo */}
             <div className="flex items-center gap-2">
               <Button 
-                size="sm"
-                onClick={() => navigate('/partner/apply')}
-                className="bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
-              >
-                <span className="hidden sm:inline">Become a Partner</span>
-                <span className="sm:hidden">Partner</span>
-              </Button>
+                  size="sm"
+                  onClick={() => navigate('/partner/apply')}
+                  className="bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
+                >
+                  <span className="hidden sm:inline">{t('header.becomePartner')}</span>
+                  <span className="sm:hidden">{t('header.becomePartner')}</span>
+                </Button>
 
               {/* Language switch: English / Georgian only */}
               <LanguageButtons />
@@ -297,25 +302,25 @@ export default function Index() {
                     className="border-[#4CC9A8] text-[#4CC9A8] hover:bg-[#4CC9A8] hover:text-white transition-all duration-250 hidden md:flex"
                   >
                     <Shield className="w-4 h-4 mr-2" />
-                    Admin
+                    {t('header.admin')}
                   </Button>
                 )}
                 <Button variant="outline" size="sm" onClick={() => navigate('/my-picks')} className="hover:scale-105 transition-transform duration-250 hidden sm:flex">
-                  My Picks
+                  {t('header.myPicks')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => navigate('/partner')} className="hover:scale-105 transition-transform duration-250 hidden sm:flex">
-                  Partner
+                  {t('header.partner')}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleSignOut} className="hover:scale-105 transition-transform duration-250">
                   <LogOut className="w-4 h-4 md:mr-2" />
-                  <span className="hidden md:inline">Sign Out</span>
+                  <span className="hidden md:inline">{t('header.signOut')}</span>
                 </Button>
               </>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setShowAuthDialog(true)} className="hover:scale-105 transition-transform duration-250">
-                <LogIn className="w-4 h-4 md:mr-2" />
-                <span className="hidden md:inline">Sign In</span>
-              </Button>
+                <Button variant="outline" size="sm" onClick={() => setShowAuthDialog(true)} className="hover:scale-105 transition-transform duration-250">
+                  <LogIn className="w-4 h-4 md:mr-2" />
+                  <span className="hidden md:inline">{t('header.signIn')}</span>
+                </Button>
             )}
           </div>
         </div>
@@ -475,7 +480,7 @@ export default function Index() {
               }`}
               onClick={() => setSelectedCategory(category === 'All' ? '' : category)}
             >
-              {category}
+              {displayCategory(category)}
             </Badge>
           ))}
         </div>
