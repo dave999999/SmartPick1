@@ -386,26 +386,27 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   return (
     <div className="w-full space-y-6">
       {/* Near Me Control - Prominent and Floating */}
-      <div className="flex flex-wrap gap-3 items-center justify-between px-4 md:px-6 py-3">
+      <div className="flex flex-wrap gap-3 items-center justify-between px-4 md:px-6 py-4">
         <Button
           variant="default"
           onClick={handleNearMe}
-          className="bg-[#4CC9A8] hover:bg-[#3BA890] text-white rounded-full shadow-lg hover:shadow-xl transition-all px-6 py-3 font-semibold"
+          className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 px-6 py-3 font-semibold"
         >
           <Navigation className="w-4 h-4 mr-2" />
           📍 Near Me
         </Button>
-        <div className="text-sm md:text-base text-gray-600 font-medium flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#4CC9A8] text-white font-bold">
+        <div className="text-sm md:text-base text-[#6E7A78] font-medium flex items-center gap-2">
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] text-white font-bold text-sm shadow-sm">
             {displayOffers.length}
           </span>
-          Smart Picks {userLocation ? 'near you' : 'available'}
+          <span className="hidden sm:inline">Smart Picks {userLocation ? 'near you' : 'available'}</span>
+          <span className="sm:hidden">{displayOffers.length} picks</span>
         </div>
       </div>
 
       {/* Interactive Map - mobile-first height */}
       {showMap && (
-        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[75vh] sm:h-[90vh] min-h-[420px]'} rounded-xl overflow-hidden border border-gray-300 shadow-2xl`}>
+        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[75vh] sm:h-[90vh] min-h-[420px]'} rounded-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -422,8 +423,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
           >
             <MapController center={mapCenter} zoom={mapZoom} />
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              maxZoom={20}
             />
             
             {/* User location marker */}
@@ -432,12 +435,12 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                 position={userLocation}
                 icon={L.divIcon({
                   className: 'user-location-marker',
-                  html: '<div style="background: #3B82F6; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>',
-                  iconSize: [20, 20],
-                  iconAnchor: [10, 10],
+                  html: '<div style="background: linear-gradient(135deg, #00C896 0%, #009B77 100%); width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 12px rgba(0, 200, 150, 0.4);"></div>',
+                  iconSize: [24, 24],
+                  iconAnchor: [12, 12],
                 })}
               >
-                <Popup>Your Location</Popup>
+                <Popup>📍 Your Location</Popup>
               </Marker>
             )}
             
@@ -527,7 +530,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
           {!isFullscreen && (
             <Button
               variant="default"
-              className="md:hidden fixed bottom-4 right-4 z-[1000] bg-mint-600 hover:bg-mint-700 text-white px-5 py-3 rounded-full shadow-lg active:scale-95"
+              className="md:hidden fixed bottom-6 right-4 z-[1000] bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300"
               onClick={handleNearMe}
             >
               📍 Near Me

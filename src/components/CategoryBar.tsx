@@ -27,7 +27,7 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
   const { t } = useI18n();
 
   return (
-    <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+    <div className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm border-b border-[#E8F9F4] shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Mobile: Horizontal scroll */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0 max-w-full">
@@ -40,10 +40,10 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
                 onClick={() => onCategorySelect(category.value)}
                 variant={isActive ? 'default' : 'outline'}
                 className={`
-                  flex-shrink-0 flex items-center gap-2 min-w-[90px] px-3 py-3 md:px-4 md:py-2 rounded-full transition-all
+                  flex-shrink-0 flex items-center gap-2 min-w-[90px] px-3 py-3 md:px-4 md:py-2 rounded-full transition-all duration-300
                   ${isActive
-                    ? 'bg-[#4CC9A8] text-white border-[#4CC9A8] hover:bg-[#3BA890] shadow-md'
-                    : 'bg-white border-gray-200 text-gray-700 hover:bg-[#E8F9F4] hover:border-[#4CC9A8]'
+                    ? 'bg-gradient-to-r from-[#00C896] to-[#009B77] text-white border-transparent hover:from-[#00B588] hover:to-[#008866] shadow-md hover:shadow-lg'
+                    : 'bg-white border-[#E8F9F4] text-[#6E7A78] hover:bg-[#F9FFFB] hover:border-[#00C896] hover:text-[#00C896] shadow-sm'
                   }
                 `}
               >
