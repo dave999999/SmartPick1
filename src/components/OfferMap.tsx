@@ -521,21 +521,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             })}
           </MapContainer>
           
-          {/* Map Legend */}
-          <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg z-[1000]">
-            <h4 className="font-semibold text-xs mb-2">Categories</h4>
-            <div className="space-y-1">
-              {Object.entries(CATEGORY_COLORS).map(([category, color]) => (
-                <div key={category} className="flex items-center gap-2 text-xs">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: color }}
-                  />
-                  <span>{category}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Map Legend removed per request */}
           
           {/* Floating Near Me button on mobile */}
           {!isFullscreen && (
