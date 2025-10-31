@@ -1,5 +1,5 @@
 export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN';
-export type BusinessType = 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY';
+export type BusinessType = 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL';
 export type OfferStatus = 'ACTIVE' | 'EXPIRED' | 'PAUSED' | 'SOLD_OUT';
 export type ReservationStatus = 'ACTIVE' | 'PICKED_UP' | 'CANCELLED' | 'EXPIRED';
 export type PartnerStatus = 'PENDING' | 'APPROVED' | 'BLOCKED' | 'PAUSED';

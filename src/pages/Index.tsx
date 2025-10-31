@@ -38,7 +38,7 @@ function LanguageButtons() {
   );
 }
 
-const CATEGORIES = ['All', 'BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
+const CATEGORIES = ['All', 'BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY', 'FAST_FOOD', 'ALCOHOL'];
 
 export default function Index() {
   const [offers, setOffers] = useState<Offer[]>([]);

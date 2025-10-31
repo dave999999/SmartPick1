@@ -54,6 +54,8 @@ const translations: Record<Language, Record<string, string>> = {
   'category.RESTAURANT': 'Restaurant',
   'category.CAFE': 'Café',
   'category.GROCERY': 'Grocery',
+  'category.FAST_FOOD': 'Fast Food',
+  'category.ALCOHOL': 'Alcohol & Wine',
 
     // Map View
     'map.mapView': 'Map View',
@@ -189,6 +191,8 @@ const translations: Record<Language, Record<string, string>> = {
   'category.RESTAURANT': 'რესტორანი',
   'category.CAFE': 'კაფე',
   'category.GROCERY': 'სურსათის მაღაზია',
+  'category.FAST_FOOD': 'ფასთ ფუდი',
+  'category.ALCOHOL': 'ალკოჰოლი და ღვინო',
 
     // Map View
     'map.mapView': 'რუკის ხედი',
@@ -324,6 +328,8 @@ const translations: Record<Language, Record<string, string>> = {
   'category.RESTAURANT': 'Ресторан',
   'category.CAFE': 'Кафе',
   'category.GROCERY': 'Продукты',
+  'category.FAST_FOOD': 'Фаст-фуд',
+  'category.ALCOHOL': 'Алкоголь и вино',
 
     // Map View
     'map.mapView': 'Карта',
