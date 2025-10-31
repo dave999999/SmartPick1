@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 
 export default function SplashScreen() {
-  const [isVisible, setIsVisible] = useState(true);
+  const initialShouldShow = (() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      const nav = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined);
+      if (nav && nav.type === 'back_forward') return false;
+    } catch {}
+    if ((window as any).__smartpickSplashShownThisLoad) return false;
+    return true;
+  })();
+  const [isVisible, setIsVisible] = useState(initialShouldShow);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   useEffect(() => {
