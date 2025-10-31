@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Upload, X, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const BUSINESS_TYPES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
+const BUSINESS_TYPES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY', 'FAST_FOOD', 'ALCOHOL'];
 
 // Custom marker icon
 const customIcon = L.divIcon({
