@@ -148,8 +148,9 @@ export default function PartnerApplication() {
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     try {
+      // Using geocode.maps.co (free alternative to Nominatim with better CORS support)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+        `https://geocode.maps.co/reverse?lat=${lat}&lon=${lon}&format=json`,
         {
           headers: {
             'Accept': 'application/json',
@@ -165,7 +166,7 @@ export default function PartnerApplication() {
       const data = await response.json();
 
       if (data && data.display_name) {
-        const addressText = data.address?.road || data.display_name;
+        const addressText = data.address?.road || data.address?.suburb || data.display_name;
         const cityText = data.address?.city || data.address?.town || data.address?.village || formData.city;
 
         setFormData(prev => ({
@@ -235,8 +236,9 @@ export default function PartnerApplication() {
     setIsLoadingAddress(true);
 
     try {
+      // Using geocode.maps.co (free alternative to Nominatim with better CORS support)
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(query)}&limit=5`,
+        `https://geocode.maps.co/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
         {
           headers: {
             'Accept': 'application/json',
