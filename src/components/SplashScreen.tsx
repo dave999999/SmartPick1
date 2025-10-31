@@ -5,7 +5,14 @@ export default function SplashScreen() {
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   useEffect(() => {
-    // Always show the splash on every refresh.
+    // Show splash once per full page load (initial visit or manual refresh).
+    // If navigating back to home within SPA, do not show again until a reload.
+    if (typeof window !== 'undefined' && (window as any).__smartpickSplashShownThisLoad) {
+      setIsVisible(false);
+      return;
+    }
+    (window as any).__smartpickSplashShownThisLoad = true;
+
     // Respect reduced motion preferences by shortening the duration.
     const prefersReduced =
       typeof window !== 'undefined' &&
