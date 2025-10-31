@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { resolveOfferImageUrl } from '@/lib/api';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -339,9 +340,10 @@ export default function MyPicks() {
                         <div className="flex items-center gap-3">
                           {reservation.offer?.images?.[0] && (
                             <img
-                              src={reservation.offer.images[0]}
+                              src={resolveOfferImageUrl(reservation.offer.images[0])}
                               alt={reservation.offer.title}
                               className="w-12 h-12 rounded-lg object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                             />
                           )}
                           <div>
@@ -500,9 +502,10 @@ export default function MyPicks() {
                         <div className="flex items-center gap-3">
                           {reservation.offer?.images?.[0] && (
                             <img
-                              src={reservation.offer.images[0]}
+                              src={resolveOfferImageUrl(reservation.offer.images[0])}
                               alt={reservation.offer.title}
                               className="w-12 h-12 rounded-lg object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                             />
                           )}
                           <div>
