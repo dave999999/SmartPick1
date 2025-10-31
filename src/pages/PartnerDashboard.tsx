@@ -41,7 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw } from 'lucide-react';
+import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown } from 'lucide-react';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -66,6 +66,7 @@ export default function PartnerDashboard() {
   const [pickupStartSlot, setPickupStartSlot] = useState('');
   const [pickupEndSlot, setPickupEndSlot] = useState('');
   const [autoExpire12h, setAutoExpire12h] = useState(true);
+  const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out'>('all');
   const navigate = useNavigate();
 
   const CATEGORIES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
@@ -711,17 +712,29 @@ const generate24HourOptions = (): string[] => {
 };
   const getEndTimeSlots = () => {
     if (!pickupStartSlot) return [];
-    
+
     const [hours, minutes] = pickupStartSlot.split(':').map(Number);
     const startTime = new Date();
     startTime.setHours(hours, minutes, 0, 0);
-    
+
     const minEndTime = new Date(startTime.getTime() + 30 * 60 * 1000); // At least 30 min after start
     const closing = getClosingTime();
     const maxEndTime = closing || new Date(startTime.getTime() + 8 * 60 * 60 * 1000);
-    
+
     return generateTimeSlots(minEndTime, maxEndTime);
   };
+
+  // Filter offers based on selected filter
+  const filteredOffers = offers.filter(offer => {
+    const displayStatus = getOfferDisplayStatus(offer);
+
+    if (offerFilter === 'all') return true;
+    if (offerFilter === 'active') return displayStatus === 'ACTIVE';
+    if (offerFilter === 'expired') return displayStatus === 'EXPIRED';
+    if (offerFilter === 'sold_out') return displayStatus === 'SOLD_OUT';
+
+    return true;
+  });
 
   if (isLoading) {
     return (
@@ -732,23 +745,32 @@ const generate24HourOptions = (): string[] => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <header className="bg-white border-b border-[#E8F9F4] sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-8 h-8 text-mint-600" />
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">SmartPick Partner</h1>
-              <p className="text-sm text-gray-500">{partner?.business_name}</p>
+            <img src="/icon1.png" alt="SmartPick icon" className="h-8 md:h-10 w-8 md:w-10 object-contain" />
+            <div className="leading-tight">
+              <h1 className="text-lg md:text-xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                {partner?.business_name}
+              </h1>
+              <p className="text-[11px] md:text-xs text-neutral-500">Partner Dashboard</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            
-            <Button variant="outline" onClick={() => navigate('/')}>
-              Customer View
+          <div className="hidden md:flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="h-11 rounded-full"
+              onClick={() => navigate('/')}
+            >
+              🏠 Customer View
             </Button>
-            <Button variant="outline" onClick={handleSignOut}>
+            <Button
+              variant="outline"
+              className="h-11 rounded-full"
+              onClick={handleSignOut}
+            >
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
             </Button>
@@ -774,47 +796,55 @@ const generate24HourOptions = (): string[] => {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className={isPending ? 'opacity-60' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Active Offers</CardTitle>
-              <Package className="w-4 h-4 text-mint-600" />
+        {/* Summary Bar - Enhanced with Mint Theme */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-gray-600">📦 Offers Live</CardTitle>
+              <Package className="w-5 h-5 text-[#00C896]" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-mint-600">{isPending ? '—' : stats.activeOffers}</div>
+              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                {isPending ? '—' : stats.activeOffers}
+              </div>
               {isPending && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   <Lock className="w-3 h-3" />
                   <span>Available after approval</span>
                 </div>
               )}
             </CardContent>
           </Card>
-          <Card className={isPending ? 'opacity-60' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Reservations Today</CardTitle>
-              <ShoppingBag className="w-4 h-4 text-coral-600" />
+
+          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-gray-600">✅ Picked Up Today</CardTitle>
+              <CheckCircle className="w-5 h-5 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-coral-600">{isPending ? '—' : stats.reservationsToday}</div>
+              <div className="text-3xl md:text-4xl font-bold text-green-600">
+                {isPending ? '—' : stats.itemsPickedUp}
+              </div>
               {isPending && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   <Lock className="w-3 h-3" />
                   <span>Available after approval</span>
                 </div>
               )}
             </CardContent>
           </Card>
-          <Card className={isPending ? 'opacity-60' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Items Picked Up</CardTitle>
-              <CheckCircle className="w-4 h-4 text-green-600" />
+
+          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-gray-600">💰 SmartPick Revenue</CardTitle>
+              <DollarSign className="w-5 h-5 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{isPending ? '—' : stats.itemsPickedUp}</div>
+              <div className="text-3xl md:text-4xl font-bold text-purple-600">
+                {isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}
+              </div>
               {isPending && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                   <Lock className="w-3 h-3" />
                   <span>Available after approval</span>
                 </div>
@@ -824,35 +854,40 @@ const generate24HourOptions = (): string[] => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
           <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
             setIsCreateDialogOpen(open);
             if (!open) {
-                    setImageFiles([]);
+              setImageFiles([]);
               setImagePreviews([]);
               setFormErrors({});
               setUseBusinessHours(false);
-                    setPickupStartSlot('');
+              setPickupStartSlot('');
               setPickupEndSlot('');
               setAutoExpire12h(true);
             }
           }}>
             <DialogTrigger asChild>
-              <Button className="bg-[#4CC9A8] hover:bg-[#3db891] text-white" disabled={isPending}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Smart-Time Offer
+              <Button
+                className="h-11 md:h-12 rounded-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                disabled={isPending}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                ✨ New Smart-Time Offer
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold">Create New Offer</DialogTitle>
-                <DialogDescription>Add a fresh Smart-Time offer for your customers</DialogDescription>
+                <DialogTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                  ✨ Create New Offer
+                </DialogTitle>
+                <DialogDescription className="text-sm md:text-base">Add a fresh Smart-Time offer for your customers</DialogDescription>
               </DialogHeader>
-              
+
               {/* Single Page Form Header */}
-              <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-[#4CC9A8] mb-6">
-                <h3 className="font-semibold text-gray-900 mb-1">Complete Offer Details</h3>
+              <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] p-4 rounded-xl border-l-4 border-[#00C896] mb-6 shadow-sm">
+                <h3 className="font-semibold text-gray-900 mb-1">📝 Complete Offer Details</h3>
                 <p className="text-sm text-gray-600">Fill in all information to create your Smart-Time offer</p>
               </div>
 
@@ -866,12 +901,12 @@ const generate24HourOptions = (): string[] => {
                         <Utensils className="w-4 h-4 text-[#4CC9A8]" />
                         Offer Title *
                       </Label>
-                      <Input 
-                        id="title" 
-                        name="title" 
-                        required 
-                        placeholder="e.g., Fresh Khachapuri" 
-                        className="text-base py-6"
+                      <Input
+                        id="title"
+                        name="title"
+                        required
+                        placeholder="e.g., Fresh Khachapuri"
+                        className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                       />
                       {formErrors.title && <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>}
                     </div>
@@ -881,12 +916,12 @@ const generate24HourOptions = (): string[] => {
                         <MessageSquare className="w-4 h-4 text-[#4CC9A8]" />
                         Description *
                       </Label>
-                      <Textarea 
-                        id="description" 
-                        name="description" 
-                        required 
-                        placeholder="Describe your offer in detail..." 
-                        className="text-base min-h-[100px]"
+                      <Textarea
+                        id="description"
+                        name="description"
+                        required
+                        placeholder="Describe your offer in detail..."
+                        className="text-base min-h-[100px] rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                       />
                       {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
                     </div>
@@ -897,10 +932,10 @@ const generate24HourOptions = (): string[] => {
                         <Package className="w-4 h-4 text-[#4CC9A8]" />
                         Category
                       </Label>
-                      <div className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-6 flex items-center gap-2">
+                      <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] border border-[#DFF5ED] rounded-xl px-4 py-6 flex items-center gap-2">
                         <span className="text-2xl">{getCategoryIcon(partner?.business_type || 'RESTAURANT')}</span>
-                        <span className="text-base font-medium text-gray-700">{partner?.business_type || 'RESTAURANT'}</span>
-                        <span className="text-sm text-gray-500 ml-2">(auto-filled)</span>
+                        <span className="text-base font-medium text-gray-900">{partner?.business_type || 'RESTAURANT'}</span>
+                        <span className="text-sm text-[#00C896] ml-2">(auto-filled)</span>
                       </div>
                       <p className="text-xs text-gray-500 mt-1">Category is automatically set based on your business type</p>
                     </div>
@@ -911,8 +946,8 @@ const generate24HourOptions = (): string[] => {
                         Images (Optional)
                       </Label>
                       <div
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                          isDragOver ? 'border-[#4CC9A8] bg-[#4CC9A8]/5' : 'border-gray-300'
+                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
+                          isDragOver ? 'border-[#00C896] bg-[#F9FFFB] scale-105' : 'border-[#DFF5ED] hover:border-[#00C896]'
                         }`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
@@ -967,14 +1002,14 @@ const generate24HourOptions = (): string[] => {
                           <Hash className="w-4 h-4 text-[#4CC9A8]" />
                           Quantity *
                         </Label>
-                        <Input 
-                          id="quantity" 
-                          name="quantity" 
-                          type="number" 
-                          required 
-                          min="1" 
+                        <Input
+                          id="quantity"
+                          name="quantity"
+                          type="number"
+                          required
+                          min="1"
                           placeholder="10"
-                          className="text-base py-6"
+                          className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                         />
                         {formErrors.quantity && <p className="text-red-500 text-sm mt-1">{formErrors.quantity}</p>}
                       </div>
@@ -987,14 +1022,14 @@ const generate24HourOptions = (): string[] => {
                           Original Price *
                         </Label>
                         <div className="relative">
-                          <Input 
-                            id="original_price" 
-                            name="original_price" 
-                            type="number" 
-                            step="0.01" 
-                            required 
+                          <Input
+                            id="original_price"
+                            name="original_price"
+                            type="number"
+                            step="0.01"
+                            required
                             placeholder="10.00"
-                            className="text-base py-6 pr-12"
+                            className="text-base py-6 pr-12 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₾</span>
                         </div>
@@ -1006,14 +1041,14 @@ const generate24HourOptions = (): string[] => {
                           Smart Price *
                         </Label>
                         <div className="relative">
-                          <Input 
-                            id="smart_price" 
-                            name="smart_price" 
-                            type="number" 
-                            step="0.01" 
-                            required 
+                          <Input
+                            id="smart_price"
+                            name="smart_price"
+                            type="number"
+                            step="0.01"
+                            required
                             placeholder="6.00"
-                            className="text-base py-6 pr-12"
+                            className="text-base py-6 pr-12 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                           />
                           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4CC9A8] font-semibold">₾</span>
                         </div>
@@ -1094,15 +1129,15 @@ const generate24HourOptions = (): string[] => {
                     type="button"
                     variant="outline"
                     onClick={() => setIsCreateDialogOpen(false)}
-                    className="flex-1 py-6 text-base"
+                    className="flex-1 py-6 text-base rounded-full border-[#E8F9F4] hover:border-gray-400"
                   >
                     Cancel
                   </Button>
 
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891] text-white py-6 text-lg font-bold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+                    className="flex-1 bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                   >
                     {isSubmitting ? (
                       <>
@@ -1123,16 +1158,22 @@ const generate24HourOptions = (): string[] => {
 
           <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" disabled={isPending}>
-                <QrCode className="w-4 h-4 mr-2" />
-                Scan QR Code
+              <Button
+                variant="outline"
+                className="h-11 md:h-12 rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB] font-semibold transition-all duration-300"
+                disabled={isPending}
+              >
+                <QrCode className="w-5 h-5 mr-2" />
+                📱 Scan QR Code
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="rounded-2xl">
               <DialogHeader>
-                <DialogTitle>Validate Pickup</DialogTitle>
-                <DialogDescription>Enter the customer's QR code</DialogDescription>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                  📱 Validate Pickup
+                </DialogTitle>
+                <DialogDescription className="text-base">Enter the customer's QR code to confirm pickup</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <Input
@@ -1140,8 +1181,13 @@ const generate24HourOptions = (): string[] => {
                   value={qrInput}
                   onChange={(e) => setQrInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleValidateQR()}
+                  className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
                 />
-                <Button onClick={handleValidateQR} className="w-full bg-mint-600 hover:bg-mint-700">
+                <Button
+                  onClick={handleValidateQR}
+                  className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <CheckCircle className="w-5 h-5 mr-2" />
                   Validate & Confirm Pickup
                 </Button>
               </div>
@@ -1149,70 +1195,73 @@ const generate24HourOptions = (): string[] => {
           </Dialog>
         </div>
 
-        {/* Active Reservations */}
-        <Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
+        {/* Active Reservations - Card-based Layout */}
+        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Active Reservations
-              {isPending && <Lock className="w-4 h-4 text-gray-400" />}
+            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+              🛎️ Active Reservations
+              {isPending && <Lock className="w-5 h-5 text-gray-400" />}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm md:text-base">
               {isPending ? 'This section will be available after approval' : 'Customers waiting for pickup'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isPending ? (
-              <div className="text-center py-8">
-                <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2">Reservations will appear here once your account is approved</p>
-                <p className="text-sm text-gray-400">You'll be able to manage customer pickups and validate QR codes</p>
+              <div className="text-center py-8 md:py-12">
+                <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2 text-sm md:text-base">Reservations will appear here once your account is approved</p>
+                <p className="text-xs md:text-sm text-gray-400">You'll be able to manage customer pickups and validate QR codes</p>
               </div>
             ) : reservations.length === 0 ? (
-              <div className="text-center py-8">
-                <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No active reservations</p>
-                <p className="text-sm text-gray-400">When customers reserve your offers, they'll appear here</p>
+              <div className="text-center py-8 md:py-12">
+                <ShoppingBag className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2 text-sm md:text-base">No active reservations</p>
+                <p className="text-xs md:text-sm text-gray-400">When customers reserve your offers, they'll appear here</p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Quantity</TableHead>
-                    <TableHead>Pickup Time</TableHead>
-                    <TableHead>QR Code</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reservations.map((reservation) => (
-                    <TableRow key={reservation.id}>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{reservation.customer?.name || 'Customer'}</div>
-                          <div className="text-sm text-gray-500">{reservation.customer?.email}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {reservations.map((reservation) => (
+                  <Card key={reservation.id} className="rounded-xl border-[#E8F9F4] hover:border-[#00C896] transition-all duration-300 hover:shadow-lg">
+                    <CardContent className="p-4 md:p-5">
+                      <div className="space-y-3">
+                        {/* Customer Info */}
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold text-gray-900">{reservation.customer?.name || 'Customer'}</p>
+                            <p className="text-xs md:text-sm text-gray-500">{reservation.customer?.email}</p>
+                          </div>
+                          <Badge className="bg-[#00C896] hover:bg-[#00B588] text-white">
+                            {reservation.quantity}x
+                          </Badge>
                         </div>
-                      </TableCell>
-                      <TableCell>{reservation.offer?.title}</TableCell>
-                      <TableCell>{reservation.quantity}</TableCell>
-                      <TableCell>
+
+                        {/* Offer Title */}
+                        <div className="bg-[#F9FFFB] rounded-lg p-3">
+                          <p className="font-medium text-gray-900 text-sm md:text-base">{reservation.offer?.title}</p>
+                        </div>
+
+                        {/* Pickup Time */}
                         {reservation.offer?.pickup_start && (
-                          <div className="text-sm">
-                            <div>{formatDateTime(reservation.offer.pickup_start)}</div>
-                            <div className="text-gray-500">to {formatDateTime(reservation.offer.pickup_end || reservation.offer.pickup_start)}</div>
+                          <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
+                            <Clock className="w-4 h-4 text-[#00C896]" />
+                            <span>
+                              {formatDateTime(reservation.offer.pickup_start)} - {formatDateTime(reservation.offer.pickup_end || reservation.offer.pickup_start)}
+                            </span>
                           </div>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-gray-100 px-2 py-1 rounded">{reservation.qr_code}</code>
-                      </TableCell>
-                      <TableCell>
+
+                        {/* QR Code */}
+                        <div className="flex items-center gap-2">
+                          <QrCode className="w-4 h-4 text-gray-400" />
+                          <code className="text-xs bg-gray-100 px-3 py-1 rounded-full font-mono">{reservation.qr_code}</code>
+                        </div>
+
+                        {/* Action Button */}
                         <Button
-                          size="sm"
+                          className="w-full rounded-full bg-green-500 hover:bg-green-600 text-white font-semibold transition-all duration-300 hover:scale-[1.02]"
                           onClick={() => handleMarkAsPickedUp(reservation)}
                           disabled={processingIds.has(reservation.id)}
-                          className="bg-mint-600 hover:bg-mint-700"
                         >
                           {processingIds.has(reservation.id) ? (
                             <>
@@ -1222,166 +1271,253 @@ const generate24HourOptions = (): string[] => {
                           ) : (
                             <>
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Picked Up
+                              ✅ Mark as Picked Up
                             </>
                           )}
                         </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Your Offers */}
-        <Card className={`mb-8 ${isPending ? 'opacity-60' : ''}`}>
+        {/* Your Offers with Filter Tabs */}
+        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Your Offers
-              {isPending && <Lock className="w-4 h-4 text-gray-400" />}
-            </CardTitle>
-            <CardDescription>
-              {isPending ? 'This section will be available after approval' : 'Manage your Smart-Time offers'}
-            </CardDescription>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                  📦 Your Offers
+                  {isPending && <Lock className="w-5 h-5 text-gray-400" />}
+                </CardTitle>
+                <CardDescription className="text-sm md:text-base">
+                  {isPending ? 'This section will be available after approval' : 'Manage your Smart-Time offers'}
+                </CardDescription>
+              </div>
+
+              {/* Filter Tabs */}
+              {!isPending && offers.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                  <Button
+                    variant={offerFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setOfferFilter('all')}
+                    className={`rounded-full transition-all duration-300 ${
+                      offerFilter === 'all'
+                        ? 'bg-gradient-to-r from-[#00C896] to-[#009B77] text-white'
+                        : 'border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]'
+                    }`}
+                  >
+                    All ({offers.length})
+                  </Button>
+                  <Button
+                    variant={offerFilter === 'active' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setOfferFilter('active')}
+                    className={`rounded-full transition-all duration-300 ${
+                      offerFilter === 'active'
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'border-[#E8F9F4] hover:border-green-500 hover:bg-green-50'
+                    }`}
+                  >
+                    Active ({offers.filter(o => getOfferDisplayStatus(o) === 'ACTIVE').length})
+                  </Button>
+                  <Button
+                    variant={offerFilter === 'expired' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setOfferFilter('expired')}
+                    className={`rounded-full transition-all duration-300 ${
+                      offerFilter === 'expired'
+                        ? 'bg-gray-500 text-white hover:bg-gray-600'
+                        : 'border-[#E8F9F4] hover:border-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    Expired ({offers.filter(o => getOfferDisplayStatus(o) === 'EXPIRED').length})
+                  </Button>
+                  <Button
+                    variant={offerFilter === 'sold_out' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setOfferFilter('sold_out')}
+                    className={`rounded-full transition-all duration-300 ${
+                      offerFilter === 'sold_out'
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'border-[#E8F9F4] hover:border-red-500 hover:bg-red-50'
+                    }`}
+                  >
+                    Sold Out ({offers.filter(o => getOfferDisplayStatus(o) === 'SOLD_OUT').length})
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             {isPending ? (
-              <div className="text-center py-8">
-                <Lock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2">You'll be able to create and manage offers once approved</p>
-                <p className="text-sm text-gray-400">Start reducing food waste by offering Smart-Time deals to customers</p>
+              <div className="text-center py-8 md:py-12">
+                <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2 text-sm md:text-base">You'll be able to create and manage offers once approved</p>
+                <p className="text-xs md:text-sm text-gray-400">Start reducing food waste by offering Smart-Time deals to customers</p>
               </div>
             ) : offers.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No offers yet. Create your first one!</p>
+              <div className="text-center py-8 md:py-12">
+                <Package className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-2 text-sm md:text-base">No offers yet. Create your first one!</p>
+                <p className="text-xs md:text-sm text-gray-400">Start offering Smart-Time deals to attract customers</p>
+              </div>
+            ) : filteredOffers.length === 0 ? (
+              <div className="text-center py-8 md:py-12">
+                <Filter className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-sm md:text-base">No {offerFilter} offers found</p>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Available</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {offers.map((offer) => (
-                    <TableRow key={offer.id}>
-                      <TableCell className="font-medium">{offer.title}</TableCell>
-                      <TableCell>{offer.category}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-mint-600">{offer.smart_price} GEL</div>
-                          <div className="text-sm text-gray-500 line-through">{offer.original_price} GEL</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{offer.quantity_available}/{offer.quantity_total}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const st = getOfferDisplayStatus(offer);
-                          const isActive = st === 'ACTIVE';
-                          const cls = isActive
-                            ? 'bg-green-100 text-green-800'
-                            : st === 'SOLD_OUT'
-                              ? 'bg-red-100 text-red-800'
-                              : st === 'EXPIRED'
-                                ? 'bg-gray-100 text-gray-800'
-                                : st === 'PAUSED'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-gray-100 text-gray-800';
-                          return (
-                            <Badge variant={isActive ? 'default' : 'secondary'} className={cls}>
-                              {st}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleToggleOffer(offer.id, offer.status)}
-                            disabled={processingIds.has(offer.id)}
-                          >
-                            {offer.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRefreshQuantity(offer.id)}
-                            disabled={processingIds.has(offer.id)}
-                          >
-                            <RefreshCw className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-green-500 hover:bg-green-600 text-white"
-                            onClick={() => handleCreateNewFromOld(offer)}
-                            disabled={processingIds.has(offer.id)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openEditDialog(offer)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDeleteOffer(offer.id)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#E8F9F4]">
+                      <TableHead className="text-gray-700 font-semibold">Title</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">Category</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">Price</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">Available</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">Status</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                      {filteredOffers.map((offer) => (
+                      <TableRow key={offer.id} className="border-[#E8F9F4] hover:bg-[#F9FFFB] transition-colors">
+                        <TableCell className="font-semibold text-gray-900">{offer.title}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="text-lg">{getCategoryIcon(offer.category)}</span>
+                            <span className="text-sm text-gray-600">{offer.category}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-bold text-[#00C896]">{offer.smart_price} ₾</div>
+                            <div className="text-xs text-gray-400 line-through">{offer.original_price} ₾</div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="border-[#E8F9F4] font-medium">
+                            {offer.quantity_available}/{offer.quantity_total}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const st = getOfferDisplayStatus(offer);
+                            const isActive = st === 'ACTIVE';
+                            const cls = isActive
+                              ? 'bg-green-100 text-green-800 border-green-200'
+                              : st === 'SOLD_OUT'
+                                ? 'bg-red-100 text-red-800 border-red-200'
+                                : st === 'EXPIRED'
+                                  ? 'bg-gray-100 text-gray-800 border-gray-200'
+                                  : st === 'PAUSED'
+                                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                    : 'bg-gray-100 text-gray-800 border-gray-200';
+                            return (
+                              <Badge className={`${cls} rounded-full font-medium`}>
+                                {st}
+                              </Badge>
+                            );
+                          })()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
+                              onClick={() => handleToggleOffer(offer.id, offer.status)}
+                              disabled={processingIds.has(offer.id)}
+                              title={offer.status === 'ACTIVE' ? 'Pause' : 'Activate'}
+                            >
+                              {offer.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-[#E8F9F4] hover:border-blue-500 hover:bg-blue-50"
+                              onClick={() => handleRefreshQuantity(offer.id)}
+                              disabled={processingIds.has(offer.id)}
+                              title="Refresh quantity"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="rounded-full bg-green-500 hover:bg-green-600 text-white"
+                              onClick={() => handleCreateNewFromOld(offer)}
+                              disabled={processingIds.has(offer.id)}
+                              title="Clone offer"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
+                              onClick={() => openEditDialog(offer)}
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full border-[#E8F9F4] hover:border-red-500 hover:bg-red-50"
+                              onClick={() => handleDeleteOffer(offer.id)}
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Analytics Summary */}
-        <Card className={isPending ? 'opacity-60' : ''}>
+        {/* Analytics Summary - Collapsible */}
+        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
               <TrendingUp className="w-5 h-5" />
-              Analytics Summary
-              {isPending && <Lock className="w-4 h-4 text-gray-400" />}
+              📊 Analytics Overview
+              {isPending && <Lock className="w-5 h-5 text-gray-400" />}
             </CardTitle>
-            <CardDescription>
-              {isPending ? 'Analytics will be available after approval' : 'Your SmartPick performance overview'}
+            <CardDescription className="text-sm md:text-base">
+              {isPending ? 'Analytics will be available after approval' : 'Your complete SmartPick performance metrics'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-mint-600">{isPending ? '—' : analytics.totalOffers}</div>
-                <div className="text-sm text-gray-500">Total Offers</div>
+              <div className="text-center bg-[#F9FFFB] rounded-xl p-4">
+                <div className="text-2xl md:text-3xl font-bold text-[#00C896]">{isPending ? '—' : analytics.totalOffers}</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Offers Created</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-coral-600">{isPending ? '—' : analytics.totalReservations}</div>
-                <div className="text-sm text-gray-500">Total Reservations</div>
+              <div className="text-center bg-[#FFF9F5] rounded-xl p-4">
+                <div className="text-2xl md:text-3xl font-bold text-orange-600">{isPending ? '—' : analytics.totalReservations}</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Reservations</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{isPending ? '—' : analytics.itemsSold}</div>
-                <div className="text-sm text-gray-500">Items Sold</div>
+              <div className="text-center bg-green-50 rounded-xl p-4">
+                <div className="text-2xl md:text-3xl font-bold text-green-600">{isPending ? '—' : analytics.itemsSold}</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">Items Sold</div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{isPending ? '—' : analytics.revenue.toFixed(2)} GEL</div>
-                <div className="text-sm text-gray-500">SmartPick Revenue</div>
+              <div className="text-center bg-purple-50 rounded-xl p-4">
+                <div className="text-2xl md:text-3xl font-bold text-purple-600">{isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Revenue</div>
               </div>
             </div>
             {isPending && (
-              <div className="flex items-center justify-center gap-2 mt-4 text-sm text-gray-500">
+              <div className="flex items-center justify-center gap-2 mt-4 text-xs md:text-sm text-gray-500">
                 <Lock className="w-4 h-4" />
                 <span>Full analytics will be unlocked once your application is approved</span>
               </div>
@@ -1390,12 +1526,24 @@ const generate24HourOptions = (): string[] => {
         </Card>
       </div>
 
+      {/* Floating Action Button (Mobile) */}
+      <button
+        onClick={() => setIsCreateDialogOpen(true)}
+        disabled={isPending}
+        className="md:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-label="Create new offer"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
       {/* Edit Offer Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Offer</DialogTitle>
-            <DialogDescription>Update your Smart-Time offer</DialogDescription>
+            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+              ✏️ Edit Offer
+            </DialogTitle>
+            <DialogDescription className="text-base">Update your Smart-Time offer details</DialogDescription>
           </DialogHeader>
           {editingOffer && (
             <form onSubmit={handleEditOffer} className="space-y-4">
@@ -1465,10 +1613,19 @@ const generate24HourOptions = (): string[] => {
                 />
               </div>
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="rounded-full border-[#E8F9F4] hover:border-gray-400"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" className="bg-mint-600 hover:bg-mint-700">
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
                   Update Offer
                 </Button>
               </DialogFooter>
