@@ -50,6 +50,18 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     }
   };
 
+  const getDerivedStatus = (offer: any) => {
+    const now = Date.now();
+    if (offer.expires_at) {
+      const exp = new Date(offer.expires_at).getTime();
+      if (!isNaN(exp) && exp <= now) return 'EXPIRED';
+    }
+    if (typeof offer.quantity_available === 'number' && offer.quantity_available <= 0) {
+      return 'SOLD_OUT';
+    }
+    return offer.status;
+  };
+
   const filterOffers = () => {
     let filtered = offers;
 
@@ -62,7 +74,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(offer => offer.status === statusFilter);
+      filtered = filtered.filter(offer => getDerivedStatus(offer) === statusFilter);
     }
 
     if (categoryFilter !== 'all') {
@@ -143,6 +155,8 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     switch (status) {
       case 'ACTIVE':
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case 'SOLD_OUT':
+        return <Badge className="bg-red-100 text-red-800">Sold Out</Badge>;
       case 'DISABLED':
         return <Badge className="bg-red-100 text-red-800">Disabled</Badge>;
       case 'EXPIRED':
@@ -211,6 +225,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="SOLD_OUT">Sold Out</SelectItem>
                 <SelectItem value="DISABLED">Disabled</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
               </SelectContent>
@@ -260,7 +275,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                     <TableCell>{getCategoryBadge(offer.category)}</TableCell>
                     <TableCell>{formatPrice(offer.original_price)}</TableCell>
                     <TableCell>{offer.quantity_available}</TableCell>
-                    <TableCell>{getStatusBadge(offer.status)}</TableCell>
+                    <TableCell>{getStatusBadge(getDerivedStatus(offer))}</TableCell>
                     <TableCell>
                       {new Date(offer.created_at).toLocaleDateString()}
                     </TableCell>
