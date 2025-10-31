@@ -109,7 +109,7 @@ export default function Index() {
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-2">
-            <img src="/logo-icon.svg" alt="SmartPick icon" className="h-8 md:h-10 w-8 md:w-10 object-contain" />
+            <img src="/logo-icon.png" alt="SmartPick icon" className="h-8 md:h-10 w-8 md:w-10 object-contain" />
             <div className="leading-tight">
               <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                 SmartPick
