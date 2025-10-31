@@ -107,7 +107,7 @@ export default function Index() {
       {/* Splash Screen - Shows on first visit */}
       <SplashScreen />
 
-      <div className="min-h-screen bg-gradient-to-b from-white to-[#f7fff9]" style={{ fontFamily: 'Manrope, Poppins, sans-serif' }}>
+      <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
 
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -127,9 +127,9 @@ export default function Index() {
           <div className="hidden md:flex items-center gap-2">
             <Button
               onClick={() => navigate('/partner/apply')}
-              className="h-11 bg-[#FF6F61] hover:bg-[#ff5545] text-white hover:scale-105 transition-all duration-250 font-semibold shadow-md hover:shadow-lg"
+              className="h-11 rounded-full bg-gradient-to-r from-[#FF6F61] to-[#FF8A7A] hover:from-[#ff5545] hover:to-[#FF7565] text-white hover:scale-105 transition-all duration-300 font-semibold shadow-md hover:shadow-lg px-6"
             >
-              {t('header.becomePartner')}
+              🤝 {t('header.becomePartner')}
             </Button>
             <LanguageButtons />
             {user ? (
@@ -189,9 +189,9 @@ export default function Index() {
                       navigate('/partner/apply');
                       setMobileMenuOpen(false);
                     }}
-                    className="h-11 w-full bg-[#FF6F61] hover:bg-[#ff5545] text-white font-semibold justify-start"
+                    className="h-11 w-full rounded-full bg-gradient-to-r from-[#FF6F61] to-[#FF8A7A] hover:from-[#ff5545] hover:to-[#FF7565] text-white font-semibold justify-start shadow-md"
                   >
-                    {t('header.becomePartner')}
+                    🤝 {t('header.becomePartner')}
                   </Button>
 
                   {user ? (
