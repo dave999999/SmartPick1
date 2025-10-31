@@ -204,13 +204,15 @@ export const getActiveOffers = async (filters?: OfferFilters): Promise<Offer[]> 
   }
 
   // 🔹 Build query to get only ACTIVE offers that are not expired AND have stock
+  // 🔹 ONLY show offers from APPROVED partners (hide offers from PAUSED/BLOCKED partners)
   let query = supabase
     .from('offers')
     .select(`
       *,
-      partner:partners(*)
+      partner:partners!inner(*)
     `)
     .eq('status', 'ACTIVE')                               // only active offers
+    .eq('partner.status', 'APPROVED')                     // 🔒 only approved partners
     .gt('expires_at', new Date().toISOString())            // not expired
     .gt('quantity_available', 0)                           // 🧠 hide sold-out offers
     .order('created_at', { ascending: false });             // newest first
