@@ -388,76 +388,7 @@ export default function Index() {
           />
         )}
       </section>
-{/* Why It Matters */}
-      <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-br from-[#4CC9A8]/5 to-[#FF6F61]/5">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-8 md:mb-12 px-2">
-              {t('why.title')}
-            </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-10">
-              <div className="flex items-start gap-3 text-left">
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">✓</span>
-                </div>
-                <p className="text-base md:text-lg text-gray-700">{t('why.point1')}</p>
-              </div>
-
-              <div className="flex items-start gap-3 text-left">
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">✓</span>
-                </div>
-                <p className="text-base md:text-lg text-gray-700">{t('why.point2')}</p>
-              </div>
-
-              <div className="flex items-start gap-3 text-left">
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">✓</span>
-                </div>
-                <p className="text-base md:text-lg text-gray-700">{t('why.point3')}</p>
-              </div>
-
-              <div className="flex items-start gap-3 text-left">
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-[#4CC9A8] rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-white font-bold text-sm">✓</span>
-                </div>
-                <p className="text-base md:text-lg text-gray-700">{t('why.point4')}</p>
-              </div>
-            </div>
-
-            <p className="text-lg md:text-xl text-gray-700 italic font-medium px-2">
-              {t('why.tagline')}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* The Movement Manifesto */}
-      <section className="py-12 md:py-16 lg:py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-2xl md:text-3xl lg:text-5xl font-bold text-gray-900 mb-6 md:mb-8 relative inline-block px-2">
-              {t('manifesto.title')}
-            </h3>
-
-            <div className="space-y-4 md:space-y-6 text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed px-2">
-              <p>
-                {t('manifesto.line1')}
-              </p>
-              <p>
-                {t('manifesto.line2')}
-              </p>
-              <p>
-                {t('manifesto.line3')}
-              </p>
-              <p className="font-semibold text-[#4CC9A8]">
-                {t('manifesto.line4')}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
       
 
       {/* Enhanced Reservation Modal */}
