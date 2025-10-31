@@ -30,7 +30,7 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
     <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-3">
         {/* Mobile: Horizontal scroll */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0 max-w-full">
           {CATEGORIES.map((category) => {
             const isActive = selectedCategory === category.value;
 
@@ -40,7 +40,7 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
                 onClick={() => onCategorySelect(category.value)}
                 variant={isActive ? 'default' : 'outline'}
                 className={`
-                  flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full transition-all
+                  flex-shrink-0 flex items-center gap-2 min-w-[90px] px-3 py-3 md:px-4 md:py-2 rounded-full transition-all
                   ${isActive
                     ? 'bg-[#4CC9A8] text-white border-[#4CC9A8] hover:bg-[#3BA890] shadow-md'
                     : 'bg-white border-gray-200 text-gray-700 hover:bg-[#E8F9F4] hover:border-[#4CC9A8]'
@@ -48,7 +48,7 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
                 `}
               >
                 <span className="text-lg">{category.emoji}</span>
-                <span className="font-medium text-sm whitespace-nowrap">
+                <span className="font-medium text-[15px] md:text-sm whitespace-nowrap">
                   {t(category.labelKey)}
                 </span>
               </Button>

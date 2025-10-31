@@ -118,12 +118,14 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
 
 export default function OfferMap({ offers, onOfferClick, selectedCategory, highlightedOfferId }: OfferMapProps) {
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
-  const [showMap, setShowMap] = useState(window.innerWidth >= 768); // Default to list on mobile
+  // Always show map, including on mobile
+  const [showMap, setShowMap] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([41.7151, 44.8271]); // Tbilisi
   const [mapZoom, setMapZoom] = useState(13);
   const mapRef = useRef<L.Map | null>(null);
+  const [listReady, setListReady] = useState(false);
 
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
@@ -206,6 +208,16 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
     };
   }, []);
 
+  // Invalidate size shortly after mount to fix mobile render
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.invalidateSize();
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
+
   // Update filtered offers when offers or selectedCategory changes
   useEffect(() => {
     console.log('Offers received:', offers.length);
@@ -220,17 +232,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
     }
   }, [offers, selectedCategory]);
 
-  // Handle responsive view
+  // Keep map visible on mobile; no forced list switch
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 768 && showMap) {
-        setShowMap(false); // Auto-switch to list on mobile
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [showMap]);
+    // No-op: previously forced list on small screens
+  }, []);
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString('en-US', {
@@ -398,14 +403,21 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
         </div>
       </div>
 
-      {/* Interactive Map - 80-90vh height, full width */}
+      {/* Interactive Map - mobile-first height */}
       {showMap && (
-        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[85vh]'} rounded-xl overflow-hidden border border-gray-300 shadow-2xl`}>
+        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[75vh] sm:h-[90vh] min-h-[420px]'} rounded-xl overflow-hidden border border-gray-300 shadow-2xl`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
-            style={{ height: '100%', width: '100%' }}
+            className="w-full h-full"
+            style={{ height: '100%', width: '100%', minHeight: '420px' }}
             scrollWheelZoom={true}
+            whenReady={(e) => {
+              mapRef.current = (e as unknown as { target: L.Map }).target;
+              mapRef.current.invalidateSize();
+              setTimeout(() => mapRef.current && mapRef.current.invalidateSize(), 300);
+              setListReady(true);
+            }}
             ref={mapRef}
           >
             <MapController center={mapCenter} zoom={mapZoom} />
@@ -525,6 +537,17 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             </div>
           </div>
           
+          {/* Floating Near Me button on mobile */}
+          {!isFullscreen && (
+            <Button
+              variant="default"
+              className="md:hidden fixed bottom-4 right-4 z-[1000] bg-mint-600 hover:bg-mint-700 text-white px-5 py-3 rounded-full shadow-lg active:scale-95"
+              onClick={handleNearMe}
+            >
+              📍 Near Me
+            </Button>
+          )}
+
           {isFullscreen && (
             <Button
               variant="outline"
@@ -540,7 +563,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
       {/* Offers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {displayOffers.map((offer) => {
+        {(listReady ? displayOffers : []).map((offer) => {
           const pickupTimes = getPickupTimes(offer);
           const expiringSoon = isExpiringSoon(offer.expires_at);
           const expired = isExpired(offer.expires_at);
@@ -558,6 +581,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                   <img
                     src={offer.images[0]}
                     alt={offer.title}
+                    loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                   />
                   <Badge 
