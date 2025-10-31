@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Navigation, Maximize2, Minimize2 } from 'lucide-react';
-import { subscribeToOffers } from '@/lib/api';
+import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
 
 // Fix Leaflet default marker icon issue
@@ -568,9 +568,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
               {offer.images && offer.images.length > 0 && (
                 <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
                   <img
-                    src={offer.images[0]}
+                    src={resolveOfferImageUrl(offer.images[0])}
                     alt={offer.title}
                     loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                   />
                   <Badge 

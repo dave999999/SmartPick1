@@ -841,3 +841,17 @@ export const duplicateOffer = async (offerId: string, partnerId: string): Promis
   if (error) throw error;
   return data as Offer;
 };
+// Resolve an offer image URL that might be a bare filename or a full URL
+export const resolveOfferImageUrl = (url?: string): string => {
+  if (!url) return '';
+  // If it's already an absolute URL, use it as-is
+  if (/^https?:\/\//i.test(url)) return url;
+  try {
+    const { data: { publicUrl } } = supabase.storage
+      .from('offer-images')
+      .getPublicUrl(url);
+    return publicUrl;
+  } catch {
+    return url;
+  }
+};

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { resolveOfferImageUrl } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -141,9 +142,10 @@ export default function ReservationModal({
         {offer.images && offer.images.length > 0 && (
           <div className="relative h-64 w-full overflow-hidden rounded-lg -mt-6 -mx-6 mb-4">
             <img
-              src={offer.images[0]}
+              src={resolveOfferImageUrl(offer.images[0])}
               alt={offer.title}
               className="w-full h-full object-cover"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
             />
             <Badge className="absolute top-4 right-4 bg-mint-500 hover:bg-mint-600 text-white">
               {offer.category}
