@@ -13,10 +13,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase, isDemoMode } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Upload, X, Clock } from 'lucide-react';
+import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-const BUSINESS_TYPES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY', 'FAST_FOOD', 'ALCOHOL'];
+const BUSINESS_TYPES = [
+  { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
+  { value: 'CAFE', label: 'Cafe', emoji: '☕' },
+  { value: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
+  { value: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
+  { value: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
+  { value: 'GROCERY', label: 'Grocery', emoji: '🛒' },
+];
 
 // Custom marker icon
 const customIcon = L.divIcon({
@@ -101,47 +108,42 @@ export default function PartnerApplication() {
   const [markerPosition, setMarkerPosition] = useState<[number, number]>([41.7151, 44.8271]);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong' | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string>('');
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [open24h, setOpen24h] = useState(false);
-  
+
   // Form validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  
+
   // Address autocomplete
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [addressAutoDetected, setAddressAutoDetected] = useState(false);
   const addressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const [formData, setFormData] = useState({
-  // Account fields
-  email: '',
-  password: '',
-  confirmPassword: '',
+    // Account fields
+    email: '',
+    password: '',
+    confirmPassword: '',
 
-  // Business fields
-  business_name: '',
-  business_type: '',
-  description: '',
-  opening_hours: '',
-  closing_hours: '',
-  pickup_notes: '',
-  address: '',
-  city: 'Tbilisi',
-  latitude: 41.7151,
-  longitude: 44.8271,
-  phone: '',
-  telegram: '',
-  whatsapp: '',
-
-  // ✅ add this flag so the validator knows if it's 24h
-  open_24h: false,
-});
-
+    // Business fields
+    business_name: '',
+    business_type: '',
+    description: '',
+    opening_hours: '',
+    closing_hours: '',
+    pickup_notes: '',
+    address: '',
+    city: 'Tbilisi',
+    latitude: 41.7151,
+    longitude: 44.8271,
+    phone: '',
+    telegram: '',
+    whatsapp: '',
+    open_24h: false,
+  });
 
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
@@ -154,28 +156,26 @@ export default function PartnerApplication() {
           },
         }
       );
-      
+
       if (!response.ok) {
         console.error('Reverse geocoding failed:', response.statusText);
         return;
       }
-      
+
       const data = await response.json();
-      
+
       if (data && data.display_name) {
-        // Extract road/street name if available, otherwise use display_name
         const addressText = data.address?.road || data.display_name;
         const cityText = data.address?.city || data.address?.town || data.address?.village || formData.city;
-        
+
         setFormData(prev => ({
           ...prev,
           address: addressText,
           city: cityText,
         }));
-        
+
         setAddressAutoDetected(true);
-        
-        // Clear the auto-detected flag after 3 seconds
+
         setTimeout(() => {
           setAddressAutoDetected(false);
         }, 3000);
@@ -192,8 +192,7 @@ export default function PartnerApplication() {
       latitude: pos[0],
       longitude: pos[1],
     }));
-    
-    // Trigger reverse geocoding
+
     reverseGeocode(pos[0], pos[1]);
   };
 
@@ -209,10 +208,9 @@ export default function PartnerApplication() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           }));
-          
-          // Trigger reverse geocoding
+
           reverseGeocode(position.coords.latitude, position.coords.longitude);
-          
+
           toast.dismiss();
           toast.success('Location updated!');
         },
@@ -227,16 +225,15 @@ export default function PartnerApplication() {
     }
   };
 
-  // Address autocomplete with debounce
   const searchAddress = useCallback(async (query: string) => {
     if (!query || query.length < 3) {
       setAddressSuggestions([]);
       setShowAddressSuggestions(false);
       return;
     }
-    
+
     setIsLoadingAddress(true);
-    
+
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(query)}&limit=5`,
@@ -246,15 +243,15 @@ export default function PartnerApplication() {
           },
         }
       );
-      
+
       if (!response.ok) {
         console.error('Address search failed:', response.statusText);
         setIsLoadingAddress(false);
         return;
       }
-      
+
       const data: AddressSuggestion[] = await response.json();
-      
+
       if (data && data.length > 0) {
         setAddressSuggestions(data);
         setShowAddressSuggestions(true);
@@ -275,13 +272,11 @@ export default function PartnerApplication() {
   const handleAddressChange = (value: string) => {
     setFormData(prev => ({ ...prev, address: value }));
     setAddressAutoDetected(false);
-    
-    // Clear existing timeout
+
     if (addressTimeoutRef.current) {
       clearTimeout(addressTimeoutRef.current);
     }
-    
-    // Debounce address search by 400ms
+
     addressTimeoutRef.current = setTimeout(() => {
       searchAddress(value);
     }, 400);
@@ -290,11 +285,10 @@ export default function PartnerApplication() {
   const handleSelectAddressSuggestion = (suggestion: AddressSuggestion) => {
     const lat = parseFloat(suggestion.lat);
     const lon = parseFloat(suggestion.lon);
-    
-    // Update address field
+
     const addressText = suggestion.address?.road || suggestion.display_name;
     const cityText = suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || formData.city;
-    
+
     setFormData(prev => ({
       ...prev,
       address: addressText,
@@ -302,11 +296,8 @@ export default function PartnerApplication() {
       latitude: lat,
       longitude: lon,
     }));
-    
-    // Move map marker
+
     setMarkerPosition([lat, lon]);
-    
-    // Hide suggestions
     setShowAddressSuggestions(false);
     setAddressSuggestions([]);
   };
@@ -331,8 +322,7 @@ export default function PartnerApplication() {
     } else {
       setPasswordStrength(null);
     }
-    
-    // Clear password error when user types
+
     if (fieldErrors.password) {
       setFieldErrors(prev => ({ ...prev, password: '' }));
     }
@@ -353,14 +343,12 @@ export default function PartnerApplication() {
     setEmailError('');
 
     try {
-      // Check in users table
       const { data: userData } = await supabase
         .from('users')
         .select('email')
         .eq('email', email)
         .single();
 
-      // Check in partners table
       const { data: partnerData } = await supabase
         .from('partners')
         .select('email')
@@ -390,140 +378,94 @@ export default function PartnerApplication() {
     return true;
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
 
-    // Validate file type
-    if (!['image/jpeg', 'image/jpg', 'image/png'].includes(file.type)) {
-      toast.error('Please upload a JPG or PNG image');
-      return;
+    if (!formData.email) {
+      errors.email = 'Please fill out this field.';
+    } else if (!validateEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address.';
+    } else if (emailError) {
+      errors.email = emailError;
     }
 
-    // Validate file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image size must be less than 2MB');
-      return;
+    if (!formData.password) {
+      errors.password = 'Please fill out this field.';
+    } else if (!validatePassword(formData.password)) {
+      errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
     }
 
-    setLogoFile(file);
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = 'Please fill out this field.';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (!formData.business_name) {
+      errors.business_name = 'Please fill out this field.';
+    }
+
+    if (!formData.business_type) {
+      errors.business_type = 'Please select a business type.';
+    }
+
+    if (!formData.description) {
+      errors.description = 'Please fill out this field.';
+    }
+
+    const isOpen24h = open24h === true || formData.open_24h === true;
+
+    if (!isOpen24h) {
+      if (!formData.opening_hours) {
+        errors.opening_hours = 'Please select opening hours.';
+      }
+
+      if (!formData.closing_hours) {
+        errors.closing_hours = 'Please select closing hours.';
+      } else if (
+        formData.opening_hours &&
+        formData.closing_hours <= formData.opening_hours
+      ) {
+        errors.closing_hours = 'Closing time must be later than opening time.';
+      }
+    } else {
+      formData.opening_hours = '00:00';
+      formData.closing_hours = '23:59';
+    }
+
+    if (!formData.address) {
+      errors.address = 'Please fill out this field.';
+    }
+
+    if (!formData.city) {
+      errors.city = 'Please fill out this field.';
+    }
+
+    if (!formData.phone) {
+      errors.phone = 'Please fill out this field.';
+    }
+
+    if (!formData.latitude || !formData.longitude) {
+      errors.location = 'Please set your location on the map.';
+    }
+
+    if (!acceptedTerms) {
+      errors.terms = 'Please accept the terms and conditions.';
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error('Please complete all required fields before applying.');
+      return false;
+    }
+
+    return true;
   };
-
-  const removeLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-  };
-
-  // Enhanced form validation with field-level error tracking
-const validateForm = (): boolean => {
-  const errors: Record<string, string> = {};
-
-  // Email validation
-  if (!formData.email) {
-    errors.email = 'Please fill out this field.';
-  } else if (!validateEmail(formData.email)) {
-    errors.email = 'Please enter a valid email address.';
-  } else if (emailError) {
-    errors.email = emailError;
-  }
-
-  // Password validation
-  if (!formData.password) {
-    errors.password = 'Please fill out this field.';
-  } else if (!validatePassword(formData.password)) {
-    errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
-  }
-
-  // Confirm password validation
-  if (!formData.confirmPassword) {
-    errors.confirmPassword = 'Please fill out this field.';
-  } else if (formData.password !== formData.confirmPassword) {
-    errors.confirmPassword = 'Passwords do not match.';
-  }
-
-  // Business name validation
-  if (!formData.business_name) {
-    errors.business_name = 'Please fill out this field.';
-  }
-
-  // Business type validation
-  if (!formData.business_type) {
-    errors.business_type = 'Please fill out this field.';
-  }
-
-  // Description validation
-  if (!formData.description) {
-    errors.description = 'Please fill out this field.';
-  }
-
-  // Opening/Closing hours validation (only if not 24h)
-const isOpen24h = open24h === true || formData.open_24h === true;
-
-if (!isOpen24h) {
-  if (!formData.opening_hours) {
-    errors.opening_hours = 'Please select opening hours.';
-  }
-
-  if (!formData.closing_hours) {
-    errors.closing_hours = 'Please select closing hours.';
-  } else if (
-    formData.opening_hours &&
-    formData.closing_hours <= formData.opening_hours
-  ) {
-    errors.closing_hours = 'Closing time must be later than opening time.';
-  }
-} else {
-  // ✅ 24-hour businesses skip validation and set safe defaults
-  formData.opening_hours = '00:00';
-  formData.closing_hours = '23:59';
-}
-
-  // Address validation
-  if (!formData.address) {
-    errors.address = 'Please fill out this field.';
-  }
-
-  // City validation
-  if (!formData.city) {
-    errors.city = 'Please fill out this field.';
-  }
-
-  // Phone validation
-  if (!formData.phone) {
-    errors.phone = 'Please fill out this field.';
-  }
-
-  // Latitude/Longitude validation (should always have values from map)
-  if (!formData.latitude || !formData.longitude) {
-    errors.location = 'Please set your location on the map.';
-  }
-
-  // Terms acceptance
-  if (!acceptedTerms) {
-    errors.terms = 'Please accept the terms and conditions.';
-  }
-
-  setFieldErrors(errors);
-
-  if (Object.keys(errors).length > 0) {
-    toast.error('Please complete all required fields before applying.');
-    return false;
-  }
-
-  return true;
-};
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isDemoMode) {
       toast.error('Demo mode: Please configure Supabase to submit applications');
       return;
@@ -535,8 +477,7 @@ if (!isOpen24h) {
 
     try {
       setIsSubmitting(true);
-      
-      // Step 1: Create user account with PARTNER role
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -550,8 +491,7 @@ if (!isOpen24h) {
 
       if (authError) {
         console.error('Auth error:', authError);
-        // Handle duplicate email errors
-        if (authError.message.includes('already registered') || 
+        if (authError.message.includes('already registered') ||
             authError.message.includes('duplicate') ||
             authError.message.includes('already exists')) {
           toast.error('This email is already registered. Please log in instead.');
@@ -570,52 +510,6 @@ if (!isOpen24h) {
 
       console.log('User account created successfully:', authData.user.id);
 
-      // Step 2: Upload logo if provided (check bucket existence first)
-      let logoUrl = '';
-      if (logoFile) {
-        try {
-          // Check if bucket exists
-          const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-          
-          if (bucketError) {
-            console.warn('Could not check storage buckets:', bucketError);
-          } else {
-            const bucketExists = buckets?.some(bucket => bucket.name === 'partner-logos');
-            
-            if (!bucketExists) {
-              console.warn('Bucket "partner-logos" not found. Skipping logo upload.');
-              toast.warning('Logo upload skipped (storage not configured), continuing with registration...');
-            } else {
-              // Upload logo
-              const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${logoFile.name.split('.').pop()}`;
-              
-              const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('partner-logos')
-                .upload(fileName, logoFile, {
-                  cacheControl: '31536000',
-                  upsert: false,
-                });
-
-              if (uploadError) {
-                console.error('Logo upload error:', uploadError);
-                toast.warning('Logo upload failed, but continuing with registration...');
-              } else if (uploadData) {
-                const { data: { publicUrl } } = supabase.storage
-                  .from('partner-logos')
-                  .getPublicUrl(fileName);
-                
-                logoUrl = publicUrl;
-                console.log('Logo uploaded successfully:', logoUrl);
-              }
-            }
-          }
-        } catch (logoError) {
-          console.error('Logo upload error:', logoError);
-          toast.warning('Logo upload failed, but continuing with registration...');
-        }
-      }
-
-      // Step 3: Validate and prepare partner data with safe defaults
       const partnerData = {
         user_id: authData.user.id,
         business_name: formData.business_name || '',
@@ -634,14 +528,13 @@ if (!isOpen24h) {
         email: formData.email || '',
         telegram: formData.telegram || '',
         whatsapp: formData.whatsapp || '',
-        logo_url: logoUrl || '',
+        logo_url: '',
         pickup_notes: formData.pickup_notes || '',
         status: 'PENDING',
       };
 
       console.log('Creating partner application with data:', partnerData);
 
-      // Step 4: Insert partner record using Supabase JS client
       try {
         const { data: partnerResult, error: partnerError } = await supabase
           .from('partners')
@@ -651,15 +544,8 @@ if (!isOpen24h) {
 
         if (partnerError) {
           console.error('Supabase partner insert error:', partnerError);
-          console.error('Error details:', {
-            message: partnerError.message,
-            details: partnerError.details,
-            hint: partnerError.hint,
-            code: partnerError.code,
-          });
-          
-          // Handle specific error cases
-          if (partnerError.message?.includes('duplicate') || 
+
+          if (partnerError.message?.includes('duplicate') ||
               partnerError.message?.includes('already exists') ||
               partnerError.code === '23505') {
             toast.error('A partner application already exists for this email. Please log in instead.');
@@ -669,18 +555,15 @@ if (!isOpen24h) {
           return;
         }
 
-        // Check if we got valid data back
         if (partnerResult && partnerResult.id) {
           console.log('Partner application created successfully:', partnerResult);
-          toast.success('✅ Your partner application has been submitted and is pending admin review.');
-          
-          // Show success modal
+          toast.success('✅ Your partner application has been submitted!');
+
           setShowSuccessModal(true);
-          
-          // Redirect to home after 3 seconds
+
           setTimeout(() => {
             navigate('/');
-          }, 3000);
+          }, 4000);
         } else {
           console.error('Partner application returned no data:', partnerResult);
           toast.error('Failed to submit partner application. Please contact support.');
@@ -699,8 +582,7 @@ if (!isOpen24h) {
 
   const handleChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear field error when user types
+
     if (fieldErrors[field]) {
       setFieldErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -724,12 +606,11 @@ if (!isOpen24h) {
     }
   };
 
-  // Close address suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
       setShowAddressSuggestions(false);
     };
-    
+
     if (showAddressSuggestions) {
       document.addEventListener('click', handleClickOutside);
       return () => document.removeEventListener('click', handleClickOutside);
@@ -749,11 +630,12 @@ if (!isOpen24h) {
             </div>
             <DialogTitle className="text-center text-2xl">Application Submitted!</DialogTitle>
             <DialogDescription className="text-center text-base pt-2">
-              ✅ Your partner application has been submitted and is pending admin review.
+              ✅ Application received!<br />
+              ჩვენი გუნდი დაგიკავშირდებათ მალე.
               <br /><br />
               Please check your email to verify your account.
               <br /><br />
-              Redirecting to home in 3 seconds...
+              Redirecting to home in 4 seconds...
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -775,7 +657,7 @@ if (!isOpen24h) {
           <Alert className="bg-blue-50 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-900">
-              <strong>Demo Mode:</strong> Partner applications require Supabase configuration. Please add your Supabase credentials to enable this feature.
+              <strong>Demo Mode:</strong> Partner applications require Supabase configuration.
             </AlertDescription>
           </Alert>
         </div>
@@ -786,24 +668,24 @@ if (!isOpen24h) {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3 mb-2">
-              <Store className="w-8 h-8 text-mint-600" />
+              <Store className="w-8 h-8 text-[#4CC9A8]" />
               <div>
                 <CardTitle className="text-3xl">Become a SmartPick Partner</CardTitle>
                 <CardDescription className="text-base mt-1">
-                  Create your partner account and join our platform to reduce food waste
+                  Join our platform to reduce food waste and reach more customers
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Account Creation Section */}
-              <div className="space-y-4 p-6 bg-mint-50 rounded-lg border-2 border-mint-200">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* 1. Account Creation Section */}
+              <div className="space-y-4 p-6 bg-[#E8F9F4] rounded-lg border-2 border-[#4CC9A8]/30">
                 <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-5 h-5 text-mint-600" />
+                  <Shield className="w-5 h-5 text-[#4CC9A8]" />
                   <h3 className="text-lg font-semibold text-gray-900">Create Your Partner Account</h3>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="email">Email Address (Your Login ID) *</Label>
                   <Input
@@ -834,9 +716,6 @@ if (!isOpen24h) {
                       Email is available
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 mt-1">
-                    This email will be used to log in to your partner account
-                  </p>
                 </div>
 
                 <div>
@@ -879,9 +758,6 @@ if (!isOpen24h) {
                         </div>
                         <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
                       </div>
-                      <p className="text-xs text-gray-500">
-                        Requirements: Min 8 characters, 1 number, 1 uppercase letter
-                      </p>
                     </div>
                   )}
                 </div>
@@ -913,9 +789,6 @@ if (!isOpen24h) {
                       {fieldErrors.confirmPassword}
                     </p>
                   )}
-                  {!fieldErrors.confirmPassword && formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                    <p className="text-xs text-red-600 mt-1">Passwords do not match</p>
-                  )}
                   {!fieldErrors.confirmPassword && formData.confirmPassword && formData.password === formData.confirmPassword && (
                     <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
@@ -925,241 +798,18 @@ if (!isOpen24h) {
                 </div>
               </div>
 
-              {/* Business Information */}
+              {/* 2. Location Section (Moved Higher) */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
-                
-                <div>
-                  <Label htmlFor="business_name">Business Name *</Label>
-                  <Input
-                    id="business_name"
-                    value={formData.business_name}
-                    onChange={(e) => handleChange('business_name', e.target.value)}
-                    placeholder="e.g., Fresh Bakery"
-                    required
-                    className={fieldErrors.business_name ? 'border-red-500' : ''}
-                  />
-                  {fieldErrors.business_name && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {fieldErrors.business_name}
-                    </p>
-                  )}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">📍</span>
+                  <h3 className="text-lg font-semibold text-gray-900">Business Location</h3>
                 </div>
 
-                <div>
-                  <Label htmlFor="business_type">Business Type *</Label>
-                  <Select
-                    value={formData.business_type}
-                    onValueChange={(value) => handleChange('business_type', value)}
-                  >
-                    <SelectTrigger className={fieldErrors.business_type ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select business type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BUSINESS_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {fieldErrors.business_type && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {fieldErrors.business_type}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Business Description *</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleChange('description', e.target.value)}
-                    placeholder="Tell us about your business..."
-                    rows={4}
-                    required
-                    className={fieldErrors.description ? 'border-red-500' : ''}
-                  />
-                  {fieldErrors.description && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
-                      {fieldErrors.description}
-                    </p>
-                  )}
-                </div>
-
-                {/* Business Hours */}
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-  {/* Opening Hours */}
-  <div>
-    <Label htmlFor="opening_hours" className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-[#4CC9A8]" />
-      Opening Hours {!open24h && '*'}
-    </Label>
-
-    <Select
-      value={formData.opening_hours}
-      onValueChange={(value) => handleChange('opening_hours', value)}
-      disabled={open24h}
-    >
-      <SelectTrigger className={fieldErrors.opening_hours ? 'border-red-500' : ''}>
-        <SelectValue placeholder="Select opening time" />
-      </SelectTrigger>
-      <SelectContent className="max-h-60 overflow-y-auto">
-        {[...Array(48)].map((_, i) => {
-          const hours = Math.floor(i / 2);
-          const minutes = i % 2 === 0 ? '00' : '30';
-          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
-          return (
-            <SelectItem key={label} value={label}>
-              {label}
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
-
-    {fieldErrors.opening_hours && (
-      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" />
-        {fieldErrors.opening_hours}
-      </p>
-    )}
-  </div>
-
-  {/* Closing Hours */}
-  <div>
-    <Label htmlFor="closing_hours" className="flex items-center gap-2">
-      <Clock className="w-4 h-4 text-[#4CC9A8]" />
-      Closing Hours {!open24h && '*'}
-    </Label>
-
-    <Select
-      value={formData.closing_hours}
-      onValueChange={(value) => handleChange('closing_hours', value)}
-      disabled={open24h}
-    >
-      <SelectTrigger className={fieldErrors.closing_hours ? 'border-red-500' : ''}>
-        <SelectValue placeholder="Select closing time" />
-      </SelectTrigger>
-      <SelectContent className="max-h-60 overflow-y-auto">
-        {[...Array(48)].map((_, i) => {
-          const hours = Math.floor(i / 2);
-          const minutes = i % 2 === 0 ? '00' : '30';
-          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
-          return (
-            <SelectItem key={label} value={label}>
-              {label}
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
-
-    {fieldErrors.closing_hours && (
-      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-        <AlertCircle className="w-3 h-3" />
-        {fieldErrors.closing_hours}
-      </p>
-    )}
-  </div>
-</div>
-
-
-                {/* 24-Hour Checkbox */}
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                  <Checkbox 
-                    id="open_24h" 
-                    checked={open24h}
-                    onCheckedChange={(checked) => {
-                      setOpen24h(checked as boolean);
-                      // Clear hours errors when toggling
-                      if (checked) {
-                        setFieldErrors(prev => {
-                          const newErrors = { ...prev };
-                          delete newErrors.opening_hours;
-                          delete newErrors.closing_hours;
-                          return newErrors;
-                        });
-                      }
-                    }}
-                  />
-                  <Label htmlFor="open_24h" className="text-sm cursor-pointer">
-                    My business operates 24 hours
-                  </Label>
-                </div>
-
-                <p className="text-xs text-gray-500 -mt-2">
-                  {open24h 
-                    ? 'Your business is set to operate 24/7. Opening and closing hours are disabled.' 
-                    : 'Select when your business opens and closes each day.'}
-                </p>
-
-                {/* Logo Upload */}
-                <div>
-                  <Label htmlFor="logo">Business Logo (Optional)</Label>
-                  <p className="text-xs text-gray-500 mb-2">JPG or PNG, max 2MB</p>
-                  
-                  {!logoPreview ? (
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-mint-500 transition-colors">
-                      <input
-                        id="logo"
-                        type="file"
-                        accept="image/jpeg,image/jpg,image/png"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                      <label htmlFor="logo" className="cursor-pointer">
-                        <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600">Click to upload business logo</p>
-                      </label>
-                    </div>
-                  ) : (
-                    <div className="relative inline-block">
-                      <img
-                        src={logoPreview}
-                        alt="Logo preview"
-                        className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeLogo}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Pickup Instructions */}
-                <div>
-                  <Label htmlFor="pickup_notes">Pickup Instructions (Optional)</Label>
-                  <Textarea
-                    id="pickup_notes"
-                    value={formData.pickup_notes}
-                    onChange={(e) => handleChange('pickup_notes', e.target.value)}
-                    placeholder="e.g., Enter through the side door, ring the bell twice..."
-                    rows={3}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Help customers find your pickup location easily
-                  </p>
-                </div>
-              </div>
-
-              {/* Location with Map */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Business Location</h3>
-                
                 <div className="relative">
                   <div className="flex items-center justify-between mb-1">
                     <Label htmlFor="address">Street Address *</Label>
                     {addressAutoDetected && (
-                      <span className="text-xs text-mint-600 flex items-center gap-1">
+                      <span className="text-xs text-[#4CC9A8] flex items-center gap-1">
                         📍 Auto-detected from map
                       </span>
                     )}
@@ -1179,17 +829,16 @@ if (!isOpen24h) {
                       {fieldErrors.address}
                     </p>
                   )}
-                  
-                  {/* Address Suggestions Dropdown */}
+
                   {showAddressSuggestions && addressSuggestions.length > 0 && (
-                    <div 
+                    <div
                       className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {addressSuggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="px-4 py-3 hover:bg-mint-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className="px-4 py-3 hover:bg-[#E8F9F4] cursor-pointer border-b border-gray-100 last:border-b-0"
                           onClick={() => handleSelectAddressSuggestion(suggestion)}
                         >
                           <p className="text-sm text-gray-900">{suggestion.display_name}</p>
@@ -1197,7 +846,7 @@ if (!isOpen24h) {
                       ))}
                     </div>
                   )}
-                  
+
                   {isLoadingAddress && (
                     <p className="text-xs text-gray-500 mt-1">Searching addresses...</p>
                   )}
@@ -1238,11 +887,11 @@ if (!isOpen24h) {
                       Use My Location
                     </Button>
                   </div>
-                  
-                  <Alert className="bg-mint-50 border-mint-200">
-                    <MapPin className="h-4 w-4 text-mint-600" />
-                    <AlertDescription className="text-mint-900">
-                      <strong>Drag the pin to set your business location precisely.</strong> Click anywhere on the map or drag the green marker. The address will auto-update!
+
+                  <Alert className="bg-[#E8F9F4] border-[#4CC9A8]/30">
+                    <MapPin className="h-4 w-4 text-[#4CC9A8]" />
+                    <AlertDescription className="text-gray-800">
+                      <strong>Drag the pin to set your location precisely.</strong> Click anywhere on the map or drag the green marker.
                     </AlertDescription>
                   </Alert>
 
@@ -1264,46 +913,220 @@ if (!isOpen24h) {
                     </MapContainer>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="latitude">Latitude *</Label>
-                      <Input
-                        id="latitude"
-                        type="number"
-                        step="0.000001"
-                        value={formData.latitude.toFixed(6)}
-                        readOnly
-                        className="bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="longitude">Longitude *</Label>
-                      <Input
-                        id="longitude"
-                        type="number"
-                        step="0.000001"
-                        value={formData.longitude.toFixed(6)}
-                        readOnly
-                        className="bg-gray-50"
-                      />
-                    </div>
-                  </div>
+                  {/* Hidden lat/long fields */}
+                  <input type="hidden" name="latitude" value={formData.latitude} />
+                  <input type="hidden" name="longitude" value={formData.longitude} />
+
+                  <p className="text-xs text-gray-500">
+                    📍 Your coordinates update automatically when you move the pin.
+                  </p>
+
                   {fieldErrors.location && (
                     <p className="text-xs text-red-600 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
                       {fieldErrors.location}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500">
-                    📍 Coordinates are automatically updated when you move the marker
+                </div>
+              </div>
+
+              {/* 3. Business Information */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🏪</span>
+                  <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+                </div>
+
+                <div>
+                  <Label htmlFor="business_name">Business Name *</Label>
+                  <Input
+                    id="business_name"
+                    value={formData.business_name}
+                    onChange={(e) => handleChange('business_name', e.target.value)}
+                    placeholder="e.g., Fresh Bakery"
+                    required
+                    className={fieldErrors.business_name ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.business_name && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {fieldErrors.business_name}
+                    </p>
+                  )}
+                </div>
+
+                {/* Business Type - Icon Buttons */}
+                <div>
+                  <Label>Business Type *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                    {BUSINESS_TYPES.map((type) => (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => {
+                          handleChange('business_type', type.value);
+                          if (fieldErrors.business_type) {
+                            setFieldErrors(prev => ({ ...prev, business_type: '' }));
+                          }
+                        }}
+                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 ${
+                          formData.business_type === type.value
+                            ? 'border-[#4CC9A8] bg-[#E8F9F4] text-[#4CC9A8] font-semibold shadow-md'
+                            : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="text-3xl">{type.emoji}</span>
+                        <span className="text-sm">{type.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {fieldErrors.business_type && (
+                    <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {fieldErrors.business_type}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="description">Business Description *</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleChange('description', e.target.value)}
+                    placeholder="Tell us about your business..."
+                    rows={4}
+                    required
+                    className={fieldErrors.description ? 'border-red-500' : ''}
+                  />
+                  {fieldErrors.description && (
+                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {fieldErrors.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Business Hours */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="opening_hours" className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+                      Opening Hours {!open24h && '*'}
+                    </Label>
+
+                    <Select
+                      value={formData.opening_hours}
+                      onValueChange={(value) => handleChange('opening_hours', value)}
+                      disabled={open24h}
+                    >
+                      <SelectTrigger className={fieldErrors.opening_hours ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select opening time" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {[...Array(48)].map((_, i) => {
+                          const hours = Math.floor(i / 2);
+                          const minutes = i % 2 === 0 ? '00' : '30';
+                          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                          return (
+                            <SelectItem key={label} value={label}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+
+                    {fieldErrors.opening_hours && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {fieldErrors.opening_hours}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="closing_hours" className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+                      Closing Hours {!open24h && '*'}
+                    </Label>
+
+                    <Select
+                      value={formData.closing_hours}
+                      onValueChange={(value) => handleChange('closing_hours', value)}
+                      disabled={open24h}
+                    >
+                      <SelectTrigger className={fieldErrors.closing_hours ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select closing time" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60 overflow-y-auto">
+                        {[...Array(48)].map((_, i) => {
+                          const hours = Math.floor(i / 2);
+                          const minutes = i % 2 === 0 ? '00' : '30';
+                          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                          return (
+                            <SelectItem key={label} value={label}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+
+                    {fieldErrors.closing_hours && (
+                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" />
+                        {fieldErrors.closing_hours}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 24-Hour Checkbox */}
+                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <Checkbox
+                    id="open_24h"
+                    checked={open24h}
+                    onCheckedChange={(checked) => {
+                      setOpen24h(checked as boolean);
+                      if (checked) {
+                        setFieldErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.opening_hours;
+                          delete newErrors.closing_hours;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                  />
+                  <Label htmlFor="open_24h" className="text-sm cursor-pointer">
+                    My business operates 24 hours
+                  </Label>
+                </div>
+
+                {/* Pickup Instructions */}
+                <div>
+                  <Label htmlFor="pickup_notes">Pickup Instructions (Optional)</Label>
+                  <Textarea
+                    id="pickup_notes"
+                    value={formData.pickup_notes}
+                    onChange={(e) => handleChange('pickup_notes', e.target.value)}
+                    placeholder="e.g., Enter through the side door, ring the bell twice..."
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Help customers find your pickup location easily
                   </p>
                 </div>
               </div>
 
-              {/* Contact Information */}
+              {/* 4. Contact Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
-                
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">📞</span>
+                  <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+                </div>
+
                 <div>
                   <Label htmlFor="phone">Phone Number *</Label>
                   <Input
@@ -1384,7 +1207,7 @@ if (!isOpen24h) {
                 <Button
                   type="submit"
                   disabled={isSubmitting || isDemoMode}
-                  className="flex-1 bg-mint-600 hover:bg-mint-700"
+                  className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
                 >
                   {isSubmitting ? 'Creating Account...' : 'Create Partner Account & Apply'}
                 </Button>
