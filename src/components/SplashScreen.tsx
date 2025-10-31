@@ -45,12 +45,13 @@ export default function SplashScreen() {
         ${isAnimatingOut ? 'animate-fade-out' : 'animate-fade-in'}
       `}
     >
-      <div className="relative w-full h-full max-w-md max-h-screen flex items-center justify-center p-8">
+      <div className="relative w-full h-full overflow-hidden">
         <img
           src="/splash-screen.webp"
           alt="SmartPick"
-          className="w-full h-auto object-contain animate-scale-in"
-          style={{ maxHeight: '80vh' }}
+          className="absolute inset-0 w-full h-full object-cover animate-scale-in"
+          loading="eager"
+          decoding="async"
         />
       </div>
 
