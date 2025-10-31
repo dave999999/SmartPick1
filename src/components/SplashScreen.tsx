@@ -5,6 +5,15 @@ export default function SplashScreen() {
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   useEffect(() => {
+    // Do not show when returning via Back/Forward cache (history navigation)
+    try {
+      const nav = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined);
+      if (nav && nav.type === 'back_forward') {
+        setIsVisible(false);
+        return;
+      }
+    } catch {}
+
     // Show splash once per full page load (initial visit or manual refresh).
     // If navigating back to home within SPA, do not show again until a reload.
     if (typeof window !== 'undefined' && (window as any).__smartpickSplashShownThisLoad) {
@@ -12,6 +21,15 @@ export default function SplashScreen() {
       return;
     }
     (window as any).__smartpickSplashShownThisLoad = true;
+
+    // If the page is restored from bfcache, hide the splash immediately
+    const onPageShow = (e: PageTransitionEvent) => {
+      // When persisted === true, page came from bfcache (back/forward)
+      if ((e as any).persisted) {
+        setIsVisible(false);
+      }
+    };
+    window.addEventListener('pageshow', onPageShow);
 
     // Respect reduced motion preferences by shortening the duration.
     const prefersReduced =
@@ -34,6 +52,7 @@ export default function SplashScreen() {
     return () => {
       clearTimeout(fadeOutTimer);
       clearTimeout(hideTimer);
+      window.removeEventListener('pageshow', onPageShow);
     };
   }, []);
 
