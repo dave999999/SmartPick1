@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { resolveOfferImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
@@ -183,9 +184,10 @@ export default function ReserveOffer() {
           {offer.images && offer.images.length > 0 && (
             <div className="relative h-64 w-full overflow-hidden rounded-t-lg">
               <img
-                src={offer.images[0]}
+                src={resolveOfferImageUrl(offer.images[0])}
                 alt={offer.title}
                 className="w-full h-full object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
               />
             </div>
           )}

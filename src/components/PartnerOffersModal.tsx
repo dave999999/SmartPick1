@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { resolveOfferImageUrl } from '@/lib/api';
 import { Clock, MapPin } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -100,9 +101,10 @@ export default function PartnerOffersModal({
                       {offer.images && offer.images.length > 0 && (
                         <div className="relative h-40 w-full overflow-hidden rounded-t-lg">
                           <img
-                            src={offer.images[0]}
+                            src={resolveOfferImageUrl(offer.images[0])}
                             alt={offer.title}
                             className="w-full h-full object-cover"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                           />
                           <Badge className="absolute top-2 right-2 bg-mint-600 hover:bg-mint-700">
                             {offer.category}
