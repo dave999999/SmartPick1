@@ -50,6 +50,7 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.noOffers': 'No offers available at the moment.',
     'browse.checkBack': 'Check back soon for new Smart Picks!',
   // Categories
+  'category.All': 'All',
   'category.BAKERY': 'Bakery',
   'category.RESTAURANT': 'Restaurant',
   'category.CAFE': 'Café',
@@ -187,6 +188,7 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.noOffers': 'ამ მომენტში შეთავაზებები არ არის ხელმისაწვდომი.',
     'browse.checkBack': 'შემოწმდი მალე ახალი SmartPick-ებისთვის!',
   // Categories
+  'category.All': 'ყველა',
   'category.BAKERY': 'ფუნთუშეული',
   'category.RESTAURANT': 'რესტორანი',
   'category.CAFE': 'კაფე',
@@ -324,6 +326,7 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.noOffers': 'На данный момент предложений нет.',
     'browse.checkBack': 'Заходите позже за новыми SmartPick!',
   // Categories
+  'category.All': 'Все',
   'category.BAKERY': 'Пекарня',
   'category.RESTAURANT': 'Ресторан',
   'category.CAFE': 'Кафе',

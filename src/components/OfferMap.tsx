@@ -380,50 +380,27 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
   return (
     <div className="w-full space-y-6">
-      {/* View Toggle and Controls */}
-      <div className="flex flex-wrap gap-2 items-center">
+      {/* Near Me Control - Prominent and Floating */}
+      <div className="flex flex-wrap gap-3 items-center justify-between px-4 md:px-6 py-3">
         <Button
-          variant={showMap ? 'default' : 'outline'}
-          onClick={() => setShowMap(true)}
-          className={showMap ? 'bg-mint-600 hover:bg-mint-700' : ''}
+          variant="default"
+          onClick={handleNearMe}
+          className="bg-[#4CC9A8] hover:bg-[#3BA890] text-white rounded-full shadow-lg hover:shadow-xl transition-all px-6 py-3 font-semibold"
         >
-          <MapPin className="w-4 h-4 mr-2" />
-          Map View
+          <Navigation className="w-4 h-4 mr-2" />
+          📍 Near Me
         </Button>
-        <Button
-          variant={!showMap ? 'default' : 'outline'}
-          onClick={() => setShowMap(false)}
-          className={!showMap ? 'bg-mint-600 hover:bg-mint-700' : ''}
-        >
-          List View
-        </Button>
-        {showMap && (
-          <>
-            <Button
-              variant="outline"
-              onClick={handleNearMe}
-              className="border-mint-600 text-mint-600 hover:bg-mint-50"
-            >
-              <Navigation className="w-4 h-4 mr-2" />
-              Near Me
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
-          </>
-        )}
-        <div className="ml-auto text-sm text-gray-600 flex items-center">
-          {displayOffers.length} Smart Picks {userLocation ? 'near you' : 'available'}
+        <div className="text-sm md:text-base text-gray-600 font-medium flex items-center gap-2">
+          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#4CC9A8] text-white font-bold">
+            {displayOffers.length}
+          </span>
+          Smart Picks {userLocation ? 'near you' : 'available'}
         </div>
       </div>
 
-      {/* Interactive Map */}
+      {/* Interactive Map - 80-90vh height, full width */}
       {showMap && (
-        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[500px]'} rounded-lg overflow-hidden border-2 border-gray-200 shadow-lg`}>
+        <div className={`w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[85vh]'} rounded-xl overflow-hidden border border-gray-300 shadow-2xl`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
