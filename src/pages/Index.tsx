@@ -109,13 +109,12 @@ export default function Index() {
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-2">
-            <img src="/logo-icon.png" alt="SmartPick Logo" className="h-8 md:h-10 w-auto object-contain" />
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold">
-                <span style={{ color: '#1A1E29' }}>Smart</span>
-                <span style={{ color: '#2FB673' }}>Pick</span>
+            <img src="/logo-icon.png" alt="SmartPick icon" className="h-8 md:h-10 w-auto object-contain" />
+            <div className="leading-tight">
+              <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                SmartPick
               </h1>
-              <p className="text-xs text-gray-500 hidden sm:block">{t('header.tagline')}</p>
+              <p className="text-[11px] md:text-xs text-neutral-500 hidden sm:block">Smart choice every day</p>
             </div>
           </div>
 
