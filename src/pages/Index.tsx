@@ -4,15 +4,13 @@ import { Offer, User } from '@/lib/types';
 import { getActiveOffers, getCurrentUser, signOut } from '@/lib/api';
 import { isDemoMode } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Card, CardContent } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import OfferMap from '@/components/OfferMap';
+import CategoryBar from '@/components/CategoryBar';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
-import HeroSection from '@/components/HeroSection';
-import { MapPin, Clock, ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Leaf, DollarSign, Globe, Footprints, ArrowDown, ChevronDown, Menu, X } from 'lucide-react';
+import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -37,8 +35,6 @@ function LanguageButtons() {
     </div>
   );
 }
-
-const CATEGORIES = ['All', 'BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY', 'FAST_FOOD', 'ALCOHOL'];
 
 export default function Index() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -105,63 +101,8 @@ export default function Index() {
     setSelectedOffer(null);
   };
 
-  const handleFindSmartPicksClick = () => {
-    const mapView = document.getElementById('map-view');
-    if (mapView) {
-      const rect = mapView.getBoundingClientRect();
-      const isVisible = rect.top < window.innerHeight && rect.bottom >= 0;
-      
-      if (isVisible && window.innerWidth < 768) {
-        // Map is already visible on mobile, just add a pulse effect
-        mapView.classList.add('pulse-focus');
-        setTimeout(() => mapView.classList.remove('pulse-focus'), 600);
-      } else {
-        // Scroll to map
-        mapView.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  };
-
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const displayCategory = (category: string) => {
-    if (category === 'All') return t('browse.all');
-    return t(`category.${category}`) || category;
-  };
-
-  // Helper function to safely get pickup times
-  const getPickupTimes = (offer: Offer) => {
-    const start = offer.pickup_start || offer.pickup_window?.start || '';
-    const end = offer.pickup_end || offer.pickup_window?.end || '';
-    return { start, end };
-  };
-
   return (
-    <div className="min-h-screen bg-[#FAFAFA]" style={{ fontFamily: 'Manrope, Poppins, sans-serif' }}>
-      <style>{`
-        @keyframes pulse-animation {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.03); }
-        }
-
-        .pulse-focus {
-          animation: pulse-animation 0.6s ease-in-out;
-          box-shadow: 0 0 0 4px rgba(76, 201, 168, 0.3);
-          border-radius: 12px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .pulse-focus {
-            animation: none !important;
-          }
-        }
-      `}</style>
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#f7fff9]" style={{ fontFamily: 'Manrope, Poppins, sans-serif' }}>
 
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -325,9 +266,15 @@ export default function Index() {
         </div>
       </header>
 
+      {/* Category Bar - Sticky below header */}
+      <CategoryBar
+        selectedCategory={selectedCategory}
+        onCategorySelect={setSelectedCategory}
+      />
+
       {/* Demo Mode Alert */}
       {isDemoMode && (
-        <div className="container mx-auto px-4 pt-4">
+        <div className="max-w-7xl mx-auto px-4 pt-4">
           <Alert className="bg-blue-50 border-blue-200">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-900 text-sm">
@@ -337,38 +284,8 @@ export default function Index() {
         </div>
       )}
 
-      {/* Minimalist Hero Section with Integrated How It Works */}
-      <HeroSection onFindPicksClick={handleFindSmartPicksClick} />
-
-
-      {/* Category Filters */}
-      <section className="container mx-auto px-4 py-6 md:py-8 bg-[#FAFAFA]" id="offers">
-        <div className="text-center mb-4 md:mb-6">
-          <h3 className="text-xl md:text-2xl lg:text-4xl font-bold text-gray-900 mb-2 md:mb-4">
-            {t('browse.title')}
-          </h3>
-          <p className="text-sm md:text-base text-gray-600">{t('browse.subtitle')}</p>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 justify-start md:justify-center">
-          {CATEGORIES.map((category) => (
-            <Badge
-              key={category}
-              variant={selectedCategory === (category === 'All' ? '' : category) ? 'default' : 'outline'}
-              className={`cursor-pointer px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm whitespace-nowrap rounded-xl font-semibold transition-all duration-250 ${
-                selectedCategory === (category === 'All' ? '' : category)
-                  ? 'bg-[#4CC9A8] hover:bg-[#3db891] text-white shadow-lg hover:scale-105'
-                  : 'hover:bg-[#4CC9A8]/10 hover:border-[#4CC9A8] hover:scale-105'
-              }`}
-              onClick={() => setSelectedCategory(category === 'All' ? '' : category)}
-            >
-              {displayCategory(category)}
-            </Badge>
-          ))}
-        </div>
-      </section>
-
-      {/* Offers Map/List */}
-      <section id="map-view" className="container mx-auto px-4 pb-12 md:pb-16 bg-[#FAFAFA] transition-all duration-300">
+      {/* Map-First Section: Offers Map/List */}
+      <section id="map-view" className="w-full"  style={{ minHeight: '85vh' }}>
         {isLoading ? (
               <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#4CC9A8] mx-auto mb-4"></div>
