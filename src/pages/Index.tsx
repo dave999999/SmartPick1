@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import OfferMap from '@/components/OfferMap';
 import CategoryBar from '@/components/CategoryBar';
+import SplashScreen from '@/components/SplashScreen';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu } from 'lucide-react';
@@ -102,7 +103,11 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#f7fff9]" style={{ fontFamily: 'Manrope, Poppins, sans-serif' }}>
+    <>
+      {/* Splash Screen - Shows on first visit */}
+      <SplashScreen />
+
+      <div className="min-h-screen bg-gradient-to-b from-white to-[#f7fff9]" style={{ fontFamily: 'Manrope, Poppins, sans-serif' }}>
 
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -351,5 +356,6 @@ export default function Index() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
