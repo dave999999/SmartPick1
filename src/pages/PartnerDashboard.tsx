@@ -70,6 +70,19 @@ export default function PartnerDashboard() {
 
   const CATEGORIES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
 
+  // Derive display status for an offer based on quantity and time
+  const getOfferDisplayStatus = (offer: Offer): string => {
+    const now = Date.now();
+    if (offer.expires_at) {
+      const exp = new Date(offer.expires_at).getTime();
+      if (!isNaN(exp) && exp <= now) return 'EXPIRED';
+    }
+    if (typeof offer.quantity_available === 'number' && offer.quantity_available <= 0) {
+      return 'SOLD_OUT';
+    }
+    return offer.status;
+  };
+
   // Check if partner is pending - case insensitive
   const isPending = partner?.status?.toUpperCase() === 'PENDING';
   
@@ -1267,16 +1280,24 @@ const generate24HourOptions = (): string[] => {
                       </TableCell>
                       <TableCell>{offer.quantity_available}/{offer.quantity_total}</TableCell>
                       <TableCell>
-                        <Badge 
-                          variant={offer.status === 'ACTIVE' ? 'default' : 'secondary'}
-                          className={
-                            offer.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
-                            offer.status === 'PAUSED' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }
-                        >
-                          {offer.status}
-                        </Badge>
+                        {(() => {
+                          const st = getOfferDisplayStatus(offer);
+                          const isActive = st === 'ACTIVE';
+                          const cls = isActive
+                            ? 'bg-green-100 text-green-800'
+                            : st === 'SOLD_OUT'
+                              ? 'bg-red-100 text-red-800'
+                              : st === 'EXPIRED'
+                                ? 'bg-gray-100 text-gray-800'
+                                : st === 'PAUSED'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800';
+                          return (
+                            <Badge variant={isActive ? 'default' : 'secondary'} className={cls}>
+                              {st}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
