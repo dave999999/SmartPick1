@@ -8,23 +8,29 @@ export default function SplashScreen() {
     // Check if splash was already shown
     const hasSeenSplash = localStorage.getItem('smartpick-splash-shown');
 
+    // Respect reduced motion: skip long animations
+    const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     if (hasSeenSplash === 'true') {
       // If user has seen splash before, don't show it
       setIsVisible(false);
       return;
     }
 
-    // Start fade-out animation after 2 seconds
+    // Start fade-out animation after 2 seconds (or quicker with reduced motion)
+    const fadeDelay = prefersReduced ? 500 : 2000;
+    const hideDelay = prefersReduced ? 700 : 2500;
+
     const fadeOutTimer = setTimeout(() => {
       setIsAnimatingOut(true);
-    }, 2000);
+    }, fadeDelay);
 
     // Completely hide splash after fade-out animation completes
     const hideTimer = setTimeout(() => {
       setIsVisible(false);
       // Mark splash as shown
       localStorage.setItem('smartpick-splash-shown', 'true');
-    }, 2500);
+    }, hideDelay);
 
     return () => {
       clearTimeout(fadeOutTimer);
@@ -52,6 +58,11 @@ export default function SplashScreen() {
           className="absolute inset-0 w-full h-full object-cover animate-scale-in"
           loading="eager"
           decoding="async"
+          onError={() => {
+            // If image fails to load, don't block the app
+            setIsVisible(false);
+            localStorage.setItem('smartpick-splash-shown', 'true');
+          }}
         />
       </div>
 
