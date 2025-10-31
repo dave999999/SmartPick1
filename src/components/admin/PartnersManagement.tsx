@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play } from 'lucide-react';
-import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
+import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban } from 'lucide-react';
+import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -145,6 +145,18 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     }
   };
 
+  const handleBan = async (partner: Partner) => {
+    try {
+      await disablePartner(partner.id);
+      toast.success('Partner banned successfully');
+      loadPartners();
+      onStatsUpdate();
+    } catch (error) {
+      console.error('Error banning partner:', error);
+      toast.error('Failed to ban partner');
+    }
+  };
+
   const handleViewPartner = async (partner: Partner) => {
     setSelectedPartner(partner);
     setShowPartnerView(true);
@@ -209,18 +221,21 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'PENDING':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'PAUSED':
-        return <Badge className="bg-orange-100 text-orange-800">Paused</Badge>;
-      case 'BLOCKED':
-        return <Badge className="bg-red-100 text-red-800">Blocked</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+    const statusColors = {
+      APPROVED: 'bg-green-100 text-green-800',
+      PENDING: 'bg-gray-100 text-gray-700',
+      PAUSED: 'bg-yellow-100 text-yellow-700',
+      BLOCKED: 'bg-red-100 text-red-700',
+    };
+
+    const color = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-700';
+    const label = status.charAt(0) + status.slice(1).toLowerCase();
+
+    return (
+      <span className={`px-2 py-1 rounded-full text-sm font-medium ${color}`}>
+        {label}
+      </span>
+    );
   };
 
   const getOfferStatusBadge = (status: string) => {
@@ -317,41 +332,55 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                       {new Date(partner.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEdit(partner)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {partner.status === 'PENDING' && (
+                      <div className="flex justify-end gap-1">
+                        {/* Approve Button - Green */}
+                        {partner.status !== 'APPROVED' && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleApprove(partner)}
-                            className="text-green-600 hover:text-green-700"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Approve Partner"
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
                         )}
-                        {(partner.status === 'APPROVED' || partner.status === 'PAUSED') && (
+
+                        {/* Pause/Unpause Button - Yellow */}
+                        {partner.status !== 'BLOCKED' && (
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleTogglePause(partner)}
-                            className={partner.status === 'PAUSED' ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'}
+                            className="text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50"
+                            title={partner.status === 'PAUSED' ? 'Unpause Partner' : 'Pause Partner'}
                           >
                             {partner.status === 'PAUSED' ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                           </Button>
                         )}
+
+                        {/* Ban Button - Red */}
+                        {partner.status !== 'BLOCKED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleBan(partner)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            title="Ban Partner"
+                          >
+                            <Ban className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Edit Button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(partner)}
-                          className="text-red-600 hover:text-red-700"
+                          onClick={() => handleEdit(partner)}
+                          className="text-gray-600 hover:text-gray-700 hover:bg-gray-50"
+                          title="Edit Partner"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
