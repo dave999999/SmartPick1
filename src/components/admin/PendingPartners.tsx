@@ -81,10 +81,10 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
 
   const handleApprove = async (partner: Partner) => {
     try {
-      // Update partner status to 'APPROVED'
+      // Update partner status to 'APPROVED' (uppercase to match filter in getActiveOffers)
       const { error } = await supabase
         .from('partners')
-        .update({ status: 'approved' })
+        .update({ status: 'APPROVED' })
         .eq('id', partner.id);
 
       if (error) {
@@ -111,10 +111,10 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
     if (!partnerToReject) return;
 
     try {
-      // Update partner status to 'REJECTED'
+      // Update partner status to 'REJECTED' (uppercase for consistency)
       const { error } = await supabase
         .from('partners')
-        .update({ status: 'rejected' })
+        .update({ status: 'REJECTED' })
         .eq('id', partnerToReject.id);
 
       if (error) {
