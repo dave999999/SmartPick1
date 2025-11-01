@@ -266,7 +266,7 @@ export default function PartnerDashboard() {
 
       if (partner) {
         // Create offer with already-processed image URLs
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('offers')
           .insert({
             partner_id: partner.id,
@@ -286,6 +286,31 @@ export default function PartnerDashboard() {
           })
           .select()
           .single();
+
+        if (error && (String(error?.message || '').includes('auto_expire_in') || String(error?.code) === 'PGRST204')) {
+          console.warn('API schema missing auto_expire_in; retrying insert without the column');
+          const retry = await supabase
+            .from('offers')
+            .insert({
+              partner_id: partner.id,
+              title: offerData.title,
+              description: offerData.description,
+              category: offerData.category,
+              images: processedImages,
+              original_price: offerData.original_price,
+              smart_price: offerData.smart_price,
+              quantity_available: offerData.quantity_total,
+              quantity_total: offerData.quantity_total,
+              pickup_start: offerData.pickup_window.start.toISOString(),
+              pickup_end: offerData.pickup_window.end.toISOString(),
+              status: 'ACTIVE',
+              expires_at: offerData.pickup_window.end.toISOString(),
+            })
+            .select()
+            .single();
+          data = retry.data as any;
+          error = retry.error as any;
+        }
 
         if (error) throw error;
         toast.success('Offer created successfully!');
