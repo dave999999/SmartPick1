@@ -282,6 +282,7 @@ export default function PartnerDashboard() {
             pickup_end: offerData.pickup_window.end.toISOString(),
             status: 'ACTIVE',
             expires_at: offerData.pickup_window.end.toISOString(),
+            auto_expire_in: offerData.pickup_window.end.toISOString(),
           })
           .select()
           .single();
