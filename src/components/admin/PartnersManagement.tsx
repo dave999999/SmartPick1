@@ -222,15 +222,19 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   };
 
   const getStatusBadge = (status: string) => {
+    // Normalize status to uppercase for consistent color mapping
+    const normalizedStatus = status?.toUpperCase();
+
     const statusColors = {
       APPROVED: 'bg-green-100 text-green-800',
       PENDING: 'bg-gray-100 text-gray-700',
       PAUSED: 'bg-yellow-100 text-yellow-700',
       BLOCKED: 'bg-red-100 text-red-700',
+      REJECTED: 'bg-red-100 text-red-700',
     };
 
-    const color = statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-700';
-    const label = status.charAt(0) + status.slice(1).toLowerCase();
+    const color = statusColors[normalizedStatus as keyof typeof statusColors] || 'bg-gray-100 text-gray-700';
+    const label = normalizedStatus ? normalizedStatus.charAt(0) + normalizedStatus.slice(1).toLowerCase() : 'Unknown';
 
     return (
       <span className={`px-2 py-1 rounded-full text-sm font-medium ${color}`}>

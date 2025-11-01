@@ -518,14 +518,18 @@ export const getPartnerByUserId = async (userId: string): Promise<Partner | null
   if (isDemoMode) {
     return null;
   }
-  
+
+  // Use maybeSingle() instead of single() to avoid 406 errors when no partner exists
   const { data, error } = await supabase
     .from('partners')
     .select('*')
     .eq('user_id', userId)
-    .single();
+    .maybeSingle();
 
-  if (error) return null;
+  if (error) {
+    console.error('Error fetching partner by user_id:', error);
+    return null;
+  }
   return data as Partner;
 };
 
