@@ -70,7 +70,8 @@ export default function PartnerDashboard() {
   const [useBusinessHours, setUseBusinessHours] = useState(false);
   const [pickupStartSlot, setPickupStartSlot] = useState('');
   const [pickupEndSlot, setPickupEndSlot] = useState('');
-  const [autoExpire12h, setAutoExpire12h] = useState(true);
+  // Auto-expiration for 24h businesses: 6 hours by spec
+  const [autoExpire6h, setAutoExpire6h] = useState(true);
   const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out'>('all');
   const navigate = useNavigate();
 
@@ -139,63 +140,8 @@ export default function PartnerDashboard() {
     loadPartnerData();
   }, []);
 
-  // Auto-fill pickup times when dialog opens
-  useEffect(() => {
-    if (isCreateDialogOpen && partner) {
-      const now = new Date();
-      
-      // For 24-hour businesses with auto-expire enabled
-      if (is24HourBusiness && autoExpire12h) {
-        const end = new Date(now.getTime() + 12 * 60 * 60 * 1000); // +12 hours
-        
-        const pickupStartInput = document.getElementById('pickup_start') as HTMLInputElement;
-        const pickupEndInput = document.getElementById('pickup_end') as HTMLInputElement;
-        
-        if (pickupStartInput) {
-          pickupStartInput.value = now.toISOString().slice(0, 16);
-          pickupStartInput.readOnly = true;
-        }
-        if (pickupEndInput) {
-          pickupEndInput.value = end.toISOString().slice(0, 16);
-          pickupEndInput.readOnly = true;
-        }
-      } else {
-        // For non-24h businesses or 24h with auto-expire disabled
-        const roundedNow = roundToNearest15(now);
-        const pickupStartInput = document.getElementById('pickup_start') as HTMLInputElement;
-        
-        if (pickupStartInput && !useBusinessHours) {
-          pickupStartInput.value = roundedNow.toISOString().slice(0, 16);
-          pickupStartInput.readOnly = false;
-        }
-
-        // Set pickup end based on business hours or +2 hours
-        let endTime: Date;
-        const closing = getClosingTime();
-        if (closing && closing > roundedNow && !is24HourBusiness) {
-          endTime = closing;
-        } else {
-          // Fallback: +2 hours
-          endTime = new Date(roundedNow.getTime() + 2 * 60 * 60 * 1000);
-        }
-
-        const pickupEndInput = document.getElementById('pickup_end') as HTMLInputElement;
-        if (pickupEndInput && !useBusinessHours) {
-          pickupEndInput.value = endTime.toISOString().slice(0, 16);
-          pickupEndInput.readOnly = false;
-        }
-
-        // Initialize dropdown slots if in dropdown mode
-        if (useBusinessHours) {
-          const slots = generateTimeSlots(roundedNow, endTime);
-          if (slots.length > 0) {
-            setPickupStartSlot(slots[0]);
-            setPickupEndSlot(slots[slots.length - 1]);
-          }
-        }
-      }
-    }
-  }, [isCreateDialogOpen, partner,  useBusinessHours, is24HourBusiness, autoExpire12h]);
+  // Pickup times are set automatically on submit; no UI auto-fill needed
+  useEffect(() => {}, [isCreateDialogOpen, partner]);
 
   const loadPartnerData = async () => {
     try {
@@ -273,28 +219,23 @@ export default function PartnerDashboard() {
       const title = (formData.get('title') as string)?.trim() || "Untitled Offer";
       const description = (formData.get('description') as string)?.trim() || "No description provided";
 
-      // Handle pickup times based on mode
-      let pickupStart: Date;
-      let pickupEnd: Date;
+      // Compute pickup times automatically based on business hours
+      const now = new Date();
+      let pickupStart: Date = now;
+      let pickupEnd: Date = now;
 
-      if (is24HourBusiness && autoExpire12h) {
-        // 24-hour business with auto-expire: current time + 12 hours
-        pickupStart = new Date();
-        pickupEnd = new Date(pickupStart.getTime() + 12 * 60 * 60 * 1000);
+      if (is24HourBusiness && autoExpire6h) {
+        // 24-hour business: live next 6 hours
+        pickupEnd = new Date(now.getTime() + 6 * 60 * 60 * 1000);
       } else {
-        // Read 24-hour time inputs and combine with today's date
-        const today = new Date();
-        const startTime = formData.get('pickup_start_time') as string;
-        const endTime = formData.get('pickup_end_time') as string;
-        
-        const [startHours, startMinutes] = startTime.split(':').map(Number);
-        const [endHours, endMinutes] = endTime.split(':').map(Number);
-        
-        pickupStart = new Date(today);
-        pickupStart.setHours(startHours, startMinutes, 0, 0);
-        
-        pickupEnd = new Date(today);
-        pickupEnd.setHours(endHours, endMinutes, 0, 0);
+        const closing = getClosingTime();
+        if (closing && closing > now) {
+          // Live until closing time today
+          pickupEnd = closing;
+        } else {
+          // Fallback if closing unknown/past: default to +2 hours
+          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        }
       }
 
       // Debug: Check what we're starting with
@@ -353,7 +294,7 @@ export default function PartnerDashboard() {
         setUseBusinessHours(false);
         setPickupStartSlot('');
         setPickupEndSlot('');
-        setAutoExpire12h(true);
+        setAutoExpire6h(true);
         loadPartnerData();
       }
     } catch (error) {
@@ -669,47 +610,7 @@ export default function PartnerDashboard() {
     if (!originalPriceInput?.value || parseFloat(originalPriceInput.value) <= 0) errors.original_price = 'Please fill this field';
     if (!smartPriceInput?.value || parseFloat(smartPriceInput.value) <= 0) errors.smart_price = 'Please fill this field';
     
-    // Skip pickup time validation for 24h businesses with auto-expire enabled
-    if (is24HourBusiness && autoExpire12h) {
-      // No validation needed, times are auto-set
-    } else if (useBusinessHours) {
-      // Dropdown mode validation
-      if (!pickupStartSlot) errors.pickup_start = 'Please select pickup start time';
-      if (!pickupEndSlot) errors.pickup_end = 'Please select pickup end time';
-      
-      if (pickupStartSlot && pickupEndSlot && pickupEndSlot <= pickupStartSlot) {
-        errors.pickup_end = 'Pickup end must be after pickup start';
-      }
-    } else {
-      // Date-time picker mode validation
-      const pickupStartInput = document.getElementById('pickup_start') as HTMLInputElement;
-      const pickupEndInput = document.getElementById('pickup_end') as HTMLInputElement;
-      
-      if (!pickupStartInput?.value) errors.pickup_start = 'Please fill this field';
-      if (!pickupEndInput?.value) errors.pickup_end = 'Please fill this field';
-      
-      if (pickupStartInput?.value && pickupEndInput?.value) {
-        const startTime = new Date(pickupStartInput.value);
-        const endTime = new Date(pickupEndInput.value);
-        
-        if (endTime <= startTime) {
-          errors.pickup_end = 'Pickup end must be after pickup start';
-        }
-        
-        // Validate against business closing time (only for non-24h businesses)
-        if (!is24HourBusiness) {
-          const closing = getClosingTime();
-          if (closing && endTime > closing && endTime.getDate() === closing.getDate()) {
-            errors.pickup_end = 'Pickup end cannot exceed business closing time';
-          }
-          
-          // Validate start time is within business hours
-          if (closing && startTime > closing && startTime.getDate() === closing.getDate()) {
-            errors.pickup_start = 'Pickup time must be within business hours';
-          }
-        }
-      }
-    }
+    // Pickup times are auto-set based on business hours or 24h policy; no validation needed here.
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1088,53 +989,16 @@ const generate24HourOptions = (): string[] => {
                     )}
                 </div>
 
-                {/* Pickup Time Section */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Pickup Time Window</h4>
-
-                  {/* 24-hour time dropdowns */}
-                  {(!is24HourBusiness || !autoExpire12h) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="pickup_start_time" className="flex items-center gap-2 text-base font-semibold mb-2">
-                            <Clock className="w-4 h-4 text-[#4CC9A8]" />
-                            Pickup Start Time *
-                          </Label>
-                          <select
-                            id="pickup_start_time"
-                            name="pickup_start_time"
-                            required
-                            className="w-full text-base py-3 px-4 border border-[#DFF5ED] rounded-md focus:border-[#4CC9A8] focus:outline-none"
-                          >
-                            <option value="">Select time</option>
-                            {generate24HourOptions().map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">24-hour format (HH:mm)</p>
-                          {formErrors.pickup_start && <p className="text-red-500 text-sm mt-1">{formErrors.pickup_start}</p>}
-                        </div>
-                        <div>
-                          <Label htmlFor="pickup_end_time" className="flex items-center gap-2 text-base font-semibold mb-2">
-                            <Clock className="w-4 h-4 text-[#4CC9A8]" />
-                            Pickup End Time *
-                          </Label>
-                          <select
-                            id="pickup_end_time"
-                            name="pickup_end_time"
-                            required
-                            className="w-full text-base py-3 px-4 border border-[#DFF5ED] rounded-md focus:border-[#4CC9A8] focus:outline-none"
-                          >
-                            <option value="">Select time</option>
-                            {generate24HourOptions().map(time => (
-                              <option key={time} value={time}>{time}</option>
-                            ))}
-                          </select>
-                          <p className="text-xs text-gray-500 mt-1">24-hour format (HH:mm)</p>
-                          {formErrors.pickup_end && <p className="text-red-500 text-sm mt-1">{formErrors.pickup_end}</p>}
-                        </div>
-                      </div>
-                  )}
+                {/* Pickup timing is set automatically */}
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Pickup Time</h4>
+                  <p className="text-sm text-gray-600">
+                    We set times automatically based on your business hours:
+                    {" "}
+                    <span className="font-medium">until closing</span> if you have set daily hours, or
+                    {" "}
+                    <span className="font-medium">next 6 hours</span> if you operate 24/7.
+                  </p>
                 </div>
 
                 {/* Submit Buttons */}
