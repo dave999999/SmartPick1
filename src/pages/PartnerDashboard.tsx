@@ -17,7 +17,7 @@ import {
   processOfferImages,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
-import ImagePicker from '@/components/ImagePicker';
+import ImageLibraryModal from '@/components/ImageLibraryModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -63,6 +63,7 @@ export default function PartnerDashboard() {
   const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -968,18 +969,33 @@ const generate24HourOptions = (): string[] => {
                       <p className="text-xs text-gray-500 mt-1">Category is automatically set based on your business type</p>
                     </div>
 
-                    {/* Image Picker with Library and Custom Upload */}
+                    {/* Choose Image (opens library modal) */}
                     <div>
-                      <ImagePicker
-                        category={partner?.business_type || 'RESTAURANT'}
-                        onSelect={(imageUrl) => {
-                          // Handle both library URLs (strings) and custom files (File objects)
-                          setImageFiles([imageUrl]);
-                          setSelectedLibraryImage(typeof imageUrl === 'string' ? imageUrl : null);
-                        }}
-                        allowUpload={partner?.approved_for_upload || false}
-                        selectedImage={selectedLibraryImage}
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowImageModal(true)}
+                        className="w-full rounded-lg bg-[#00C896] py-2 font-medium text-white transition hover:bg-[#009B77]"
+                      >
+                        🖼 Choose Image
+                      </button>
+                      {selectedLibraryImage && (
+                        <img
+                          src={selectedLibraryImage}
+                          className="mt-2 h-40 w-full rounded-xl object-cover"
+                          alt="Selected product"
+                        />
+                      )}
+
+                      {showImageModal && (
+                        <ImageLibraryModal
+                          category={partner?.business_type || 'RESTAURANT'}
+                          onSelect={(url) => {
+                            setSelectedLibraryImage(url);
+                            setImageFiles([url]);
+                          }}
+                          onClose={() => setShowImageModal(false)}
+                        />
+                      )}
                     </div>
                 </div>
 
