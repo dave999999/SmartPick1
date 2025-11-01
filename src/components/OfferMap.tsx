@@ -126,6 +126,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   const [mapZoom, setMapZoom] = useState(13);
   const mapRef = useRef<L.Map | null>(null);
   const [listReady, setListReady] = useState(false);
+  const [tilesLoaded, setTilesLoaded] = useState(false);
+
+  // Detect preferred color scheme for tile selection
+  const prefersDark = typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tileUrl = prefersDark
+    ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
+    : 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png';
 
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
@@ -426,7 +435,11 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
       {/* Interactive Map - Reduced height for slider below */}
       {showMap && (
-        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}>
+        <div
+          id="map"
+          className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}
+          style={{ opacity: tilesLoaded ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}
+        >
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -443,10 +456,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
           >
             <MapController center={mapCenter} zoom={mapZoom} />
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-              subdomains="abcd"
-              maxZoom={20}
+              url={tileUrl}
+              maxZoom={19}
+              attribution='&copy; OpenStreetMap &copy; Stadia Maps'
+              eventHandlers={{ load: () => setTilesLoaded(true) }}
             />
             
             {/* User location marker */}
