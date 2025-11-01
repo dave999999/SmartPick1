@@ -313,31 +313,51 @@ export default function PartnerDashboard() {
     const formData = new FormData(e.currentTarget);
 
     try {
-      // Upload new images if any
-      let imageUrls = editingOffer.images || [];
-      if (imageFiles.length > 0) {
-        const newImageUrls = await uploadImages(imageFiles, 'offer-images');
-        imageUrls = [...imageUrls, ...newImageUrls];
+      // Process images (both library URLs and custom uploads)
+      const processedImages = await processOfferImages(imageFiles, partner?.id || '');
+
+      // Use processed images if new ones were selected, otherwise keep existing
+      const imageUrls = imageFiles.length > 0 ? processedImages : (editingOffer.images || []);
+
+      // Compute pickup times automatically based on business hours (same logic as create)
+      const now = new Date();
+      let pickupStart: Date = now;
+      let pickupEnd: Date = now;
+
+      if (is24HourBusiness && autoExpire6h) {
+        // 24-hour business: live next 6 hours
+        pickupEnd = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+      } else {
+        const closing = getClosingTime();
+        if (closing && closing > now) {
+          // Live until closing time today
+          pickupEnd = closing;
+        } else {
+          // Fallback if closing unknown/past: default to +2 hours
+          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        }
       }
 
       const updates = {
         title: formData.get('title') as string,
         description: formData.get('description') as string,
-        category: formData.get('category') as string,
+        category: partner?.business_type || editingOffer.category,
         images: imageUrls,
         original_price: parseFloat(formData.get('original_price') as string),
         smart_price: parseFloat(formData.get('smart_price') as string),
         quantity_total: parseInt(formData.get('quantity') as string),
         quantity_available: parseInt(formData.get('quantity') as string),
-        pickup_start: new Date(formData.get('pickup_start') as string).toISOString(),
-        pickup_end: new Date(formData.get('pickup_end') as string).toISOString(),
+        pickup_start: pickupStart.toISOString(),
+        pickup_end: pickupEnd.toISOString(),
+        expires_at: pickupEnd.toISOString(),
       };
 
       await updateOffer(editingOffer.id, updates);
-      toast.success('Offer updated successfully!');
+      toast.success('✅ Offer updated successfully!');
       setIsEditDialogOpen(false);
       setEditingOffer(null);
       setImageFiles([]);
+      setSelectedLibraryImage(null);
       loadPartnerData();
     } catch (error) {
       console.error('Error updating offer:', error);
@@ -1416,85 +1436,239 @@ const generate24HourOptions = (): string[] => {
 
       {/* Edit Offer Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
               ✏️ Edit Offer
             </DialogTitle>
-            <DialogDescription className="text-base">Update your Smart-Time offer details</DialogDescription>
+            <DialogDescription className="text-base">Update your offer details</DialogDescription>
           </DialogHeader>
           {editingOffer && (
-            <form onSubmit={handleEditOffer} className="space-y-4">
-              <div>
-                <Label htmlFor="edit_title">Title</Label>
-                <Input id="edit_title" name="title" required defaultValue={editingOffer.title} />
-              </div>
-              <div>
-                <Label htmlFor="edit_description">Description</Label>
-                <Textarea id="edit_description" name="description" required defaultValue={editingOffer.description} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleEditOffer} className="space-y-6">
+              {/* 📋 Basic Details Section */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
+                  <span>🏷️</span> Basic Details
+                </h4>
+
                 <div>
-                  <Label htmlFor="edit_category">Category</Label>
-                  <select id="edit_category" name="category" required defaultValue={editingOffer.category} className="w-full border rounded-md p-2">
-                    <option value="BAKERY">Bakery</option>
-                    <option value="RESTAURANT">Restaurant</option>
-                    <option value="CAFE">Café</option>
-                    <option value="GROCERY">Grocery</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="edit_quantity">Quantity</Label>
-                  <Input id="edit_quantity" name="quantity" type="number" required min="1" defaultValue={editingOffer.quantity_total} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_original_price">Original Price (GEL)</Label>
-                  <Input id="edit_original_price" name="original_price" type="number" step="0.01" required defaultValue={editingOffer.original_price} />
-                </div>
-                <div>
-                  <Label htmlFor="edit_smart_price">Smart Price (GEL)</Label>
-                  <Input id="edit_smart_price" name="smart_price" type="number" step="0.01" required defaultValue={editingOffer.smart_price} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit_pickup_start">Pickup Start</Label>
-                  <Input 
-                    id="edit_pickup_start" 
-                    name="pickup_start" 
-                    type="datetime-local" 
-                    required 
-                    defaultValue={editingOffer.pickup_start ? new Date(editingOffer.pickup_start).toISOString().slice(0, 16) : ''}
+                  <Label htmlFor="edit_title" className="text-sm font-semibold">
+                    Title / დასახელება
+                  </Label>
+                  <Input
+                    id="edit_title"
+                    name="title"
+                    required
+                    defaultValue={editingOffer.title}
+                    placeholder="e.g., Fresh Croissants / ახალი კრუასანები"
+                    className="mt-1"
                   />
                 </div>
+
                 <div>
-                  <Label htmlFor="edit_pickup_end">Pickup End</Label>
-                  <Input 
-                    id="edit_pickup_end" 
-                    name="pickup_end" 
-                    type="datetime-local" 
-                    required 
-                    defaultValue={editingOffer.pickup_end ? new Date(editingOffer.pickup_end).toISOString().slice(0, 16) : ''}
+                  <Label htmlFor="edit_description" className="text-sm font-semibold">
+                    Description / აღწერა
+                  </Label>
+                  <Textarea
+                    id="edit_description"
+                    name="description"
+                    required
+                    defaultValue={editingOffer.description}
+                    placeholder="Describe your offer / აღწერეთ თქვენი შეთავაზება"
+                    className="mt-1 min-h-[100px] resize-y"
                   />
                 </div>
               </div>
-              <div>
-                <Label htmlFor="edit_images">Add More Images</Label>
-                <Input 
-                  id="edit_images" 
-                  type="file" 
-                  multiple 
-                  accept="image/*"
-                  onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
-                />
+
+              {/* 💰 Pricing & Quantity Section */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
+                  <span>💰</span> Pricing & Quantity
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit_category" className="text-sm font-semibold">Category</Label>
+                    <Input
+                      id="edit_category"
+                      value={partner?.business_type || editingOffer.category}
+                      disabled
+                      className="mt-1 bg-gray-50 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Auto-set based on business type</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit_quantity" className="text-sm font-semibold">Quantity</Label>
+                    <Input
+                      id="edit_quantity"
+                      name="quantity"
+                      type="number"
+                      required
+                      min="1"
+                      defaultValue={editingOffer.quantity_total}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit_original_price" className="text-sm font-semibold">
+                      Original Price (₾)
+                    </Label>
+                    <Input
+                      id="edit_original_price"
+                      name="original_price"
+                      type="number"
+                      step="0.01"
+                      required
+                      defaultValue={editingOffer.original_price}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit_smart_price" className="text-sm font-semibold">
+                      Smart Price (₾)
+                    </Label>
+                    <Input
+                      id="edit_smart_price"
+                      name="smart_price"
+                      type="number"
+                      step="0.01"
+                      required
+                      defaultValue={editingOffer.smart_price}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Tip:</strong> Smart price is typically ~50% of original. Adjust as needed!
+                  </p>
+                </div>
               </div>
-              <DialogFooter>
+
+              {/* 🕒 Pickup Time Section */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
+                  <span>🕒</span> Pickup Time Window
+                </h4>
+
+                <div className="bg-[#F0FDF9] border border-[#DFF5ED] rounded-lg p-4">
+                  <p className="text-sm text-gray-700 mb-2">
+                    ⚙️ Pickup times are set <strong>automatically</strong> based on your business hours.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {is24HourBusiness ? (
+                      <>📅 <strong>24/7 business:</strong> Your offer will be live for the next <strong>6 hours</strong>.</>
+                    ) : (
+                      <>📅 <strong>Regular hours:</strong> Your offer will be live until <strong>closing time today</strong>.</>
+                    )}
+                  </p>
+                  {editingOffer.pickup_start && editingOffer.pickup_end && (
+                    <div className="mt-3 pt-3 border-t border-[#DFF5ED]">
+                      <p className="text-sm font-semibold text-[#00C896]">
+                        Current window: {new Date(editingOffer.pickup_start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                        {' → '}
+                        {new Date(editingOffer.pickup_end).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        (Will be updated to current business hours on save)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 📸 Product Image Section */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
+                  <span>📸</span> Product Image
+                </h4>
+
+                {/* Current Image Preview */}
+                {editingOffer.images && editingOffer.images.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600 mb-2">Current image:</p>
+                    <img
+                      src={resolveOfferImageUrl(editingOffer.images[0], editingOffer.category)}
+                      alt="Current offer"
+                      className="h-32 w-48 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                  </div>
+                )}
+
+                {/* Choose Image Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowImageModal(true);
+                  }}
+                  className="w-full rounded-lg bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] py-3 font-semibold text-white transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2"
+                >
+                  📷 Choose New Image from Library
+                </button>
+
+                {selectedLibraryImage && (
+                  <div className="mt-2">
+                    <p className="text-sm text-green-600 font-medium">✓ New image selected from library</p>
+                    <img
+                      src={selectedLibraryImage}
+                      alt="Selected"
+                      className="mt-2 h-32 w-48 object-cover rounded-lg border-2 border-[#00C896]"
+                    />
+                  </div>
+                )}
+
+                {/* Image Library Modal */}
+                {showImageModal && (
+                  <ImageLibraryModal
+                    category={partner?.business_type || 'RESTAURANT'}
+                    onSelect={(url) => {
+                      console.log('🖼️ Image selected from library for edit:', url);
+                      setSelectedLibraryImage(url);
+                      setImageFiles([url]);
+                    }}
+                    onClose={() => setShowImageModal(false)}
+                  />
+                )}
+
+                {/* Optional: Custom Upload for Approved Partners */}
+                {partner?.approved_for_upload && (
+                  <div className="mt-3 pt-3 border-t">
+                    <Label htmlFor="edit_custom_upload" className="text-sm text-gray-600">
+                      Or upload custom image (approved partners only)
+                    </Label>
+                    <Input
+                      id="edit_custom_upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setImageFiles([file]);
+                          setSelectedLibraryImage(null);
+                        }
+                      }}
+                      className="mt-1"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Sticky Footer Buttons */}
+              <DialogFooter className="sticky bottom-0 bg-white pt-4 border-t mt-6">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setSelectedLibraryImage(null);
+                    setImageFiles([]);
+                  }}
                   className="rounded-full border-[#E8F9F4] hover:border-gray-400"
                 >
                   Cancel
@@ -1504,7 +1678,7 @@ const generate24HourOptions = (): string[] => {
                   className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Update Offer
+                  ✅ Update Offer
                 </Button>
               </DialogFooter>
             </form>
