@@ -127,7 +127,7 @@ export function NewUsers({ onStatsUpdate }: NewUsersProps) {
                       <div>
                         <p className="text-sm font-medium text-gray-600">New Customers</p>
                         <p className="text-2xl font-bold text-green-600">
-                          {newUsers.filter(u => u.role === 'customer').length}
+                          {newUsers.filter(u => (u.role || '').toLowerCase() === 'customer').length}
                         </p>
                       </div>
                       <Users className="h-8 w-8 text-green-500" />
@@ -141,7 +141,7 @@ export function NewUsers({ onStatsUpdate }: NewUsersProps) {
                       <div>
                         <p className="text-sm font-medium text-gray-600">New Partners</p>
                         <p className="text-2xl font-bold text-orange-600">
-                          {newUsers.filter(u => u.role === 'partner').length}
+                          {newUsers.filter(u => (u.role || '').toLowerCase() === 'partner').length}
                         </p>
                       </div>
                       <Calendar className="h-8 w-8 text-orange-500" />
