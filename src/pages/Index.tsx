@@ -115,7 +115,12 @@ export default function Index() {
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           {/* Logo and Title */}
           <div className="flex items-center gap-2">
-            <img src="/icon1.png" alt="SmartPick icon" className="h-8 md:h-10 w-8 md:w-10 object-contain" />
+            <img
+              src="/icon1.png"
+              alt="SmartPick icon"
+              className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
+              style={{ minHeight: '32px' }}
+            />
             <div className="leading-tight">
               <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                 SmartPick
