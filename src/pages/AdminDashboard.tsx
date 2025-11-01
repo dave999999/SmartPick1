@@ -61,23 +61,30 @@ export default function AdminDashboard() {
         .select('role')
         .eq('id', user.id)
         .single();
-        
+
       console.log('AdminDashboard: User profile check:', { profile, error });
-        
+
       if (error) {
         console.error('Error fetching user profile:', error);
-        // For testing, allow access even if profile fetch fails
-        console.warn('AdminDashboard: Proceeding without role check for testing');
-      } 
+        toast.error('Unable to verify admin privileges');
+        navigate('/');
+        return;
+      }
 
-      // User is authenticated, load stats
+      // Verify admin role (case-insensitive)
+      if (!profile || profile.role?.toUpperCase() !== 'ADMIN') {
+        console.error('AdminDashboard: Unauthorized access attempt by user:', user.email);
+        toast.error('Unauthorized: Admin access required');
+        navigate('/');
+        return;
+      }
+
+      // User is authenticated and authorized, load stats
       await loadStats();
     } catch (error) {
       console.error('Error checking admin access:', error);
       toast.error('Failed to verify admin access');
-      // For testing, don't redirect on error
-      // navigate('/');
-      await loadStats(); // Try to load stats anyway
+      navigate('/');
     }
   };
 
