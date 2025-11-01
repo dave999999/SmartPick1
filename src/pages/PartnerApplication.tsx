@@ -148,15 +148,12 @@ export default function PartnerApplication() {
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     try {
-      // Using geocode.maps.co (free alternative to Nominatim with better CORS support)
-      const response = await fetch(
-        `https://geocode.maps.co/reverse?lat=${lat}&lon=${lon}&format=json`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-        }
-      );
+      // Use serverless proxy to avoid CORS/rate-limit issues
+      const response = await fetch(`/api/geocode?lat=${lat}&lon=${lon}`, {
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         console.error('Reverse geocoding failed:', response.statusText);
