@@ -920,14 +920,24 @@ export const duplicateOffer = async (offerId: string, partnerId: string): Promis
 // Resolve an offer image URL that might be a bare filename or a full URL
 export const resolveOfferImageUrl = (url?: string): string => {
   if (!url) return '';
-  // If it's already an absolute URL, use it as-is
-  if (/^https?:\/\//i.test(url)) return url;
+
+  const trimmed = url.trim();
+
+  // Absolute URLs (already public)
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  // Public assets served from the app (e.g. from /public/library/...)
+  if (trimmed.startsWith('/')) return trimmed; // already root-relative
+  if (trimmed.toLowerCase().startsWith('library/')) return `/${trimmed}`;
+
+  // Otherwise treat as Supabase Storage path (e.g., partners/... or offer-images/...)
   try {
+    const path = trimmed.replace(/^\/+/, '');
     const { data: { publicUrl } } = supabase.storage
       .from('offer-images')
-      .getPublicUrl(url);
-    return publicUrl;
+      .getPublicUrl(path);
+    return publicUrl || trimmed;
   } catch {
-    return url;
+    return trimmed;
   }
 };
