@@ -130,75 +130,86 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
 
-  // Create category icon using mint-colored SVG icons
+  // Create category icon using clear, optimized SVG icons
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const icons: Record<string, string> = {
-      BAKERY: '/icons/croissant.svg',
-      RESTAURANT: '/icons/plate.svg',
-      CAFE: '/icons/coffee.svg',
-      GROCERY: '/icons/basket.svg',
-      ALCOHOL: '/icons/wine.svg',
-      FAST_FOOD: '/icons/burger.svg',
+    const categoryIcons: Record<string, string> = {
+      BAKERY: 'croissant.svg',
+      RESTAURANT: 'plate-fork-knife.svg',
+      CAFE: 'coffee-cup.svg',
+      GROCERY: 'shopping-basket.svg',
+      ALCOHOL: 'wine-glass.svg',
+      FAST_FOOD: 'burger.svg',
     };
-    const iconUrl = icons[category] || '/icons/plate.svg';
-    const scale = isHighlighted ? 1.3 : 1;
+
+    const iconFile = categoryIcons[category] || 'plate-fork-knife.svg';
+    const size = isHighlighted ? 44 : 36;
+    const bgColor = isHighlighted ? '#00C896' : '#FFFFFF';
+    const borderColor = isHighlighted ? '#FFFFFF' : '#00C896';
     const shadow = isHighlighted
-      ? '0 8px 20px rgba(0, 200, 150, 0.4)'
-      : '0 4px 12px rgba(0, 0, 0, 0.15)';
-    const background = isHighlighted
-      ? 'linear-gradient(135deg, #00C896 0%, #009B77 100%)'
-      : '#ffffff';
-    const borderColor = isHighlighted ? '#00C896' : '#ffffff';
+      ? '0 6px 16px rgba(0, 200, 150, 0.5), 0 2px 4px rgba(0,0,0,0.1)'
+      : '0 3px 8px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0,0,0,0.1)';
 
     return L.divIcon({
-      className: 'custom-marker',
+      className: 'smartpick-marker',
       html: `
-        <div style="
-          width: ${48 * scale}px;
-          height: ${48 * scale}px;
-          border-radius: 50%;
-          background: ${background};
-          border: 3px solid ${borderColor};
-          box-shadow: ${shadow};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-          transform: translateY(-4px);
+        <div class="marker-container" style="
           position: relative;
-          padding: ${8 * scale}px;
+          width: ${size}px;
+          height: ${size}px;
+          filter: drop-shadow(${shadow});
         ">
-          <img src="${iconUrl}"
-               style="width: 100%; height: 100%; object-fit: contain; filter: ${isHighlighted ? 'brightness(0) invert(1)' : 'none'};"
-               alt="${category}" />
+          <div class="marker-circle" style="
+            width: ${size}px;
+            height: ${size}px;
+            border-radius: 50%;
+            background: ${bgColor};
+            border: 2.5px solid ${borderColor};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          ">
+            <img
+              src="/icons/categories/${iconFile}"
+              style="
+                width: ${size - 12}px;
+                height: ${size - 12}px;
+                object-fit: contain;
+                ${isHighlighted ? 'filter: brightness(0) invert(1);' : ''}
+              "
+              alt="${category}"
+            />
+          </div>
           ${count > 1 ? `
-            <div style="
+            <div class="marker-badge" style="
               position: absolute;
-              top: -4px;
-              right: -4px;
+              top: -6px;
+              right: -6px;
+              min-width: 22px;
+              height: 22px;
+              padding: 0 6px;
               background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
               color: white;
-              border-radius: 50%;
-              width: ${22 * scale}px;
-              height: ${22 * scale}px;
+              border-radius: 12px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: ${11 * scale}px;
-              font-weight: bold;
+              font-size: 11px;
+              font-weight: 700;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
               border: 2px solid white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+              box-shadow: 0 2px 6px rgba(0,0,0,0.25);
             ">${count}</div>
           ` : ''}
         </div>
       `,
-      iconSize: [48 * scale, 48 * scale],
-      iconAnchor: [24 * scale, 48 * scale],
-      popupAnchor: [0, -48 * scale],
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size],
+      popupAnchor: [0, -size],
     });
   };
 
@@ -561,6 +572,47 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
       )}
 
       {/* Offers Grid - Moved to RecentOffersSlider component */}
+
+      {/* Global marker styles */}
+      <style>{`
+        .smartpick-marker {
+          cursor: pointer !important;
+        }
+
+        .smartpick-marker .marker-container {
+          transform-origin: center bottom;
+          animation: marker-appear 0.3s ease-out;
+        }
+
+        @keyframes marker-appear {
+          from {
+            transform: scale(0) translateY(10px);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .smartpick-marker:hover .marker-circle {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(0, 200, 150, 0.3);
+        }
+
+        .smartpick-marker:active .marker-circle {
+          transform: scale(0.95);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .smartpick-marker .marker-container {
+            animation: none;
+          }
+          .smartpick-marker:hover .marker-circle {
+            transform: scale(1.05);
+          }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Top bun -->
+  <path d="M6 14C6 10 9 7 16 7C23 7 26 10 26 14H6Z"
+        fill="#00C896"
+        stroke="white"
+        stroke-width="2"
+        stroke-linejoin="round"/>
+  <!-- Lettuce -->
+  <rect x="5" y="14" width="22" height="3"
+        fill="#10B981"
+        stroke="white"
+        stroke-width="1.5"/>
+  <!-- Patty -->
+  <rect x="5" y="17" width="22" height="4"
+        fill="#00C896"
+        stroke="white"
+        stroke-width="2"/>
+  <!-- Bottom bun -->
+  <path d="M5 21H27C27 23 26 25 24 25H8C6 25 5 23 5 21Z"
+        fill="#00C896"
+        stroke="white"
+        stroke-width="2"/>
+  <!-- Sesame seeds -->
+  <circle cx="10" cy="11" r="1" fill="white"/>
+  <circle cx="16" cy="10" r="1" fill="white"/>
+  <circle cx="22" cy="11" r="1" fill="white"/>
+</svg>
