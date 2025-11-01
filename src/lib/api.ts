@@ -2,6 +2,19 @@ import { supabase, isDemoMode } from './supabase';
 import { Offer, Reservation, Partner, CreateOfferDTO, OfferFilters, User, PenaltyInfo } from './types';
 import { mockOffers, mockPartners } from './mockData';
 import QRCode from 'qrcode';
+import {
+  MAX_RESERVATION_QUANTITY,
+  PENALTY_FIRST_OFFENSE_HOURS,
+  PENALTY_SECOND_OFFENSE_HOURS,
+  PENALTY_THIRD_OFFENSE_HOURS,
+  PENALTY_REPEAT_OFFENSE_HOURS,
+  ALLOWED_IMAGE_TYPES,
+  MAX_FILE_SIZE_BYTES,
+  ERROR_MESSAGES,
+  IMAGE_CACHE_MAX_AGE,
+  QR_CODE_SIZE,
+  QR_CODE_MARGIN,
+} from './constants';
 
 // Auth functions
 export const getCurrentUser = async (): Promise<{ user: User | null; error?: unknown }> => {
@@ -146,13 +159,17 @@ export const applyPenalty = async (userId: string): Promise<void> => {
 
     const currentCount = user?.penalty_count || 0;
     const newCount = currentCount + 1;
-    
-    // Determine penalty duration
+
+    // Determine penalty duration based on offense count
     let penaltyHours = 0;
     if (newCount === 1) {
-      penaltyHours = 3; // First miss: 3 hours
+      penaltyHours = PENALTY_FIRST_OFFENSE_HOURS;
+    } else if (newCount === 2) {
+      penaltyHours = PENALTY_SECOND_OFFENSE_HOURS;
+    } else if (newCount === 3) {
+      penaltyHours = PENALTY_THIRD_OFFENSE_HOURS;
     } else {
-      penaltyHours = 12; // Second and subsequent: 12 hours
+      penaltyHours = PENALTY_REPEAT_OFFENSE_HOURS;
     }
 
     const penaltyUntil = new Date();
@@ -324,60 +341,76 @@ export const createReservation = async (
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase to create reservations');
   }
-  
+
   // Check penalty status
   const penaltyInfo = await checkUserPenalty(customerId);
   if (penaltyInfo.isUnderPenalty) {
     throw new Error(`You are currently under penalty until ${penaltyInfo.penaltyUntil?.toLocaleString()}. Remaining time: ${penaltyInfo.remainingTime}`);
   }
 
-  // Enforce 3-unit maximum per offer per user
-  if (quantity > 3) {
-    throw new Error('Maximum 3 units allowed per reservation');
+  // Enforce maximum quantity limit
+  if (quantity > MAX_RESERVATION_QUANTITY) {
+    throw new Error(ERROR_MESSAGES.MAX_RESERVATIONS_REACHED);
+  }
+
+  // Validate quantity is positive
+  if (quantity < 1) {
+    throw new Error('Quantity must be at least 1');
   }
 
   // Generate unique QR code
   const timestamp = Date.now();
   const qrCode = `SP-${timestamp.toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
 
+  // Set expiration to 30 minutes from now
   const expiresAt = new Date();
   expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
   // Get offer to calculate price
   const offer = await getOfferById(offerId);
+  if (!offer) {
+    throw new Error('Offer not found');
+  }
+
   const totalPrice = offer.smart_price * quantity;
 
-  const { data, error } = await supabase
+  // Use atomic database function to prevent race conditions
+  // This function locks the offer row and updates quantity in a single transaction
+  const { data, error } = await supabase.rpc('create_reservation_atomic', {
+    p_offer_id: offerId,
+    p_customer_id: customerId,
+    p_quantity: quantity,
+    p_qr_code: qrCode,
+    p_total_price: totalPrice,
+    p_expires_at: expiresAt.toISOString(),
+  });
+
+  if (error) {
+    // Handle specific error messages from the database function
+    if (error.message?.includes('Insufficient quantity')) {
+      throw new Error(ERROR_MESSAGES.INSUFFICIENT_QUANTITY);
+    } else if (error.message?.includes('not active')) {
+      throw new Error(ERROR_MESSAGES.OFFER_EXPIRED);
+    } else if (error.message?.includes('expired')) {
+      throw new Error(ERROR_MESSAGES.OFFER_EXPIRED);
+    }
+    throw error;
+  }
+
+  // Fetch the complete reservation with relations
+  const { data: reservation, error: fetchError } = await supabase
     .from('reservations')
-    .insert({
-      offer_id: offerId,
-      customer_id: customerId,
-      partner_id: offer.partner_id,
-      qr_code: qrCode,
-      quantity,
-      total_price: totalPrice,
-      status: 'ACTIVE',
-      expires_at: expiresAt.toISOString(),
-    })
     .select(`
       *,
       offer:offers(*),
       partner:partners(*)
     `)
+    .eq('id', data.id)
     .single();
 
-  if (error) throw error;
+  if (fetchError) throw fetchError;
 
-  // Update offer quantity
-  const newQuantity = offer.quantity_available - quantity;
-  const updates: Record<string, unknown> = { quantity_available: newQuantity };
-  // Persist updated quantity (frontend will treat quantity 0 as sold out)
-  await supabase
-    .from('offers')
-    .update(updates)
-    .eq('id', offerId);
-
-  return data as Reservation;
+  return reservation as Reservation;
 };
 
 export const getCustomerReservations = async (customerId: string): Promise<Reservation[]> => {
@@ -724,6 +757,45 @@ export const getPlatformStats = async () => {
 };
 
 // Utility functions
+
+/**
+ * Validate file for upload
+ * @throws Error if file is invalid
+ */
+const validateFile = (file: File): void => {
+  // Check file type
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type as any)) {
+    throw new Error(ERROR_MESSAGES.INVALID_FILE_TYPE);
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(ERROR_MESSAGES.FILE_TOO_LARGE);
+  }
+
+  // Additional security: Check for double extensions (e.g., .php.jpg)
+  const fileName = file.name.toLowerCase();
+  const suspiciousExtensions = ['.php', '.exe', '.sh', '.bat', '.cmd', '.js', '.html'];
+  for (const ext of suspiciousExtensions) {
+    if (fileName.includes(ext)) {
+      throw new Error('Invalid file name. Please rename the file and try again.');
+    }
+  }
+};
+
+/**
+ * Get safe file extension from MIME type
+ */
+const getExtensionFromMimeType = (mimeType: string): string => {
+  const mimeToExt: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  };
+  return mimeToExt[mimeType] || 'jpg';
+};
+
 export const uploadImages = async (files: File[], bucket: string): Promise<string[]> => {
   if (isDemoMode) {
     return [];
@@ -732,13 +804,21 @@ export const uploadImages = async (files: File[], bucket: string): Promise<strin
   const urls: string[] = [];
 
   for (const file of files) {
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
+    // Validate file before upload
+    validateFile(file);
+
+    // Use MIME type for extension (more secure than trusting filename)
+    const ext = getExtensionFromMimeType(file.type);
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileName = `${timestamp}-${randomId}.${ext}`;
 
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
-        cacheControl: '31536000',
+        cacheControl: String(IMAGE_CACHE_MAX_AGE),
         upsert: false,
+        contentType: file.type, // Explicitly set content type
       });
 
     if (error) throw error;
@@ -767,16 +847,21 @@ export const uploadPartnerImages = async (files: File[], partnerId: string): Pro
   const urls: string[] = [];
 
   for (const file of files) {
-    const fileExt = file.name.split('.').pop();
+    // Validate file before upload
+    validateFile(file);
+
+    // Use MIME type for extension (more secure than trusting filename)
+    const ext = getExtensionFromMimeType(file.type);
     const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(7);
-    const fileName = `partners/${partnerId}/uploads/${timestamp}-${randomId}.${fileExt}`;
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileName = `partners/${partnerId}/uploads/${timestamp}-${randomId}.${ext}`;
 
     const { data, error } = await supabase.storage
       .from('offer-images') // Using the same bucket, just different path structure
       .upload(fileName, file, {
-        cacheControl: '31536000',
+        cacheControl: String(IMAGE_CACHE_MAX_AGE),
         upsert: false,
+        contentType: file.type, // Explicitly set content type
       });
 
     if (error) throw error;
@@ -832,8 +917,8 @@ export const processOfferImages = async (
 export const generateQRCodeDataURL = async (text: string): Promise<string> => {
   try {
     return await QRCode.toDataURL(text, {
-      width: 300,
-      margin: 2,
+      width: QR_CODE_SIZE,
+      margin: QR_CODE_MARGIN,
       color: {
         dark: '#333333',
         light: '#FFFFFF',
