@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload } from 'lucide-react';
+import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus } from 'lucide-react';
+import { supabase, isDemoMode } from '@/lib/supabase';
 import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
@@ -36,6 +37,15 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [loadingOffers, setLoadingOffers] = useState(false);
   const [showDeleteOfferDialog, setShowDeleteOfferDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
+
+  // Add Partner modal state
+  const [openAddPartner, setOpenAddPartner] = useState(false);
+  const [businessName, setBusinessName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'OTHER'>('RESTAURANT');
+  const [description, setDescription] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadPartners();
@@ -69,10 +79,80 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(partner => partner.status === statusFilter);
+      filtered = filtered.filter(partner => (partner.status || '').toLowerCase() === statusFilter.toLowerCase());
     }
 
     setFilteredPartners(filtered);
+  };
+
+  const handleAddPartner = async () => {
+    try {
+      setSubmitting(true);
+      if (!businessName.trim() || !email.trim()) {
+        toast.error('Business name and email are required');
+        return;
+      }
+
+      // Check if user with this email already exists
+      const { data: exists, error: existsErr } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email.trim())
+        .limit(1)
+        .maybeSingle();
+      if (existsErr) throw existsErr;
+      if (exists) {
+        toast.warning('A user with this email already exists. Linking partner...');
+      }
+
+      let userId = exists?.id as string | undefined;
+      if (!userId) {
+        const { data: newUser, error: userErr } = await supabase
+          .from('users')
+          .insert({
+            email: email.trim(),
+            name: businessName.trim(),
+            phone: phone.trim() || null,
+            role: 'PARTNER',
+            status: 'ACTIVE',
+          })
+          .select()
+          .single();
+        if (userErr) throw userErr;
+        userId = newUser.id;
+      }
+
+      const { error: partnerErr } = await supabase.from('partners').insert({
+        user_id: userId,
+        business_name: businessName.trim(),
+        business_type: category,
+        phone: phone.trim() || null,
+        email: email.trim(),
+        status: 'APPROVED',
+        description: description.trim() || null,
+      });
+      if (partnerErr) throw partnerErr;
+
+      toast.success(`Partner "${businessName}" added successfully`);
+      setOpenAddPartner(false);
+      setBusinessName('');
+      setEmail('');
+      setPhone('');
+      setCategory('RESTAURANT');
+      setDescription('');
+      loadPartners();
+      onStatsUpdate();
+
+      // Optional invite (requires service role on server; skip in browser)
+      if (!isDemoMode) {
+        console.log('Consider sending invite via a server function or Supabase Admin API.');
+      }
+    } catch (error) {
+      console.error('Failed to add partner:', error);
+      toast.error('Failed to add partner');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (partner: Partner) => {
@@ -306,6 +386,13 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             </Select>
           </div>
 
+          {/* Actions */}
+          <div className="flex items-center justify-end mb-4">
+            <Button onClick={() => setOpenAddPartner(true)} className="bg-green-500 text-white hover:bg-green-600">
+              <Plus className="h-4 w-4 mr-2" /> Add Partner
+            </Button>
+          </div>
+
           {/* Partners Table */}
           <div className="rounded-md border">
             <Table>
@@ -402,6 +489,57 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Partner Modal */}
+      <Dialog open={openAddPartner} onOpenChange={setOpenAddPartner}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add New Partner</DialogTitle>
+            <DialogDescription>
+              Fill in partner details to register them manually.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Business Name</Label>
+              <Input value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="e.g. Partner Bakery" />
+            </div>
+            <div className="space-y-2">
+              <Label>Owner Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="owner@example.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Phone Number</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+995 5XX XXX XXX" />
+            </div>
+            <div className="space-y-2">
+              <Label>Business Type</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BAKERY">Bakery</SelectItem>
+                  <SelectItem value="RESTAURANT">Restaurant</SelectItem>
+                  <SelectItem value="CAFE">Cafe</SelectItem>
+                  <SelectItem value="GROCERY">Grocery</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Business Description (optional)</Label>
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe this business briefly" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenAddPartner(false)}>Cancel</Button>
+            <Button onClick={handleAddPartner} disabled={submitting} className="bg-green-600 text-white hover:bg-green-700">
+              {submitting ? 'Adding…' : 'Add Partner'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
