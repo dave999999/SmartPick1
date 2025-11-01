@@ -502,18 +502,18 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                               }`}
                               onClick={() => onOfferClick(offer)}
                             >
-                              {/* Background Image with 50% opacity */}
+                              {/* Background Image with 60% opacity */}
                               {offer.images && offer.images[0] && (
                                 <>
                                   <div
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: `url(${resolveOfferImageUrl(offer.images[0], offer.category)})`,
-                                      opacity: 0.3,
+                                      opacity: 0.6,
                                     }}
                                   />
                                   {/* White overlay for text readability */}
-                                  <div className="absolute inset-0 bg-white/60" />
+                                  <div className="absolute inset-0 bg-white/40" />
                                 </>
                               )}
 
