@@ -178,7 +178,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
               {offer.images && offer.images.length > 0 ? (
                 <div className="relative h-40 w-full overflow-hidden rounded-t-2xl">
                   <img
-                    src={resolveOfferImageUrl(offer.images[0])}
+                    src={resolveOfferImageUrl(offer.images[0], offer.category)}
                     alt={offer.title}
                     loading="lazy"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
@@ -283,3 +283,4 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
     </div>
   );
 }
+

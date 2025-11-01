@@ -142,7 +142,7 @@ export default function ReservationModal({
         {offer.images && offer.images.length > 0 && (
           <div className="relative h-64 w-full overflow-hidden rounded-lg -mt-6 -mx-6 mb-4">
             <img
-              src={resolveOfferImageUrl(offer.images[0])}
+              src={resolveOfferImageUrl(offer.images[0], offer.category)}
               alt={offer.title}
               className="w-full h-full object-cover"
               onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
@@ -312,3 +312,4 @@ export default function ReservationModal({
     </Dialog>
   );
 }
+

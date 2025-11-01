@@ -918,7 +918,7 @@ export const duplicateOffer = async (offerId: string, partnerId: string): Promis
   return data as Offer;
 };
 // Resolve an offer image URL that might be a bare filename or a full URL
-export const resolveOfferImageUrl = (url?: string): string => {
+export const resolveOfferImageUrl = (url?: string, category?: string): string => {
   if (!url) return '';
 
   const trimmed = url.trim();
@@ -929,6 +929,12 @@ export const resolveOfferImageUrl = (url?: string): string => {
   // Public assets served from the app (e.g. from /public/library/...)
   if (trimmed.startsWith('/')) return trimmed; // already root-relative
   if (trimmed.toLowerCase().startsWith('library/')) return `/${trimmed}`;
+  if (trimmed.toLowerCase().startsWith('public/library/')) return `/${trimmed.slice('public/'.length)}`;
+
+  // Bare filename coming from library selection (e.g., "xinkali.jpg")
+  if (!trimmed.includes('/') && category) {
+    return `/library/${category.toUpperCase()}/${trimmed}`;
+  }
 
   // Otherwise treat as Supabase Storage path (e.g., partners/... or offer-images/...)
   try {
