@@ -268,9 +268,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
     });
   };
 
-  const getTimeRemaining = (expiresAt: string) => {
+  const getTimeRemaining = (expiresAt?: string) => {
     const now = new Date();
-    const expires = new Date(expiresAt);
+    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const expires = new Date(target);
     const diff = expires.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -280,13 +281,24 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
     return `${minutes}m left`;
   };
 
-  const isExpiringSoon = (expiresAt: string) => {
-    const diff = new Date(expiresAt).getTime() - new Date().getTime();
+  const isExpiringSoon = (expiresAt?: string) => {
+    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const diff = new Date(target).getTime() - new Date().getTime();
     return diff > 0 && diff < 60 * 60 * 1000; // Less than 1 hour
   };
 
-  const isExpired = (expiresAt: string) => {
-    return new Date(expiresAt).getTime() <= new Date().getTime();
+  const isExpired = (expiresAt?: string) => {
+    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    return new Date(target).getTime() <= new Date().getTime();
+  };
+
+  // Unified expiry getter: prefer DB field, fallback to auto field, then default +6h
+  const getOfferExpiry = (offer: Offer): string => {
+    return (
+      (offer as any)?.expires_at ||
+      (offer as any)?.auto_expire_in ||
+      new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
+    );
   };
 
   // Helper function to get pickup times from offer
@@ -498,8 +510,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                       <div className="space-y-3">
                         {location.offers.map((offer) => {
                           const pickupTimes = getPickupTimes(offer);
-                          const expiringSoon = isExpiringSoon(offer.expires_at);
-                          const expired = isExpired(offer.expires_at);
+                          const expiry = getOfferExpiry(offer);
+                          const expiringSoon = isExpiringSoon(expiry);
+                          const expired = isExpired(expiry);
                           
                           return (
                             <div
@@ -555,7 +568,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                                 <div className={`text-xs font-bold drop-shadow ${
                                   expired ? 'text-gray-700' : expiringSoon ? 'text-orange-600' : 'text-coral-600'
                                 }`}>
-                                  {getTimeRemaining(offer.expires_at)}
+                                  {getTimeRemaining(expiry)}
                                 </div>
                               </div>
                             </div>
