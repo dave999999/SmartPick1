@@ -1,27 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
   <!-- Top bun -->
-  <path d="M6 14C6 10 9 7 16 7C23 7 26 10 26 14H6Z"
+  <path d="M6 13C6 10 9 7 16 7C23 7 26 10 26 13Z"
         fill="#00C896"
-        stroke="white"
+        stroke="#00C896"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <!-- Sesame seeds on top -->
+  <circle cx="11" cy="10" r="1" fill="white"/>
+  <circle cx="16" cy="9" r="1" fill="white"/>
+  <circle cx="21" cy="10" r="1" fill="white"/>
+  <!-- Lettuce layer -->
+  <rect x="6" y="13" width="20" height="2.5"
+        fill="#10B981"
+        rx="0.5"/>
+  <!-- Patty -->
+  <rect x="6" y="15.5" width="20" height="4"
+        fill="#00C896"
+        rx="0.5"/>
+  <!-- Bottom bun -->
+  <path d="M6 19.5H26V22C26 23.5 24.5 25 23 25H9C7.5 25 6 23.5 6 22V19.5Z"
+        fill="#00C896"
+        stroke="#00C896"
         stroke-width="2"
         stroke-linejoin="round"/>
-  <!-- Lettuce -->
-  <rect x="5" y="14" width="22" height="3"
-        fill="#10B981"
-        stroke="white"
-        stroke-width="1.5"/>
-  <!-- Patty -->
-  <rect x="5" y="17" width="22" height="4"
-        fill="#00C896"
-        stroke="white"
-        stroke-width="2"/>
-  <!-- Bottom bun -->
-  <path d="M5 21H27C27 23 26 25 24 25H8C6 25 5 23 5 21Z"
-        fill="#00C896"
-        stroke="white"
-        stroke-width="2"/>
-  <!-- Sesame seeds -->
-  <circle cx="10" cy="11" r="1" fill="white"/>
-  <circle cx="16" cy="10" r="1" fill="white"/>
-  <circle cx="22" cy="11" r="1" fill="white"/>
 </svg>
