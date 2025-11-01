@@ -15,6 +15,7 @@ import {
   signOut,
   uploadImages,
   processOfferImages,
+  resolveOfferImageUrl,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import ImageLibraryModal from '@/components/ImageLibraryModal';
