@@ -1,26 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <!-- Glass bowl -->
-  <path d="M10 6V12C10 15 12 17 16 18V18"
-        stroke="#00C896"
-        stroke-width="2.5"
-        stroke-linecap="round"/>
-  <path d="M22 6V12C22 15 20 17 16 18V18"
-        stroke="#00C896"
-        stroke-width="2.5"
-        stroke-linecap="round"/>
-  <!-- Wine in glass -->
-  <path d="M10 6H22V11C22 13 20 15 16 15C12 15 10 13 10 11V6Z"
+  <!-- Glass bowl (filled) -->
+  <path d="M10 7H22V11C22 14 19 16 16 17V17C13 16 10 14 10 11V7Z"
         fill="#00C896"
-        stroke="white"
-        stroke-width="2"/>
-  <!-- Stem -->
-  <line x1="16" y1="18" x2="16" y2="24"
         stroke="#00C896"
-        stroke-width="2.5"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+  <!-- Wine liquid inside -->
+  <path d="M11 8H21V11C21 13 19 15 16 15.5C13 15 11 13 11 11V8Z"
+        fill="white"
+        opacity="0.3"/>
+  <!-- Stem -->
+  <line x1="16" y1="17" x2="16" y2="23"
+        stroke="#00C896"
+        stroke-width="2"
         stroke-linecap="round"/>
   <!-- Base -->
-  <line x1="12" y1="26" x2="20" y2="26"
+  <line x1="12" y1="25" x2="20" y2="25"
         stroke="#00C896"
-        stroke-width="3"
+        stroke-width="2.5"
         stroke-linecap="round"/>
 </svg>
