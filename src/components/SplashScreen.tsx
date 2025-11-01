@@ -1,35 +1,27 @@
 import { useState, useEffect } from 'react';
 
 export default function SplashScreen() {
+  // Show splash ONLY on first entry to the site in this tab (not on refresh or back/forward)
   const initialShouldShow = (() => {
-    if (typeof window === 'undefined') return true;
+    if (typeof window === 'undefined') return false;
+    // Detect navigation type with fallback for older browsers
+    let navType: string = 'navigate';
     try {
-      const nav = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined);
-      if (nav && nav.type === 'back_forward') return false;
+      const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      if (entry?.type) navType = entry.type as string;
     } catch {}
-    if ((window as any).__smartpickSplashShownThisLoad) return false;
+    if (navType === 'reload' || navType === 'back_forward') return false;
+    // Session gate: only once per tab session
+    const seen = sessionStorage.getItem('smartpick-splash-seen') === '1';
+    if (seen) return false;
+    sessionStorage.setItem('smartpick-splash-seen', '1');
     return true;
   })();
   const [isVisible, setIsVisible] = useState(initialShouldShow);
   const [isAnimatingOut, setIsAnimatingOut] = useState(false);
 
   useEffect(() => {
-    // Do not show when returning via Back/Forward cache (history navigation)
-    try {
-      const nav = (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined);
-      if (nav && nav.type === 'back_forward') {
-        setIsVisible(false);
-        return;
-      }
-    } catch {}
-
-    // Show splash once per full page load (initial visit or manual refresh).
-    // If navigating back to home within SPA, do not show again until a reload.
-    if (typeof window !== 'undefined' && (window as any).__smartpickSplashShownThisLoad) {
-      setIsVisible(false);
-      return;
-    }
-    (window as any).__smartpickSplashShownThisLoad = true;
+    if (!isVisible) return;
 
     // If the page is restored from bfcache, hide the splash immediately
     const onPageShow = (e: PageTransitionEvent) => {
@@ -63,7 +55,7 @@ export default function SplashScreen() {
       clearTimeout(hideTimer);
       window.removeEventListener('pageshow', onPageShow);
     };
-  }, []);
+  }, [isVisible]);
 
   if (!isVisible) {
     return null;
