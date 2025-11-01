@@ -57,6 +57,7 @@ export interface Partner {
   business_hours?: BusinessHours;
   status: PartnerStatus;
   images: string[];
+  approved_for_upload?: boolean;
   created_at: string;
   updated_at: string;
   // For backward compatibility with nested location structure

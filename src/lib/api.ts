@@ -724,12 +724,12 @@ export const uploadImages = async (files: File[], bucket: string): Promise<strin
   if (isDemoMode) {
     return [];
   }
-  
+
   const urls: string[] = [];
 
   for (const file of files) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${file.name.split('.').pop()}`;
-    
+
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
@@ -744,6 +744,82 @@ export const uploadImages = async (files: File[], bucket: string): Promise<strin
       .getPublicUrl(fileName);
 
     urls.push(publicUrl);
+  }
+
+  return urls;
+};
+
+/**
+ * Upload partner custom images to partner-specific directory
+ * @param files - Array of File objects to upload
+ * @param partnerId - Partner UUID
+ * @returns Array of public URLs
+ */
+export const uploadPartnerImages = async (files: File[], partnerId: string): Promise<string[]> => {
+  if (isDemoMode) {
+    return [];
+  }
+
+  const urls: string[] = [];
+
+  for (const file of files) {
+    const fileExt = file.name.split('.').pop();
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(7);
+    const fileName = `partners/${partnerId}/uploads/${timestamp}-${randomId}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from('offer-images') // Using the same bucket, just different path structure
+      .upload(fileName, file, {
+        cacheControl: '31536000',
+        upsert: false,
+      });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('offer-images')
+      .getPublicUrl(fileName);
+
+    urls.push(publicUrl);
+  }
+
+  return urls;
+};
+
+/**
+ * Process images for offer creation
+ * Handles both library image URLs (strings) and custom uploaded files
+ * @param images - Array of strings (URLs) or File objects
+ * @param partnerId - Partner UUID (required for custom uploads)
+ * @returns Array of image URLs
+ */
+export const processOfferImages = async (
+  images: (string | File)[],
+  partnerId: string
+): Promise<string[]> => {
+  if (isDemoMode) {
+    return [];
+  }
+
+  const urls: string[] = [];
+  const filesToUpload: File[] = [];
+
+  // Separate library URLs from files to upload
+  for (const image of images) {
+    if (typeof image === 'string') {
+      // It's already a URL from the library
+      urls.push(image);
+    } else {
+      // It's a File object that needs to be uploaded
+      filesToUpload.push(image);
+    }
+  }
+
+  // Upload custom files if any
+  if (filesToUpload.length > 0) {
+    const uploadedUrls = await uploadPartnerImages(filesToUpload, partnerId);
+    urls.push(...uploadedUrls);
   }
 
   return urls;
