@@ -495,43 +495,61 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                           const expired = isExpired(offer.expires_at);
                           
                           return (
-                            <div 
+                            <div
                               key={offer.id}
-                              className={`border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-all ${
-                                expired ? 'opacity-40' : expiringSoon ? 'border-orange-400 bg-orange-50' : ''
+                              className={`relative border rounded-lg p-3 hover:shadow-lg cursor-pointer transition-all overflow-hidden ${
+                                expired ? 'opacity-40' : expiringSoon ? 'border-orange-400' : ''
                               }`}
                               onClick={() => onOfferClick(offer)}
                             >
-                              <div className="flex items-start justify-between mb-2">
-                                <h4 className="font-semibold text-sm flex-1">{offer.title}</h4>
-                                <Badge className="ml-2 text-xs" style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}>
-                                  {offer.category}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-lg font-bold text-mint-600">
-                                  {offer.smart_price} GEL
-                                </span>
-                                <span className="text-xs text-gray-400 line-through">
-                                  {offer.original_price} GEL
-                                </span>
-                                <Badge variant="outline" className="text-xs ml-auto">
-                                  {offer.quantity_available} left
-                                </Badge>
-                              </div>
-                              
-                              {pickupTimes.start && pickupTimes.end && (
-                                <div className="text-xs text-gray-600 flex items-center gap-1 mb-1">
-                                  <Clock className="w-3 h-3" />
-                                  {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
-                                </div>
+                              {/* Background Image with 50% opacity */}
+                              {offer.images && offer.images[0] && (
+                                <>
+                                  <div
+                                    className="absolute inset-0 bg-cover bg-center"
+                                    style={{
+                                      backgroundImage: `url(${resolveOfferImageUrl(offer.images[0], offer.category)})`,
+                                      opacity: 0.3,
+                                    }}
+                                  />
+                                  {/* White overlay for text readability */}
+                                  <div className="absolute inset-0 bg-white/60" />
+                                </>
                               )}
-                              
-                              <div className={`text-xs font-medium ${
-                                expired ? 'text-gray-500' : expiringSoon ? 'text-orange-600' : 'text-coral-600'
-                              }`}>
-                                {getTimeRemaining(offer.expires_at)}
+
+                              {/* Content with relative positioning to appear above background */}
+                              <div className="relative z-10">
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-bold text-sm flex-1 text-gray-900 drop-shadow">{offer.title}</h4>
+                                  <Badge className="ml-2 text-xs shadow-sm" style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}>
+                                    {offer.category}
+                                  </Badge>
+                                </div>
+
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-lg font-bold text-[#00C896] drop-shadow">
+                                    {offer.smart_price} GEL
+                                  </span>
+                                  <span className="text-xs text-gray-600 line-through font-semibold">
+                                    {offer.original_price} GEL
+                                  </span>
+                                  <Badge variant="outline" className="text-xs ml-auto bg-white/80 border-gray-400 font-semibold">
+                                    {offer.quantity_available} left
+                                  </Badge>
+                                </div>
+
+                                {pickupTimes.start && pickupTimes.end && (
+                                  <div className="text-xs text-gray-700 font-medium flex items-center gap-1 mb-1 drop-shadow-sm">
+                                    <Clock className="w-3 h-3" />
+                                    {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
+                                  </div>
+                                )}
+
+                                <div className={`text-xs font-bold drop-shadow ${
+                                  expired ? 'text-gray-700' : expiringSoon ? 'text-orange-600' : 'text-coral-600'
+                                }`}>
+                                  {getTimeRemaining(offer.expires_at)}
+                                </div>
                               </div>
                             </div>
                           );
