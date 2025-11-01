@@ -60,11 +60,15 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(user => user.status === statusFilter);
+      filtered = filtered.filter(
+        (user) => (user.status || '').toLowerCase() === statusFilter.toLowerCase()
+      );
     }
 
     if (roleFilter !== 'all') {
-      filtered = filtered.filter(user => user.role === roleFilter);
+      filtered = filtered.filter(
+        (user) => (user.role || '').toLowerCase() === roleFilter.toLowerCase()
+      );
     }
 
     setFilteredUsers(filtered);
