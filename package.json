@@ -82,6 +82,7 @@
     "@types/node": "^22.5.5",
     "@types/react": "^19.1.11",
     "@types/react-dom": "^19.1.8",
+    "@vercel/node": "^5.5.3",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.9.0",

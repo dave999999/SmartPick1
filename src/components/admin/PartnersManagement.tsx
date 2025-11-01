@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload } from 'lucide-react';
 import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
@@ -505,6 +506,32 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                     })}
                   />
                 </div>
+              </div>
+
+              {/* Custom Image Upload Approval */}
+              <div className="flex items-center justify-between p-4 bg-[#F0FDF9] border border-[#DFF5ED] rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-lg shadow-sm">
+                    <Upload className="w-5 h-5 text-[#00C896]" />
+                  </div>
+                  <div>
+                    <Label htmlFor="approved_for_upload" className="text-base font-semibold cursor-pointer">
+                      Allow Custom Image Uploads
+                    </Label>
+                    <p className="text-sm text-gray-600">
+                      Enable this partner to upload custom product images instead of just using the image library
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="approved_for_upload"
+                  checked={editingPartner.approved_for_upload || false}
+                  onCheckedChange={(checked) => setEditingPartner({
+                    ...editingPartner,
+                    approved_for_upload: checked
+                  })}
+                  className="data-[state=checked]:bg-[#00C896]"
+                />
               </div>
             </div>
           )}

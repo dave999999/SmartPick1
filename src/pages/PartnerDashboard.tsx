@@ -14,7 +14,10 @@ import {
   getCurrentUser,
   signOut,
   uploadImages,
+  processOfferImages,
 } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import ImagePicker from '@/components/ImagePicker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -57,8 +60,9 @@ export default function PartnerDashboard() {
   const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -292,11 +296,14 @@ export default function PartnerDashboard() {
         pickupEnd.setHours(endHours, endMinutes, 0, 0);
       }
 
+      // Process images (both library URLs and custom uploads)
+      const processedImages = await processOfferImages(imageFiles, partner?.id || '');
+
       const offerData = {
         title,
         description,
         category: partner?.business_type || 'RESTAURANT',
-        images: imageFiles, // Pass File[] array, API will handle upload
+        images: processedImages, // Pass processed image URLs
         original_price: parseFloat(formData.get('original_price') as string),
         smart_price: parseFloat(formData.get('smart_price') as string),
         quantity_total: parseInt(formData.get('quantity') as string),
@@ -309,7 +316,28 @@ export default function PartnerDashboard() {
       console.log('Creating offer with data:', offerData);
 
       if (partner) {
-        await createOffer(offerData, partner.id);
+        // Create offer with already-processed image URLs
+        const { data, error } = await supabase
+          .from('offers')
+          .insert({
+            partner_id: partner.id,
+            title: offerData.title,
+            description: offerData.description,
+            category: offerData.category,
+            images: processedImages,
+            original_price: offerData.original_price,
+            smart_price: offerData.smart_price,
+            quantity_available: offerData.quantity_total,
+            quantity_total: offerData.quantity_total,
+            pickup_start: offerData.pickup_window.start.toISOString(),
+            pickup_end: offerData.pickup_window.end.toISOString(),
+            status: 'ACTIVE',
+            expires_at: offerData.pickup_window.end.toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
         toast.success('Offer created successfully!');
         setIsCreateDialogOpen(false);
         setImageFiles([]);
@@ -940,55 +968,18 @@ const generate24HourOptions = (): string[] => {
                       <p className="text-xs text-gray-500 mt-1">Category is automatically set based on your business type</p>
                     </div>
 
+                    {/* Image Picker with Library and Custom Upload */}
                     <div>
-                      <Label className="flex items-center gap-2 text-base font-semibold mb-2">
-                        <Upload className="w-4 h-4 text-[#4CC9A8]" />
-                        Images (Optional)
-                      </Label>
-                      <div
-                        className={`border-2 border-dashed rounded-xl p-6 text-center transition-all duration-300 ${
-                          isDragOver ? 'border-[#00C896] bg-[#F9FFFB] scale-105' : 'border-[#DFF5ED] hover:border-[#00C896]'
-                        }`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                      >
-                        <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 mb-2">Drag & drop images here, or click to browse</p>
-                        <Input 
-                          id="images" 
-                          type="file" 
-                          multiple 
-                          accept="image/*"
-                          onChange={handleImageChange}
-                          className="hidden"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => document.getElementById('images')?.click()}
-                          className="mt-2"
-                        >
-                          Choose Files
-                        </Button>
-                      </div>
-                      
-                      {imagePreviews.length > 0 && (
-                        <div className="grid grid-cols-3 gap-3 mt-4">
-                          {imagePreviews.map((preview, index) => (
-                            <div key={index} className="relative group">
-                              <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-lg" />
-                              <button
-                                type="button"
-                                onClick={() => removeImage(index)}
-                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <ImagePicker
+                        category={partner?.business_type || 'RESTAURANT'}
+                        onSelect={(imageUrl) => {
+                          // Handle both library URLs (strings) and custom files (File objects)
+                          setImageFiles([imageUrl]);
+                          setSelectedLibraryImage(typeof imageUrl === 'string' ? imageUrl : null);
+                        }}
+                        allowUpload={partner?.approved_for_upload || false}
+                        selectedImage={selectedLibraryImage}
+                      />
                     </div>
                 </div>
 
