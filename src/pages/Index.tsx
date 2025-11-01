@@ -118,8 +118,8 @@ export default function Index() {
             <img
               src="/icon1.png"
               alt="SmartPick icon"
-              className="h-9 w-9 sm:h-11 sm:w-11 object-contain"
-              style={{ minHeight: '32px' }}
+              className="h-12 w-12 sm:h-14 sm:w-14 object-contain"
+              style={{ minHeight: '40px' }}
             />
             <div className="leading-tight">
               <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
