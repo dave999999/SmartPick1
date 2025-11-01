@@ -126,18 +126,16 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   const [mapZoom, setMapZoom] = useState(13);
   const mapRef = useRef<L.Map | null>(null);
   const [listReady, setListReady] = useState(false);
-  const [tilesLoaded, setTilesLoaded] = useState(false);
-
-  // Detect preferred color scheme for tile selection
-  const prefersDark = typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const tileUrl = prefersDark
-    ? 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png'
-    : 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png';
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
+
+  // Detect dark mode preference for map tiles (using free CARTO tiles)
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tileUrl = prefersDark
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   // Create category icon using clear, optimized SVG icons
   const makeCategoryIcon = (
@@ -435,11 +433,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
       {/* Interactive Map - Reduced height for slider below */}
       {showMap && (
-        <div
-          id="map"
-          className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}
-          style={{ opacity: tilesLoaded ? 1 : 0, transition: 'opacity 0.8s ease-in-out' }}
-        >
+        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -451,15 +445,18 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
               mapRef.current.invalidateSize();
               setTimeout(() => mapRef.current && mapRef.current.invalidateSize(), 300);
               setListReady(true);
+
+              // Trigger fade-in animation after map loads
+              setTimeout(() => setMapLoaded(true), 200);
             }}
             ref={mapRef}
           >
             <MapController center={mapCenter} zoom={mapZoom} />
             <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
               url={tileUrl}
-              maxZoom={19}
-              attribution='&copy; OpenStreetMap &copy; Stadia Maps'
-              eventHandlers={{ load: () => setTilesLoaded(true) }}
+              subdomains="abcd"
+              maxZoom={20}
             />
             
             {/* User location marker */}
@@ -606,6 +603,11 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
       {/* Global marker styles */}
       <style>{`
+        /* Map fade-in animation */
+        .leaflet-container {
+          transition: opacity 0.8s ease-in-out;
+        }
+
         .smartpick-marker {
           cursor: pointer !important;
         }
