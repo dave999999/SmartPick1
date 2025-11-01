@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus } from 'lucide-react';
+import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus, Loader2 } from 'lucide-react';
 import { supabase, isDemoMode } from '@/lib/supabase';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
@@ -46,6 +48,10 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'OTHER'>('RESTAURANT');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [latitude, setLatitude] = useState<number>(41.7151);
+  const [longitude, setLongitude] = useState<number>(44.8271);
+  const [openTime, setOpenTime] = useState<string>('09:00');
+  const [closeTime, setCloseTime] = useState<string>('18:00');
 
   useEffect(() => {
     loadPartners();
@@ -88,8 +94,26 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const handleAddPartner = async () => {
     try {
       setSubmitting(true);
-      if (!businessName.trim() || !email.trim()) {
-        toast.error('Business name and email are required');
+      // Basic validation
+      if (!businessName.trim()) {
+        toast.error('Business name is required');
+        return;
+      }
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+      if (!emailOk) {
+        toast.error('Please enter a valid email');
+        return;
+      }
+      if (!/^\+995/.test(phone.trim())) {
+        toast.error('Phone must start with +995');
+        return;
+      }
+      if (!latitude || !longitude) {
+        toast.error('Please set the location on the map');
+        return;
+      }
+      if (!openTime || !closeTime) {
+        toast.error('Please provide opening and closing times');
         return;
       }
 
@@ -130,6 +154,9 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         email: email.trim(),
         status: 'APPROVED',
         description: description.trim() || null,
+        latitude,
+        longitude,
+        business_hours: { open: openTime, close: closeTime },
       });
       if (partnerErr) throw partnerErr;
 
@@ -140,6 +167,8 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setPhone('');
       setCategory('RESTAURANT');
       setDescription('');
+      setLatitude(41.7151); setLongitude(44.8271);
+      setOpenTime('09:00'); setCloseTime('18:00');
       loadPartners();
       onStatsUpdate();
 
@@ -531,11 +560,40 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <Label>Business Description (optional)</Label>
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe this business briefly" />
             </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <div className="rounded-md overflow-hidden border">
+                <MapContainer center={[latitude, longitude]} zoom={13} style={{ height: '200px', width: '100%' }}>
+                  <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <Marker
+                    position={[latitude, longitude]}
+                    draggable
+                    eventHandlers={{
+                      dragend: (e: any) => {
+                        const pos = e.target.getLatLng();
+                        setLatitude(pos.lat);
+                        setLongitude(pos.lng);
+                      },
+                    }}
+                  />
+                </MapContainer>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Open Time</Label>
+                <Input type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Close Time</Label>
+                <Input type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenAddPartner(false)}>Cancel</Button>
             <Button onClick={handleAddPartner} disabled={submitting} className="bg-green-600 text-white hover:bg-green-700">
-              {submitting ? 'Adding…' : 'Add Partner'}
+              {submitting ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Adding…</>) : 'Add Partner'}
             </Button>
           </DialogFooter>
         </DialogContent>
