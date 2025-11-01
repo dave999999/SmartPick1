@@ -130,66 +130,75 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
 
-  // Safe replacement for corrupted emoji-based icon generator
+  // Create category icon using mint-colored SVG icons
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const emojis: Record<string, string> = {
-      BAKERY: '🥐',
-      RESTAURANT: '🍽️',
-      CAFE: '☕',
-      GROCERY: '🛒',
+    const icons: Record<string, string> = {
+      BAKERY: '/icons/croissant.svg',
+      RESTAURANT: '/icons/plate.svg',
+      CAFE: '/icons/coffee.svg',
+      GROCERY: '/icons/basket.svg',
+      ALCOHOL: '/icons/wine.svg',
+      FAST_FOOD: '/icons/burger.svg',
     };
-    const emoji = emojis[category] || '📍';
-    const scale = isHighlighted ? 1.2 : 1;
-    const shadow = isHighlighted ? '0 4px 12px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.3)';
-    const background = isHighlighted ? '#2CB97A' : '#ffffff';
-    const textColor = isHighlighted ? '#ffffff' : '#2CB97A';
+    const iconUrl = icons[category] || '/icons/plate.svg';
+    const scale = isHighlighted ? 1.3 : 1;
+    const shadow = isHighlighted
+      ? '0 8px 20px rgba(0, 200, 150, 0.4)'
+      : '0 4px 12px rgba(0, 0, 0, 0.15)';
+    const background = isHighlighted
+      ? 'linear-gradient(135deg, #00C896 0%, #009B77 100%)'
+      : '#ffffff';
+    const borderColor = isHighlighted ? '#00C896' : '#ffffff';
+
     return L.divIcon({
       className: 'custom-marker',
       html: `
         <div style="
-          width: ${40 * scale}px;
-          height: ${40 * scale}px;
+          width: ${48 * scale}px;
+          height: ${48 * scale}px;
           border-radius: 50%;
           background: ${background};
-          border: 3px solid white;
+          border: 3px solid ${borderColor};
           box-shadow: ${shadow};
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: ${22 * scale}px;
-          color: ${textColor};
           transition: all 0.3s ease;
           transform: translateY(-4px);
           position: relative;
+          padding: ${8 * scale}px;
         ">
-          ${emoji}
+          <img src="${iconUrl}"
+               style="width: 100%; height: 100%; object-fit: contain; filter: ${isHighlighted ? 'brightness(0) invert(1)' : 'none'};"
+               alt="${category}" />
           ${count > 1 ? `
             <div style="
               position: absolute;
-              top: -6px;
-              right: -6px;
-              background-color: #EF4444;
+              top: -4px;
+              right: -4px;
+              background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
               color: white;
               border-radius: 50%;
-              width: 20px;
-              height: 20px;
+              width: ${22 * scale}px;
+              height: ${22 * scale}px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 11px;
+              font-size: ${11 * scale}px;
               font-weight: bold;
               border: 2px solid white;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             ">${count}</div>
           ` : ''}
         </div>
       `,
-      iconSize: [40 * scale, 40 * scale],
-      iconAnchor: [20 * scale, 40 * scale],
-      popupAnchor: [0, -40 * scale],
+      iconSize: [48 * scale, 48 * scale],
+      iconAnchor: [24 * scale, 48 * scale],
+      popupAnchor: [0, -48 * scale],
     });
   };
 
@@ -404,9 +413,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
         </div>
       </div>
 
-      {/* Interactive Map - mobile-first height */}
+      {/* Interactive Map - Reduced height for slider below */}
       {showMap && (
-        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[75vh] sm:h-[90vh] min-h-[420px]'} rounded-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}>
+        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -526,14 +535,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
           
           {/* Map Legend removed per request */}
           
-          {/* Floating Near Me button on mobile */}
+          {/* Floating Near Me button - Always visible */}
           {!isFullscreen && (
             <Button
               variant="default"
-              className="md:hidden fixed bottom-6 right-4 z-[1000] bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-300"
+              className="absolute bottom-6 right-6 z-[1000] bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-2xl hover:shadow-[0_8px_30px_rgba(0,200,150,0.4)] active:scale-95 transition-all duration-300 font-semibold flex items-center gap-2"
               onClick={handleNearMe}
             >
-              📍 Near Me
+              <Navigation className="w-5 h-5" />
+              <span>Near Me</span>
             </Button>
           )}
 
@@ -550,100 +560,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
         </div>
       )}
 
-      {/* Offers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(listReady ? displayOffers : []).map((offer) => {
-          const pickupTimes = getPickupTimes(offer);
-          const expiringSoon = isExpiringSoon(offer.expires_at);
-          const expired = isExpired(offer.expires_at);
-          
-          return (
-            <Card
-              key={offer.id}
-              className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
-                expired ? 'opacity-50' : ''
-              } ${expiringSoon ? 'border-2 border-orange-400' : ''}`}
-              onClick={() => handleOfferClickFromList(offer)}
-            >
-              {offer.images && offer.images.length > 0 && (
-                <div className="relative h-48 w-full overflow-hidden rounded-t-lg">
-                  <img
-                    src={resolveOfferImageUrl(offer.images[0])}
-                    alt={offer.title}
-                    loading="lazy"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-                  />
-                  <Badge 
-                    className="absolute top-2 right-2 hover:bg-opacity-90"
-                    style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}
-                  >
-                    {offer.category}
-                  </Badge>
-                  {expiringSoon && !expired && (
-                    <Badge className="absolute top-2 left-2 bg-orange-500 hover:bg-orange-600 animate-pulse">
-                      Ending Soon!
-                    </Badge>
-                  )}
-                  {expired && (
-                    <Badge className="absolute top-2 left-2 bg-gray-500">
-                      Expired
-                    </Badge>
-                  )}
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle className="text-lg">{offer.title}</CardTitle>
-                <CardDescription className="flex items-center gap-1 text-sm">
-                  <MapPin className="w-3 h-3" />
-                  {offer.partner?.business_name}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-2xl font-bold text-mint-600">
-                        {offer.smart_price} GEL
-                      </span>
-                      <span className="text-sm text-gray-400 line-through ml-2">
-                        {offer.original_price} GEL
-                      </span>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {offer.quantity_available} left
-                    </Badge>
-                  </div>
-                  {pickupTimes.start && pickupTimes.end && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>
-                        {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
-                      </span>
-                    </div>
-                  )}
-                  <div className={`text-xs font-medium ${
-                    expired ? 'text-gray-500' : expiringSoon ? 'text-orange-600' : 'text-coral-600'
-                  }`}>
-                    {getTimeRemaining(offer.expires_at)}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {displayOffers.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">
-            {userLocation 
-              ? 'No Smart Picks available within 5km of your location' 
-              : 'No Smart Picks available in this category'}
-          </p>
-          <p className="text-sm text-gray-400 mt-2">Check back soon for fresh offers!</p>
-        </div>
-      )}
+      {/* Offers Grid - Moved to RecentOffersSlider component */}
     </div>
   );
 }

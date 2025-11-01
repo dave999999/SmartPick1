@@ -11,6 +11,7 @@ import CategoryBar from '@/components/CategoryBar';
 import SplashScreen from '@/components/SplashScreen';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
+import RecentOffersSlider from '@/components/RecentOffersSlider';
 import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -289,9 +290,9 @@ export default function Index() {
       )}
 
       {/* Map-First Section: Offers Map/List */}
-      <section id="map-view" className="w-full"  style={{ minHeight: '85vh' }}>
+      <section id="map-view" className="w-full">
         {isLoading ? (
-              <div className="text-center py-12">
+          <div className="text-center py-12">
             <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#4CC9A8] mx-auto mb-4"></div>
             <p className="text-sm md:text-base text-gray-500">{t('browse.loading')}</p>
           </div>
@@ -302,11 +303,18 @@ export default function Index() {
             <p className="text-xs md:text-sm text-gray-400 mt-2">{t('browse.checkBack')}</p>
           </div>
         ) : (
-          <OfferMap
-            offers={offers}
-            onOfferClick={handleOfferClick}
-            selectedCategory={selectedCategory}
-          />
+          <>
+            <OfferMap
+              offers={offers}
+              onOfferClick={handleOfferClick}
+              selectedCategory={selectedCategory}
+            />
+            {/* Recently Added Offers Slider - Below Map */}
+            <RecentOffersSlider
+              offers={offers}
+              onOfferClick={handleOfferClick}
+            />
+          </>
         )}
       </section>
 
