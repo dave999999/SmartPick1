@@ -55,9 +55,10 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
     });
   };
 
-  const getTimeRemaining = (expiresAt: string) => {
+  const getTimeRemaining = (expiresAt?: string) => {
+    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
     const now = new Date();
-    const expires = new Date(expiresAt);
+    const expires = new Date(target);
     const diff = expires.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -67,8 +68,9 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
     return `${minutes}m left`;
   };
 
-  const isExpiringSoon = (expiresAt: string) => {
-    const diff = new Date(expiresAt).getTime() - new Date().getTime();
+  const isExpiringSoon = (expiresAt?: string) => {
+    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const diff = new Date(target).getTime() - new Date().getTime();
     return diff > 0 && diff < 60 * 60 * 1000; // Less than 1 hour
   };
 
@@ -166,7 +168,8 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
         >
           {recentOffers.map((offer) => {
           const pickupTimes = getPickupTimes(offer);
-          const expiringSoon = isExpiringSoon(offer.expires_at);
+          const expiry = (offer as any)?.expires_at || (offer as any)?.auto_expire_in || new Date(Date.now() + 6*60*60*1000).toISOString();
+          const expiringSoon = isExpiringSoon(expiry);
 
           return (
             <Card
@@ -242,7 +245,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
                     <span className={`text-xs font-medium ${
                       expiringSoon ? 'text-orange-600' : 'text-[#00C896]'
                     }`}>
-                      {getTimeRemaining(offer.expires_at)}
+                      {getTimeRemaining(expiry)}
                     </span>
                     <Badge variant="outline" className="text-xs border-[#E8F9F4]">
                       {offer.quantity_available} left

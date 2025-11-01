@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Index from './pages/Index';
 import PartnerDashboard from './pages/PartnerDashboard';
+import { ErrorBoundary } from 'react-error-boundary';
 import PartnerApplication from './pages/PartnerApplication';
 import ReservationDetail from './pages/ReservationDetail';
 import MyPicks from './pages/MyPicks';
@@ -22,7 +23,22 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/partner" element={<PartnerDashboard />} />
+          <Route
+            path="/partner"
+            element={
+              <ErrorBoundary
+                fallbackRender={({ error }) => (
+                  <div className="p-6 text-center">
+                    <h2 className="text-red-600 font-semibold">⚠️ Something went wrong</h2>
+                    <p className="text-gray-700">{error?.message}</p>
+                    <p className="text-sm text-gray-500">Component: Partner Dashboard</p>
+                  </div>
+                )}
+              >
+                <PartnerDashboard />
+              </ErrorBoundary>
+            }
+          />
           <Route path="/partner/apply" element={<PartnerApplication />} />
           <Route path="/my-picks" element={<MyPicks />} />
           <Route path="/reservation/:id" element={<ReservationDetail />} />
