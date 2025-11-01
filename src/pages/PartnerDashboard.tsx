@@ -297,8 +297,14 @@ export default function PartnerDashboard() {
         pickupEnd.setHours(endHours, endMinutes, 0, 0);
       }
 
+      // Debug: Check what we're starting with
+      console.log('🔍 DEBUG - imageFiles before processing:', imageFiles);
+
       // Process images (both library URLs and custom uploads)
       const processedImages = await processOfferImages(imageFiles, partner?.id || '');
+
+      // Debug: Check what we got after processing
+      console.log('🔍 DEBUG - processedImages after processing:', processedImages);
 
       const offerData = {
         title,
@@ -314,7 +320,7 @@ export default function PartnerDashboard() {
         },
       };
 
-      console.log('Creating offer with data:', offerData);
+      console.log('✅ Creating offer with data:', offerData);
 
       if (partner) {
         // Create offer with already-processed image URLs
@@ -990,6 +996,7 @@ const generate24HourOptions = (): string[] => {
                         <ImageLibraryModal
                           category={partner?.business_type || 'RESTAURANT'}
                           onSelect={(url) => {
+                            console.log('🖼️ Image selected from library:', url);
                             setSelectedLibraryImage(url);
                             setImageFiles([url]);
                           }}
