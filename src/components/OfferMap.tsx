@@ -131,11 +131,8 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
 
-  // Detect dark mode preference for map tiles (using free CARTO tiles)
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const tileUrl = prefersDark
-    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  // Use bright, modern CARTO Voyager style (like Glovo/Wolt)
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
   // Create category icon using clear, optimized SVG icons
   const makeCategoryIcon = (
