@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ✅ Live Supabase configuration
-const supabaseUrl = 'https://***REMOVED_PROJECT_ID***.supabase.co';
-const supabaseAnonKey =
-  '***REMOVED_ANON_KEY_2***';
+// Read Supabase configuration from Vite env variables
+// Set these in Vercel project settings as Environment Variables
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-// 🔒 If these are missing, fallback to demo mode
+// If missing, run in demo mode (no network calls)
 const DEMO_MODE = !supabaseUrl || !supabaseAnonKey;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -20,7 +20,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'Content-Type': 'application/json',
     },
   },
@@ -34,7 +34,7 @@ export const signInWithEmail = async (email: string, password: string) => {
     return {
       data: null,
       error: new Error(
-        'Demo mode: Supabase not configured. Please check your environment variables.'
+        'Demo mode: Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
       ),
     };
   }
@@ -55,7 +55,7 @@ export const signUpWithEmail = async (
     return {
       data: null,
       error: new Error(
-        'Demo mode: Supabase not configured. Please check your environment variables.'
+        'Demo mode: Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
       ),
     };
   }
@@ -77,7 +77,7 @@ export const signInWithGoogle = async () => {
     return {
       data: null,
       error: new Error(
-        'Demo mode: Supabase not configured. Please check your environment variables.'
+        'Demo mode: Supabase not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
       ),
     };
   }
@@ -102,6 +102,10 @@ export const getCurrentUser = async () => {
     return { user: null, error: null };
   }
 
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
   return { user, error };
 };
+
