@@ -74,11 +74,15 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     }
 
     if (statusFilter !== 'all') {
-      filtered = filtered.filter(offer => getDerivedStatus(offer) === statusFilter);
+      filtered = filtered.filter(
+        (offer) => getDerivedStatus(offer)?.toLowerCase() === statusFilter.toLowerCase()
+      );
     }
 
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(offer => offer.category === categoryFilter);
+      filtered = filtered.filter(
+        (offer) => (offer.category || '').toLowerCase() === categoryFilter.toLowerCase()
+      );
     }
 
     setFilteredOffers(filtered);
