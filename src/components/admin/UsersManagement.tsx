@@ -148,7 +148,10 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
   };
 
   const getRoleBadge = (role: string) => {
-    switch (role) {
+    // Normalize role to lowercase for consistent badge display
+    const normalizedRole = role?.toLowerCase();
+
+    switch (normalizedRole) {
       case 'admin':
         return <Badge className="bg-purple-100 text-purple-800">Admin</Badge>;
       case 'customer':
