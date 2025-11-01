@@ -521,7 +521,6 @@ export default function PartnerApplication() {
           open: formData.opening_hours,
           close: formData.closing_hours
         },
-        open_24h: open24h,
         address: formData.address || '',
         city: formData.city || 'Tbilisi',
         latitude: formData.latitude || 0,
@@ -530,8 +529,7 @@ export default function PartnerApplication() {
         email: formData.email || '',
         telegram: formData.telegram || '',
         whatsapp: formData.whatsapp || '',
-        logo_url: '',
-        pickup_notes: formData.pickup_notes || '',
+        images: [],
         status: 'PENDING',
       };
 
