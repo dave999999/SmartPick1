@@ -581,9 +581,35 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
               );
             })}
           </MapContainer>
-          
-          {/* Map Legend removed per request */}
-          
+
+          {/* Map Legend - Top Right Corner */}
+          {!isFullscreen && (
+            <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3 max-w-[200px]">
+              <h3 className="text-xs font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Categories</h3>
+              <div className="space-y-2">
+                {[
+                  { category: 'BAKERY', label: 'Bakery', icon: 'croissant.svg' },
+                  { category: 'RESTAURANT', label: 'Restaurant', icon: 'plate-fork-knife.svg' },
+                  { category: 'CAFE', label: 'Café', icon: 'coffee-cup.svg' },
+                  { category: 'GROCERY', label: 'Grocery', icon: 'shopping-basket.svg' },
+                  { category: 'FAST_FOOD', label: 'Fast Food', icon: 'burger.svg' },
+                  { category: 'ALCOHOL', label: 'Alcohol', icon: 'wine-glass.svg' },
+                ].map(({ category, label, icon }) => (
+                  <div key={category} className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] flex items-center justify-center flex-shrink-0">
+                      <img
+                        src={`/icons/categories/${icon}`}
+                        alt={label}
+                        className="w-4 h-4 filter brightness-0 invert"
+                      />
+                    </div>
+                    <span className="text-xs text-gray-700 font-medium">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Floating Near Me button - Always visible */}
           {!isFullscreen && (
             <Button
