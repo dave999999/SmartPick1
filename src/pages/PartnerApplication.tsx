@@ -698,7 +698,7 @@ export default function PartnerApplication() {
               <div>
                 <CardTitle className="text-3xl">Become a SmartPick Partner</CardTitle>
                 <CardDescription className="text-base mt-1">
-                  Join our platform to reduce food waste and reach more customers
+                  Join our platform to reach more customers with smart-time offers
                 </CardDescription>
               </div>
             </div>

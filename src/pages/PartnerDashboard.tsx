@@ -1413,7 +1413,7 @@ const generate24HourOptions = (): string[] => {
               <div className="text-center py-8 md:py-12">
                 <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2 text-sm md:text-base">You'll be able to create and manage offers once approved</p>
-                <p className="text-xs md:text-sm text-gray-400">Start reducing food waste by offering Smart-Time deals to customers</p>
+                <p className="text-xs md:text-sm text-gray-400">Create smart-time offers and reach more customers</p>
               </div>
             ) : offers.length === 0 ? (
               <div className="text-center py-8 md:py-12">
