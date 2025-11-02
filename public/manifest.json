@@ -1,7 +1,7 @@
 {
-  "name": "SmartPick - Reduce Food Waste",
+  "name": "SmartPick - Smart Choice Every Day",
   "short_name": "SmartPick",
-  "description": "Save money and reduce food waste by reserving surplus food from local businesses",
+  "description": "Save money with smart-time offers from local businesses. Fresh picks at the perfect time.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
