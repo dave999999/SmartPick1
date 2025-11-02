@@ -1,20 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <!-- Basket body -->
-  <path d="M7 12H25L23 24C23 25 22 26 21 26H11C10 26 9 25 9 24L7 12Z"
+  <!-- Bold shopping bag body -->
+  <path d="M8 13H24L23 24C23 25 22 26 21 26H11C10 26 9 25 9 24L8 13Z"
         fill="#00C896"
         stroke="#00C896"
-        stroke-width="2"
+        stroke-width="3"
         stroke-linecap="round"
         stroke-linejoin="round"/>
-  <!-- Basket handles -->
-  <path d="M11 12V9C11 7 13 5 16 5C19 5 21 7 21 9V12"
+
+  <!-- Bold handles -->
+  <path d="M12 13V10C12 8 14 6 16 6C18 6 20 8 20 10V13"
         stroke="#00C896"
-        stroke-width="2"
+        stroke-width="3"
         stroke-linecap="round"
         stroke-linejoin="round"
         fill="none"/>
-  <!-- Items in basket (dots) -->
-  <circle cx="13" cy="17" r="1.2" fill="white"/>
-  <circle cx="19" cy="17" r="1.2" fill="white"/>
-  <circle cx="16" cy="20" r="1.2" fill="white"/>
+
+  <!-- Simple items dots -->
+  <circle cx="13" cy="18" r="1.5" fill="white"/>
+  <circle cx="19" cy="18" r="1.5" fill="white"/>
+  <circle cx="16" cy="21" r="1.5" fill="white"/>
 </svg>
