@@ -561,8 +561,25 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       </Card>
 
       {/* Add Partner Modal */}
-      <Dialog open={openAddPartner} onOpenChange={setOpenAddPartner}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={openAddPartner} onOpenChange={(open) => {
+        setOpenAddPartner(open);
+        if (!open) {
+          // Reset all fields when closing
+          setBusinessName('');
+          setEmail('');
+          setPhone('');
+          setCategory('RESTAURANT');
+          setDescription('');
+          setLatitude(41.7151);
+          setLongitude(44.8271);
+          setOpenTime('09:00');
+          setCloseTime('18:00');
+          setOpen24h(false);
+          setSetPasswordNow(false);
+          setPassword('');
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Partner</DialogTitle>
             <DialogDescription>
@@ -621,15 +638,55 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                 </MapContainer>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Open Time</Label>
-                <Input type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+            {/* 24-hour operation toggle */}
+            <div className="flex items-center justify-between space-x-2 p-3 bg-gray-50 rounded-lg">
+              <div className="space-y-0.5">
+                <Label className="text-sm font-medium">Open 24 Hours</Label>
+                <p className="text-xs text-gray-500">Toggle if this business operates 24/7</p>
               </div>
-              <div className="space-y-2">
-                <Label>Close Time</Label>
-                <Input type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+              <Switch checked={open24h} onCheckedChange={setOpen24h} />
+            </div>
+
+            {/* Operating hours - only show if not 24h */}
+            {!open24h && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Open Time</Label>
+                  <Input type="time" value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Close Time</Label>
+                  <Input type="time" value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+                </div>
               </div>
+            )}
+
+            {/* Password setting option */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center justify-between space-x-2 p-3 bg-blue-50 rounded-lg">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-medium">Set Password Now</Label>
+                  <p className="text-xs text-gray-500">Create login credentials immediately for the partner</p>
+                </div>
+                <Switch checked={setPasswordNow} onCheckedChange={setSetPasswordNow} />
+              </div>
+
+              {/* Password field - only show if setPasswordNow is enabled */}
+              {setPasswordNow && (
+                <div className="space-y-2 pl-3">
+                  <Label>Password (min. 8 characters)</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter secure password"
+                    className="border-blue-300"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Partner can use this password to login immediately. If not set, they'll receive an email to set their password.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
