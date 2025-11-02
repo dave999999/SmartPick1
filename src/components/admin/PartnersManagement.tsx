@@ -109,8 +109,12 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.error('Please enter a valid email');
         return;
       }
-      if (!/^\+995/.test(phone.trim())) {
-        toast.error('Phone must start with +995');
+      // Georgian mobile format: +995 5XX XXX XXX (9 digits after +995)
+      const phoneRegex = /^\+995[5-9]\d{8}$/;
+      const cleanPhone = phone.replace(/\s/g, ''); // Remove spaces for validation
+
+      if (!phoneRegex.test(cleanPhone)) {
+        toast.error('Invalid phone number. Format: +995 5XX XXX XXX (Georgian mobile)');
         return;
       }
       if (!address.trim()) {
@@ -134,6 +138,26 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       if (password && password.length < 6) {
         toast.error('Password must be at least 6 characters');
         return;
+      }
+
+      // Check for duplicate email first (both flows)
+      const { data: existingEmail, error: emailCheckErr } = await supabase
+        .from('users')
+        .select('id, role, email')
+        .eq('email', email.trim())
+        .maybeSingle();
+
+      if (emailCheckErr) {
+        console.error('Email check error:', emailCheckErr);
+      }
+
+      if (existingEmail) {
+        if (existingEmail.role === 'PARTNER') {
+          toast.error(`A partner with email "${email}" already exists`);
+          return;
+        }
+        // Allow converting USER to PARTNER
+        toast.info(`User "${email}" exists. Converting to partner...`);
       }
 
       // If password is provided, use secure server endpoint
@@ -235,9 +259,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       onStatsUpdate();
 
       // Optional invite (requires service role on server; skip in browser)
-      if (!isDemoMode) {
-        console.log('Consider sending invite via a server function or Supabase Admin API.');
-      }
+      // Future: Send partner invitation email
     } catch (error) {
       console.error('Failed to add partner:', error);
       toast.error('Failed to add partner');
@@ -284,6 +306,11 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       );
       const data = await response.json();
 
+      if (response.status === 404 || (data && data.error)) {
+        toast.warning('Address not found. Please adjust the map marker manually.');
+        return;
+      }
+
       if (data && data.lat && data.lon) {
         const lat = parseFloat(data.lat);
         const lng = parseFloat(data.lon);
@@ -293,7 +320,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       }
     } catch (error) {
       console.error('Forward geocoding error:', error);
-      // Don't show error - user can manually adjust the map
+      toast.error('Failed to locate address. Please use the map.');
     }
   };
 
@@ -737,7 +764,6 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <Select
                 value={category}
                 onValueChange={(value: string) => {
-                  console.log('Business type selected:', value);
                   setCategory(value as 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL');
                 }}
               >

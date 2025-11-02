@@ -132,7 +132,8 @@ export default function ReservationModal({
   const totalPrice = offer.smart_price * quantity;
   const maxQuantity = Math.min(3, offer.quantity_available); // Enforce 3-unit max
   const timeRemaining = getTimeRemaining(offer.expires_at);
-  const isExpiringSoon = offer.expires_at && 
+  const isExpired = offer.expires_at && new Date(offer.expires_at).getTime() <= Date.now();
+  const isExpiringSoon = offer.expires_at &&
     new Date(offer.expires_at).getTime() - new Date().getTime() < 60 * 60 * 1000; // Less than 1 hour
 
   return (
@@ -161,14 +162,27 @@ export default function ReservationModal({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Expired Offer Warning */}
+          {isExpired && (
+            <Alert variant="destructive" className="bg-red-50 border-red-200">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-900">
+                <strong>This offer has expired</strong>
+                <p className="mt-1">
+                  This offer is no longer available for reservation. Please browse other active offers.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Penalty Warning */}
-          {penaltyInfo?.isUnderPenalty && (
+          {!isExpired && penaltyInfo?.isUnderPenalty && (
             <Alert className="bg-red-50 border-red-200">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-900">
                 <strong>Account Penalty Active</strong>
                 <p className="mt-1">
-                  You missed {penaltyInfo.penaltyCount} pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}. 
+                  You missed {penaltyInfo.penaltyCount} pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}.
                   Reservations are blocked for: <strong>{countdown}</strong>
                 </p>
               </AlertDescription>
@@ -176,7 +190,7 @@ export default function ReservationModal({
           )}
 
           {/* Expiring Soon Warning */}
-          {isExpiringSoon && (
+          {!isExpired && isExpiringSoon && (
             <Alert className="bg-orange-50 border-orange-200">
               <Clock className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-900">
@@ -285,16 +299,19 @@ export default function ReservationModal({
             className="w-full bg-mint-600 hover:bg-mint-700 text-lg py-6"
             onClick={handleReserve}
             disabled={
-              isReserving || 
-              offer.quantity_available === 0 || 
+              isReserving ||
+              isExpired ||
+              offer.quantity_available === 0 ||
               penaltyInfo?.isUnderPenalty ||
               false
             }
           >
-            {isReserving 
-              ? 'Creating Reservation...' 
-              : penaltyInfo?.isUnderPenalty 
-              ? `Blocked - ${countdown}` 
+            {isReserving
+              ? 'Creating Reservation...'
+              : isExpired
+              ? 'Offer Expired'
+              : penaltyInfo?.isUnderPenalty
+              ? `Blocked - ${countdown}`
               : 'Reserve Now'}
           </Button>
 
