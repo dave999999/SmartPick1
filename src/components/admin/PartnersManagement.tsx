@@ -238,6 +238,39 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     }
   };
 
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      // Use Nominatim (OpenStreetMap) reverse geocoding - free and no API key required
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
+        {
+          headers: {
+            'User-Agent': 'SmartPick-Admin',
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data && data.display_name) {
+        // Format a nice address from the response
+        const addr = data.address || {};
+        const parts = [
+          addr.road || addr.street,
+          addr.house_number,
+          addr.suburb || addr.neighbourhood,
+          addr.city || addr.town || addr.village,
+        ].filter(Boolean);
+
+        const formattedAddress = parts.length > 0 ? parts.join(', ') : data.display_name;
+        setAddress(formattedAddress);
+        toast.success('Address auto-filled from location');
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      // Don't show error - address can be entered manually
+    }
+  };
+
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error('Geolocation is not supported by your browser');
@@ -246,12 +279,15 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
 
     setGettingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
         setLatitude(lat);
         setLongitude(lng);
         setGettingLocation(false);
         toast.success('Location set to your current position');
+
+        // Auto-fill address using reverse geocoding
+        await reverseGeocode(lat, lng);
       },
       (error) => {
         console.error('Error getting location:', error);
@@ -704,7 +740,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-gray-500">Drag the marker to adjust the location</p>
+              <p className="text-xs text-gray-500">Drag the marker to adjust location. Address will auto-fill! ✨</p>
               <div className="rounded-md overflow-hidden border">
                 <MapContainer center={[latitude, longitude]} zoom={13} style={{ height: '200px', width: '100%' }}>
                   <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -712,10 +748,13 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                     position={[latitude, longitude]}
                     draggable
                     eventHandlers={{
-                      dragend: (e: any) => {
+                      dragend: async (e: any) => {
                         const pos = e.target.getLatLng();
                         setLatitude(pos.lat);
                         setLongitude(pos.lng);
+
+                        // Auto-fill address when marker is dragged
+                        await reverseGeocode(pos.lat, pos.lng);
                       },
                     }}
                   />
