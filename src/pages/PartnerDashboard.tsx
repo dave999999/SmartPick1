@@ -220,6 +220,46 @@ export default function PartnerDashboard() {
       const title = (formData.get('title') as string)?.trim() || "Untitled Offer";
       const description = (formData.get('description') as string)?.trim() || "No description provided";
 
+      // Validate price
+      const MIN_PRICE = 0.50; // Minimum 50 tetri
+      const MAX_PRICE = 500.00; // Maximum ₾500
+      const originalPrice = parseFloat(formData.get('original_price') as string);
+      const smartPrice = parseFloat(formData.get('smart_price') as string);
+
+      if (!smartPrice || isNaN(smartPrice)) {
+        setFormErrors({ smart_price: 'Smart price is required' });
+        return;
+      }
+
+      if (smartPrice < MIN_PRICE) {
+        setFormErrors({ smart_price: `Minimum price is ₾${MIN_PRICE}` });
+        return;
+      }
+
+      if (smartPrice > MAX_PRICE) {
+        setFormErrors({ smart_price: `Maximum price is ₾${MAX_PRICE}` });
+        return;
+      }
+
+      if (originalPrice && originalPrice < smartPrice) {
+        setFormErrors({ original_price: 'Original price must be higher than smart price' });
+        return;
+      }
+
+      // Validate quantity
+      const MAX_QUANTITY = 100;
+      const quantity = parseInt(formData.get('quantity') as string);
+
+      if (!quantity || quantity <= 0) {
+        setFormErrors({ quantity_initial: 'Quantity is required' });
+        return;
+      }
+
+      if (quantity > MAX_QUANTITY) {
+        setFormErrors({ quantity_initial: `Maximum ${MAX_QUANTITY} items per offer` });
+        return;
+      }
+
       // Compute pickup times automatically based on business hours
       const now = new Date();
       let pickupStart: Date = now;
@@ -239,30 +279,22 @@ export default function PartnerDashboard() {
         }
       }
 
-      // Debug: Check what we're starting with
-      console.log('🔍 DEBUG - imageFiles before processing:', imageFiles);
-
       // Process images (both library URLs and custom uploads)
       const processedImages = await processOfferImages(imageFiles, partner?.id || '');
-
-      // Debug: Check what we got after processing
-      console.log('🔍 DEBUG - processedImages after processing:', processedImages);
 
       const offerData = {
         title,
         description,
         category: partner?.business_type || 'RESTAURANT',
         images: processedImages, // Pass processed image URLs
-        original_price: parseFloat(formData.get('original_price') as string),
-        smart_price: parseFloat(formData.get('smart_price') as string),
-        quantity_total: parseInt(formData.get('quantity') as string),
+        original_price: originalPrice,
+        smart_price: smartPrice,
+        quantity_total: quantity,
         pickup_window: {
           start: pickupStart,
           end: pickupEnd,
         },
       };
-
-      console.log('✅ Creating offer with data:', offerData);
 
       if (partner) {
         // Create offer with already-processed image URLs
@@ -340,6 +372,46 @@ export default function PartnerDashboard() {
     const formData = new FormData(e.currentTarget);
 
     try {
+      // Validate price
+      const MIN_PRICE = 0.50;
+      const MAX_PRICE = 500.00;
+      const originalPrice = parseFloat(formData.get('original_price') as string);
+      const smartPrice = parseFloat(formData.get('smart_price') as string);
+
+      if (!smartPrice || isNaN(smartPrice)) {
+        toast.error('Smart price is required');
+        return;
+      }
+
+      if (smartPrice < MIN_PRICE) {
+        toast.error(`Minimum price is ₾${MIN_PRICE}`);
+        return;
+      }
+
+      if (smartPrice > MAX_PRICE) {
+        toast.error(`Maximum price is ₾${MAX_PRICE}`);
+        return;
+      }
+
+      if (originalPrice && originalPrice < smartPrice) {
+        toast.error('Original price must be higher than smart price');
+        return;
+      }
+
+      // Validate quantity
+      const MAX_QUANTITY = 100;
+      const quantity = parseInt(formData.get('quantity') as string);
+
+      if (!quantity || quantity <= 0) {
+        toast.error('Quantity is required');
+        return;
+      }
+
+      if (quantity > MAX_QUANTITY) {
+        toast.error(`Maximum ${MAX_QUANTITY} items per offer`);
+        return;
+      }
+
       // Process images (both library URLs and custom uploads)
       const processedImages = await processOfferImages(imageFiles, partner?.id || '');
 
@@ -370,10 +442,10 @@ export default function PartnerDashboard() {
         description: formData.get('description') as string,
         category: partner?.business_type || editingOffer.category,
         images: imageUrls,
-        original_price: parseFloat(formData.get('original_price') as string),
-        smart_price: parseFloat(formData.get('smart_price') as string),
-        quantity_total: parseInt(formData.get('quantity') as string),
-        quantity_available: parseInt(formData.get('quantity') as string),
+        original_price: originalPrice,
+        smart_price: smartPrice,
+        quantity_total: quantity,
+        quantity_available: quantity,
         pickup_start: pickupStart.toISOString(),
         pickup_end: pickupEnd.toISOString(),
         expires_at: pickupEnd.toISOString(),
@@ -568,8 +640,39 @@ export default function PartnerDashboard() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+
+    // Validation constants
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const MAX_IMAGES = 5;
+
+    // Check total image count
+    if (imageFiles.length + files.length > MAX_IMAGES) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed per offer`);
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    // Validate each file
+    for (const file of files) {
+      // Check file type
+      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+        toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
+        e.target.value = '';
+        return;
+      }
+
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
+        e.target.value = '';
+        return;
+      }
+    }
+
     setImageFiles(files);
-    
+
     // Create previews
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
@@ -587,10 +690,38 @@ export default function PartnerDashboard() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
+    // Validation constants
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const MAX_IMAGES = 5;
+
     const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+
+    // Check total image count
+    if (imageFiles.length + files.length > MAX_IMAGES) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed per offer`);
+      return;
+    }
+
+    // Validate each file
+    for (const file of files) {
+      // Check file type
+      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+        toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
+        return;
+      }
+
+      // Check file size
+      if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
+        return;
+      }
+    }
+
     setImageFiles(files);
-    
+
     const previews = files.map(file => URL.createObjectURL(file));
     setImagePreviews(previews);
   };
@@ -944,7 +1075,6 @@ const generate24HourOptions = (): string[] => {
                         <ImageLibraryModal
                           category={partner?.business_type || 'RESTAURANT'}
                           onSelect={(url) => {
-                            console.log('🖼️ Image selected from library:', url);
                             setSelectedLibraryImage(url);
                             setImageFiles([url]);
                           }}
@@ -1655,7 +1785,6 @@ const generate24HourOptions = (): string[] => {
                   <ImageLibraryModal
                     category={partner?.business_type || 'RESTAURANT'}
                     onSelect={(url) => {
-                      console.log('🖼️ Image selected from library for edit:', url);
                       setSelectedLibraryImage(url);
                       setImageFiles([url]);
                     }}
@@ -1675,10 +1804,29 @@ const generate24HourOptions = (): string[] => {
                       accept="image/*"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          setImageFiles([file]);
-                          setSelectedLibraryImage(null);
+                        if (!file) return;
+
+                        // Validation constants
+                        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
+                        const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
+                        // Check file type
+                        if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
+                          toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
+                          e.target.value = '';
+                          return;
                         }
+
+                        // Check file size
+                        if (file.size > MAX_FILE_SIZE) {
+                          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                          toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
+                          e.target.value = '';
+                          return;
+                        }
+
+                        setImageFiles([file]);
+                        setSelectedLibraryImage(null);
                       }}
                       className="mt-1"
                     />

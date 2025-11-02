@@ -64,8 +64,6 @@ export default function Index() {
     try {
       setIsLoading(true);
       const data = await getActiveOffers();
-      console.log('Loaded offers:', data);
-      console.log('Offers with partner data:', data.filter(o => o.partner).length);
       setOffers(data);
     } catch (error) {
       console.error('Error loading offers:', error);
