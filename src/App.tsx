@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ReserveOffer from './pages/ReserveOffer';
 import NotFound from './pages/NotFound';
 import { InstallPWA } from './components/InstallPWA';
+import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import 'leaflet/dist/leaflet.css';
 
 const queryClient = new QueryClient();
@@ -48,8 +49,9 @@ const App = () => (
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-        {/* PWA Install Prompt */}
+        {/* PWA Install Prompts */}
         <InstallPWA />
+        <IOSInstallPrompt />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
