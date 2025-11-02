@@ -240,14 +240,9 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
 
   const reverseGeocode = async (lat: number, lng: number) => {
     try {
-      // Use Nominatim (OpenStreetMap) reverse geocoding - free and no API key required
+      // Use our backend proxy to avoid CORS issues
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'SmartPick-Admin',
-          },
-        }
+        `/api/geocode/reverse?lat=${lat}&lon=${lng}`
       );
       const data = await response.json();
 
