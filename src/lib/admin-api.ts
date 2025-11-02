@@ -265,6 +265,50 @@ export const enableUser = async (userId: string) => {
   return updateUser(userId, { status: 'ACTIVE' });
 };
 
+// Banned Users Management
+export const getBannedUsers = async () => {
+  if (isDemoMode) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('status', 'BANNED')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Admin API: Error fetching banned users:', error);
+    return [];
+  }
+};
+
+export const unbanUser = async (userId: string) => {
+  if (isDemoMode) {
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('users')
+      .update({
+        status: 'ACTIVE',
+        penalty_count: 0,
+        penalty_until: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Admin API: Error unbanning user:', error);
+    throw error;
+  }
+};
+
 // Offers Management
 export const getAllOffers = async () => {
   if (isDemoMode) {

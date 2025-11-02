@@ -10,24 +10,24 @@
 /** Maximum number of items a user can reserve per offer */
 export const MAX_RESERVATION_QUANTITY = 3;
 
-/** Maximum active reservations a user can have at once */
-export const MAX_ACTIVE_RESERVATIONS = 10;
+/** Maximum active reservations a user can have at once (1 = only one at a time) */
+export const MAX_ACTIVE_RESERVATIONS = 1;
 
 // ============================================================================
 // PENALTY SYSTEM
 // ============================================================================
 
-/** First penalty duration in hours */
-export const PENALTY_FIRST_OFFENSE_HOURS = 24;
+/** First penalty duration in hours (30 minutes) */
+export const PENALTY_FIRST_OFFENSE_HOURS = 0.5; // 30 minutes
 
-/** Second penalty duration in hours */
-export const PENALTY_SECOND_OFFENSE_HOURS = 48;
+/** Second penalty duration in hours (1 hour) */
+export const PENALTY_SECOND_OFFENSE_HOURS = 1; // 1 hour
 
-/** Third penalty duration in hours */
-export const PENALTY_THIRD_OFFENSE_HOURS = 72;
+/** Third offense results in permanent ban - not a time penalty */
+export const PENALTY_THIRD_OFFENSE_HOURS = 0; // User gets banned instead
 
-/** Fourth and subsequent penalty duration in hours */
-export const PENALTY_REPEAT_OFFENSE_HOURS = 168; // 1 week
+/** Fourth and subsequent - not used (user is banned after 3rd) */
+export const PENALTY_REPEAT_OFFENSE_HOURS = 0;
 
 // ============================================================================
 // FILE UPLOAD CONSTRAINTS
