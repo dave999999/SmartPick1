@@ -4,6 +4,7 @@ import { mockOffers, mockPartners } from './mockData';
 import QRCode from 'qrcode';
 import {
   MAX_RESERVATION_QUANTITY,
+  MAX_ACTIVE_RESERVATIONS,
   PENALTY_FIRST_OFFENSE_HOURS,
   PENALTY_SECOND_OFFENSE_HOURS,
   PENALTY_THIRD_OFFENSE_HOURS,
@@ -160,16 +161,26 @@ export const applyPenalty = async (userId: string): Promise<void> => {
     const currentCount = user?.penalty_count || 0;
     const newCount = currentCount + 1;
 
-    // Determine penalty duration based on offense count
+    // Third offense = permanent ban
+    if (newCount >= 3) {
+      await supabase
+        .from('users')
+        .update({
+          penalty_count: newCount,
+          status: 'BANNED',
+          penalty_until: null, // No time limit - permanent ban
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+      return;
+    }
+
+    // First and second offense = temporary penalty
     let penaltyHours = 0;
     if (newCount === 1) {
-      penaltyHours = PENALTY_FIRST_OFFENSE_HOURS;
+      penaltyHours = PENALTY_FIRST_OFFENSE_HOURS; // 0.5 hours = 30 min
     } else if (newCount === 2) {
-      penaltyHours = PENALTY_SECOND_OFFENSE_HOURS;
-    } else if (newCount === 3) {
-      penaltyHours = PENALTY_THIRD_OFFENSE_HOURS;
-    } else {
-      penaltyHours = PENALTY_REPEAT_OFFENSE_HOURS;
+      penaltyHours = PENALTY_SECOND_OFFENSE_HOURS; // 1 hour
     }
 
     const penaltyUntil = new Date();
@@ -197,6 +208,7 @@ export const clearPenalty = async (userId: string): Promise<void> => {
       .update({
         penalty_count: 0,
         penalty_until: null,
+        status: 'ACTIVE', // Remove ban status
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId);
@@ -342,10 +354,41 @@ export const createReservation = async (
     throw new Error('Demo mode: Please configure Supabase to create reservations');
   }
 
+  // Check if user is banned
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('status')
+    .eq('id', customerId)
+    .single();
+
+  if (userError) {
+    throw new Error('Failed to verify user status');
+  }
+
+  if (userData?.status === 'BANNED') {
+    throw new Error('Your account has been banned due to repeated no-shows. Please contact support.');
+  }
+
   // Check penalty status
   const penaltyInfo = await checkUserPenalty(customerId);
   if (penaltyInfo.isUnderPenalty) {
     throw new Error(`You are currently under penalty until ${penaltyInfo.penaltyUntil?.toLocaleString()}. Remaining time: ${penaltyInfo.remainingTime}`);
+  }
+
+  // Check active reservations limit (only 1 active reservation allowed)
+  const { data: activeReservations, error: activeError } = await supabase
+    .from('reservations')
+    .select('id')
+    .eq('customer_id', customerId)
+    .eq('status', 'PENDING')
+    .limit(MAX_ACTIVE_RESERVATIONS + 1);
+
+  if (activeError) {
+    throw new Error('Failed to check active reservations');
+  }
+
+  if (activeReservations && activeReservations.length >= MAX_ACTIVE_RESERVATIONS) {
+    throw new Error(`You can only have ${MAX_ACTIVE_RESERVATIONS} active reservation at a time. Please pick up your current reservation before making a new one.`);
   }
 
   // Enforce maximum quantity limit
