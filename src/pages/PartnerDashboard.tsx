@@ -847,7 +847,7 @@ const generate24HourOptions = (): string[] => {
               setUseBusinessHours(false);
               setPickupStartSlot('');
               setPickupEndSlot('');
-              setAutoExpire12h(true);
+              setAutoExpire6h(true);
             }
           }}>
             <DialogTrigger asChild>
@@ -1021,16 +1021,16 @@ const generate24HourOptions = (): string[] => {
                     {/* 24-Hour Business Auto-Expire Checkbox */}
                     {is24HourBusiness && (
                       <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <Checkbox 
-                          id="auto_expire_12h" 
-                          checked={autoExpire12h}
+                        <Checkbox
+                          id="auto_expire_6h"
+                          checked={autoExpire6h}
                           onCheckedChange={(checked) => {
-                            setAutoExpire12h(checked as boolean);
+                            setAutoExpire6h(checked as boolean);
                             setFormErrors({});
                           }}
                         />
-                        <Label htmlFor="auto_expire_12h" className="text-sm cursor-pointer">
-                          This offer expires automatically in 12 hours
+                        <Label htmlFor="auto_expire_6h" className="text-sm cursor-pointer">
+                          This offer expires automatically in 6 hours
                         </Label>
                       </div>
                     )}
