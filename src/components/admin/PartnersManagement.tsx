@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus, Loader2 } from 'lucide-react';
+import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus, Loader2, Navigation } from 'lucide-react';
 import { supabase, isDemoMode } from '@/lib/supabase';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -55,6 +55,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [openTime, setOpenTime] = useState<string>('09:00');
   const [closeTime, setCloseTime] = useState<string>('18:00');
   const [open24h, setOpen24h] = useState<boolean>(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
 
   useEffect(() => {
     loadPartners();
@@ -150,7 +151,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         setOpenAddPartner(false);
         setBusinessName(''); setEmail(''); setPhone(''); setCategory('RESTAURANT'); setDescription('');
         setLatitude(41.7151); setLongitude(44.8271); setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false);
-        setSetPasswordNow(false); setPassword('');
+        setSetPasswordNow(false); setPassword(''); setGettingLocation(false);
         loadPartners();
         onStatsUpdate();
         return;
@@ -209,7 +210,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
-      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false); setSetPasswordNow(false); setPassword('');
+      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false); setSetPasswordNow(false); setPassword(''); setGettingLocation(false);
       loadPartners();
       onStatsUpdate();
 
@@ -223,6 +224,43 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        setLatitude(lat);
+        setLongitude(lng);
+        setGettingLocation(false);
+        toast.success('Location set to your current position');
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        setGettingLocation(false);
+
+        let errorMessage = 'Unable to get your location';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = 'Location access denied. Please enable location permissions.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = 'Location information unavailable';
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = 'Location request timed out';
+        }
+        toast.error(errorMessage);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   const handleEdit = (partner: Partner) => {
@@ -577,6 +615,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           setOpen24h(false);
           setSetPasswordNow(false);
           setPassword('');
+          setGettingLocation(false);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -626,7 +665,30 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe this business briefly" />
             </div>
             <div className="space-y-2">
-              <Label>Location</Label>
+              <div className="flex items-center justify-between">
+                <Label>Location</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGetCurrentLocation}
+                  disabled={gettingLocation}
+                  className="text-xs"
+                >
+                  {gettingLocation ? (
+                    <>
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      Getting location...
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-3 h-3 mr-1" />
+                      Use Current Location
+                    </>
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500">Drag the marker to adjust the location</p>
               <div className="rounded-md overflow-hidden border">
                 <MapContainer center={[latitude, longitude]} zoom={13} style={{ height: '200px', width: '100%' }}>
                   <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -643,6 +705,9 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                   />
                 </MapContainer>
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                📍 Current: {latitude.toFixed(6)}, {longitude.toFixed(6)}
+              </p>
             </div>
             {/* 24-hour operation toggle */}
             <div className="flex items-center justify-between space-x-2 p-3 bg-gray-50 rounded-lg">
