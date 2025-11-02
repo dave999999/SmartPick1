@@ -49,6 +49,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [password, setPassword] = useState('');
+  const [address, setAddress] = useState('');
   const [latitude, setLatitude] = useState<number>(41.7151);
   const [longitude, setLongitude] = useState<number>(44.8271);
   const [openTime, setOpenTime] = useState<string>('09:00');
@@ -111,6 +112,10 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.error('Phone must start with +995');
         return;
       }
+      if (!address.trim()) {
+        toast.error('Business address is required');
+        return;
+      }
       if (!latitude || !longitude) {
         toast.error('Please set the location on the map');
         return;
@@ -139,6 +144,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             business_name: businessName.trim(),
             business_type: category,
             description: description.trim() || null,
+            address: address.trim(),
             latitude,
             longitude,
             open_24h: open24h,
@@ -153,7 +159,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         }
         toast.success(`Partner "${businessName}" added successfully with password!`);
         setOpenAddPartner(false);
-        setBusinessName(''); setEmail(''); setPhone(''); setCategory('RESTAURANT'); setDescription('');
+        setBusinessName(''); setEmail(''); setPhone(''); setAddress(''); setCategory('RESTAURANT'); setDescription('');
         setLatitude(41.7151); setLongitude(44.8271); setOpenTime('09:00'); setCloseTime('18:00');
         setOpen24h(false); setPassword(''); setGettingLocation(false);
         loadPartners();
@@ -197,6 +203,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         business_type: category,
         phone: phone.trim() || null,
         email: email.trim(),
+        address: address.trim(),
         status: 'APPROVED',
         description: description.trim() || null,
         latitude,
@@ -211,6 +218,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setBusinessName('');
       setEmail('');
       setPhone('');
+      setAddress('');
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
@@ -610,6 +618,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           setBusinessName('');
           setEmail('');
           setPhone('');
+          setAddress('');
           setCategory('RESTAURANT');
           setDescription('');
           setLatitude(41.7151);
@@ -640,6 +649,10 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             <div className="space-y-2">
               <Label>Phone Number</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+995 5XX XXX XXX" />
+            </div>
+            <div className="space-y-2">
+              <Label>Business Address</Label>
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 123 Rustaveli Ave, Tbilisi" />
             </div>
             <div className="space-y-2">
               <Label>Business Type</Label>
