@@ -509,6 +509,26 @@ export default function PartnerApplication() {
 
       console.log('User account created successfully:', authData.user.id);
 
+      // Verify session is established after signup
+      if (!authData.session) {
+        console.error('No session after signup - signing in manually');
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (signInError || !signInData.session) {
+          console.error('Failed to sign in after signup:', signInError);
+          toast.error('Account created but failed to sign in. Please sign in manually.');
+          return;
+        }
+
+        console.log('Successfully signed in after signup');
+      }
+
+      // Small delay to ensure session is fully propagated
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const partnerData = {
         user_id: authData.user.id,
         business_name: formData.business_name || '',
@@ -531,6 +551,15 @@ export default function PartnerApplication() {
       };
 
       console.log('Creating partner application with data:', partnerData);
+
+      // Verify we have an active session before inserting
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error('No active session found before partner insert');
+        toast.error('Authentication error. Please try signing in and applying again.');
+        return;
+      }
+      console.log('Active session confirmed, user ID:', session.user.id);
 
       try {
         const { data: partnerResult, error: partnerError } = await supabase
@@ -900,8 +929,10 @@ export default function PartnerApplication() {
                       scrollWheelZoom={true}
                     >
                       <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        subdomains="abcd"
+                        maxZoom={20}
                       />
                       <LocationMarker
                         position={markerPosition}

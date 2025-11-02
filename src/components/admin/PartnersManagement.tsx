@@ -811,7 +811,12 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <p className="text-xs text-gray-500">Drag the marker to adjust location. Address will auto-fill! ✨</p>
               <div className="rounded-md overflow-hidden border">
                 <MapContainer center={[latitude, longitude]} zoom={13} style={{ height: '200px', width: '100%' }}>
-                  <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                    subdomains="abcd"
+                    maxZoom={20}
+                  />
                   <Marker
                     position={[latitude, longitude]}
                     draggable

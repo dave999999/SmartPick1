@@ -10,6 +10,7 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { OffersManagement } from '@/components/admin/OffersManagement';
 import { PendingPartners } from '@/components/admin/PendingPartners';
 import { NewUsers } from '@/components/admin/NewUsers';
+import { BannedUsers } from '@/components/admin/BannedUsers';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -183,7 +184,7 @@ export default function AdminDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="partners">Partners</TabsTrigger>
             <TabsTrigger value="pending">
@@ -196,6 +197,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="new-users">New Users</TabsTrigger>
+            <TabsTrigger value="banned">Banned</TabsTrigger>
             <TabsTrigger value="offers">Offers</TabsTrigger>
           </TabsList>
 
@@ -338,6 +340,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="new-users">
             <NewUsers onStatsUpdate={loadStats} />
+          </TabsContent>
+
+          <TabsContent value="banned">
+            <BannedUsers />
           </TabsContent>
 
           <TabsContent value="offers">
