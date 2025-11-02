@@ -1,21 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
-  <!-- Bold wine glass bowl -->
-  <path d="M11 7H21V12C21 15 19 17 16 18C13 17 11 15 11 12V7Z"
+  <!-- Ultra-simple martini/cocktail glass -->
+
+  <!-- Glass bowl - simple triangle -->
+  <path d="M10 7L16 17L22 7H10Z"
         fill="#00C896"
         stroke="#00C896"
-        stroke-width="3"
-        stroke-linecap="round"
+        stroke-width="2.5"
         stroke-linejoin="round"/>
 
-  <!-- Bold stem -->
-  <line x1="16" y1="18" x2="16" y2="24"
-        stroke="#00C896"
-        stroke-width="3"
-        stroke-linecap="round"/>
-
-  <!-- Bold base -->
-  <line x1="12" y1="26" x2="20" y2="26"
+  <!-- Stem - bold line -->
+  <line x1="16" y1="17" x2="16" y2="24"
         stroke="#00C896"
         stroke-width="3.5"
+        stroke-linecap="round"/>
+
+  <!-- Base - bold line -->
+  <line x1="11" y1="26" x2="21" y2="26"
+        stroke="#00C896"
+        stroke-width="4"
         stroke-linecap="round"/>
 </svg>
