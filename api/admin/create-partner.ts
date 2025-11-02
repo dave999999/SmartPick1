@@ -24,6 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       business_type,
       description,
       address,
+      city,
       latitude,
       longitude,
       open_24h,
@@ -31,8 +32,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       close_time,
     } = req.body || {};
 
-    if (!email || !business_name || !business_type || !address) {
-      return res.status(400).json({ error: 'Missing required fields (email, business_name, business_type, address)' });
+    if (!email || !business_name || !business_type || !address || !city) {
+      return res.status(400).json({ error: 'Missing required fields (email, business_name, business_type, address, city)' });
     }
 
     // Create or get Auth user first
@@ -76,6 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       phone: phone || null,
       email,
       address,
+      city,
       status: 'APPROVED',
       description: description || null,
       latitude,

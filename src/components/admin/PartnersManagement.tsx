@@ -50,6 +50,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [submitting, setSubmitting] = useState(false);
   const [password, setPassword] = useState('');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
   const [latitude, setLatitude] = useState<number>(41.7151);
   const [longitude, setLongitude] = useState<number>(44.8271);
   const [openTime, setOpenTime] = useState<string>('09:00');
@@ -116,6 +117,10 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.error('Business address is required');
         return;
       }
+      if (!city.trim()) {
+        toast.error('City is required');
+        return;
+      }
       if (!latitude || !longitude) {
         toast.error('Please set the location on the map');
         return;
@@ -145,6 +150,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             business_type: category,
             description: description.trim() || null,
             address: address.trim(),
+            city: city.trim(),
             latitude,
             longitude,
             open_24h: open24h,
@@ -159,7 +165,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         }
         toast.success(`Partner "${businessName}" added successfully with password!`);
         setOpenAddPartner(false);
-        setBusinessName(''); setEmail(''); setPhone(''); setAddress(''); setCategory('RESTAURANT'); setDescription('');
+        setBusinessName(''); setEmail(''); setPhone(''); setAddress(''); setCity(''); setCategory('RESTAURANT'); setDescription('');
         setLatitude(41.7151); setLongitude(44.8271); setOpenTime('09:00'); setCloseTime('18:00');
         setOpen24h(false); setPassword(''); setGettingLocation(false);
         loadPartners();
@@ -204,6 +210,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         phone: phone.trim() || null,
         email: email.trim(),
         address: address.trim(),
+        city: city.trim(),
         status: 'APPROVED',
         description: description.trim() || null,
         latitude,
@@ -219,6 +226,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setEmail('');
       setPhone('');
       setAddress('');
+      setCity('');
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
@@ -249,15 +257,16 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       if (data && data.display_name) {
         // Format a nice address from the response
         const addr = data.address || {};
+        const cityName = addr.city || addr.town || addr.village || '';
         const parts = [
           addr.road || addr.street,
           addr.house_number,
           addr.suburb || addr.neighbourhood,
-          addr.city || addr.town || addr.village,
         ].filter(Boolean);
 
         const formattedAddress = parts.length > 0 ? parts.join(', ') : data.display_name;
         setAddress(formattedAddress);
+        setCity(cityName);
         toast.success('Address auto-filled from location');
       }
     } catch (error) {
@@ -265,6 +274,40 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       // Don't show error - address can be entered manually
     }
   };
+
+  const forwardGeocode = async (fullAddress: string) => {
+    if (!fullAddress.trim()) return;
+
+    try {
+      const response = await fetch(
+        `/api/geocode/forward?address=${encodeURIComponent(fullAddress)}`
+      );
+      const data = await response.json();
+
+      if (data && data.lat && data.lon) {
+        const lat = parseFloat(data.lat);
+        const lng = parseFloat(data.lon);
+        setLatitude(lat);
+        setLongitude(lng);
+        toast.success('Map updated to address location');
+      }
+    } catch (error) {
+      console.error('Forward geocoding error:', error);
+      // Don't show error - user can manually adjust the map
+    }
+  };
+
+  // Debounced forward geocoding when address or city changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (address.trim() && city.trim()) {
+        const fullAddress = `${address}, ${city}, Georgia`;
+        forwardGeocode(fullAddress);
+      }
+    }, 1500); // Wait 1.5 seconds after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [address, city]);
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -683,7 +726,11 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             </div>
             <div className="space-y-2">
               <Label>Business Address</Label>
-              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 123 Rustaveli Ave, Tbilisi" />
+              <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="e.g. 123 Rustaveli Ave" />
+            </div>
+            <div className="space-y-2">
+              <Label>City</Label>
+              <Input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Tbilisi" />
             </div>
             <div className="space-y-2">
               <Label>Business Type</Label>
