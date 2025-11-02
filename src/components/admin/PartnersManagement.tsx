@@ -601,17 +601,23 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             </div>
             <div className="space-y-2">
               <Label>Business Type</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose type" />
+              <Select
+                value={category}
+                onValueChange={(value: string) => {
+                  console.log('Business type selected:', value);
+                  setCategory(value as 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL');
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select business type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="BAKERY">Bakery</SelectItem>
-                  <SelectItem value="RESTAURANT">Restaurant</SelectItem>
-                  <SelectItem value="CAFE">Cafe</SelectItem>
-                  <SelectItem value="GROCERY">Grocery</SelectItem>
-                  <SelectItem value="FAST_FOOD">Fast Food</SelectItem>
-                  <SelectItem value="ALCOHOL">Alcohol</SelectItem>
+                <SelectContent position="popper" className="z-[9999]">
+                  <SelectItem value="BAKERY">🍞 Bakery</SelectItem>
+                  <SelectItem value="RESTAURANT">🍕 Restaurant</SelectItem>
+                  <SelectItem value="CAFE">☕ Café</SelectItem>
+                  <SelectItem value="GROCERY">🛒 Grocery</SelectItem>
+                  <SelectItem value="FAST_FOOD">🍔 Fast Food</SelectItem>
+                  <SelectItem value="ALCOHOL">🍸 Alcohol</SelectItem>
                 </SelectContent>
               </Select>
             </div>
