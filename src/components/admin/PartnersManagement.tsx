@@ -48,6 +48,8 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL'>('RESTAURANT');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [setPasswordNow, setSetPasswordNow] = useState(false);
+  const [password, setPassword] = useState('');
   const [latitude, setLatitude] = useState<number>(41.7151);
   const [longitude, setLongitude] = useState<number>(44.8271);
   const [openTime, setOpenTime] = useState<string>('09:00');
@@ -118,6 +120,43 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         return;
       }
 
+      // If admin wants to set a password now, prefer secure server endpoint
+      if (setPasswordNow) {
+        if (password && password.length < 8) {
+          toast.error('Password must be at least 8 characters');
+          return;
+        }
+        const res = await fetch('/api/admin/create-partner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password || undefined,
+            name: businessName.trim(),
+            phone: phone.trim() || null,
+            business_name: businessName.trim(),
+            business_type: category,
+            description: description.trim() || null,
+            latitude,
+            longitude,
+            open_24h: open24h,
+            open_time: openTime,
+            close_time: closeTime,
+          }),
+        });
+        const resp = await res.json();
+        if (!res.ok) throw new Error(resp?.error || 'Server error creating partner');
+        toast.success(`Partner "${businessName}" added successfully`);
+        setOpenAddPartner(false);
+        setBusinessName(''); setEmail(''); setPhone(''); setCategory('RESTAURANT'); setDescription('');
+        setLatitude(41.7151); setLongitude(44.8271); setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false);
+        setSetPasswordNow(false); setPassword('');
+        loadPartners();
+        onStatsUpdate();
+        return;
+      }
+
+      // Client-side fallback flow (no password set): create or link user row, then partner row
       // Check if user with this email already exists
       const { data: exists, error: existsErr } = await supabase
         .from('users')
@@ -170,7 +209,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
-      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false);
+      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false); setSetPasswordNow(false); setPassword('');
       loadPartners();
       onStatsUpdate();
 
