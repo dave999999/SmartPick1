@@ -48,8 +48,6 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL'>('RESTAURANT');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [setPasswordNow, setSetPasswordNow] = useState(false);
-  const [password, setPassword] = useState('');
   const [latitude, setLatitude] = useState<number>(41.7151);
   const [longitude, setLongitude] = useState<number>(44.8271);
   const [openTime, setOpenTime] = useState<string>('09:00');
@@ -121,43 +119,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         return;
       }
 
-      // If admin wants to set a password now, prefer secure server endpoint
-      if (setPasswordNow) {
-        if (password && password.length < 8) {
-          toast.error('Password must be at least 8 characters');
-          return;
-        }
-        const res = await fetch('/api/admin/create-partner', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            password: password || undefined,
-            name: businessName.trim(),
-            phone: phone.trim() || null,
-            business_name: businessName.trim(),
-            business_type: category,
-            description: description.trim() || null,
-            latitude,
-            longitude,
-            open_24h: open24h,
-            open_time: openTime,
-            close_time: closeTime,
-          }),
-        });
-        const resp = await res.json();
-        if (!res.ok) throw new Error(resp?.error || 'Server error creating partner');
-        toast.success(`Partner "${businessName}" added successfully`);
-        setOpenAddPartner(false);
-        setBusinessName(''); setEmail(''); setPhone(''); setCategory('RESTAURANT'); setDescription('');
-        setLatitude(41.7151); setLongitude(44.8271); setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false);
-        setSetPasswordNow(false); setPassword(''); setGettingLocation(false);
-        loadPartners();
-        onStatsUpdate();
-        return;
-      }
-
-      // Client-side fallback flow (no password set): create or link user row, then partner row
+      // Create user and partner records
       // Check if user with this email already exists
       const { data: exists, error: existsErr } = await supabase
         .from('users')
@@ -210,7 +172,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
-      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false); setSetPasswordNow(false); setPassword(''); setGettingLocation(false);
+      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false); setGettingLocation(false);
       loadPartners();
       onStatsUpdate();
 
@@ -613,8 +575,6 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           setOpenTime('09:00');
           setCloseTime('18:00');
           setOpen24h(false);
-          setSetPasswordNow(false);
-          setPassword('');
           setGettingLocation(false);
         }
       }}>
@@ -732,32 +692,19 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               </div>
             )}
 
-            {/* Password setting option */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex items-center justify-between space-x-2 p-3 bg-blue-50 rounded-lg">
-                <div className="space-y-0.5">
-                  <Label className="text-sm font-medium">Set Password Now</Label>
-                  <p className="text-xs text-gray-500">Create login credentials immediately for the partner</p>
+            {/* Info about password */}
+            <div className="border-t pt-4">
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-2">
+                  <div className="text-blue-600 mt-0.5">ℹ️</div>
+                  <div className="space-y-1">
+                    <Label className="text-sm font-medium text-blue-900">Partner Login Access</Label>
+                    <p className="text-xs text-blue-700">
+                      After creating the partner, they will be able to login using their email. You can share login credentials with them separately, or they can use the "Forgot Password" feature to set their password.
+                    </p>
+                  </div>
                 </div>
-                <Switch checked={setPasswordNow} onCheckedChange={setSetPasswordNow} />
               </div>
-
-              {/* Password field - only show if setPasswordNow is enabled */}
-              {setPasswordNow && (
-                <div className="space-y-2 pl-3">
-                  <Label>Password (min. 8 characters)</Label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter secure password"
-                    className="border-blue-300"
-                  />
-                  <p className="text-xs text-gray-500">
-                    Partner can use this password to login immediately. If not set, they'll receive an email to set their password.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
           <DialogFooter>
