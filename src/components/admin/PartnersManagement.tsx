@@ -45,13 +45,14 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [businessName, setBusinessName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'OTHER'>('RESTAURANT');
+  const [category, setCategory] = useState<'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL'>('RESTAURANT');
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [latitude, setLatitude] = useState<number>(41.7151);
   const [longitude, setLongitude] = useState<number>(44.8271);
   const [openTime, setOpenTime] = useState<string>('09:00');
   const [closeTime, setCloseTime] = useState<string>('18:00');
+  const [open24h, setOpen24h] = useState<boolean>(false);
 
   useEffect(() => {
     loadPartners();
@@ -112,7 +113,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.error('Please set the location on the map');
         return;
       }
-      if (!openTime || !closeTime) {
+      if (!open24h && (!openTime || !closeTime)) {
         toast.error('Please provide opening and closing times');
         return;
       }
@@ -156,7 +157,8 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         description: description.trim() || null,
         latitude,
         longitude,
-        business_hours: { open: openTime, close: closeTime },
+        open_24h: open24h,
+        business_hours: open24h ? null : { open: openTime, close: closeTime },
       });
       if (partnerErr) throw partnerErr;
 
@@ -168,7 +170,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setCategory('RESTAURANT');
       setDescription('');
       setLatitude(41.7151); setLongitude(44.8271);
-      setOpenTime('09:00'); setCloseTime('18:00');
+      setOpenTime('09:00'); setCloseTime('18:00'); setOpen24h(false);
       loadPartners();
       onStatsUpdate();
 
@@ -552,7 +554,8 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
                   <SelectItem value="RESTAURANT">Restaurant</SelectItem>
                   <SelectItem value="CAFE">Cafe</SelectItem>
                   <SelectItem value="GROCERY">Grocery</SelectItem>
-                  <SelectItem value="OTHER">Other</SelectItem>
+                  <SelectItem value="FAST_FOOD">Fast Food</SelectItem>
+                  <SelectItem value="ALCOHOL">Alcohol</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -871,3 +874,5 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     </div>
   );
 }
+
+
