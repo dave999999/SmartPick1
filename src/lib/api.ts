@@ -470,13 +470,17 @@ export const createReservation = async (
     const partnerAddress = reservation.partner?.address || 'Address not available';
 
     // Notify partner about new reservation
-    notifyPartnerNewReservation(
-      reservation.partner_id,
-      customerName,
-      offerTitle,
-      quantity,
-      pickupBy
-    ).catch(err => console.error('Failed to send partner notification:', err));
+    // Note: notification_preferences uses user_id, not partner_id
+    const partnerUserId = reservation.partner?.user_id;
+    if (partnerUserId) {
+      notifyPartnerNewReservation(
+        partnerUserId,
+        customerName,
+        offerTitle,
+        quantity,
+        pickupBy
+      ).catch(err => console.error('Failed to send partner notification:', err));
+    }
 
     // Notify customer about reservation confirmation
     notifyCustomerReservationConfirmed(
@@ -568,7 +572,8 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
       customer_id,
       partner_id,
       customer:users(name),
-      offer:offers(title)
+      offer:offers(title),
+      partner:partners(user_id)
     `)
     .eq('id', reservationId)
     .single();
@@ -592,12 +597,14 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
   if (error) throw error;
 
   // Send pickup notification to partner (don't block on this)
-  if (reservation.partner_id && reservation.customer && reservation.offer) {
+  // Note: notification_preferences uses user_id, not partner_id
+  const partnerUserId = reservation.partner?.user_id;
+  if (partnerUserId && reservation.customer && reservation.offer) {
     const customerName = reservation.customer.name || 'Customer';
     const offerTitle = reservation.offer.title || 'Offer';
 
     notifyPartnerPickupComplete(
-      reservation.partner_id,
+      partnerUserId,
       customerName,
       offerTitle,
       reservation.quantity
