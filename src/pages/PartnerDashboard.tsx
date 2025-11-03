@@ -46,6 +46,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown } from 'lucide-react';
+import { TelegramConnect } from '@/components/TelegramConnect';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -1579,6 +1580,23 @@ const generate24HourOptions = (): string[] => {
             )}
           </CardContent>
         </Card>
+
+        {/* Notification Settings - Telegram */}
+        {!isPending && partner && (
+          <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                📲 Notification Settings
+              </CardTitle>
+              <CardDescription className="text-sm md:text-base">
+                Get instant notifications about reservations and orders
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TelegramConnect userId={partner.user_id} userType="partner" />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Floating Action Button (Mobile) */}

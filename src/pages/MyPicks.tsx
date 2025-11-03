@@ -14,6 +14,7 @@ import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import { useI18n } from '@/lib/i18n';
+import { TelegramConnect } from '@/components/TelegramConnect';
 
 export default function MyPicks() {
   const [user, setUser] = useState<User | null>(null);
@@ -574,6 +575,23 @@ export default function MyPicks() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Notification Settings */}
+        {user && (
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                📲 Notification Settings
+              </CardTitle>
+              <CardDescription>
+                Get instant Telegram notifications about your orders
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TelegramConnect userId={user.id} userType="customer" />
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* QR Code Dialog */}
