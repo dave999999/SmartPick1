@@ -16,6 +16,7 @@ import {
   QR_CODE_SIZE,
   QR_CODE_MARGIN,
 } from './constants';
+import { notifyPartnerNewReservation, notifyCustomerReservationConfirmed, notifyPartnerPickupComplete } from './telegram';
 
 // Auth functions
 export const getCurrentUser = async (): Promise<{ user: User | null; error?: unknown }> => {
@@ -446,12 +447,47 @@ export const createReservation = async (
     .select(`
       *,
       offer:offers(*),
-      partner:partners(*)
+      partner:partners(*),
+      customer:users(name, email, id)
     `)
     .eq('id', data.id)
     .single();
 
   if (fetchError) throw fetchError;
+
+  // Send Telegram notifications (don't block on these)
+  if (reservation) {
+    const customerName = reservation.customer?.name || 'Customer';
+    const offerTitle = reservation.offer?.title || 'Offer';
+    const pickupBy = new Date(reservation.expires_at).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const partnerName = reservation.partner?.business_name || 'Partner';
+    const partnerAddress = reservation.partner?.address || 'Address not available';
+
+    // Notify partner about new reservation
+    notifyPartnerNewReservation(
+      reservation.partner_id,
+      customerName,
+      offerTitle,
+      quantity,
+      pickupBy
+    ).catch(err => console.error('Failed to send partner notification:', err));
+
+    // Notify customer about reservation confirmation
+    notifyCustomerReservationConfirmed(
+      customerId,
+      offerTitle,
+      quantity,
+      partnerName,
+      partnerAddress,
+      pickupBy
+    ).catch(err => console.error('Failed to send customer notification:', err));
+  }
 
   return reservation as Reservation;
 };
@@ -523,10 +559,17 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Demo mode: Please configure Supabase');
   }
 
-  // Get reservation details first
+  // Get reservation details first with customer and offer info
   const { data: reservation, error: reservationError } = await supabase
     .from('reservations')
-    .select('offer_id, quantity, customer_id')
+    .select(`
+      offer_id,
+      quantity,
+      customer_id,
+      partner_id,
+      customer:users(name),
+      offer:offers(title)
+    `)
     .eq('id', reservationId)
     .single();
 
@@ -547,6 +590,19 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     .single();
 
   if (error) throw error;
+
+  // Send pickup notification to partner (don't block on this)
+  if (reservation.partner_id && reservation.customer && reservation.offer) {
+    const customerName = reservation.customer.name || 'Customer';
+    const offerTitle = reservation.offer.title || 'Offer';
+
+    notifyPartnerPickupComplete(
+      reservation.partner_id,
+      customerName,
+      offerTitle,
+      reservation.quantity
+    ).catch(err => console.error('Failed to send pickup notification:', err));
+  }
 
   return data as Reservation;
 };
