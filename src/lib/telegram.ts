@@ -52,7 +52,7 @@ export async function sendTelegramMessage(message: TelegramMessage): Promise<boo
  */
 export function getTelegramBotLink(userId: string): string {
   // Get bot username from environment or use default
-  const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'SmartPickGeBot';
+  const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'SmartPickGE_bot';
   // Encode user ID as start parameter
   const startParam = btoa(userId).replace(/=/g, '');
   return `https://t.me/${botUsername}?start=${startParam}`;
