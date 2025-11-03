@@ -1,48 +1,23 @@
 import { supabase } from './supabase';
 
-const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
-
-export interface TelegramMessage {
-  chat_id: string;
-  text: string;
-  parse_mode?: 'HTML' | 'Markdown';
-  reply_markup?: any;
-}
-
 /**
- * Send a message via Telegram Bot API
+ * Send a notification via secure Edge Function
+ * Bot token is stored securely on the server, not exposed to client
  */
-export async function sendTelegramMessage(message: TelegramMessage): Promise<boolean> {
-  if (!TELEGRAM_BOT_TOKEN) {
-    console.error('Telegram bot token not configured');
-    return false;
-  }
-
+async function sendNotification(userId: string, message: string, type: 'partner' | 'customer'): Promise<boolean> {
   try {
-    const response = await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: message.chat_id,
-        text: message.text,
-        parse_mode: message.parse_mode || 'HTML',
-        reply_markup: message.reply_markup,
-      }),
+    const { data, error } = await supabase.functions.invoke('send-notification', {
+      body: { userId, message, type }
     });
 
-    const data = await response.json();
-
-    if (!data.ok) {
-      console.error('Telegram API error:', data);
+    if (error) {
+      console.error('Error sending notification:', error);
       return false;
     }
 
-    return true;
+    return data?.success || false;
   } catch (error) {
-    console.error('Error sending Telegram message:', error);
+    console.error('Error calling notification function:', error);
     return false;
   }
 }
@@ -155,11 +130,6 @@ export async function notifyPartnerNewReservation(
   quantity: number,
   pickupBy: string
 ) {
-  const connection = await getTelegramConnection(partnerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `🎉 <b>New Reservation!</b>
 
 <b>Customer:</b> ${customerName}
@@ -169,11 +139,7 @@ export async function notifyPartnerNewReservation(
 
 The customer will arrive soon to pick up their order.`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(partnerId, message, 'partner');
 }
 
 /**
@@ -185,11 +151,6 @@ export async function notifyPartnerPickupComplete(
   offerTitle: string,
   quantity: number
 ) {
-  const connection = await getTelegramConnection(partnerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `✅ <b>Pickup Complete!</b>
 
 <b>Customer:</b> ${customerName}
@@ -198,11 +159,7 @@ export async function notifyPartnerPickupComplete(
 
 Order successfully completed. Great job! 👏`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(partnerId, message, 'partner');
 }
 
 /**
@@ -214,11 +171,6 @@ export async function notifyPartnerNoShow(
   offerTitle: string,
   quantity: number
 ) {
-  const connection = await getTelegramConnection(partnerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `❌ <b>Customer No-Show</b>
 
 <b>Customer:</b> ${customerName}
@@ -227,11 +179,7 @@ export async function notifyPartnerNoShow(
 
 The customer did not pick up their reservation. Penalty has been applied to their account.`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(partnerId, message, 'partner');
 }
 
 /**
@@ -242,11 +190,6 @@ export async function notifyPartnerLowStock(
   offerTitle: string,
   quantityLeft: number
 ) {
-  const connection = await getTelegramConnection(partnerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `⚠️ <b>Low Stock Alert!</b>
 
 <b>Item:</b> ${offerTitle}
@@ -254,11 +197,7 @@ export async function notifyPartnerLowStock(
 
 Your offer is running low. Consider creating a new offer or updating the quantity.`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(partnerId, message, 'partner');
 }
 
 /**
@@ -271,11 +210,6 @@ export async function notifyCustomerPickupReminder(
   partnerAddress: string,
   expiresAt: string
 ) {
-  const connection = await getTelegramConnection(customerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `⏰ <b>Pickup Reminder!</b>
 
 <b>Hurry! Only 15 minutes left to pick up:</b>
@@ -288,11 +222,7 @@ ${partnerAddress}
 
 Don't forget to pick up your order! 🏃‍♂️`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(customerId, message, 'customer');
 }
 
 /**
@@ -305,11 +235,6 @@ export async function notifyCustomerNewOffer(
   distance: string,
   expiresAt: string
 ) {
-  const connection = await getTelegramConnection(customerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `🎁 <b>New Offer Nearby!</b>
 
 <b>${offerTitle}</b>
@@ -319,11 +244,7 @@ export async function notifyCustomerNewOffer(
 
 Open SmartPick app to reserve now! 🚀`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(customerId, message, 'customer');
 }
 
 /**
@@ -337,11 +258,6 @@ export async function notifyCustomerReservationConfirmed(
   partnerAddress: string,
   pickupBy: string
 ) {
-  const connection = await getTelegramConnection(customerId);
-  if (!connection?.telegram_chat_id || !connection.enable_telegram) {
-    return false;
-  }
-
   const message = `✅ <b>Reservation Confirmed!</b>
 
 <b>Item:</b> ${offerTitle}
@@ -355,9 +271,5 @@ ${partnerAddress}
 
 See you there! 🎉`;
 
-  return sendTelegramMessage({
-    chat_id: connection.telegram_chat_id,
-    text: message,
-    parse_mode: 'HTML',
-  });
+  return sendNotification(customerId, message, 'customer');
 }
