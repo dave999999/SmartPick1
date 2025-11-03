@@ -102,7 +102,7 @@ export async function getTelegramConnection(userId: string) {
       .from('notification_preferences')
       .select('telegram_chat_id, telegram_username, enable_telegram')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching Telegram connection:', error);
