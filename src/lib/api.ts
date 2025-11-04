@@ -23,22 +23,43 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
   if (isDemoMode) {
     return { user: null };
   }
-  
+
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
     if (error) return { user: null, error };
-    
     if (!user) return { user: null };
 
-    // Get user role from users table
+    // Try to read public profile; if missing, create a minimal record for resilience
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (!userData) {
+      // Attempt to upsert a minimal profile to keep the app functional even if trigger didn't run
+      const minimal = {
+        id: user.id,
+        email: user.email ?? '',
+        name: (user.user_metadata as any)?.name || user.email || 'User',
+        role: 'CUSTOMER',
+        status: 'ACTIVE',
+      } as Partial<User>;
+      await supabase.from('users').upsert(minimal, { onConflict: 'id' });
+
+      // Re-fetch after upsert
+      const { data: created } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      return { user: created as User };
+    }
 
     if (userError) return { user: null, error: userError };
-    
     return { user: userData as User };
   } catch (error) {
     return { user: null, error };
