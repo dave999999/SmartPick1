@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { getCurrentUser } from '@/lib/api';
-import { getTelegramConnection } from '@/lib/telegram';
+import { getTelegramConnection, getTelegramBotLink } from '@/lib/telegram';
 import { supabase } from '@/lib/supabase';
 
 export default function NotificationsDebug() {
@@ -13,11 +13,22 @@ export default function NotificationsDebug() {
   const [loadingConn, setLoadingConn] = useState(false);
   const [partnerUserId, setPartnerUserId] = useState<string>('');
   const [log, setLog] = useState<string>('');
+  const [botLink, setBotLink] = useState<string>('');
 
   useEffect(() => {
     (async () => {
       const { user } = await getCurrentUser();
-      if (user) setUserId(user.id);
+      if (user) {
+        setUserId(user.id);
+        setBotLink(getTelegramBotLink(user.id));
+        // Prefill partner user id if current user is a partner
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (partner?.user_id) setPartnerUserId(partner.user_id);
+      }
     })();
   }, []);
 
@@ -69,6 +80,11 @@ export default function NotificationsDebug() {
           <div className="flex gap-2">
             <Button onClick={refreshConnection} disabled={!userId || loadingConn}>Refresh My Telegram Status</Button>
             <Button onClick={() => userId && sendTest(userId, 'customer')} disabled={!userId}>Send Test (Customer)</Button>
+            {botLink && (
+              <a href={botLink} target="_blank" rel="noreferrer" className="inline-flex items-center px-4 py-2 rounded-md border bg-white hover:bg-gray-50 text-sm">
+                Open Bot Link
+              </a>
+            )}
           </div>
 
           <div className="text-sm bg-gray-50 rounded p-3">
@@ -93,4 +109,3 @@ export default function NotificationsDebug() {
     </div>
   );
 }
-
