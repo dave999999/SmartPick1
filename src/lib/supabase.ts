@@ -1,9 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Read Supabase configuration from Vite env variables
-// Set these in Vercel project settings as Environment Variables
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Read Supabase configuration from env variables
+// Primary: Vite-style (VITE_*)
+// Fallbacks: NEXT_PUBLIC_* or process.env for robustness
+const env: any = (import.meta as any).env || {};
+const supabaseUrl =
+  (env.VITE_SUPABASE_URL as string | undefined) ||
+  (env.NEXT_PUBLIC_SUPABASE_URL as string | undefined) ||
+  (typeof process !== 'undefined' ? (process as any).env?.VITE_SUPABASE_URL : undefined) ||
+  (typeof process !== 'undefined' ? (process as any).env?.NEXT_PUBLIC_SUPABASE_URL : undefined);
+
+const supabaseAnonKey =
+  (env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+  (env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined) ||
+  (typeof process !== 'undefined' ? (process as any).env?.VITE_SUPABASE_ANON_KEY : undefined) ||
+  (typeof process !== 'undefined' ? (process as any).env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined);
 
 // If missing, run in demo mode (no network calls)
 const DEMO_MODE = !supabaseUrl || !supabaseAnonKey;
@@ -108,4 +119,3 @@ export const getCurrentUser = async () => {
   } = await supabase.auth.getUser();
   return { user, error };
 };
-

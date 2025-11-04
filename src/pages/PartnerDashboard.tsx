@@ -1582,7 +1582,7 @@ const generate24HourOptions = (): string[] => {
         </Card>
 
         {/* Notification Settings - Telegram */}
-        {!isPending && partner && (
+        {partner && (
           <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
