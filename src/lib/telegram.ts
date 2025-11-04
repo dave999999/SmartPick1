@@ -28,8 +28,12 @@ async function sendNotification(userId: string, message: string, type: 'partner'
 export function getTelegramBotLink(userId: string): string {
   // Get bot username from environment or use default
   const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'SmartPickGE_bot';
-  // Encode user ID as start parameter
-  const startParam = btoa(userId).replace(/=/g, '');
+  // Encode user ID as base64url start parameter (no padding)
+  const b64 = btoa(userId)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  const startParam = b64;
   return `https://t.me/${botUsername}?start=${startParam}`;
 }
 

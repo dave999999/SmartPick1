@@ -44,8 +44,14 @@ serve(async (req) => {
         const encodedUserId = params[1]
 
         try {
-          // Decode user ID
-          const userId = atob(encodedUserId)
+          // Decode user ID (support base64url without padding)
+          const normalized = encodedUserId.replace(/-/g, '+').replace(/_/g, '/');
+          let padded = normalized;
+          const mod = normalized.length % 4;
+          if (mod === 2) padded += '==';
+          else if (mod === 3) padded += '=';
+          else if (mod === 1) throw new Error('Invalid start parameter length');
+          const userId = atob(padded)
 
           // Save chat ID to database
           const { error: upsertError } = await supabase
