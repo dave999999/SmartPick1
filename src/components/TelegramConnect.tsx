@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Send, Check, X, Bell, AlertCircle } from 'lucide-react';
-import { getTelegramBotLink, getTelegramConnection, disconnectTelegramAccount } from '@/lib/telegram';
+import { getTelegramBotLink } from '@/lib/telegram';
+import { useTelegramStatus } from '@/hooks/useTelegramStatus';
 import { toast } from 'sonner';
 
 interface TelegramConnectProps {
@@ -13,49 +14,22 @@ interface TelegramConnectProps {
 }
 
 export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
-  const [connection, setConnection] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { connected, username, loading, disconnect } = useTelegramStatus(userId);
   const [disconnecting, setDisconnecting] = useState(false);
-
-  useEffect(() => {
-    loadConnection();
-  }, [userId]);
-
-  const loadConnection = async () => {
-    setLoading(true);
-    const data = await getTelegramConnection(userId);
-    setConnection(data);
-    setLoading(false);
-  };
 
   const handleConnect = () => {
     const botLink = getTelegramBotLink(userId);
     window.open(botLink, '_blank');
 
-    // Show instructions
-    toast.info(
-      'After clicking Start in Telegram, come back here and refresh the page to see your connection status.',
-      { duration: 8000 }
-    );
+    // Inform the user that status will update automatically
+    toast.info('After tapping START in Telegram, this status will update automatically.', { duration: 6000 });
   };
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
-    const success = await disconnectTelegramAccount(userId);
-
-    if (success) {
-      toast.success('Telegram disconnected successfully');
-      setConnection(null);
-    } else {
-      toast.error('Failed to disconnect Telegram');
-    }
-
+    await disconnect();
+    toast.success('Telegram disconnected successfully');
     setDisconnecting(false);
-  };
-
-  const handleRefresh = () => {
-    loadConnection();
-    toast.success('Connection status refreshed');
   };
 
   if (loading) {
@@ -68,7 +42,7 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
     );
   }
 
-  const isConnected = connection?.telegram_chat_id && connection?.enable_telegram;
+  const isConnected = !!connected;
 
   return (
     <Card>
@@ -103,8 +77,8 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
               <AlertDescription className="text-green-900">
                 <strong>Connected to Telegram!</strong>
                 <div className="mt-2 text-sm">
-                  {connection.telegram_username && (
-                    <div>Username: @{connection.telegram_username}</div>
+                  {username && (
+                    <div>Username: @{username}</div>
                   )}
                   <div className="mt-1 text-green-700">
                     You'll receive notifications via Telegram bot.
@@ -140,13 +114,6 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
 
             {/* Disconnect button */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRefresh}
-                className="flex-1"
-              >
-                Refresh Status
-              </Button>
               <Button
                 variant="outline"
                 onClick={handleDisconnect}
