@@ -12,6 +12,7 @@ import AdminPanel from './pages/AdminPanel';
 import AdminDashboard from './pages/AdminDashboard';
 import ReserveOffer from './pages/ReserveOffer';
 import NotFound from './pages/NotFound';
+import NotificationsDebug from './pages/NotificationsDebug';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import 'leaflet/dist/leaflet.css';
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/reserve/:offerId" element={<ReserveOffer />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/debug/notifications" element={<NotificationsDebug />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         {/* PWA Install Prompts */}
