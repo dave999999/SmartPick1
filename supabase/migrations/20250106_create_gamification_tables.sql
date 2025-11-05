@@ -30,16 +30,18 @@ CREATE TABLE IF NOT EXISTS user_stats (
 );
 
 -- Index for faster lookups
-CREATE INDEX idx_user_stats_user_id ON user_stats(user_id);
-CREATE INDEX idx_user_stats_streak ON user_stats(current_streak_days DESC);
+CREATE INDEX IF NOT EXISTS idx_user_stats_user_id ON user_stats(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_stats_streak ON user_stats(current_streak_days DESC);
 
 -- RLS Policies
 ALTER TABLE user_stats ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own stats" ON user_stats;
 CREATE POLICY "Users can view their own stats"
   ON user_stats FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can modify stats" ON user_stats;
 CREATE POLICY "Service role can modify stats"
   ON user_stats FOR ALL
   USING (auth.role() = 'service_role');
@@ -91,6 +93,7 @@ ON CONFLICT (id) DO NOTHING;
 -- RLS Policies (public read)
 ALTER TABLE achievement_definitions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can view achievements" ON achievement_definitions;
 CREATE POLICY "Anyone can view achievements"
   ON achievement_definitions FOR SELECT
   USING (true);
@@ -110,16 +113,18 @@ CREATE TABLE IF NOT EXISTS user_achievements (
 );
 
 -- Index for faster lookups
-CREATE INDEX idx_user_achievements_user_id ON user_achievements(user_id);
-CREATE INDEX idx_user_achievements_unlocked ON user_achievements(unlocked_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_achievements_unlocked ON user_achievements(unlocked_at DESC);
 
 -- RLS Policies
 ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own achievements" ON user_achievements;
 CREATE POLICY "Users can view their own achievements"
   ON user_achievements FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can modify achievements" ON user_achievements;
 CREATE POLICY "Service role can modify achievements"
   ON user_achievements FOR ALL
   USING (auth.role() = 'service_role');
