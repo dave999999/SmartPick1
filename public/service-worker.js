@@ -1,17 +1,18 @@
 /* eslint-disable no-restricted-globals */
 /**
  * SmartPick PWA Service Worker
- * v3.2 – cache bust + safer HTML strategy + gentle asset caching
- * Deployed: 2025-11-06
+ * Auto-versioned at build time for guaranteed cache invalidation
  *
  * Notes:
- * - Bump CACHE_NAME/RUNTIME_CACHE on any release that must invalidate old caches.
+ * - VERSION is injected during build (see vite.config.ts)
  * - HTML is network-first (always try fresh), fallback to cache/offline.
  * - Static assets are cached with stale-while-revalidate for speed.
  */
 
-const CACHE_NAME = 'smartpick-v3.2-profile-update';
-const RUNTIME_CACHE = 'smartpick-runtime-v3.2';
+// VERSION is replaced at build time with timestamp (e.g., "20250106-143052")
+const VERSION = '__BUILD_VERSION__';
+const CACHE_NAME = `smartpick-v${VERSION}`;
+const RUNTIME_CACHE = `smartpick-runtime-v${VERSION}`;
 
 // Precache only essentials. Avoid listing hashed bundles explicitly here — Vite names change per build.
 const PRECACHE_URLS = ['/', '/index.html', '/offline.html'];
@@ -44,7 +45,7 @@ self.addEventListener('activate', (event) => {
     // Ask open pages to refresh (they can decide to ignore)
     const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     clients.forEach((client) => {
-      client.postMessage({ type: 'SW_ACTIVATED_V3_2' });
+      client.postMessage({ type: 'SW_ACTIVATED', version: VERSION });
     });
   })());
 });
