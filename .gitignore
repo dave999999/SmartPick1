@@ -42,3 +42,4 @@ supabase/.temp
 .claude/
 .mgx/
 settings.local.json
+.vercel
