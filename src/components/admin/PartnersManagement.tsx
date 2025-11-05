@@ -162,9 +162,19 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
 
       // If password is provided, use secure server endpoint
       if (password) {
+        // Include Supabase access token so the API can authorize ADMINs
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) {
+          toast.error('You must be signed in as admin to perform this action');
+          return;
+        }
+
         const res = await fetch('/api/admin/create-partner', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
           body: JSON.stringify({
             email: email.trim(),
             password: password,
@@ -1155,5 +1165,4 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     </div>
   );
 }
-
 
