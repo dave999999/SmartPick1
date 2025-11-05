@@ -14,7 +14,8 @@
       "Bash(git rm:*)",
       "Bash(cat:*)",
       "Bash(git log:*)",
-      "WebFetch(domain:www.smartpick.ge)"
+      "WebFetch(domain:www.smartpick.ge)",
+      "WebFetch(domain:smartpick.ge)"
     ],
     "deny": [],
     "ask": []
