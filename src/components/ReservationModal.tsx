@@ -15,10 +15,12 @@ import { resolveOfferImageUrl } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, Minus, Plus, Share2 } from 'lucide-react';
+import { Clock, MapPin, AlertCircle, Minus, Plus, Share2, Coins } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
+import { checkSufficientPoints, deductPoints, getUserPoints } from '@/lib/smartpoints-api';
+import { BuyPointsModal } from './BuyPointsModal';
 
 interface ReservationModalProps {
   offer: Offer | null;
@@ -39,17 +41,34 @@ export default function ReservationModal({
   const [isReserving, setIsReserving] = useState(false);
   const [penaltyInfo, setPenaltyInfo] = useState<PenaltyInfo | null>(null);
   const [countdown, setCountdown] = useState('');
+  const [pointsBalance, setPointsBalance] = useState<number>(0);
+  const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
+  const [insufficientPoints, setInsufficientPoints] = useState(false);
   const navigate = useNavigate();
+
+  const POINTS_PER_RESERVATION = 5;
 
   useEffect(() => {
     if (open && user) {
       loadPenaltyInfo();
+      loadPointsBalance();
     }
     // Update meta tags for social sharing when modal opens
     if (open && offer) {
       updateMetaTags(offer);
     }
   }, [open, user, offer]);
+
+  const loadPointsBalance = async () => {
+    if (!user) return;
+    try {
+      const userPoints = await getUserPoints(user.id);
+      setPointsBalance(userPoints?.balance ?? 0);
+      setInsufficientPoints((userPoints?.balance ?? 0) < POINTS_PER_RESERVATION);
+    } catch (error) {
+      console.error('Error loading points balance:', error);
+    }
+  };
 
   useEffect(() => {
     if (penaltyInfo?.isUnderPenalty && penaltyInfo.penaltyUntil) {
@@ -90,10 +109,40 @@ export default function ReservationModal({
       return;
     }
 
+    // Check SmartPoints balance
+    if (pointsBalance < POINTS_PER_RESERVATION) {
+      setInsufficientPoints(true);
+      setShowBuyPointsModal(true);
+      toast.error(`⚠️ You need ${POINTS_PER_RESERVATION} SmartPoints to reserve. Buy more to continue!`);
+      return;
+    }
+
     try {
       setIsReserving(true);
+
+      // Deduct SmartPoints first
+      const pointsResult = await deductPoints(
+        user.id,
+        POINTS_PER_RESERVATION,
+        'reservation',
+        { offer_id: offer.id, offer_title: offer.title }
+      );
+
+      if (!pointsResult.success) {
+        toast.error(pointsResult.error || 'Failed to deduct SmartPoints');
+        return;
+      }
+
+      // Create reservation
       const reservation = await createReservation(offer.id, user.id, quantity);
-      toast.success('Reservation created successfully!');
+
+      // Update local balance
+      setPointsBalance(pointsResult.balance ?? 0);
+
+      toast.success(
+        `✅ Reservation confirmed! ${POINTS_PER_RESERVATION} SmartPoints used. Balance: ${pointsResult.balance}`
+      );
+
       onOpenChange(false);
       if (onSuccess) onSuccess();
       navigate(`/reservation/${reservation.id}`);
@@ -104,6 +153,13 @@ export default function ReservationModal({
     } finally {
       setIsReserving(false);
     }
+  };
+
+  const handleBuyPointsSuccess = (newBalance: number) => {
+    setPointsBalance(newBalance);
+    setInsufficientPoints(false);
+    setShowBuyPointsModal(false);
+    toast.success(`🎉 Success! You now have ${newBalance} SmartPoints`);
   };
 
   const formatTime = (dateString: string) => {
@@ -252,6 +308,42 @@ export default function ReservationModal({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* SmartPoints Balance */}
+          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-[#EFFFF8] to-[#C9F9E9] rounded-lg border border-[#4CC9A8]/30">
+            <div className="flex items-center gap-2">
+              <Coins className="w-5 h-5 text-[#4CC9A8]" />
+              <div>
+                <p className="text-xs text-gray-600">Your Balance</p>
+                <p className="text-lg font-bold text-gray-900">{pointsBalance} SmartPoints</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-600">This costs</p>
+              <p className="text-lg font-bold text-[#4CC9A8]">{POINTS_PER_RESERVATION} Points</p>
+            </div>
+          </div>
+
+          {/* Insufficient Points Warning */}
+          {insufficientPoints && (
+            <Alert className="bg-orange-50 border-orange-200">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <AlertDescription className="text-orange-900">
+                <strong>⚠️ Insufficient SmartPoints</strong>
+                <p className="mt-1">
+                  You need {POINTS_PER_RESERVATION} SmartPoints to reserve this offer.
+                  Buy 100 points for ₾1 to continue.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => setShowBuyPointsModal(true)}
+                  className="mt-2 bg-orange-600 hover:bg-orange-700"
+                >
+                  Buy SmartPoints Now
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Expired Offer Warning */}
           {isExpired && (
             <Alert variant="destructive" className="bg-red-50 border-red-200">
@@ -416,6 +508,17 @@ export default function ReservationModal({
           </p>
         </div>
       </DialogContent>
+
+      {/* Buy SmartPoints Modal */}
+      {user && (
+        <BuyPointsModal
+          open={showBuyPointsModal}
+          onClose={() => setShowBuyPointsModal(false)}
+          userId={user.id}
+          currentBalance={pointsBalance}
+          onSuccess={handleBuyPointsSuccess}
+        />
+      )}
     </Dialog>
   );
 }
