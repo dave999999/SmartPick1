@@ -39,7 +39,6 @@ supabase/.temp
 .aider*
 
 # AI system config
-.claude/
 .mgx/
 settings.local.json
 .vercel
