@@ -15,6 +15,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
   try {
+    // Require caller to be an authenticated ADMIN
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : undefined;
+
+    if (!token) {
+      return res.status(401).json({ error: 'Missing Authorization bearer token' });
+    }
+
+    // Resolve the user from the Supabase JWT
+    const { data: authUser, error: authErr } = await admin.auth.getUser(token);
+    if (authErr || !authUser?.user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Verify role in public.users table
+    const { data: caller, error: callerErr } = await admin
+      .from('users')
+      .select('id, role')
+      .eq('id', authUser.user.id)
+      .single();
+
+    if (callerErr || !caller || caller.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin privileges required' });
+    }
+
     const {
       email,
       password,
@@ -93,4 +120,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: e?.message || 'Unknown error' });
   }
 }
-

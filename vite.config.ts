@@ -16,4 +16,17 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Generate hashed filenames for cache busting
+    rollupOptions: {
+      output: {
+        // Use hash in filenames for better cache invalidation
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]',
+      },
+    },
+    // Ensure source maps are generated for debugging
+    sourcemap: mode !== 'production',
+  },
 }));
