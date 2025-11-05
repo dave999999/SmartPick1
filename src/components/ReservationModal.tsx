@@ -15,8 +15,9 @@ import { resolveOfferImageUrl } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react';
+import { Clock, MapPin, AlertCircle, Minus, Plus, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Facebook, Twitter, Instagram } from 'lucide-react';
 
 interface ReservationModalProps {
   offer: Offer | null;
@@ -126,6 +127,43 @@ export default function ReservationModal({
     return { start, end };
   };
 
+  const handleShareFacebook = () => {
+    if (!offer) return;
+    const url = encodeURIComponent(window.location.href);
+    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    toast.success('Opening Facebook share dialog...');
+  };
+
+  const handleShareTwitter = () => {
+    if (!offer) return;
+    const text = encodeURIComponent(`Check out this amazing deal: ${offer.title} - Save ${((1 - offer.smart_price / offer.original_price) * 100).toFixed(0)}% with SmartPick!`);
+    const url = encodeURIComponent(window.location.href);
+    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    toast.success('Opening Twitter share dialog...');
+  };
+
+  const handleShareInstagram = () => {
+    // Instagram doesn't have a direct web sharing API
+    // We'll copy the link and show instructions
+    if (!offer) return;
+    const shareText = `Check out this deal on SmartPick: ${offer.title}`;
+
+    // Try to copy to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+          toast.success('Link copied! Open Instagram app and paste in your story or post.');
+        })
+        .catch(() => {
+          toast.info('Please copy this link to share on Instagram: ' + window.location.href);
+        });
+    } else {
+      toast.info('Please copy this link to share on Instagram: ' + window.location.href);
+    }
+  };
+
   if (!offer) return null;
 
   const pickupTimes = getPickupTimes(offer);
@@ -159,6 +197,50 @@ export default function ReservationModal({
           <DialogDescription className="text-base">
             {offer.partner?.business_name}
           </DialogDescription>
+
+          {/* Social Share Buttons */}
+          <div className="flex items-center gap-2 pt-3 border-t">
+            <span className="text-sm text-gray-600 flex items-center gap-1">
+              <Share2 className="h-4 w-4" />
+              Share:
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareFacebook();
+              }}
+            >
+              <Facebook className="h-4 w-4 mr-2" />
+              Facebook
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareTwitter();
+              }}
+            >
+              <Twitter className="h-4 w-4 mr-2" />
+              Twitter
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 hover:bg-pink-50 hover:text-pink-600 hover:border-pink-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareInstagram();
+              }}
+            >
+              <Instagram className="h-4 w-4 mr-2" />
+              Instagram
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4">
