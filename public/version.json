@@ -1,0 +1,5 @@
+{
+  "version": "3.0.0-gamification",
+  "deployed": "2025-01-06T19:30:00Z",
+  "features": ["gamification", "achievements", "streaks", "levels", "referrals"]
+}
