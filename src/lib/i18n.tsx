@@ -153,6 +153,22 @@ const translations: Record<Language, Record<string, string>> = {
   'maintenance.title': 'Under Construction',
   'maintenance.subtitle': 'We\'re working on something amazing!',
   'maintenance.message': 'Our site is currently undergoing scheduled maintenance to bring you new features and improvements. We\'ll be back soon!',
+
+  // Search and Filters
+  'search.placeholder': 'Search offers...',
+  'filter.title': 'Filters',
+  'filter.distance': 'Distance',
+  'filter.maxDistance': 'Max Distance (km)',
+  'filter.priceRange': 'Price Range',
+  'filter.minPrice': 'Min Price (₾)',
+  'filter.maxPrice': 'Max Price (₾)',
+  'filter.apply': 'Apply Filters',
+  'filter.clear': 'Clear All',
+  'sort.title': 'Sort By',
+  'sort.nearest': 'Nearest First',
+  'sort.cheapest': 'Cheapest First',
+  'sort.expiring': 'Ending Soon',
+  'sort.newest': 'Newest First',
   },
   ka: {
     // Header
@@ -296,6 +312,22 @@ const translations: Record<Language, Record<string, string>> = {
   'maintenance.title': 'მიმდინარეობს სამუშაოები',
   'maintenance.subtitle': 'ჩვენ ვმუშაობთ რაღაც შესანიშნავზე!',
   'maintenance.message': 'ჩვენი საიტი ამჟამად გადის დაგეგმილ ტექნიკურ მოვლას, რათა მოგიტანოთ ახალი ფუნქციები და გაუმჯობესებები. მალე დავბრუნდებით!',
+
+  // Search and Filters
+  'search.placeholder': 'მოძებნე შეთავაზებები...',
+  'filter.title': 'ფილტრები',
+  'filter.distance': 'დისტანცია',
+  'filter.maxDistance': 'მაქს. დისტანცია (კმ)',
+  'filter.priceRange': 'ფასის დიაპაზონი',
+  'filter.minPrice': 'მინ. ფასი (₾)',
+  'filter.maxPrice': 'მაქს. ფასი (₾)',
+  'filter.apply': 'გამოყენება',
+  'filter.clear': 'გასუფთავება',
+  'sort.title': 'დალაგება',
+  'sort.nearest': 'ყველაზე ახლოს',
+  'sort.cheapest': 'ყველაზე იაფი',
+  'sort.expiring': 'მალე იწურება',
+  'sort.newest': 'უახლესი',
   },
 };
 
