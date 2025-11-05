@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Clock, MapPin, AlertCircle, Minus, Plus, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
+import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
 
 interface ReservationModalProps {
   offer: Offer | null;
@@ -44,7 +45,11 @@ export default function ReservationModal({
     if (open && user) {
       loadPenaltyInfo();
     }
-  }, [open, user]);
+    // Update meta tags for social sharing when modal opens
+    if (open && offer) {
+      updateMetaTags(offer);
+    }
+  }, [open, user, offer]);
 
   useEffect(() => {
     if (penaltyInfo?.isUnderPenalty && penaltyInfo.penaltyUntil) {
@@ -129,18 +134,15 @@ export default function ReservationModal({
 
   const handleShareFacebook = () => {
     if (!offer) return;
-    const url = encodeURIComponent(window.location.href);
-    const shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
-    window.open(shareUrl, '_blank', 'width=600,height=400');
+    const shareUrls = generateShareUrls(offer, window.location.href);
+    window.open(shareUrls.facebook, '_blank', 'width=600,height=400');
     toast.success('Opening Facebook share dialog...');
   };
 
   const handleShareTwitter = () => {
     if (!offer) return;
-    const text = encodeURIComponent(`Check out this amazing deal: ${offer.title} - Save ${((1 - offer.smart_price / offer.original_price) * 100).toFixed(0)}% with SmartPick!`);
-    const url = encodeURIComponent(window.location.href);
-    const shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
-    window.open(shareUrl, '_blank', 'width=600,height=400');
+    const shareUrls = generateShareUrls(offer, window.location.href);
+    window.open(shareUrls.twitter, '_blank', 'width=600,height=400');
     toast.success('Opening Twitter share dialog...');
   };
 
@@ -148,7 +150,6 @@ export default function ReservationModal({
     // Instagram doesn't have a direct web sharing API
     // We'll copy the link and show instructions
     if (!offer) return;
-    const shareText = `Check out this deal on SmartPick: ${offer.title}`;
 
     // Try to copy to clipboard
     if (navigator.clipboard) {
