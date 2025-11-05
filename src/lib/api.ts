@@ -122,9 +122,35 @@ export const signOut = async () => {
   if (isDemoMode) {
     return { error: null };
   }
-  
+
   const { error } = await supabase.auth.signOut();
   return { error };
+};
+
+// Update user profile
+export const updateUserProfile = async (userId: string, updates: Partial<User>) => {
+  if (isDemoMode) {
+    return { data: null, error: new Error('Demo mode') };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .update({
+        name: updates.name,
+        phone: updates.phone,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    return { data: null, error };
+  }
 };
 
 // Penalty System Functions

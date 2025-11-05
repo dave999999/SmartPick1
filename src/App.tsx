@@ -15,6 +15,7 @@ import ReserveOffer from './pages/ReserveOffer';
 import NotFound from './pages/NotFound';
 import NotificationsDebug from './pages/NotificationsDebug';
 import MaintenanceMode from './pages/MaintenanceMode';
+import UserProfile from './pages/UserProfile';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { getCurrentUser } from './lib/api';
@@ -82,6 +83,7 @@ const AppContent = () => {
         />
         <Route path="/partner/apply" element={<PartnerApplication />} />
         <Route path="/my-picks" element={<MyPicks />} />
+        <Route path="/profile" element={<UserProfile />} />
         <Route path="/reservation/:id" element={<ReservationDetail />} />
         <Route path="/reserve/:offerId" element={<ReserveOffer />} />
         <Route path="/admin" element={<AdminPanel />} />

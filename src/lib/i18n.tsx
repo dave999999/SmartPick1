@@ -17,6 +17,7 @@ const translations: Record<Language, Record<string, string>> = {
     'header.signOut': 'Sign Out',
     'header.becomePartner': 'Become a Partner',
     'header.myPicks': 'My Picks',
+    'header.profile': 'Profile',
     'header.partner': 'Partner',
     'header.admin': 'Admin',
     'header.tagline': 'SmartPick every day',
@@ -169,6 +170,33 @@ const translations: Record<Language, Record<string, string>> = {
   'sort.cheapest': 'Cheapest First',
   'sort.expiring': 'Ending Soon',
   'sort.newest': 'Newest First',
+
+  // User Profile
+  'profile.title': 'My Profile',
+  'profile.editProfile': 'Edit Profile',
+  'profile.name': 'Name',
+  'profile.email': 'Email',
+  'profile.phone': 'Phone Number',
+  'profile.role': 'Account Type',
+  'profile.memberSince': 'Member Since',
+  'profile.saveChanges': 'Save Changes',
+  'profile.cancel': 'Cancel',
+  'profile.updateSuccess': 'Profile updated successfully',
+  'profile.updateError': 'Failed to update profile',
+
+  // Favorites
+  'favorites.title': 'My Favorites',
+  'favorites.offers': 'Saved Offers',
+  'favorites.partners': 'Saved Partners',
+  'favorites.empty': 'No favorites yet',
+  'favorites.add': 'Add to favorites',
+  'favorites.remove': 'Remove from favorites',
+  'favorites.added': 'Added to favorites',
+  'favorites.removed': 'Removed from favorites',
+
+  // Recently Viewed
+  'recent.title': 'Recently Viewed',
+  'recent.empty': 'No recently viewed items',
   },
   ka: {
     // Header
@@ -176,6 +204,7 @@ const translations: Record<Language, Record<string, string>> = {
     'header.signOut': 'გასვლა',
     'header.becomePartner': 'გახდი პარტნიორი',
     'header.myPicks': 'ჩემი არჩევანი',
+    'header.profile': 'პროფილი',
     'header.partner': 'პარტნიორი',
     'header.admin': 'ადმინი',
     'header.tagline': 'გონივრული არჩევანი ყოველდღე',
@@ -328,6 +357,33 @@ const translations: Record<Language, Record<string, string>> = {
   'sort.cheapest': 'ყველაზე იაფი',
   'sort.expiring': 'მალე იწურება',
   'sort.newest': 'უახლესი',
+
+  // User Profile
+  'profile.title': 'ჩემი პროფილი',
+  'profile.editProfile': 'პროფილის რედაქტირება',
+  'profile.name': 'სახელი',
+  'profile.email': 'ელ.ფოსტა',
+  'profile.phone': 'ტელეფონი',
+  'profile.role': 'ანგარიშის ტიპი',
+  'profile.memberSince': 'წევრი',
+  'profile.saveChanges': 'ცვლილებების შენახვა',
+  'profile.cancel': 'გაუქმება',
+  'profile.updateSuccess': 'პროფილი წარმატებით განახლდა',
+  'profile.updateError': 'პროფილის განახლება ვერ მოხერხდა',
+
+  // Favorites
+  'favorites.title': 'ჩემი ფავორიტები',
+  'favorites.offers': 'შენახული შეთავაზებები',
+  'favorites.partners': 'შენახული პარტნიორები',
+  'favorites.empty': 'ჯერ არ გაქვთ ფავორიტები',
+  'favorites.add': 'დამატება ფავორიტებში',
+  'favorites.remove': 'წაშლა ფავორიტებიდან',
+  'favorites.added': 'დაემატა ფავორიტებში',
+  'favorites.removed': 'წაიშალა ფავორიტებიდან',
+
+  // Recently Viewed
+  'recent.title': 'ბოლოს ნანახი',
+  'recent.empty': 'არ არის ბოლოს ნანახი',
   },
 };
 

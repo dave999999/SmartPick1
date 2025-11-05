@@ -13,7 +13,7 @@ import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
-import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu } from 'lucide-react';
+import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -263,6 +263,10 @@ export default function Index() {
                     {t('header.admin')}
                   </Button>
                 )}
+                <Button variant="outline" className="h-11" onClick={() => navigate('/profile')}>
+                  <UserIcon className="w-4 h-4 mr-2" />
+                  {t('header.profile')}
+                </Button>
                 <Button variant="outline" className="h-11" onClick={() => navigate('/my-picks')}>
                   {t('header.myPicks')}
                 </Button>
@@ -331,6 +335,18 @@ export default function Index() {
                           {t('header.admin')}
                         </Button>
                       )}
+
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full justify-start"
+                        onClick={() => {
+                          navigate('/profile');
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <UserIcon className="w-4 h-4 mr-2" />
+                        {t('header.profile')}
+                      </Button>
 
                       <Button
                         variant="outline"
