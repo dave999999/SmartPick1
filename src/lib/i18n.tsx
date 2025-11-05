@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
-type Language = 'en' | 'ka' | 'ru';
+type Language = 'en' | 'ka';
 
 interface I18nContextType {
   language: Language;
@@ -148,6 +148,11 @@ const translations: Record<Language, Record<string, string>> = {
   'label.pickupLocation': 'Pickup Location',
   'button.getDirections': 'Get Directions',
   'contact.partner': 'Contact Partner',
+
+  // Maintenance Mode
+  'maintenance.title': 'Under Construction',
+  'maintenance.subtitle': 'We\'re working on something amazing!',
+  'maintenance.message': 'Our site is currently undergoing scheduled maintenance to bring you new features and improvements. We\'ll be back soon!',
   },
   ka: {
     // Header
@@ -286,79 +291,11 @@ const translations: Record<Language, Record<string, string>> = {
   'label.pickupLocation': 'აღების ადგილმდებარეობა',
   'button.getDirections': 'მიიღე ინსტრუქციები',
   'contact.partner': 'დაგვიკავშირდით პარტნიორს',
-  },
-  ru: {
-    // Header
-    'header.signIn': 'Войти',
-    'header.signOut': 'Выйти',
-    'header.becomePartner': 'Стать партнёром',
-    'header.myPicks': 'Мои заказы',
-    'header.partner': 'Партнёр',
-    'header.admin': 'Админ',
-    'header.tagline': 'SmartPick каждый день',
 
-    // Hero Section
-    'hero.title1': 'Умная еда. Умные люди.',
-    'hero.title2': 'SmartPick',
-    'hero.subtitle': 'Свежие блюда, готовые к выдаче — из любимых мест, в идеальное время.',
-    'hero.description': 'Самые свежие находки вашего города для тех, кто знает, где искать.',
-    'hero.findButton': 'Найти SmartPick рядом',
-
-    // How It Works
-    'howItWorks.title': 'Как это работает',
-    'howItWorks.subtitle': 'Три простых шага к свежим местным блюдам',
-    'howItWorks.step1.title': 'Найди предложения',
-    'howItWorks.step1.description': 'Открой для себя свежие блюда рядом',
-    'howItWorks.step2.title': 'Забронируй',
-    'howItWorks.step2.description': 'Зарезервируй блюдо мгновенно',
-    'howItWorks.step3.title': 'Иди, забери, наслаждайся',
-    'howItWorks.step3.description': 'Двигайся и пробуй свой город',
-    'howItWorks.explore': 'Узнай, что свежего рядом 🍞',
-
-    // Browse Section
-    'browse.title': 'Просмотр SmartPick',
-    'browse.subtitle': 'Фильтруй по категории, чтобы найти именно то, что ищешь',
-    'browse.all': 'Все',
-    'browse.smartPicks': 'SmartPick',
-    'browse.available': 'доступно',
-    'browse.nearYou': 'рядом с вами',
-    'browse.loading': 'Загрузка SmartPick...',
-    'browse.noOffers': 'На данный момент предложений нет.',
-    'browse.checkBack': 'Заходите позже за новыми SmartPick!',
-  // Categories
-  'category.All': 'Все',
-  'category.BAKERY': 'Пекарня',
-  'category.RESTAURANT': 'Ресторан',
-  'category.CAFE': 'Кафе',
-  'category.GROCERY': 'Продукты',
-  'category.FAST_FOOD': 'Фаст-фуд',
-  'category.ALCOHOL': 'Алкоголь и вино',
-
-    // Map View
-    'map.mapView': 'Карта',
-    'map.listView': 'Список',
-    'map.nearMe': 'Рядом со мной',
-    'map.showingNear': 'SmartPick рядом с вами',
-    'map.showingAvailable': 'SmartPick доступно',
-
-    // Why It Matters
-    'why.title': 'Когда ты выбираешь, ты делаешь свой город умнее.',
-    'why.point1': 'Больше свежести делится',
-    'why.point2': 'Больше людей ходят пешком',
-    'why.point3': 'Сильнее местные магазины',
-    'why.point4': 'Лучший ритм жизни',
-    'why.tagline': 'Каждый SmartPick — это момент связи между вами, вашим городом и тем, что свежо.',
-
-    // Manifesto
-    'manifesto.title': 'Мы верим в свежесть, движение и осознанную жизнь.',
-    'manifesto.line1': 'SmartPick — это не просто приложение, это ритм.',
-    'manifesto.line2': 'Способ жить легче, больше ходить и соединяться с настоящим вкусом вашего города.',
-    'manifesto.line3': 'Каждый раз, когда вы идёте, выбираете и делитесь, вы становитесь частью чего-то умного.',
-    'manifesto.line4': 'Вместе мы поддерживаем круг — свежий, простой и настоящий.',
-
-    // Footer
-    'footer.description': 'SmartPick помогает местному бизнесу делиться тем, что они создают, и меньше пропадать — естественно.',
-    'footer.copyright': '© 2025 SmartPick. Все права защищены.',
+  // Maintenance Mode
+  'maintenance.title': 'მიმდინარეობს სამუშაოები',
+  'maintenance.subtitle': 'ჩვენ ვმუშაობთ რაღაც შესანიშნავზე!',
+  'maintenance.message': 'ჩვენი საიტი ამჟამად გადის დაგეგმილ ტექნიკურ მოვლას, რათა მოგიტანოთ ახალი ფუნქციები და გაუმჯობესებები. მალე დავბრუნდებით!',
   },
 };
 
