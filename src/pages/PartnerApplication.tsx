@@ -101,6 +101,7 @@ interface AddressSuggestion {
 
 export default function PartnerApplication() {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -114,6 +115,14 @@ export default function PartnerApplication() {
 
   // Form validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const totalSteps = 4;
+  const steps = [
+    { number: 1, title: 'Account', icon: '🔐' },
+    { number: 2, title: 'Location', icon: '📍' },
+    { number: 3, title: 'Business Info', icon: '🏪' },
+    { number: 4, title: 'Contact', icon: '📞' },
+  ];
 
   // Address autocomplete
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -375,6 +384,109 @@ export default function PartnerApplication() {
     if (!/\d/.test(password)) return false;
     if (!/[A-Z]/.test(password)) return false;
     return true;
+  };
+
+  const validateStep = (step: number): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (step === 1) {
+      // Account Creation
+      if (!formData.email) {
+        errors.email = 'Please fill out this field.';
+      } else if (!validateEmail(formData.email)) {
+        errors.email = 'Please enter a valid email address.';
+      } else if (emailError) {
+        errors.email = emailError;
+      }
+
+      if (!formData.password) {
+        errors.password = 'Please fill out this field.';
+      } else if (!validatePassword(formData.password)) {
+        errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
+      }
+
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = 'Please fill out this field.';
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match.';
+      }
+    } else if (step === 2) {
+      // Location
+      if (!formData.address) {
+        errors.address = 'Please fill out this field.';
+      }
+
+      if (!formData.city) {
+        errors.city = 'Please fill out this field.';
+      }
+
+      if (!formData.latitude || !formData.longitude) {
+        errors.location = 'Please set your location on the map.';
+      }
+    } else if (step === 3) {
+      // Business Information
+      if (!formData.business_name) {
+        errors.business_name = 'Please fill out this field.';
+      }
+
+      if (!formData.business_type) {
+        errors.business_type = 'Please select a business type.';
+      }
+
+      if (!formData.description) {
+        errors.description = 'Please fill out this field.';
+      }
+
+      const isOpen24h = open24h === true || formData.open_24h === true;
+
+      if (!isOpen24h) {
+        if (!formData.opening_hours) {
+          errors.opening_hours = 'Please select opening hours.';
+        }
+
+        if (!formData.closing_hours) {
+          errors.closing_hours = 'Please select closing hours.';
+        } else if (
+          formData.opening_hours &&
+          formData.closing_hours <= formData.opening_hours
+        ) {
+          errors.closing_hours = 'Closing time must be later than opening time.';
+        }
+      } else {
+        formData.opening_hours = '00:00';
+        formData.closing_hours = '23:59';
+      }
+    } else if (step === 4) {
+      // Contact Information
+      if (!formData.phone) {
+        errors.phone = 'Please fill out this field.';
+      }
+
+      if (!acceptedTerms) {
+        errors.terms = 'Please accept the terms and conditions.';
+      }
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error('Please complete all required fields before continuing.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const validateForm = (): boolean => {
@@ -704,8 +816,45 @@ export default function PartnerApplication() {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Progress Indicator */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                {steps.map((step, index) => (
+                  <div key={step.number} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-1">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
+                          currentStep > step.number
+                            ? 'bg-green-500 text-white'
+                            : currentStep === step.number
+                            ? 'bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30'
+                            : 'bg-gray-200 text-gray-500'
+                        }`}
+                      >
+                        {currentStep > step.number ? '✓' : step.icon}
+                      </div>
+                      <span className={`text-xs mt-2 font-medium ${
+                        currentStep === step.number ? 'text-[#4CC9A8]' : 'text-gray-500'
+                      }`}>
+                        {step.title}
+                      </span>
+                    </div>
+                    {index < steps.length - 1 && (
+                      <div className={`h-1 flex-1 mx-2 transition-all ${
+                        currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
+                      }`} />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="text-center text-sm text-gray-600">
+                Step {currentStep} of {totalSteps}
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* 1. Account Creation Section */}
+              {/* Step 1: Account Creation Section */}
+              {currentStep === 1 && (
               <div className="space-y-4 p-6 bg-[#E8F9F4] rounded-lg border-2 border-[#4CC9A8]/30">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="w-5 h-5 text-[#4CC9A8]" />
@@ -823,8 +972,10 @@ export default function PartnerApplication() {
                   )}
                 </div>
               </div>
+              )}
 
-              {/* 2. Location Section (Moved Higher) */}
+              {/* Step 2: Location Section */}
+              {currentStep === 2 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📍</span>
@@ -957,8 +1108,10 @@ export default function PartnerApplication() {
                   )}
                 </div>
               </div>
+              )}
 
-              {/* 3. Business Information */}
+              {/* Step 3: Business Information */}
+              {currentStep === 3 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🏪</span>
@@ -1147,8 +1300,10 @@ export default function PartnerApplication() {
                   </p>
                 </div>
               </div>
+              )}
 
-              {/* 4. Contact Information */}
+              {/* Step 4: Contact Information */}
+              {currentStep === 4 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📞</span>
@@ -1194,10 +1349,9 @@ export default function PartnerApplication() {
                     placeholder="+995 XXX XXX XXX"
                   />
                 </div>
-              </div>
 
-              {/* Terms and Conditions */}
-              <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                {/* Terms and Conditions */}
+                <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
                 <Checkbox
                   id="terms"
                   checked={acceptedTerms}
@@ -1220,24 +1374,48 @@ export default function PartnerApplication() {
                     </p>
                   )}
                 </div>
+                </div>
               </div>
+              )}
 
-              {/* Submit Button */}
+              {/* Navigation Buttons */}
               <div className="flex gap-4 pt-4">
+                {currentStep > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handlePrevStep}
+                    className="flex-1"
+                  >
+                    ← Back
+                  </Button>
+                )}
+
+                {currentStep < totalSteps ? (
+                  <Button
+                    type="button"
+                    onClick={handleNextStep}
+                    className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
+                  >
+                    Next →
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || isDemoMode}
+                    className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
+                  >
+                    {isSubmitting ? 'Creating Account...' : 'Submit Application'}
+                  </Button>
+                )}
+
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => navigate('/')}
-                  className="flex-1"
+                  className={currentStep === 1 ? 'flex-1' : ''}
                 >
                   Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || isDemoMode}
-                  className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
-                >
-                  {isSubmitting ? 'Creating Account...' : 'Create Partner Account & Apply'}
                 </Button>
               </div>
             </form>
