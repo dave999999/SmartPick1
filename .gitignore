@@ -36,3 +36,4 @@ supabase/.env
 supabase/functions/telegram-webhook/.env
 supabase/functions/telegram-webhook/secrets.json
 supabase/.temp
+.aider*
