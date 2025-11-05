@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME = 'smartpick-v2.0'; // Updated: 2025-01-05 - Forces cache refresh
-const RUNTIME_CACHE = 'smartpick-runtime-v2';
+const CACHE_NAME = 'smartpick-v3.0-gamification'; // Updated: 2025-01-06 - Gamification system
+const RUNTIME_CACHE = 'smartpick-runtime-v3';
 
 // Assets to cache on install
 const PRECACHE_URLS = [
