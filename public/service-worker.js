@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME = 'smartpick-v1';
-const RUNTIME_CACHE = 'smartpick-runtime';
+const CACHE_NAME = 'smartpick-v2.0'; // Updated: 2025-01-05 - Forces cache refresh
+const RUNTIME_CACHE = 'smartpick-runtime-v2';
 
 // Assets to cache on install
 const PRECACHE_URLS = [
@@ -76,38 +76,68 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first strategy for static assets
-  event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
+  // Network-first strategy for HTML (always get latest)
+  // Cache-first for hashed assets (immutable JS/CSS bundles)
+  const isHtmlRequest = request.mode === 'navigate' ||
+                        url.pathname.endsWith('.html') ||
+                        url.pathname === '/' ||
+                        url.pathname.endsWith('/');
 
-        // Not in cache, fetch from network
-        return fetch(request)
-          .then((response) => {
-            // Don't cache invalid responses
-            if (!response || response.status !== 200 || response.type === 'error') {
-              return response;
-            }
-
-            // Clone and cache the response
+  if (isHtmlRequest) {
+    // Network-first for HTML - always try to get latest version
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache the fresh HTML
+          if (response && response.status === 200) {
             const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
+            caches.open(CACHE_NAME).then((cache) => {
               cache.put(request, responseClone);
             });
-
-            return response;
-          })
-          .catch(() => {
-            // Network failed, show offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match('/offline.html');
-            }
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || caches.match('/offline.html');
           });
-      })
-  );
+        })
+    );
+  } else {
+    // Cache-first for static assets (JS/CSS with hashes are immutable)
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          // Not in cache, fetch from network
+          return fetch(request)
+            .then((response) => {
+              // Don't cache invalid responses
+              if (!response || response.status !== 200 || response.type === 'error') {
+                return response;
+              }
+
+              // Clone and cache the response
+              const responseClone = response.clone();
+              caches.open(RUNTIME_CACHE).then((cache) => {
+                cache.put(request, responseClone);
+              });
+
+              return response;
+            })
+            .catch(() => {
+              // Network failed, show offline page for navigation requests
+              if (request.mode === 'navigate') {
+                return caches.match('/offline.html');
+              }
+            });
+        })
+    );
+  }
 });
 
 // Push notification event
