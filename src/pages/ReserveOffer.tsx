@@ -11,6 +11,7 @@ import { resolveOfferImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { updateMetaTags } from '@/lib/social-share';
 
 export default function ReserveOffer() {
   const { offerId } = useParams<{ offerId: string }>();
@@ -56,6 +57,10 @@ export default function ReserveOffer() {
       setIsLoading(true);
       const data = await getOfferById(offerId);
       setOffer(data);
+      // Update meta tags for social sharing
+      if (data) {
+        updateMetaTags(data);
+      }
     } catch (error) {
       console.error('Error loading offer:', error);
   toast.error(t('toast.failedLoadOffer'));
