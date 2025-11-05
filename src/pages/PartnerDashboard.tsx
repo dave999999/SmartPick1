@@ -44,9 +44,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown } from 'lucide-react';
+import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown, Camera } from 'lucide-react';
 import { TelegramConnect } from '@/components/TelegramConnect';
+import QRScanner from '@/components/QRScanner';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -1224,29 +1226,70 @@ const generate24HourOptions = (): string[] => {
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-2xl">
+            <DialogContent className="rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                   📱 Validate Pickup
                 </DialogTitle>
-                <DialogDescription className="text-base">Enter the customer's QR code to confirm pickup</DialogDescription>
+                <DialogDescription className="text-base">Scan or enter the customer's QR code to confirm pickup</DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <Input
-                  placeholder="SP-2024-XY7K9"
-                  value={qrInput}
-                  onChange={(e) => setQrInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleValidateQR()}
-                  className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
-                />
-                <Button
-                  onClick={handleValidateQR}
-                  className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Validate & Confirm Pickup
-                </Button>
-              </div>
+
+              <Tabs defaultValue="camera" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="camera" className="flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Camera Scan
+                  </TabsTrigger>
+                  <TabsTrigger value="manual" className="flex items-center gap-2">
+                    <QrCode className="w-4 h-4" />
+                    Manual Entry
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="camera" className="space-y-4 mt-4">
+                  <QRScanner
+                    onScan={async (code) => {
+                      setQrInput(code);
+                      // Automatically validate the scanned code
+                      try {
+                        const result = await validateQRCode(code);
+                        if (result.valid && result.reservation) {
+                          await handleMarkAsPickedUp(result.reservation);
+                          setQrInput('');
+                          setQrScannerOpen(false);
+                          toast.success('Pickup confirmed successfully!');
+                        } else {
+                          toast.error(result.error || 'Invalid QR code');
+                        }
+                      } catch (error) {
+                        toast.error('Failed to validate QR code');
+                      }
+                    }}
+                    onError={(error) => {
+                      toast.error(error);
+                    }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="manual" className="space-y-4 mt-4">
+                  <div className="space-y-4">
+                    <Input
+                      placeholder="SP-2024-XY7K9"
+                      value={qrInput}
+                      onChange={(e) => setQrInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleValidateQR()}
+                      className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
+                    />
+                    <Button
+                      onClick={handleValidateQR}
+                      className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                    >
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Validate & Confirm Pickup
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
