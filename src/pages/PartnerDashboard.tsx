@@ -76,7 +76,10 @@ export default function PartnerDashboard() {
   const [pickupEndSlot, setPickupEndSlot] = useState('');
   // Auto-expiration for 24h businesses: 6 hours by spec
   const [autoExpire6h, setAutoExpire6h] = useState(true);
-  const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out'>('all');
+  const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out' | 'scheduled'>('all');
+  // Offer scheduling
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledPublishAt, setScheduledPublishAt] = useState('');
   const navigate = useNavigate();
 
   const CATEGORIES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
@@ -300,6 +303,10 @@ export default function PartnerDashboard() {
       };
 
       if (partner) {
+        // Determine status and scheduled_publish_at
+        const offerStatus = isScheduled ? 'SCHEDULED' : 'ACTIVE';
+        const scheduledDate = isScheduled && scheduledPublishAt ? new Date(scheduledPublishAt).toISOString() : null;
+
         // Create offer with already-processed image URLs
         let { data, error } = await supabase
           .from('offers')
@@ -315,9 +322,10 @@ export default function PartnerDashboard() {
             quantity_total: offerData.quantity_total,
             pickup_start: offerData.pickup_window.start.toISOString(),
             pickup_end: offerData.pickup_window.end.toISOString(),
-            status: 'ACTIVE',
+            status: offerStatus,
             expires_at: offerData.pickup_window.end.toISOString(),
             auto_expire_in: offerData.pickup_window.end.toISOString(),
+            ...(scheduledDate && { scheduled_publish_at: scheduledDate }),
           })
           .select()
           .single();
@@ -338,8 +346,9 @@ export default function PartnerDashboard() {
               quantity_total: offerData.quantity_total,
               pickup_start: offerData.pickup_window.start.toISOString(),
               pickup_end: offerData.pickup_window.end.toISOString(),
-              status: 'ACTIVE',
+              status: offerStatus,
               expires_at: offerData.pickup_window.end.toISOString(),
+              ...(scheduledDate && { scheduled_publish_at: scheduledDate }),
             })
             .select()
             .single();
@@ -348,7 +357,7 @@ export default function PartnerDashboard() {
         }
 
         if (error) throw error;
-        toast.success('Offer created successfully!');
+        toast.success(isScheduled ? 'Offer scheduled successfully!' : 'Offer created successfully!');
         setIsCreateDialogOpen(false);
         setImageFiles([]);
         setImagePreviews([]);
@@ -357,6 +366,8 @@ export default function PartnerDashboard() {
         setPickupStartSlot('');
         setPickupEndSlot('');
         setAutoExpire6h(true);
+        setIsScheduled(false);
+        setScheduledPublishAt('');
         loadPartnerData();
       }
     } catch (error) {
@@ -1179,6 +1190,48 @@ const generate24HourOptions = (): string[] => {
                     {" "}
                     <span className="font-medium">next 6 hours</span> if you operate 24/7.
                   </p>
+                </div>
+
+                {/* Offer Scheduling Section */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Schedule Publishing</h4>
+
+                  <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <Checkbox
+                      id="is_scheduled"
+                      checked={isScheduled}
+                      onCheckedChange={(checked) => {
+                        setIsScheduled(checked as boolean);
+                        if (!checked) {
+                          setScheduledPublishAt('');
+                        }
+                      }}
+                    />
+                    <Label htmlFor="is_scheduled" className="text-sm cursor-pointer font-medium">
+                      Schedule this offer for later
+                    </Label>
+                  </div>
+
+                  {isScheduled && (
+                    <div>
+                      <Label htmlFor="scheduled_publish_at" className="flex items-center gap-2 text-base font-semibold mb-2">
+                        <Calendar className="w-4 h-4 text-[#4CC9A8]" />
+                        Publish Date & Time *
+                      </Label>
+                      <Input
+                        id="scheduled_publish_at"
+                        type="datetime-local"
+                        value={scheduledPublishAt}
+                        onChange={(e) => setScheduledPublishAt(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        required={isScheduled}
+                        className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        The offer will automatically go live at the specified time
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit Buttons */}
