@@ -8,13 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X } from 'lucide-react';
+import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X, Bell, BellOff } from 'lucide-react';
 import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import { useI18n } from '@/lib/i18n';
 import { TelegramConnect } from '@/components/TelegramConnect';
+import { usePickupReminders } from '@/hooks/usePickupReminders';
 
 export default function MyPicks() {
   const [user, setUser] = useState<User | null>(null);
@@ -29,6 +30,7 @@ export default function MyPicks() {
   const [timers, setTimers] = useState<Record<string, string>>({});
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { permission, requestPermission, scheduleMultipleReminders, hasPermission } = usePickupReminders();
 
   useEffect(() => {
     loadUserAndReservations();
@@ -85,9 +87,25 @@ export default function MyPicks() {
 
       const reservationsData = await getCustomerReservations(userIdToUse);
       setReservations(reservationsData);
+
+      // Schedule pickup reminders for active reservations
+      if (hasPermission) {
+        scheduleMultipleReminders(reservationsData);
+      }
     } catch (error) {
       console.error('Error loading reservations:', error);
   toast.error(t('toast.failedLoadReservations'));
+    }
+  };
+
+  // Request notification permission and schedule reminders
+  const handleEnableReminders = async () => {
+    const granted = await requestPermission();
+    if (granted) {
+      toast.success('Pickup reminders enabled!');
+      scheduleMultipleReminders(reservations);
+    } else {
+      toast.error('Notification permission denied');
     }
   };
 
@@ -297,6 +315,28 @@ export default function MyPicks() {
                 <p className="text-gray-600">Your reservations and pickup history</p>
               </div>
             </div>
+
+            {/* Pickup Reminders Button */}
+            {activeReservations.length > 0 && (
+              <>
+                {!hasPermission ? (
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="h-11 gap-2"
+                    onClick={handleEnableReminders}
+                  >
+                    <Bell className="h-4 w-4" />
+                    Enable Pickup Reminders
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                    <Bell className="h-4 w-4" />
+                    <span className="font-medium">Reminders Active</span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
