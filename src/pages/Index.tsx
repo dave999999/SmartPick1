@@ -13,6 +13,7 @@ import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -61,6 +62,7 @@ export default function Index() {
 
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { addRecentlyViewed } = useRecentlyViewed();
 
   useEffect(() => {
     loadOffers();
@@ -100,6 +102,9 @@ export default function Index() {
 
   const handleOfferClick = (offer: Offer) => {
     setSelectedOffer(offer);
+    // Track recently viewed
+    addRecentlyViewed(offer.id, 'offer');
+
     if (!user) {
       setShowAuthDialog(true);
     } else {
