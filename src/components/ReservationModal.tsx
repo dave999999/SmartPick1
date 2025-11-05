@@ -134,14 +134,18 @@ export default function ReservationModal({
 
   const handleShareFacebook = () => {
     if (!offer) return;
-    const shareUrls = generateShareUrls(offer, window.location.href);
+    // Use the dedicated offer URL for proper Open Graph meta tags
+    const offerUrl = `${window.location.origin}/reserve/${offer.id}`;
+    const shareUrls = generateShareUrls(offer, offerUrl);
     window.open(shareUrls.facebook, '_blank', 'width=600,height=400');
     toast.success('Opening Facebook share dialog...');
   };
 
   const handleShareTwitter = () => {
     if (!offer) return;
-    const shareUrls = generateShareUrls(offer, window.location.href);
+    // Use the dedicated offer URL for proper Open Graph meta tags
+    const offerUrl = `${window.location.origin}/reserve/${offer.id}`;
+    const shareUrls = generateShareUrls(offer, offerUrl);
     window.open(shareUrls.twitter, '_blank', 'width=600,height=400');
     toast.success('Opening Twitter share dialog...');
   };
@@ -151,17 +155,20 @@ export default function ReservationModal({
     // We'll copy the link and show instructions
     if (!offer) return;
 
+    // Use the dedicated offer URL
+    const offerUrl = `${window.location.origin}/reserve/${offer.id}`;
+
     // Try to copy to clipboard
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard.writeText(offerUrl)
         .then(() => {
           toast.success('Link copied! Open Instagram app and paste in your story or post.');
         })
         .catch(() => {
-          toast.info('Please copy this link to share on Instagram: ' + window.location.href);
+          toast.info('Please copy this link to share on Instagram: ' + offerUrl);
         });
     } else {
-      toast.info('Please copy this link to share on Instagram: ' + window.location.href);
+      toast.info('Please copy this link to share on Instagram: ' + offerUrl);
     }
   };
 
