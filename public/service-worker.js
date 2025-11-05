@@ -1,162 +1,146 @@
 /* eslint-disable no-restricted-globals */
-const CACHE_NAME = 'smartpick-v3.0-gamification'; // Updated: 2025-01-06 - Gamification system
-const RUNTIME_CACHE = 'smartpick-runtime-v3';
+/**
+ * SmartPick PWA Service Worker
+ * v3.2 – cache bust + safer HTML strategy + gentle asset caching
+ * Deployed: 2025-11-06
+ *
+ * Notes:
+ * - Bump CACHE_NAME/RUNTIME_CACHE on any release that must invalidate old caches.
+ * - HTML is network-first (always try fresh), fallback to cache/offline.
+ * - Static assets are cached with stale-while-revalidate for speed.
+ */
 
-// Assets to cache on install
-const PRECACHE_URLS = [
-  '/',
-  '/index.html',
-  '/offline.html',
-];
+const CACHE_NAME = 'smartpick-v3.2-profile-update';
+const RUNTIME_CACHE = 'smartpick-runtime-v3.2';
 
-// Install event - cache essential assets
+// Precache only essentials. Avoid listing hashed bundles explicitly here — Vite names change per build.
+const PRECACHE_URLS = ['/', '/index.html', '/offline.html'];
+
+// ---- Install: precache & take control immediately
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
+  console.log('[SW] Installing…');
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('[Service Worker] Precaching assets');
-        return cache.addAll(PRECACHE_URLS);
-      })
-      .then(() => self.skipWaiting()) // Activate immediately
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Activate event - clean up old caches
+// ---- Activate: clean old caches, claim clients, and ping pages to reload if needed
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-            console.log('[Service Worker] Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim()) // Take control immediately
-  );
+  console.log('[SW] Activating…');
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(
+      names.map((n) => {
+        if (n !== CACHE_NAME && n !== RUNTIME_CACHE) {
+          console.log('[SW] Deleting old cache:', n);
+          return caches.delete(n);
+        }
+      })
+    );
+    await self.clients.claim();
+
+    // Ask open pages to refresh (they can decide to ignore)
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    clients.forEach((client) => {
+      client.postMessage({ type: 'SW_ACTIVATED_V3_2' });
+    });
+  })());
 });
 
-// Fetch event - serve from cache, fallback to network
+// Utility: treat as navigation/HTML?
+function isHtmlNavigation(request, url) {
+  return (
+    request.mode === 'navigate' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname === '/' ||
+    url.pathname.endsWith('/')
+  );
+}
+
+// ---- Fetch: HTML = network-first; API = network-only (fallback: cache); assets = stale-while-revalidate
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
+  // Only handle same-origin requests
+  if (url.origin !== self.location.origin) return;
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
+  // Only GET is cacheable
+  if (request.method !== 'GET') return;
 
-  // Network-first strategy for API calls
-  if (url.pathname.includes('/rest/v1/') || url.pathname.includes('/auth/')) {
+  // Avoid caching Supabase auth/REST responses to prevent stale data
+  const isApi =
+    url.pathname.includes('/rest/v1/') ||
+    url.pathname.includes('/auth/') ||
+    url.pathname.startsWith('/api/');
+
+  // ---- API: network-first; fallback to cache if offline (optional)
+  if (isApi) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          // Clone and cache successful responses
+          // Optionally: cache successful GETs (commented out to reduce staleness)
+          // if (response && response.status === 200) {
+          //   const copy = response.clone();
+          //   caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
+          // }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // ---- HTML (navigation): network-first to guarantee fresh build after deploy
+  if (isHtmlNavigation(request, url)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
           if (response && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(RUNTIME_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(request, copy));
           }
           return response;
         })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request);
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return cached || caches.match('/offline.html');
         })
     );
     return;
   }
 
-  // Network-first strategy for HTML (always get latest)
-  // Cache-first for hashed assets (immutable JS/CSS bundles)
-  const isHtmlRequest = request.mode === 'navigate' ||
-                        url.pathname.endsWith('.html') ||
-                        url.pathname === '/' ||
-                        url.pathname.endsWith('/');
-
-  if (isHtmlRequest) {
-    // Network-first for HTML - always try to get latest version
-    event.respondWith(
-      fetch(request)
+  // ---- Static assets (JS/CSS/images): stale-while-revalidate
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      const networkFetch = fetch(request)
         .then((response) => {
-          // Cache the fresh HTML
-          if (response && response.status === 200) {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(request, responseClone);
-            });
+          if (response && response.status === 200 && response.type !== 'opaque') {
+            const copy = response.clone();
+            caches.open(RUNTIME_CACHE).then((c) => c.put(request, copy));
           }
           return response;
         })
-        .catch(() => {
-          // Fallback to cache if network fails
-          return caches.match(request).then((cachedResponse) => {
-            return cachedResponse || caches.match('/offline.html');
-          });
-        })
-    );
-  } else {
-    // Cache-first for static assets (JS/CSS with hashes are immutable)
-    event.respondWith(
-      caches.match(request)
-        .then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
+        .catch(() => cached); // if network fails, fall back to cache
 
-          // Not in cache, fetch from network
-          return fetch(request)
-            .then((response) => {
-              // Don't cache invalid responses
-              if (!response || response.status !== 200 || response.type === 'error') {
-                return response;
-              }
-
-              // Clone and cache the response
-              const responseClone = response.clone();
-              caches.open(RUNTIME_CACHE).then((cache) => {
-                cache.put(request, responseClone);
-              });
-
-              return response;
-            })
-            .catch(() => {
-              // Network failed, show offline page for navigation requests
-              if (request.mode === 'navigate') {
-                return caches.match('/offline.html');
-              }
-            });
-        })
-    );
-  }
+      // If we have cache, return it immediately and refresh in background
+      return cached || networkFetch;
+    })
+  );
 });
 
-// Push notification event
+// ---- Push notifications
 self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push notification received:', event);
-
-  if (!event.data) {
-    console.log('[Service Worker] Push event but no data');
-    return;
-  }
+  console.log('[SW] Push received');
+  if (!event.data) return;
 
   let data;
   try {
     data = event.data.json();
-  } catch (e) {
-    data = {
-      title: 'SmartPick',
-      body: event.data.text(),
-    };
+  } catch {
+    data = { title: 'SmartPick', body: event.data.text() };
   }
 
   const title = data.title || 'SmartPick';
@@ -166,77 +150,48 @@ self.addEventListener('push', (event) => {
     badge: '/icon-192.png',
     vibrate: [200, 100, 200],
     tag: data.tag || 'default',
-    requireInteraction: data.requireInteraction || false,
+    requireInteraction: !!data.requireInteraction,
     data: data.data || {},
     actions: data.actions || [],
   };
 
-  event.waitUntil(
-    self.registration.showNotification(title, options)
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-// Notification click event
+// ---- Notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification clicked:', event);
   event.notification.close();
-
-  // Handle action buttons
-  if (event.action) {
-    console.log('[Service Worker] Action clicked:', event.action);
-    // Handle different actions here
-  }
-
-  // Open or focus the app
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Check if app is already open
-        for (let client of clientList) {
-          if (client.url.includes(self.location.origin) && 'focus' in client) {
-            return client.focus();
-          }
-        }
-        // Open new window if not
-        if (clients.openWindow) {
-          const urlToOpen = event.notification.data?.url || '/';
-          return clients.openWindow(urlToOpen);
-        }
-      })
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) return client.focus();
+      }
+      if (self.clients.openWindow) {
+        const urlToOpen = event.notification.data?.url || '/';
+        return self.clients.openWindow(urlToOpen);
+      }
+    })
   );
 });
 
-// Background sync event (for offline actions)
+// ---- Background sync placeholder
 self.addEventListener('sync', (event) => {
-  console.log('[Service Worker] Background sync:', event.tag);
-
   if (event.tag === 'sync-reservations') {
-    event.waitUntil(
-      // Sync pending reservations when back online
-      syncPendingReservations()
-    );
+    event.waitUntil(syncPendingReservations());
   }
 });
 
 async function syncPendingReservations() {
-  // This would sync any pending offline reservations
-  console.log('[Service Worker] Syncing pending reservations...');
-  // Implementation depends on your offline storage strategy
+  console.log('[SW] Syncing pending reservations…');
+  // Implement if you add offline queueing
 }
 
-// Message event - communicate with app
+// ---- Messages from pages
 self.addEventListener('message', (event) => {
-  console.log('[Service Worker] Message received:', event.data);
-
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-
-  if (event.data && event.data.type === 'CACHE_URLS') {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'CACHE_URLS') {
     event.waitUntil(
-      caches.open(RUNTIME_CACHE).then((cache) => {
-        return cache.addAll(event.data.payload);
-      })
+      caches.open(RUNTIME_CACHE).then((cache) => cache.addAll(event.data.payload || []))
     );
   }
 });
