@@ -10,9 +10,9 @@ lerna-debug.log*
 # Environment variables (CRITICAL: Never commit these!)
 .env
 .env.local
-.env.production
 .env.development
 .env*.local
+# Note: .env.production is tracked for maintenance mode flag only
 
 # Build output
 node_modules
