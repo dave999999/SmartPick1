@@ -55,12 +55,18 @@ export default function UserProfile() {
         phone: currentUser.phone || '',
       });
 
-      // Load user stats for gamification
-      const stats = await getUserStats(currentUser.id);
-      setUserStats(stats);
+      // Load user stats for gamification (optional - graceful degradation)
+      try {
+        const stats = await getUserStats(currentUser.id);
+        setUserStats(stats);
+      } catch (statsError) {
+        console.warn('Gamification stats not available (tables may not exist yet):', statsError);
+        // Don't show error to user - profile will work without gamification
+      }
     } catch (error) {
       console.error('Error loading user:', error);
       toast.error('Failed to load profile');
+      navigate('/');
     } finally {
       setIsLoading(false);
     }
@@ -149,10 +155,10 @@ export default function UserProfile() {
       {/* Content */}
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
+          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
-            <TabsTrigger value="wallet">Wallet</TabsTrigger>
+            {userStats && <TabsTrigger value="achievements">Achievements</TabsTrigger>}
+            {userStats && <TabsTrigger value="wallet">Wallet</TabsTrigger>}
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -201,7 +207,7 @@ export default function UserProfile() {
             </motion.div>
 
             {/* Stats Row */}
-            {userStats && (
+            {userStats ? (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -209,6 +215,15 @@ export default function UserProfile() {
               >
                 <UserStatsCard stats={userStats} />
               </motion.div>
+            ) : (
+              <Card className="shadow-lg border-yellow-200 bg-yellow-50">
+                <CardContent className="py-8 text-center">
+                  <p className="text-yellow-800 font-medium mb-2">🎮 Gamification Features Coming Soon!</p>
+                  <p className="text-sm text-yellow-600">
+                    Database tables need to be set up. Check GAMIFICATION_SETUP.md for instructions.
+                  </p>
+                </CardContent>
+              </Card>
             )}
 
             {/* Level & Streak Row */}
