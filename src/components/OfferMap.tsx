@@ -95,6 +95,7 @@ interface OfferMapProps {
   onOfferClick: (offer: Offer) => void;
   selectedCategory?: string;
   highlightedOfferId?: string;
+  onLocationChange?: (location: [number, number] | null) => void;
 }
 
 interface GroupedLocation {
@@ -116,7 +117,7 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export default function OfferMap({ offers, onOfferClick, selectedCategory, highlightedOfferId }: OfferMapProps) {
+export default function OfferMap({ offers, onOfferClick, selectedCategory, highlightedOfferId, onLocationChange }: OfferMapProps) {
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   // Always show map, including on mobile
   const [showMap, setShowMap] = useState(true);
@@ -370,6 +371,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
           setUserLocation(userPos);
           setMapCenter(userPos);
           setMapZoom(14);
+          onLocationChange?.(userPos);
           toast.success('Showing offers near you');
         },
         (error) => {

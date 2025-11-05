@@ -12,6 +12,7 @@ import SplashScreen from '@/components/SplashScreen';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
+import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
@@ -47,6 +48,17 @@ export default function Index() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+
+  // Search and Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterState>({
+    maxDistance: 50,
+    minPrice: 0,
+    maxPrice: 500,
+  });
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -100,6 +112,108 @@ export default function Index() {
     setShowReservationModal(false);
     setSelectedOffer(null);
   };
+
+  // Calculate distance between two points using Haversine formula
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  // Get partner location from offer
+  const getPartnerLocation = (offer: Offer) => {
+    if (offer.partner?.location?.latitude && offer.partner?.location?.longitude) {
+      return {
+        lat: offer.partner.location.latitude,
+        lng: offer.partner.location.longitude,
+      };
+    }
+    if (offer.partner?.latitude && offer.partner?.longitude) {
+      return {
+        lat: offer.partner.latitude,
+        lng: offer.partner.longitude,
+      };
+    }
+    return null;
+  };
+
+  // Filter and sort offers
+  const getFilteredAndSortedOffers = (): Offer[] => {
+    let filtered = [...offers];
+
+    // Category filter
+    if (selectedCategory && selectedCategory !== '') {
+      filtered = filtered.filter(o => o.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(offer =>
+        offer.title.toLowerCase().includes(query) ||
+        offer.partner?.business_name?.toLowerCase().includes(query) ||
+        offer.category.toLowerCase().includes(query)
+      );
+    }
+
+    // Price filter
+    filtered = filtered.filter(offer =>
+      parseFloat(offer.smart_price) >= filters.minPrice &&
+      parseFloat(offer.smart_price) <= filters.maxPrice
+    );
+
+    // Distance filter (only if user location is set)
+    if (userLocation && filters.maxDistance < 50) {
+      filtered = filtered.filter(offer => {
+        const location = getPartnerLocation(offer);
+        if (!location) return false;
+        const distance = calculateDistance(
+          userLocation[0],
+          userLocation[1],
+          location.lat,
+          location.lng
+        );
+        return distance <= filters.maxDistance;
+      });
+    }
+
+    // Sorting
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'nearest':
+          if (!userLocation) return 0;
+          const locA = getPartnerLocation(a);
+          const locB = getPartnerLocation(b);
+          if (!locA || !locB) return 0;
+          const distA = calculateDistance(userLocation[0], userLocation[1], locA.lat, locA.lng);
+          const distB = calculateDistance(userLocation[0], userLocation[1], locB.lat, locB.lng);
+          return distA - distB;
+
+        case 'cheapest':
+          return parseFloat(a.smart_price) - parseFloat(b.smart_price);
+
+        case 'expiring':
+          const expiryA = (a as any)?.expires_at || (a as any)?.auto_expire_in || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+          const expiryB = (b as any)?.expires_at || (b as any)?.auto_expire_in || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+          return new Date(expiryA).getTime() - new Date(expiryB).getTime();
+
+        case 'newest':
+        default:
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+    });
+
+    return filtered;
+  };
+
+  const filteredOffers = getFilteredAndSortedOffers();
 
   return (
     <>
@@ -280,6 +394,19 @@ export default function Index() {
         onCategorySelect={setSelectedCategory}
       />
 
+      {/* Search and Filters */}
+      <div className="max-w-7xl mx-auto px-4 pt-4">
+        <SearchAndFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          filters={filters}
+          onFiltersChange={setFilters}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          showDistanceFilter={userLocation !== null}
+        />
+      </div>
+
       {/* Demo Mode Alert */}
       {isDemoMode && (
         <div className="max-w-7xl mx-auto px-4 pt-4">
@@ -308,13 +435,14 @@ export default function Index() {
         ) : (
           <>
             <OfferMap
-              offers={offers}
+              offers={filteredOffers}
               onOfferClick={handleOfferClick}
               selectedCategory={selectedCategory}
+              onLocationChange={setUserLocation}
             />
             {/* Recently Added Offers Slider - Below Map */}
             <RecentOffersSlider
-              offers={offers}
+              offers={filteredOffers}
               onOfferClick={handleOfferClick}
             />
           </>
