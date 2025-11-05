@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Navigation, Maximize2, Minimize2 } from 'lucide-react';
 import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
+import FavoriteButton from '@/components/FavoriteButton';
 import { toast } from 'sonner';
 
 // Fix Leaflet default marker icon issue
@@ -543,9 +544,12 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                               <div className="relative z-10">
                                 <div className="flex items-start justify-between mb-2">
                                   <h4 className="font-bold text-sm flex-1 text-gray-900 drop-shadow">{offer.title}</h4>
-                                  <Badge className="ml-2 text-xs shadow-sm" style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}>
-                                    {offer.category}
-                                  </Badge>
+                                  <div className="flex items-center gap-1 ml-2">
+                                    <FavoriteButton id={offer.id} className="bg-white/90 hover:bg-white" />
+                                    <Badge className="text-xs shadow-sm" style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}>
+                                      {offer.category}
+                                    </Badge>
+                                  </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 mb-2">
