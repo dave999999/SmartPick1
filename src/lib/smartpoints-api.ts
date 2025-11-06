@@ -1,4 +1,6 @@
 import { supabase } from './supabase';
+import { emitPointsChange } from './pointsEventBus';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface UserPoints {
   id: string;
@@ -108,7 +110,14 @@ export async function deductPoints(
       };
     }
 
-    return data as DeductPointsResult;
+    const result = data as DeductPointsResult;
+
+    // Emit event to notify all listeners about the points change
+    if (result.success && result.balance !== undefined) {
+      emitPointsChange(result.balance, userId);
+    }
+
+    return result;
   } catch (error) {
     console.error('Error in deductPoints:', error);
     return {
@@ -143,7 +152,14 @@ export async function addPoints(
       };
     }
 
-    return data as AddPointsResult;
+    const result = data as AddPointsResult;
+
+    // Emit event to notify all listeners about the points change
+    if (result.success && result.balance !== undefined) {
+      emitPointsChange(result.balance, userId);
+    }
+
+    return result;
   } catch (error) {
     console.error('Error in addPoints:', error);
     return {
@@ -232,4 +248,34 @@ export function formatPointsChange(change: number): string {
     return `+${change}`;
   }
   return `${change}`;
+}
+
+/**
+ * Subscribe to real-time updates for user points
+ * @param userId User ID to subscribe to
+ * @param callback Function called when points balance changes
+ * @returns Supabase channel for cleanup
+ */
+export function subscribeToUserPoints(
+  userId: string,
+  callback: (newBalance: number) => void
+): RealtimeChannel {
+  const channel = supabase
+    .channel(`user_points:${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'user_points',
+        filter: `user_id=eq.${userId}`
+      },
+      (payload) => {
+        const newBalance = (payload.new as UserPoints).balance;
+        callback(newBalance);
+      }
+    )
+    .subscribe();
+
+  return channel;
 }

@@ -315,48 +315,36 @@ export async function getUserReferralCode(userId: string): Promise<string | null
 
 /**
  * Apply referral code (when new user signs up)
+ * Awards 50 points to referrer and checks achievements
  */
-export async function applyReferralCode(newUserId: string, referralCode: string): Promise<boolean> {
+export async function applyReferralCode(
+  newUserId: string,
+  referralCode: string
+): Promise<{ success: boolean; error?: string; pointsAwarded?: number }> {
   try {
-    // Find the referrer
-    const { data: referrer, error: findError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('referral_code', referralCode)
-      .single();
+    const { data, error } = await supabase.rpc('apply_referral_code_with_rewards', {
+      p_new_user_id: newUserId,
+      p_referral_code: referralCode
+    });
 
-    if (findError || !referrer) {
-      console.error('Referral code not found:', findError);
-      return false;
+    if (error) {
+      console.error('Error applying referral code:', error);
+      return { success: false, error: 'Failed to apply referral code' };
     }
 
-    // Update new user's referred_by
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ referred_by: referrer.id })
-      .eq('id', newUserId);
+    const result = data as { success: boolean; error?: string; points_awarded?: number };
 
-    if (updateError) {
-      console.error('Error applying referral:', updateError);
-      return false;
+    if (!result.success) {
+      return { success: false, error: result.error || 'Invalid referral code' };
     }
 
-    // Update referrer's stats
-    const { error: statsError } = await supabase
-      .from('user_stats')
-      .update({
-        total_referrals: supabase.sql`total_referrals + 1`
-      })
-      .eq('user_id', referrer.id);
-
-    if (statsError) {
-      console.error('Error updating referrer stats:', statsError);
-    }
-
-    return true;
+    return {
+      success: true,
+      pointsAwarded: result.points_awarded || 50
+    };
   } catch (error) {
     console.error('Error in applyReferralCode:', error);
-    return false;
+    return { success: false, error: 'Network error' };
   }
 }
 
