@@ -59,12 +59,20 @@ export default function ReservationModal({
     }
   }, [open, user, offer]);
 
+  // Update insufficient points check when quantity changes
+  useEffect(() => {
+    const totalNeeded = POINTS_PER_RESERVATION * quantity;
+    setInsufficientPoints(pointsBalance < totalNeeded);
+  }, [quantity, pointsBalance]);
+
   const loadPointsBalance = async () => {
     if (!user) return;
     try {
       const userPoints = await getUserPoints(user.id);
-      setPointsBalance(userPoints?.balance ?? 0);
-      setInsufficientPoints((userPoints?.balance ?? 0) < POINTS_PER_RESERVATION);
+      const balance = userPoints?.balance ?? 0;
+      setPointsBalance(balance);
+      const totalNeeded = POINTS_PER_RESERVATION * quantity;
+      setInsufficientPoints(balance < totalNeeded);
     } catch (error) {
       console.error('Error loading points balance:', error);
     }
@@ -103,6 +111,12 @@ export default function ReservationModal({
 
   const handleReserve = async () => {
     if (!offer || !user) return;
+
+    // CRITICAL: Prevent double-submission (double-click protection)
+    if (isReserving) {
+      console.log('⚠️ Already processing reservation, ignoring duplicate click');
+      return;
+    }
 
     if (penaltyInfo?.isUnderPenalty) {
       toast.error(`You are under penalty. Time remaining: ${countdown}`);
@@ -321,8 +335,8 @@ export default function ReservationModal({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs text-gray-600">This costs</p>
-              <p className="text-lg font-bold text-[#4CC9A8]">{POINTS_PER_RESERVATION} Points</p>
+              <p className="text-xs text-gray-600">This will cost</p>
+              <p className="text-lg font-bold text-[#4CC9A8]">{POINTS_PER_RESERVATION * quantity} Points</p>
             </div>
           </div>
 
@@ -333,7 +347,7 @@ export default function ReservationModal({
               <AlertDescription className="text-orange-900">
                 <strong>⚠️ Insufficient SmartPoints</strong>
                 <p className="mt-1">
-                  You need {POINTS_PER_RESERVATION} SmartPoints to reserve this offer.
+                  You need {POINTS_PER_RESERVATION * quantity} SmartPoints to reserve {quantity} unit(s).
                   Buy 100 points for ₾1 to continue.
                 </p>
                 <Button
