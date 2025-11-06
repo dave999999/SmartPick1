@@ -666,28 +666,58 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase');
   }
-  
-  // Get reservation to restore quantity
+
+  // Get reservation details including user ID
   const { data: reservation } = await supabase
     .from('reservations')
-    .select('offer_id, quantity')
+    .select('offer_id, quantity, customer_id, status')
     .eq('id', reservationId)
     .single();
 
-  if (reservation) {
-    // Restore offer quantity
-    const { data: offer } = await supabase
-      .from('offers')
-      .select('quantity_available')
-      .eq('id', reservation.offer_id)
-      .single();
+  if (!reservation) {
+    throw new Error('Reservation not found');
+  }
 
-    if (offer) {
-      await supabase
-        .from('offers')
-        .update({ quantity_available: offer.quantity_available + reservation.quantity })
-        .eq('id', reservation.offer_id);
+  // Don't allow cancelling already cancelled or picked up reservations
+  if (reservation.status === 'CANCELLED') {
+    throw new Error('Reservation already cancelled');
+  }
+
+  if (reservation.status === 'PICKED_UP') {
+    throw new Error('Cannot cancel a picked up reservation');
+  }
+
+  // Restore offer quantity
+  const { data: offer } = await supabase
+    .from('offers')
+    .select('quantity_available')
+    .eq('id', reservation.offer_id)
+    .single();
+
+  if (offer) {
+    await supabase
+      .from('offers')
+      .update({ quantity_available: offer.quantity_available + reservation.quantity })
+      .eq('id', reservation.offer_id);
+  }
+
+  // REFUND POINTS - Give back the 5 SmartPoints deducted on reservation
+  const POINTS_PER_RESERVATION = 5;
+
+  const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
+    p_user_id: reservation.customer_id,
+    p_amount: POINTS_PER_RESERVATION,
+    p_reason: 'refund',
+    p_metadata: {
+      reservation_id: reservationId,
+      offer_id: reservation.offer_id,
+      cancelled_at: new Date().toISOString()
     }
+  });
+
+  if (refundError) {
+    console.error('Error refunding points:', refundError);
+    // Don't throw - still cancel the reservation even if refund fails
   }
 
   // Cancel reservation
