@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@/lib/types';
 import { getCurrentUser, updateUserProfile } from '@/lib/api';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Sparkles, Edit } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
+import { onPointsChange } from '@/lib/pointsEventBus';
 
 // Gamification Components
 import { SmartPointsWallet } from '@/components/SmartPointsWallet';
@@ -36,11 +37,7 @@ export default function UserProfile() {
   const navigate = useNavigate();
   const { t } = useI18n();
 
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
+  const loadUser = useCallback(async () => {
     setIsLoading(true);
     try {
       const { user: currentUser } = await getCurrentUser();
@@ -70,7 +67,44 @@ export default function UserProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate]);
+
+  // Initial load on mount
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
+
+  // Listen to points changes to refresh stats
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = onPointsChange((newBalance, changedUserId) => {
+      // Only reload stats if it's the current user
+      if (changedUserId === user.id && userStats) {
+        console.log('Points changed: Reloading user stats');
+        getUserStats(user.id)
+          .then(setUserStats)
+          .catch(err => console.warn('Failed to reload stats:', err));
+      }
+    });
+
+    return unsubscribe;
+  }, [user, userStats]);
+
+  // Auto-refresh when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        console.log('Tab visible: Refreshing profile data');
+        loadUser();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadUser, user]);
 
   const handleSave = async () => {
     if (!user) return;
