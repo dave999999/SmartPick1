@@ -701,16 +701,19 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .eq('id', reservation.offer_id);
   }
 
-  // REFUND POINTS - Give back the 5 SmartPoints deducted on reservation
+  // REFUND POINTS - Give back points based on quantity (5 points per unit)
   const POINTS_PER_RESERVATION = 5;
+  const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
 
   const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
     p_user_id: reservation.customer_id,
-    p_amount: POINTS_PER_RESERVATION,
+    p_amount: totalPointsToRefund,
     p_reason: 'refund',
     p_metadata: {
       reservation_id: reservationId,
       offer_id: reservation.offer_id,
+      quantity: reservation.quantity,
+      points_refunded: totalPointsToRefund,
       cancelled_at: new Date().toISOString()
     }
   });
