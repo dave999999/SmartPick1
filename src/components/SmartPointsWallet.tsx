@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Coins, Plus, TrendingUp, TrendingDown, Clock } from 'lucide-react';
-import { getUserPoints, getPointTransactions, formatTransactionReason, formatPointsChange } from '@/lib/smartpoints-api';
+import { getUserPoints, getPointTransactions, formatTransactionReason, formatPointsChange, subscribeToUserPoints } from '@/lib/smartpoints-api';
 import type { UserPoints, PointTransaction } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
 import { toast } from 'sonner';
+import { onPointsChange } from '@/lib/pointsEventBus';
 
 interface SmartPointsWalletProps {
   userId: string;
@@ -19,11 +20,7 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
   const [loading, setLoading] = useState(true);
   const [showBuyModal, setShowBuyModal] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, [userId]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [pointsData, transactionsData] = await Promise.all([
@@ -39,7 +36,56 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  // Initial load on mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Real-time subscription to database changes
+  useEffect(() => {
+    const channel = subscribeToUserPoints(userId, (newBalance) => {
+      console.log('Real-time update: New balance from Supabase:', newBalance);
+      setPoints(prev => prev ? { ...prev, balance: newBalance } : null);
+      // Reload transactions to show latest activity
+      getPointTransactions(userId, 5).then(setTransactions);
+    });
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [userId]);
+
+  // Event bus listener for local app events
+  useEffect(() => {
+    const unsubscribe = onPointsChange((newBalance, changedUserId) => {
+      // Only update if this is the current user
+      if (changedUserId === userId) {
+        console.log('Event bus update: New balance:', newBalance);
+        setPoints(prev => prev ? { ...prev, balance: newBalance } : null);
+        // Reload transactions to show latest activity
+        getPointTransactions(userId, 5).then(setTransactions);
+      }
+    });
+
+    return unsubscribe;
+  }, [userId]);
+
+  // Auto-refresh when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Tab visible: Refreshing SmartPoints data');
+        loadData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [loadData]);
 
   const handlePurchaseSuccess = (newBalance: number) => {
     setPoints(prev => prev ? { ...prev, balance: newBalance } : null);

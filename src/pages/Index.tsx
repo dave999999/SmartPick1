@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
 import { getActiveOffers, getCurrentUser, signOut } from '@/lib/api';
 import { isDemoMode } from '@/lib/supabase';
@@ -50,6 +50,7 @@ export default function Index() {
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,11 +64,23 @@ export default function Index() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { addRecentlyViewed } = useRecentlyViewed();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     loadOffers();
     checkUser();
   }, []);
+
+  // Check for referral code in URL and auto-open signup
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      // Auto-open signup dialog with referral code
+      setDefaultAuthTab('signup');
+      setShowAuthDialog(true);
+      toast.success(`🎁 Welcome! Referral code ${refParam.toUpperCase()} is ready to use!`);
+    }
+  }, [searchParams]);
 
   const checkUser = async () => {
     const { user } = await getCurrentUser();
@@ -485,6 +498,7 @@ export default function Index() {
       <AuthDialog
         open={showAuthDialog}
         onOpenChange={setShowAuthDialog}
+        defaultTab={defaultAuthTab}
         onSuccess={() => {
           checkUser();
           if (selectedOffer) {

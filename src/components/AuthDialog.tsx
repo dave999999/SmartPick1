@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getPartnerByUserId } from '@/lib/api';
+import { applyReferralCode } from '@/lib/gamification-api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,30 +15,42 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Mail, Clock, XCircle } from 'lucide-react';
+import { AlertCircle, Mail, Clock, XCircle, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  defaultTab?: 'signin' | 'signup';
 }
 
-export default function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialogProps) {
+export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab = 'signin' }: AuthDialogProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partnerStatus, setPartnerStatus] = useState<string | null>(null);
-  
+
   // Sign In state
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
-  
+
   // Sign Up state
   const [signUpName, setSignUpName] = useState('');
   const [signUpEmail, setSignUpEmail] = useState('');
   const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+
+  // Check for referral code in URL on mount
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      setReferralCode(refParam.toUpperCase());
+      toast.success(`🎁 Referral code ${refParam.toUpperCase()} applied! You and your friend will get bonus points!`);
+    }
+  }, [searchParams]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +145,20 @@ export default function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialog
       if (error) throw error;
 
       if (data.user) {
-        toast.success('Account created successfully!');
+        // Apply referral code if provided
+        if (referralCode.trim()) {
+          const result = await applyReferralCode(data.user.id, referralCode.trim());
+          if (result.success) {
+            toast.success(`🎉 Account created! Welcome bonus: 100 points. Your friend received ${result.pointsAwarded} points!`);
+          } else {
+            // Still show success even if referral failed
+            console.warn('Referral code application failed:', result.error);
+            toast.success('Account created successfully! Welcome bonus: 100 points');
+          }
+        } else {
+          toast.success('Account created successfully! Welcome bonus: 100 points');
+        }
+
         onOpenChange(false);
         if (onSuccess) onSuccess();
       }
@@ -191,7 +217,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialog
           </Alert>
         )}
 
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
@@ -314,6 +340,28 @@ export default function AuthDialog({ open, onOpenChange, onSuccess }: AuthDialog
                   disabled={isLoading}
                   minLength={6}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referral-code" className="flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-[#4CC9A8]" />
+                  Referral Code (Optional)
+                </Label>
+                <Input
+                  id="referral-code"
+                  type="text"
+                  placeholder="Enter referral code"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  disabled={isLoading}
+                  className="uppercase"
+                  maxLength={6}
+                />
+                {referralCode && (
+                  <p className="text-xs text-[#4CC9A8] font-medium">
+                    🎁 You and your friend will both get bonus points!
+                  </p>
+                )}
               </div>
 
               <Button
