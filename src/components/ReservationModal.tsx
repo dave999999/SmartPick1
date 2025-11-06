@@ -109,23 +109,26 @@ export default function ReservationModal({
       return;
     }
 
+    // Calculate total points needed based on quantity
+    const totalPointsNeeded = POINTS_PER_RESERVATION * quantity;
+
     // Check SmartPoints balance
-    if (pointsBalance < POINTS_PER_RESERVATION) {
+    if (pointsBalance < totalPointsNeeded) {
       setInsufficientPoints(true);
       setShowBuyPointsModal(true);
-      toast.error(`⚠️ You need ${POINTS_PER_RESERVATION} SmartPoints to reserve. Buy more to continue!`);
+      toast.error(`⚠️ You need ${totalPointsNeeded} SmartPoints to reserve ${quantity} unit(s). Buy more to continue!`);
       return;
     }
 
     try {
       setIsReserving(true);
 
-      // Deduct SmartPoints first
+      // Deduct SmartPoints first (multiply by quantity)
       const pointsResult = await deductPoints(
         user.id,
-        POINTS_PER_RESERVATION,
+        totalPointsNeeded,
         'reservation',
-        { offer_id: offer.id, offer_title: offer.title }
+        { offer_id: offer.id, offer_title: offer.title, quantity }
       );
 
       if (!pointsResult.success) {
@@ -140,7 +143,7 @@ export default function ReservationModal({
       setPointsBalance(pointsResult.balance ?? 0);
 
       toast.success(
-        `✅ Reservation confirmed! ${POINTS_PER_RESERVATION} SmartPoints used. Balance: ${pointsResult.balance}`
+        `✅ Reservation confirmed! ${totalPointsNeeded} SmartPoints used (${quantity} × ${POINTS_PER_RESERVATION}). Balance: ${pointsResult.balance}`
       );
 
       onOpenChange(false);

@@ -186,11 +186,11 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-white rounded-lg border">
-              <p className="text-xs text-gray-600">Per Reservation</p>
+              <p className="text-xs text-gray-600">Per Unit</p>
               <p className="text-lg font-bold text-gray-900">5 Points</p>
             </div>
             <div className="p-3 bg-white rounded-lg border">
-              <p className="text-xs text-gray-600">Reservations Left</p>
+              <p className="text-xs text-gray-600">Units Available</p>
               <p className="text-lg font-bold text-[#4CC9A8]">{Math.floor(balance / 5)}</p>
             </div>
           </div>
