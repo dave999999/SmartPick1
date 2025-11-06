@@ -118,17 +118,26 @@ export default function ReservationModal({
 
   const handleReserve = async () => {
     const now = Date.now();
+    const callId = Math.random().toString(36).substring(7);
+
+    console.log('🔵🔵🔵 FUNCTION ENTRY', callId, {
+      timestamp: new Date().toISOString(),
+      isProcessing: isProcessingRef.current,
+      stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
+    });
 
     // 🔒 CRITICAL: Set protection flag IMMEDIATELY before ANY checks
     // This prevents race condition where both clicks pass checks before flag is set
     if (isProcessingRef.current) {
-      console.warn('⚠️ BLOCKED: Already processing (immediate ref check)');
+      console.warn('⚠️⚠️⚠️ BLOCKED:', callId, 'Already processing');
       toast.error('⏳ Please wait, already processing...');
       return;
     }
     isProcessingRef.current = true; // Lock IMMEDIATELY
 
-    console.log('🔵 Reserve button clicked', {
+    console.log('✅ LOCK ACQUIRED', callId, 'at', new Date().toISOString());
+
+    console.log('🔵 Reserve button clicked', callId, {
       timeSinceLastClick: now - lastClickTimeRef.current,
       quantity,
       pointsNeeded: POINTS_PER_RESERVATION * quantity
@@ -173,10 +182,11 @@ export default function ReservationModal({
       console.log('✅ Starting reservation process...');
 
       // Deduct SmartPoints first (multiply by quantity)
-      console.log('💰 Deducting points:', {
+      console.log('💰💰💰 DEDUCTING POINTS', callId, {
         userId: user.id,
         amount: totalPointsNeeded,
-        quantity
+        quantity,
+        timestamp: new Date().toISOString()
       });
 
       const pointsResult = await deductPoints(
@@ -186,7 +196,7 @@ export default function ReservationModal({
         { offer_id: offer.id, offer_title: offer.title, quantity }
       );
 
-      console.log('💰 Points deduction result:', pointsResult);
+      console.log('💰 Points deduction result', callId, ':', pointsResult);
 
       if (!pointsResult.success) {
         console.error('❌ Points deduction failed:', pointsResult.error);
@@ -209,7 +219,7 @@ export default function ReservationModal({
       );
 
       // Reset locks before navigation (success path)
-      console.log('🔄 Reservation successful, resetting locks');
+      console.log('🔄🔄🔄 SUCCESS - Resetting locks', callId);
       setIsReserving(false);
       isProcessingRef.current = false;
 
@@ -217,7 +227,7 @@ export default function ReservationModal({
       if (onSuccess) onSuccess();
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
-      console.error('❌ Error in reservation process:', error);
+      console.error('❌❌❌ ERROR - Resetting locks', callId, error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
 
