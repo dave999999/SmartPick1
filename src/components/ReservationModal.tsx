@@ -119,55 +119,57 @@ export default function ReservationModal({
   const handleReserve = async () => {
     const now = Date.now();
 
+    // 🔒 CRITICAL: Set protection flag IMMEDIATELY before ANY checks
+    // This prevents race condition where both clicks pass checks before flag is set
+    if (isProcessingRef.current) {
+      console.warn('⚠️ BLOCKED: Already processing (immediate ref check)');
+      toast.error('⏳ Please wait, already processing...');
+      return;
+    }
+    isProcessingRef.current = true; // Lock IMMEDIATELY
+
     console.log('🔵 Reserve button clicked', {
-      isProcessing: isProcessingRef.current,
       timeSinceLastClick: now - lastClickTimeRef.current,
       quantity,
       pointsNeeded: POINTS_PER_RESERVATION * quantity
     });
 
-    if (!offer || !user) {
-      console.log('❌ No offer or user');
-      return;
-    }
-
-    // LAYER 1: Check if already processing
-    if (isProcessingRef.current) {
-      console.warn('⚠️ BLOCKED: Already processing reservation (ref check)');
-      toast.error('⏳ Please wait, processing your reservation...');
-      return;
-    }
-
-    // LAYER 2: Time-based debounce protection
-    const timeSinceLastClick = now - lastClickTimeRef.current;
-    if (timeSinceLastClick < DEBOUNCE_MS && lastClickTimeRef.current > 0) {
-      console.warn(`⚠️ BLOCKED: Too fast! ${timeSinceLastClick}ms since last click (minimum: ${DEBOUNCE_MS}ms)`);
-      toast.error(`⏳ Please wait ${Math.ceil((DEBOUNCE_MS - timeSinceLastClick) / 1000)} more seconds...`);
-      return;
-    }
-
-    if (penaltyInfo?.isUnderPenalty) {
-      toast.error(`You are under penalty. Time remaining: ${countdown}`);
-      return;
-    }
-
-    // Calculate total points needed based on quantity
-    const totalPointsNeeded = POINTS_PER_RESERVATION * quantity;
-
-    // Check SmartPoints balance
-    if (pointsBalance < totalPointsNeeded) {
-      setInsufficientPoints(true);
-      setShowBuyPointsModal(true);
-      toast.error(`⚠️ You need ${totalPointsNeeded} SmartPoints to reserve ${quantity} unit(s). Buy more to continue!`);
-      return;
-    }
-
     try {
-      // Set protections immediately (synchronous)
-      isProcessingRef.current = true;
-      lastClickTimeRef.current = now;
-      setIsReserving(true);
+      if (!offer || !user) {
+        console.log('❌ No offer or user');
+        isProcessingRef.current = false;
+        return;
+      }
 
+      // LAYER 2: Time-based debounce protection
+      const timeSinceLastClick = now - lastClickTimeRef.current;
+      if (timeSinceLastClick < DEBOUNCE_MS && lastClickTimeRef.current > 0) {
+        console.warn(`⚠️ BLOCKED: Too fast! ${timeSinceLastClick}ms since last click (minimum: ${DEBOUNCE_MS}ms)`);
+        toast.error(`⏳ Please wait ${Math.ceil((DEBOUNCE_MS - timeSinceLastClick) / 1000)} more seconds...`);
+        isProcessingRef.current = false;
+        return;
+      }
+      lastClickTimeRef.current = now;
+
+      if (penaltyInfo?.isUnderPenalty) {
+        toast.error(`You are under penalty. Time remaining: ${countdown}`);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // Calculate total points needed based on quantity
+      const totalPointsNeeded = POINTS_PER_RESERVATION * quantity;
+
+      // Check SmartPoints balance
+      if (pointsBalance < totalPointsNeeded) {
+        setInsufficientPoints(true);
+        setShowBuyPointsModal(true);
+        toast.error(`⚠️ You need ${totalPointsNeeded} SmartPoints to reserve ${quantity} unit(s). Buy more to continue!`);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      setIsReserving(true);
       console.log('✅ Starting reservation process...');
 
       // Deduct SmartPoints first (multiply by quantity)
@@ -189,6 +191,8 @@ export default function ReservationModal({
       if (!pointsResult.success) {
         console.error('❌ Points deduction failed:', pointsResult.error);
         toast.error(pointsResult.error || 'Failed to deduct SmartPoints');
+        setIsReserving(false);
+        isProcessingRef.current = false;
         return;
       }
 
@@ -204,6 +208,11 @@ export default function ReservationModal({
         `✅ Reservation confirmed! ${totalPointsNeeded} SmartPoints used (${quantity} × ${POINTS_PER_RESERVATION}). Balance: ${pointsResult.balance}`
       );
 
+      // Reset locks before navigation (success path)
+      console.log('🔄 Reservation successful, resetting locks');
+      setIsReserving(false);
+      isProcessingRef.current = false;
+
       onOpenChange(false);
       if (onSuccess) onSuccess();
       navigate(`/reservation/${reservation.id}`);
@@ -211,11 +220,10 @@ export default function ReservationModal({
       console.error('❌ Error in reservation process:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
-    } finally {
-      console.log('🔄 Resetting reservation locks');
+
+      // Reset locks on error
       setIsReserving(false);
-      isProcessingRef.current = false; // Reset ref
-      // Note: lastClickTimeRef is NOT reset - keeps debounce active
+      isProcessingRef.current = false;
     }
   };
 
