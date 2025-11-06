@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, User, PenaltyInfo } from '@/lib/types';
 import { createReservation, checkUserPenalty } from '@/lib/api';
@@ -46,12 +46,17 @@ export default function ReservationModal({
   const [insufficientPoints, setInsufficientPoints] = useState(false);
   const navigate = useNavigate();
 
+  // Use ref for immediate synchronous double-click protection
+  const isProcessingRef = useRef(false);
+
   const POINTS_PER_RESERVATION = 5;
 
   useEffect(() => {
     if (open && user) {
       loadPenaltyInfo();
       loadPointsBalance();
+      // Reset processing flag when modal opens
+      isProcessingRef.current = false;
     }
     // Update meta tags for social sharing when modal opens
     if (open && offer) {
@@ -112,9 +117,10 @@ export default function ReservationModal({
   const handleReserve = async () => {
     if (!offer || !user) return;
 
-    // CRITICAL: Prevent double-submission (double-click protection)
-    if (isReserving) {
+    // CRITICAL: Prevent double-submission using ref for immediate synchronous check
+    if (isProcessingRef.current) {
       console.log('⚠️ Already processing reservation, ignoring duplicate click');
+      toast.error('Please wait, processing your reservation...');
       return;
     }
 
@@ -135,6 +141,8 @@ export default function ReservationModal({
     }
 
     try {
+      // Set ref immediately (synchronous) to block subsequent clicks
+      isProcessingRef.current = true;
       setIsReserving(true);
 
       // Deduct SmartPoints first (multiply by quantity)
@@ -169,6 +177,7 @@ export default function ReservationModal({
       toast.error(errorMessage);
     } finally {
       setIsReserving(false);
+      isProcessingRef.current = false; // Reset ref
     }
   };
 
