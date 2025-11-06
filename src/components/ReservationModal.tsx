@@ -48,8 +48,10 @@ export default function ReservationModal({
 
   // Use ref for immediate synchronous double-click protection
   const isProcessingRef = useRef(false);
+  const lastClickTimeRef = useRef(0);
 
   const POINTS_PER_RESERVATION = 5;
+  const DEBOUNCE_MS = 2000; // 2 second debounce
 
   useEffect(() => {
     if (open && user) {
@@ -115,12 +117,32 @@ export default function ReservationModal({
   };
 
   const handleReserve = async () => {
-    if (!offer || !user) return;
+    const now = Date.now();
 
-    // CRITICAL: Prevent double-submission using ref for immediate synchronous check
+    console.log('🔵 Reserve button clicked', {
+      isProcessing: isProcessingRef.current,
+      timeSinceLastClick: now - lastClickTimeRef.current,
+      quantity,
+      pointsNeeded: POINTS_PER_RESERVATION * quantity
+    });
+
+    if (!offer || !user) {
+      console.log('❌ No offer or user');
+      return;
+    }
+
+    // LAYER 1: Check if already processing
     if (isProcessingRef.current) {
-      console.log('⚠️ Already processing reservation, ignoring duplicate click');
-      toast.error('Please wait, processing your reservation...');
+      console.warn('⚠️ BLOCKED: Already processing reservation (ref check)');
+      toast.error('⏳ Please wait, processing your reservation...');
+      return;
+    }
+
+    // LAYER 2: Time-based debounce protection
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+    if (timeSinceLastClick < DEBOUNCE_MS && lastClickTimeRef.current > 0) {
+      console.warn(`⚠️ BLOCKED: Too fast! ${timeSinceLastClick}ms since last click (minimum: ${DEBOUNCE_MS}ms)`);
+      toast.error(`⏳ Please wait ${Math.ceil((DEBOUNCE_MS - timeSinceLastClick) / 1000)} more seconds...`);
       return;
     }
 
@@ -141,11 +163,20 @@ export default function ReservationModal({
     }
 
     try {
-      // Set ref immediately (synchronous) to block subsequent clicks
+      // Set protections immediately (synchronous)
       isProcessingRef.current = true;
+      lastClickTimeRef.current = now;
       setIsReserving(true);
 
+      console.log('✅ Starting reservation process...');
+
       // Deduct SmartPoints first (multiply by quantity)
+      console.log('💰 Deducting points:', {
+        userId: user.id,
+        amount: totalPointsNeeded,
+        quantity
+      });
+
       const pointsResult = await deductPoints(
         user.id,
         totalPointsNeeded,
@@ -153,13 +184,18 @@ export default function ReservationModal({
         { offer_id: offer.id, offer_title: offer.title, quantity }
       );
 
+      console.log('💰 Points deduction result:', pointsResult);
+
       if (!pointsResult.success) {
+        console.error('❌ Points deduction failed:', pointsResult.error);
         toast.error(pointsResult.error || 'Failed to deduct SmartPoints');
         return;
       }
 
       // Create reservation
+      console.log('📝 Creating reservation...');
       const reservation = await createReservation(offer.id, user.id, quantity);
+      console.log('✅ Reservation created:', reservation.id);
 
       // Update local balance
       setPointsBalance(pointsResult.balance ?? 0);
@@ -172,12 +208,14 @@ export default function ReservationModal({
       if (onSuccess) onSuccess();
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      console.error('❌ Error in reservation process:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
     } finally {
+      console.log('🔄 Resetting reservation locks');
       setIsReserving(false);
       isProcessingRef.current = false; // Reset ref
+      // Note: lastClickTimeRef is NOT reset - keeps debounce active
     }
   };
 

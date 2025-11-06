@@ -705,6 +705,13 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   const POINTS_PER_RESERVATION = 5;
   const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
 
+  console.log('💰 Attempting to refund points:', {
+    userId: reservation.customer_id,
+    amount: totalPointsToRefund,
+    quantity: reservation.quantity,
+    reservationId
+  });
+
   const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
     p_user_id: reservation.customer_id,
     p_amount: totalPointsToRefund,
@@ -719,8 +726,11 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   });
 
   if (refundError) {
-    console.error('Error refunding points:', refundError);
+    console.error('❌ Error refunding points:', refundError);
+    console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
     // Don't throw - still cancel the reservation even if refund fails
+  } else {
+    console.log('✅ Points refunded successfully:', refundResult);
   }
 
   // Cancel reservation
