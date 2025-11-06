@@ -3,6 +3,7 @@
   "cleanUrls": true,
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
+  "alias": ["smartpick.ge", "www.smartpick.ge"],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
