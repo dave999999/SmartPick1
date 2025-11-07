@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AchievementBadge } from './AchievementBadge';
-import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement, getUserStats, markAchievementViewed } from '@/lib/gamification-api';
+import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement, getUserStats, markAchievementViewed, claimAchievement } from '@/lib/gamification-api';
 import { Award, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
@@ -244,6 +244,15 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
                       currentProgress={progress.current}
                       targetProgress={progress.target}
                       showDetails
+                      onClaim={async (achievementId) => {
+                        const res = await claimAchievement(achievementId);
+                        if (!res) {
+                          toast.error('Failed to claim reward');
+                          return;
+                        }
+                        toast.success('Reward claimed!');
+                        await loadAchievements();
+                      }}
                     />
                   );
                 })}
@@ -264,6 +273,15 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
                       currentProgress={progress.current}
                       targetProgress={progress.target}
                       showDetails
+                      onClaim={async (achievementId) => {
+                        const res = await claimAchievement(achievementId);
+                        if (!res) {
+                          toast.error('Failed to claim reward');
+                          return;
+                        }
+                        toast.success('Reward claimed!');
+                        await loadAchievements();
+                      }}
                     />
                   );
                 })}

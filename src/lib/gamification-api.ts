@@ -42,6 +42,9 @@ export interface UserAchievement {
   unlocked_at: string;
   is_new: boolean;
   viewed_at: string | null;
+  reward_claimed?: boolean;
+  reward_claimed_at?: string | null;
+  points_awarded?: number;
   achievement?: AchievementDefinition;
 }
 
@@ -157,6 +160,23 @@ export async function getUserAchievements(userId: string): Promise<UserAchieveme
   } catch (error) {
     console.error('Error in getUserAchievements:', error);
     return [];
+  }
+}
+
+/**
+ * Claim an unlocked achievement and receive reward points
+ */
+export async function claimAchievement(achievementId: string): Promise<{ success: boolean; awarded_now?: boolean; reward_points?: number; balance?: number } | null> {
+  try {
+    const { data, error } = await supabase.rpc('claim_achievement', { p_achievement_id: achievementId });
+    if (error) {
+      console.error('Error claiming achievement:', error);
+      return null;
+    }
+    return data as any;
+  } catch (error) {
+    console.error('Error in claimAchievement:', error);
+    return null;
   }
 }
 
