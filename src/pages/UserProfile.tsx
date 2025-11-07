@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Sparkles, Edit } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Sparkles, Edit, Coins, Clock } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { onPointsChange } from '@/lib/pointsEventBus';
@@ -21,33 +21,147 @@ import { StreakTracker } from '@/components/gamification/StreakTracker';
 import { UserLevelCard } from '@/components/gamification/UserLevelCard';
 import { ReferralCard } from '@/components/gamification/ReferralCard';
 import { AchievementsGrid } from '@/components/gamification/AchievementsGrid';
-import { checkUserPenaltyStatus, PenaltyStatus } from '@/lib/penalty-system';
+import { checkUserPenaltyStatus, PenaltyStatus, liftPenaltyWithPoints } from '@/lib/penalty-system';
 import { getUserStats, UserStats } from '@/lib/gamification-api';
 import { motion } from 'framer-motion';
 
-function PenaltyStatusBlock({ userId, fallbackUntil }: { userId: string; fallbackUntil?: string }) {
-  const [status, setStatus] = useState<PenaltyStatus | null>(null);
+function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; onExpire?: () => void }) {
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
   useEffect(() => {
-    let mounted = true;
-    checkUserPenaltyStatus(userId)
-      .then(s => { if (mounted) setStatus(s); })
-      .catch(err => console.warn('Failed to load penalty status', err));
-    return () => { mounted = false; };
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const target = new Date(penaltyUntil).getTime();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        onExpire?.();
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft({ hours, minutes, seconds });
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [penaltyUntil, onExpire]);
+
+  return (
+    <div className="flex items-center justify-center gap-2 bg-white/70 rounded-lg p-3 border-2 border-orange-300">
+      <Clock className="w-5 h-5 text-orange-600" />
+      <div className="flex gap-1 text-2xl font-bold text-orange-700 font-mono">
+        {timeLeft.hours > 0 && <span>{String(timeLeft.hours).padStart(2, '0')}:</span>}
+        <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
+        <span>:</span>
+        <span>{String(timeLeft.seconds).padStart(2, '0')}</span>
+      </div>
+    </div>
+  );
+}
+
+function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: string; fallbackUntil?: string; onUpdate?: () => void }) {
+  const [status, setStatus] = useState<PenaltyStatus | null>(null);
+  const [isLifting, setIsLifting] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      const s = await checkUserPenaltyStatus(userId);
+      setStatus(s);
+    } catch (err) {
+      console.warn('Failed to load penalty status', err);
+    }
   }, [userId]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const handleLiftPenalty = async () => {
+    if (!status) return;
+
+    setIsLifting(true);
+    try {
+      const result = await liftPenaltyWithPoints(userId);
+      
+      if (result.success) {
+        toast.success(result.message);
+        await loadStatus();
+        onUpdate?.(); // Refresh parent
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      console.error('Error lifting penalty:', error);
+      toast.error('Failed to lift penalty');
+    } finally {
+      setIsLifting(false);
+    }
+  };
+
   if (!status) {
     return fallbackUntil ? (
-      <p className="text-sm text-orange-700">Penalty active until: {fallbackUntil}</p>
+      <div className="space-y-3">
+        <PenaltyCountdown penaltyUntil={fallbackUntil} onExpire={onUpdate} />
+      </div>
     ) : null;
   }
+
   if (status.isBanned) {
-    return <p className="text-sm text-red-700 font-semibold">Account permanently banned due to repeated no-shows. Contact support.</p>;
-  }
-  if (status.isPenalized && status.penaltyUntil) {
     return (
-      <p className="text-sm text-orange-700">Penalty active until: {new Date(status.penaltyUntil).toLocaleString()} ({status.penaltyMessage})</p>
+      <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4">
+        <p className="text-sm text-red-800 font-bold">🚫 Permanently Banned</p>
+        <p className="text-xs text-red-600 mt-1">Contact support for assistance</p>
+      </div>
     );
   }
-  return <p className="text-sm text-green-700">No active penalty.</p>;
+
+  if (status.isPenalized && status.penaltyUntil) {
+    const penaltyCount = status.penaltyCount;
+    const canLift = penaltyCount === 1 || penaltyCount === 2;
+    const pointsCost = penaltyCount === 1 ? 30 : penaltyCount === 2 ? 90 : 0;
+
+    return (
+      <div className="space-y-3">
+        <PenaltyCountdown penaltyUntil={status.penaltyUntil} onExpire={onUpdate} />
+        
+        {canLift && (
+          <Button
+            onClick={handleLiftPenalty}
+            disabled={isLifting}
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold"
+            size="sm"
+          >
+            {isLifting ? (
+              'Processing...'
+            ) : (
+              <>
+                <Coins className="w-4 h-4 mr-2" />
+                Lift Penalty ({pointsCost} points)
+              </>
+            )}
+          </Button>
+        )}
+
+        {!canLift && penaltyCount >= 3 && (
+          <div className="text-xs text-orange-700 bg-orange-100/50 p-2 rounded text-center">
+            ⏳ This penalty cannot be lifted early. You must wait.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-green-100 border-2 border-green-300 rounded-lg p-3">
+      <p className="text-sm text-green-800 font-semibold">✓ No active penalty</p>
+    </div>
+  );
 }
 
 export default function UserProfile() {
@@ -284,17 +398,17 @@ export default function UserProfile() {
                     {user.penalty_count && user.penalty_count > 0 ? (
                       <div className="space-y-3">
                         <div className="bg-white/50 rounded-lg p-3 border border-orange-200">
-                          <p className="text-sm font-semibold text-orange-800 mb-1">
+                          <p className="text-sm font-semibold text-orange-800 mb-2">
                             Penalty Points: {user.penalty_count}
                           </p>
-                          <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} />
+                          <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} onUpdate={loadUser} />
                         </div>
                         <div className="text-xs text-orange-600 bg-orange-100/50 p-2 rounded">
                           <p className="font-semibold mb-1">Escalation:</p>
                           <ul className="space-y-0.5 pl-3">
-                            <li>1st: 30 min</li>
-                            <li>2nd: 90 min</li>
-                            <li>3rd: 24 hours</li>
+                            <li>1st: 30 min (30 pts to lift)</li>
+                            <li>2nd: 90 min (90 pts to lift)</li>
+                            <li>3rd: 24 hours (no lift)</li>
                             <li>4th+: Permanent ban</li>
                           </ul>
                         </div>
