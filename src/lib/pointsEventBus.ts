@@ -14,7 +14,9 @@ const listeners = new Set<PointsChangeCallback>();
  */
 export const onPointsChange = (callback: PointsChangeCallback) => {
   listeners.add(callback);
-  return () => listeners.delete(callback);
+  return () => {
+    listeners.delete(callback);
+  };
 };
 
 /**

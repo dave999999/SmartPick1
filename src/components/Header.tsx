@@ -42,13 +42,7 @@ export default function Header() {
             >
               🇬🇪
             </button>
-            <button
-              aria-label="Russian"
-              onClick={() => setLanguage('ru')}
-              className={`px-2 py-1 rounded ${language === 'ru' ? 'bg-gray-200' : 'bg-white'}`}
-            >
-              🇷🇺
-            </button>
+            {/* Russian removed */}
           </div>
 
           <Button variant="outline" onClick={() => navigate('/')}>

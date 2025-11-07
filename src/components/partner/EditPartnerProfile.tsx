@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Partner } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +34,67 @@ interface EditPartnerProfileProps {
   onUpdate: () => void;
 }
 
+// Custom map marker icon
+const customIcon = L.divIcon({
+  className: 'custom-marker',
+  html: `
+    <div style="
+      background: linear-gradient(135deg, #00C896 0%, #009B77 100%);
+      border: 4px solid white;
+      border-radius: 50% 50% 50% 0;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      <div style="
+        transform: rotate(45deg);
+        color: white;
+        font-weight: bold;
+        font-size: 20px;
+      ">📍</div>
+    </div>
+  `,
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40],
+});
+
+interface LocationMarkerProps {
+  position: [number, number];
+  setPosition: (pos: [number, number]) => void;
+}
+
+function LocationMarker({ position, setPosition }: LocationMarkerProps) {
+  const markerRef = useRef<L.Marker>(null);
+
+  useMapEvents({
+    click(e) {
+      setPosition([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+
+  return (
+    <Marker
+      position={position}
+      icon={customIcon}
+      draggable={true}
+      ref={markerRef}
+      eventHandlers={{
+        dragend() {
+          const marker = markerRef.current;
+          if (marker) {
+            const pos = marker.getLatLng();
+            setPosition([pos.lat, pos.lng]);
+          }
+        },
+      }}
+    />
+  );
+}
+
 // Generate time options in 30-minute intervals (24-hour format)
 const generateTimeOptions = (): string[] => {
   const options: string[] = [];
@@ -47,6 +111,10 @@ const generateTimeOptions = (): string[] => {
 export default function EditPartnerProfile({ partner, open, onOpenChange, onUpdate }: EditPartnerProfileProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [markerPosition, setMarkerPosition] = useState<[number, number]>([
+    partner.latitude || 41.7151,
+    partner.longitude || 44.8271,
+  ]);
   const [formData, setFormData] = useState({
     business_name: partner.business_name || '',
     business_type: partner.business_type || 'RESTAURANT',
@@ -57,6 +125,8 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
     opening_time: partner.opening_time || '',
     closing_time: partner.closing_time || '',
     open_24h: partner.open_24h || false,
+    latitude: partner.latitude || 41.7151,
+    longitude: partner.longitude || 44.8271,
   });
 
   useEffect(() => {
@@ -74,6 +144,11 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
       });
     }
   }, [partner]);
+
+  const handleMapPositionChange = (pos: [number, number]) => {
+    setMarkerPosition(pos);
+    setFormData({ ...formData, latitude: pos[0], longitude: pos[1] });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +188,8 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
           opening_time: formData.open_24h ? null : formData.opening_time,
           closing_time: formData.open_24h ? null : formData.closing_time,
           open_24h: formData.open_24h,
+          latitude: formData.latitude,
+          longitude: formData.longitude,
         })
         .eq('id', partner.id);
 
@@ -210,6 +287,31 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
           required
           className="text-base min-h-[80px]"
         />
+      </div>
+
+      {/* Interactive Map Section */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <MapPin className="w-4 h-4" />
+          Business Location *
+        </Label>
+        <div className="w-full h-[300px] rounded-lg overflow-hidden border-2 border-gray-300">
+          <MapContainer
+            center={markerPosition}
+            zoom={14}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={true}
+          >
+            <TileLayer
+              attribution='&copy; OpenStreetMap contributors'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            />
+            <LocationMarker position={markerPosition} setPosition={handleMapPositionChange} />
+          </MapContainer>
+        </div>
+        <p className="text-xs text-gray-500">
+          📍 Click or drag the pin to set your exact business location
+        </p>
       </div>
 
       {/* Description */}
