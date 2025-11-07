@@ -7,7 +7,9 @@
     "build": "vite build",
     "lint": "eslint --quiet ./src",
     "preview": "vite preview",
-    "apply:penalty": "node apply-penalty-migrations.js"
+    "apply:penalty": "node apply-penalty-migrations.js",
+    "apply:achievements": "node scripts/apply-achievement-fix.js",
+    "test:achievements": "node scripts/test-achievement-progress.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
