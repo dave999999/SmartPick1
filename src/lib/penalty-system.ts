@@ -76,7 +76,13 @@ export async function applyNoShowPenalty(userId: string, reservationId: string) 
       .eq('id', userId)
       .single();
 
-    if (userError) throw userError;
+    if (userError) {
+      // If column doesn't exist, provide helpful error
+      if (userError.message?.includes('does not exist')) {
+        throw new Error('Penalty system not configured. Please run the penalty migration in Supabase.');
+      }
+      throw userError;
+    }
     if (!user) throw new Error('User not found');
 
     // Check if already banned
