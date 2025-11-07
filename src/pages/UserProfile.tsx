@@ -94,7 +94,12 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
         await loadStatus();
         onUpdate?.(); // Refresh parent
       } else {
-        toast.error(result.message);
+        // If backend function is missing, provide clearer UI and avoid repeat attempts
+        if ((result as any).migrationMissing) {
+          toast.error('Backend function not deployed yet. Please apply the Supabase migration and try again.');
+        } else {
+          toast.error(result.message);
+        }
       }
     } catch (error) {
       console.error('Error lifting penalty:', error);
