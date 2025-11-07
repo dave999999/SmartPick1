@@ -224,46 +224,93 @@ export default function UserProfile() {
 
           {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Profile Header Card */}
+            {/* Profile Header Card with Penalty Status on Right */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="shadow-xl border-2 border-[#4CC9A8]/30 bg-gradient-to-br from-white to-[#EFFFF8]">
-                <CardContent className="pt-6">
-                  <div className="flex flex-col md:flex-row items-center gap-6">
-                    <Avatar className="h-28 w-28 border-4 border-[#4CC9A8] shadow-lg">
-                      <AvatarFallback className="bg-gradient-to-br from-[#4CC9A8] to-[#3db891] text-white text-4xl font-bold">
-                        {getInitials(user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-center md:text-left">
-                      <h2 className="text-4xl font-black text-gray-900 mb-2">{user.name}</h2>
-                      <p className="text-lg text-gray-600 mb-3">{user.email}</p>
-                      <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
-                        <Badge
-                          variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
-                          className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-[#4CC9A8] text-white'}
-                        >
-                          {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
-                          {user.role}
-                        </Badge>
-                        {user.phone && (
-                          <Badge variant="outline" className="gap-1">
-                            <Phone className="w-3 h-3" />
-                            {user.phone}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Profile Info - Left/Center (2 cols on large screens) */}
+                <Card className="shadow-xl border-2 border-[#4CC9A8]/30 bg-gradient-to-br from-white to-[#EFFFF8] lg:col-span-2">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <Avatar className="h-28 w-28 border-4 border-[#4CC9A8] shadow-lg">
+                        <AvatarFallback className="bg-gradient-to-br from-[#4CC9A8] to-[#3db891] text-white text-4xl font-bold">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-center md:text-left">
+                        <h2 className="text-4xl font-black text-gray-900 mb-2">{user.name}</h2>
+                        <p className="text-lg text-gray-600 mb-3">{user.email}</p>
+                        <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
+                          <Badge
+                            variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
+                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-[#4CC9A8] text-white'}
+                          >
+                            {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
+                            {user.role}
                           </Badge>
-                        )}
-                        <Badge variant="outline" className="gap-1">
-                          <Calendar className="w-3 h-3" />
-                          Member since {formatDate(user.created_at)}
-                        </Badge>
+                          {user.phone && (
+                            <Badge variant="outline" className="gap-1">
+                              <Phone className="w-3 h-3" />
+                              {user.phone}
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Member since {formatDate(user.created_at)}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                {/* Penalty Status - Right (1 col on large screens) */}
+                <Card className={`shadow-xl border-2 ${
+                  user.penalty_count && user.penalty_count > 0 
+                    ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-red-50' 
+                    : 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50'
+                }`}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className={`text-lg flex items-center gap-2 ${
+                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-700' : 'text-green-700'
+                    }`}>
+                      {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} Account Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {user.penalty_count && user.penalty_count > 0 ? (
+                      <div className="space-y-3">
+                        <div className="bg-white/50 rounded-lg p-3 border border-orange-200">
+                          <p className="text-sm font-semibold text-orange-800 mb-1">
+                            Penalty Points: {user.penalty_count}
+                          </p>
+                          <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} />
+                        </div>
+                        <div className="text-xs text-orange-600 bg-orange-100/50 p-2 rounded">
+                          <p className="font-semibold mb-1">Escalation:</p>
+                          <ul className="space-y-0.5 pl-3">
+                            <li>1st: 30 min</li>
+                            <li>2nd: 90 min</li>
+                            <li>3rd: 24 hours</li>
+                            <li>4th+: Permanent ban</li>
+                          </ul>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="bg-white/50 rounded-lg p-3 border border-green-200">
+                          <p className="text-sm font-semibold text-green-800 mb-1">✓ Good Standing</p>
+                          <p className="text-sm text-green-700">No active penalties</p>
+                        </div>
+                        <p className="text-xs text-green-600">Keep up the great work picking up your reservations on time!</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
 
             {/* Stats Row */}
@@ -316,29 +363,6 @@ export default function UserProfile() {
                 transition={{ duration: 0.3, delay: 0.4 }}
               >
                 <ReferralCard userId={user.id} totalReferrals={userStats.total_referrals} />
-              </motion.div>
-            )}
-
-            {/* Penalty Warning (dynamic) */}
-            {user.penalty_count && user.penalty_count > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-red-50 shadow-lg">
-                  <CardHeader>
-                    <CardTitle className="text-orange-700 flex items-center gap-2">
-                      ⚠️ Penalty Information
-                    </CardTitle>
-                    <CardDescription className="text-orange-600">
-                      You have {user.penalty_count} penalty point{user.penalty_count > 1 ? 's' : ''}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} />
-                  </CardContent>
-                </Card>
               </motion.div>
             )}
           </TabsContent>
