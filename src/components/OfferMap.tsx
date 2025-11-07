@@ -137,28 +137,29 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   // Use bright, modern CARTO Voyager style (like Glovo/Wolt)
   const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
-  // Create category icon using clear, optimized SVG icons
+  // Create category icon using emojis (no legend required)
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const categoryIcons: Record<string, string> = {
-      BAKERY: 'croissant.svg',
-      RESTAURANT: 'plate-fork-knife.svg',
-      CAFE: 'coffee-cup.svg',
-      GROCERY: 'shopping-basket.svg',
-      ALCOHOL: 'wine-glass.svg',
-      FAST_FOOD: 'burger.svg',
+    const emojis: Record<string, string> = {
+      BAKERY: '🥐',
+      CAFE: '☕',
+      RESTAURANT: '🍽️',
+      FAST_FOOD: '🍔',
+      ALCOHOL: '🍷',
+      GROCERY: '🛒',
     };
 
-    const iconFile = categoryIcons[category] || 'plate-fork-knife.svg';
+    const emoji = emojis[category] || '📍';
     const size = isHighlighted ? 44 : 36;
     const bgColor = isHighlighted ? '#00C896' : '#FFFFFF';
-    const borderColor = isHighlighted ? '#FFFFFF' : '#00C896';
+    const textColor = isHighlighted ? '#FFFFFF' : '#00A37A';
+    const borderColor = isHighlighted ? '#FFFFFF' : '#DFF5ED';
     const shadow = isHighlighted
-      ? '0 6px 16px rgba(0, 200, 150, 0.5), 0 2px 4px rgba(0,0,0,0.1)'
-      : '0 3px 8px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0,0,0,0.1)';
+      ? '0 6px 16px rgba(0, 200, 150, 0.45)'
+      : '0 3px 8px rgba(0, 0, 0, 0.18)';
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -174,42 +175,36 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             height: ${size}px;
             border-radius: 50%;
             background: ${bgColor};
-            border: 2.5px solid ${borderColor};
+            border: 2px solid ${borderColor};
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
+            color: ${textColor};
+            font-size: ${size - 14}px;
+            line-height: 1;
           ">
-            <img
-              src="/icons/categories/${iconFile}"
-              style="
-                width: ${size - 12}px;
-                height: ${size - 12}px;
-                object-fit: contain;
-                ${isHighlighted ? 'filter: brightness(0) invert(1);' : ''}
-              "
-              alt="${category}"
-            />
+            <span>${emoji}</span>
           </div>
           ${count > 1 ? `
             <div class="marker-badge" style="
               position: absolute;
               top: -6px;
               right: -6px;
-              min-width: 22px;
-              height: 22px;
+              min-width: 20px;
+              height: 20px;
               padding: 0 6px;
-              background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+              background: #ef4444;
               color: white;
-              border-radius: 12px;
+              border-radius: 10px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 11px;
+              font-size: 10px;
               font-weight: 700;
               font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
               border: 2px solid white;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+              box-shadow: 0 2px 6px rgba(0,0,0,0.2);
             ">${count}</div>
           ` : ''}
         </div>
@@ -454,14 +449,23 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             style={{ height: '100%', width: '100%', minHeight: '420px' }}
             scrollWheelZoom={true}
             whenReady={() => {
-              // Access map instance via ref callback instead of event arg (Leaflet typings expect no params)
-              mapRef.current = mapRef.current || null;
-              mapRef.current.invalidateSize();
-              setTimeout(() => mapRef.current && mapRef.current.invalidateSize(), 300);
-              setListReady(true);
-
-              // Trigger fade-in animation after map loads
-              setTimeout(() => setMapLoaded(true), 200);
+              try {
+                const map = mapRef.current;
+                if (map) {
+                  requestAnimationFrame(() => {
+                    try { map.invalidateSize(); } catch { /* noop */ }
+                  });
+                  setTimeout(() => {
+                    if (mapRef.current) {
+                      try { mapRef.current.invalidateSize(); } catch { /* noop */ }
+                    }
+                  }, 300);
+                }
+                setListReady(true);
+                setTimeout(() => setMapLoaded(true), 200);
+              } catch (err) {
+                console.error('Map whenReady handler failed:', err);
+              }
             }}
             ref={mapRef}
           >
@@ -590,45 +594,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             })}
           </MapContainer>
 
-          {/* Category chips (replaces legend) */}
-          {!isFullscreen && (
-            <div className="absolute top-4 left-4 z-[1000]">
-              <div className="flex flex-wrap gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-2 shadow-md border border-[#E8F9F4]">
-                {[
-                  { key: '', label: 'All', icon: 'sparkle.svg' },
-                  { key: 'BAKERY', label: 'Bakery', icon: 'croissant.svg' },
-                  { key: 'CAFE', label: 'Café', icon: 'coffee-cup.svg' },
-                  { key: 'RESTAURANT', label: 'Restaurant', icon: 'plate-fork-knife.svg' },
-                  { key: 'FAST_FOOD', label: 'Fast Food', icon: 'burger.svg' },
-                  { key: 'ALCOHOL', label: 'Alcohol & Wine', icon: 'wine-glass.svg' },
-                  { key: 'GROCERY', label: 'Grocery', icon: 'shopping-basket.svg' },
-                ].map((c) => (
-                  <button
-                    key={c.key || 'ALL'}
-                    onClick={() => {
-                      // toggle selectedCategory by synthetic event: update filteredOffers via state
-                      const k = c.key;
-                      if (k === '' && selectedCategory) {
-                        setFilteredOffers(offers);
-                      } else if (k) {
-                        setFilteredOffers(offers.filter(o => o.category === k));
-                      } else {
-                        setFilteredOffers(offers);
-                      }
-                    }}
-                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm border transition ${
-                      (!selectedCategory && c.key === '') || selectedCategory === c.key
-                        ? 'bg-[#F4FFFB] border-[#DFF5ED] text-[#009B77]' 
-                        : 'bg-white border-[#E8F9F4] text-gray-700 hover:border-[#DFF5ED]'
-                    }`}
-                  >
-                    <img src={`/icons/categories/${c.icon}`} alt="" className="w-4 h-4" />
-                    <span className="hidden sm:inline">{c.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* No legend/chips per design request */}
 
           {/* Floating Near Me button - Always visible */}
           {!isFullscreen && (
