@@ -1,4 +1,5 @@
 import { AchievementDefinition, UserAchievement, getAchievementTierColor } from '@/lib/gamification-api';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Lock, Sparkles, Trophy, Target, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -21,6 +22,7 @@ export function AchievementBadge({
   targetProgress = 1,
   onClaim
 }: AchievementBadgeProps) {
+  const [claiming, setClaiming] = useState(false);
   const isUnlocked = !!userAchievement;
   const isNew = userAchievement?.is_new || false;
   const rewardClaimed = userAchievement?.reward_claimed || false;
@@ -149,10 +151,20 @@ export function AchievementBadge({
       {isUnlocked && !rewardClaimed && definition.reward_points > 0 && (
         <div className="mt-3 flex justify-center">
           <button
-            onClick={() => onClaim && onClaim(definition.id)}
-            className="px-3 py-1 text-xs font-semibold rounded-full bg-[#4CC9A8] text-white hover:bg-[#3ab791] shadow-sm transition"
+            onClick={async () => {
+              if (claiming) return;
+              try {
+                setClaiming(true);
+                await onClaim?.(definition.id);
+              } finally {
+                // Let parent refresh userAchievement -> button disappears
+                setClaiming(false);
+              }
+            }}
+            disabled={claiming}
+            className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm transition ${claiming ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#4CC9A8] text-white hover:bg-[#3ab791]'}`}
           >
-            Claim Reward
+            {claiming ? 'Claiming…' : 'Claim Reward'}
           </button>
         </div>
       )}
