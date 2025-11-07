@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X, Bell, BellOff } from 'lucide-react';
-import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation } from '@/lib/api';
+import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation, cleanupOldHistory, clearAllHistory } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -28,6 +28,8 @@ export default function MyPicks() {
   const [comment, setComment] = useState('');
   const [submittingRating, setSubmittingRating] = useState(false);
   const [timers, setTimers] = useState<Record<string, string>>({});
+  const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
+  const [clearingHistory, setClearingHistory] = useState(false);
   const navigate = useNavigate();
   const { t } = useI18n();
   const { permission, requestPermission, scheduleMultipleReminders, hasPermission } = usePickupReminders();
@@ -84,6 +86,9 @@ export default function MyPicks() {
     try {
       const userIdToUse = userId || user?.id;
       if (!userIdToUse) return;
+
+      // Auto-cleanup old history items (10+ days old)
+      await cleanupOldHistory(userIdToUse);
 
       const reservationsData = await getCustomerReservations(userIdToUse);
       setReservations(reservationsData);
@@ -172,7 +177,7 @@ export default function MyPicks() {
 
   const handleRemove = async (reservationId: string) => {
   if (!confirm(t('confirm.removeReservation'))) return;
-    
+
     try {
       await cancelReservation(reservationId);
   toast.success(t('toast.reservationRemoved'));
@@ -180,6 +185,23 @@ export default function MyPicks() {
     } catch (error) {
       console.error('Error removing reservation:', error);
   toast.error(t('toast.failedRemoveReservation'));
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!user?.id) return;
+
+    try {
+      setClearingHistory(true);
+      await clearAllHistory(user.id);
+      toast.success('History cleared successfully');
+      setShowClearHistoryDialog(false);
+      loadReservations(); // Refresh the list
+    } catch (error) {
+      console.error('Error clearing history:', error);
+      toast.error('Failed to clear history');
+    } finally {
+      setClearingHistory(false);
     }
   };
 
@@ -520,7 +542,18 @@ export default function MyPicks() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <>
+                <div className="flex justify-end mb-4">
+                  <Button
+                    variant="destructive"
+                    onClick={() => setShowClearHistoryDialog(true)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Clear All History
+                  </Button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {historyReservations.map((reservation) => (
                   <Card 
                     key={reservation.id} 
@@ -605,7 +638,8 @@ export default function MyPicks() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </TabsContent>
         </Tabs>
@@ -694,6 +728,47 @@ export default function MyPicks() {
                 {submittingRating ? 'Submitting...' : 'Submit Rating'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Clear History Confirmation Dialog */}
+      <Dialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clear All History?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete all your picked up, expired, and cancelled reservations from your history.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearHistoryDialog(false)}
+              className="h-11 flex-1"
+              disabled={clearingHistory}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearHistory}
+              disabled={clearingHistory}
+              className="h-11 flex-1 bg-red-600 hover:bg-red-700"
+            >
+              {clearingHistory ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Clearing...
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Clear History
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
