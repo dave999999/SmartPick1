@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { resolveOfferImageUrl } from '@/lib/api';
+import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 
 interface RecentOffersSliderProps {
   offers: Offer[];
@@ -56,7 +57,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
   };
 
   const getTimeRemaining = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const now = new Date();
     const expires = new Date(target);
     const diff = expires.getTime() - now.getTime();
@@ -69,7 +70,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
   };
 
   const isExpiringSoon = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const diff = new Date(target).getTime() - new Date().getTime();
     return diff > 0 && diff < 60 * 60 * 1000; // Less than 1 hour
   };
@@ -168,7 +169,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
         >
           {recentOffers.map((offer) => {
           const pickupTimes = getPickupTimes(offer);
-          const expiry = (offer as any)?.expires_at || (offer as any)?.auto_expire_in || new Date(Date.now() + 6*60*60*1000).toISOString();
+          const expiry = (offer as any)?.expires_at || (offer as any)?.auto_expire_in || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS*60*60*1000).toISOString();
           const expiringSoon = isExpiringSoon(expiry);
 
           return (

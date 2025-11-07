@@ -16,6 +16,7 @@ import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAn
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 
 function LanguageButtons() {
@@ -218,8 +219,8 @@ export default function Index() {
           return parseFloat(a.smart_price) - parseFloat(b.smart_price);
 
         case 'expiring':
-          const expiryA = (a as any)?.expires_at || (a as any)?.auto_expire_in || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
-          const expiryB = (b as any)?.expires_at || (b as any)?.auto_expire_in || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+          const expiryA = (a as any)?.expires_at || (a as any)?.auto_expire_in || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
+          const expiryB = (b as any)?.expires_at || (b as any)?.auto_expire_in || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
           return new Date(expiryA).getTime() - new Date(expiryB).getTime();
 
         case 'newest':

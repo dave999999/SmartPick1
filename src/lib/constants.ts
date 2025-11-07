@@ -55,7 +55,7 @@ export const MAX_IMAGES_PER_OFFER = 5;
 // ============================================================================
 
 /** Default offer duration for 24-hour businesses (in hours) */
-export const DEFAULT_24H_OFFER_DURATION_HOURS = 6;
+export const DEFAULT_24H_OFFER_DURATION_HOURS = 12;
 
 /** Minimum offer duration (in minutes) */
 export const MIN_OFFER_DURATION_MINUTES = 30;

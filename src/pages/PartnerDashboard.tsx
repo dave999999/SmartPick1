@@ -18,6 +18,7 @@ import {
   resolveOfferImageUrl,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import ImageLibraryModal from '@/components/ImageLibraryModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -74,7 +75,7 @@ export default function PartnerDashboard() {
   const [useBusinessHours, setUseBusinessHours] = useState(false);
   const [pickupStartSlot, setPickupStartSlot] = useState('');
   const [pickupEndSlot, setPickupEndSlot] = useState('');
-  // Auto-expiration for 24h businesses: 6 hours by spec
+  // Auto-expiration for 24h businesses: 12 hours by spec
   const [autoExpire6h, setAutoExpire6h] = useState(true);
   const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out' | 'scheduled'>('all');
   // Offer scheduling
@@ -272,8 +273,8 @@ export default function PartnerDashboard() {
       let pickupEnd: Date = now;
 
       if (is24HourBusiness && autoExpire6h) {
-        // 24-hour business: live next 6 hours
-        pickupEnd = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+        // 24-hour business: live next 12 hours
+        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
       } else {
         const closing = getClosingTime();
         if (closing && closing > now) {
@@ -438,8 +439,8 @@ export default function PartnerDashboard() {
       let pickupEnd: Date = now;
 
       if (is24HourBusiness && autoExpire6h) {
-        // 24-hour business: live next 6 hours
-        pickupEnd = new Date(now.getTime() + 6 * 60 * 60 * 1000);
+        // 24-hour business: live next 12 hours
+        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
       } else {
         const closing = getClosingTime();
         if (closing && closing > now) {
@@ -507,10 +508,24 @@ export default function PartnerDashboard() {
 
     try {
       setProcessingIds(prev => new Set(prev).add(oldOffer.id));
-      
-      // Set new pickup window (2 hours from now)
+
+      // Set new pickup window using same logic as create offer
       const now = new Date();
-      const pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      let pickupEnd: Date;
+
+      if (is24HourBusiness && autoExpire6h) {
+        // 24-hour business: live next 12 hours
+        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
+      } else {
+        const closing = getClosingTime();
+        if (closing && closing > now) {
+          // Live until closing time today
+          pickupEnd = closing;
+        } else {
+          // Fallback if closing unknown/past: default to +2 hours
+          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        }
+      }
 
       // Create new offer with old parameters but new times
       if (partner) {
@@ -1174,7 +1189,7 @@ const generate24HourOptions = (): string[] => {
                           }}
                         />
                         <Label htmlFor="auto_expire_6h" className="text-sm cursor-pointer">
-                          This offer expires automatically in 6 hours
+                          This offer expires automatically in 12 hours
                         </Label>
                       </div>
                     )}
@@ -1188,7 +1203,7 @@ const generate24HourOptions = (): string[] => {
                     {" "}
                     <span className="font-medium">until closing</span> if you have set daily hours, or
                     {" "}
-                    <span className="font-medium">next 6 hours</span> if you operate 24/7.
+                    <span className="font-medium">next 12 hours</span> if you operate 24/7.
                   </p>
                 </div>
 
@@ -1834,7 +1849,7 @@ const generate24HourOptions = (): string[] => {
                   </p>
                   <p className="text-sm text-gray-600">
                     {is24HourBusiness ? (
-                      <>📅 <strong>24/7 business:</strong> Your offer will be live for the next <strong>6 hours</strong>.</>
+                      <>📅 <strong>24/7 business:</strong> Your offer will be live for the next <strong>12 hours</strong>.</>
                     ) : (
                       <>📅 <strong>Regular hours:</strong> Your offer will be live until <strong>closing time today</strong>.</>
                     )}
