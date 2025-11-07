@@ -3,8 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Store, Package, Clock, UserCheck, AlertTriangle } from 'lucide-react';
+import { Users, Store, Package, Clock, UserCheck, AlertTriangle, Shield } from 'lucide-react';
 import { getDashboardStats, testAdminConnection, getAllPartners, getAllUsers } from '@/lib/admin-api';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { SectionCard } from '@/components/layout/SectionCard';
 import { PartnersManagement } from '@/components/admin/PartnersManagement';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { OffersManagement } from '@/components/admin/OffersManagement';
@@ -152,37 +155,21 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">SmartPick Admin Dashboard</h1>
-              <p className="text-gray-600">Manage partners, users, and offers</p>
-              {connectionStatus && (
-                <p className="text-xs text-gray-500">DB Status: {connectionStatus}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                Admin Panel
-              </Badge>
-              <Button variant="outline" className="h-11" onClick={handleRefreshData}>
-                Refresh Data
-              </Button>
-              <Button variant="outline" className="h-11" onClick={() => navigate('/')}>
-                Back to Home
-              </Button>
-              <Button variant="outline" className="h-11" onClick={handleSignOut}>
-                Sign Out
-              </Button>
-            </div>
+    <PageShell>
+      <PageHeader
+        title={<span className="flex items-center gap-2"><Shield className="w-6 h-6 text-blue-600" /> Admin Dashboard</span>}
+        subtitle={<span className="text-gray-600">Manage partners, users, and offers</span>}
+        right={
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">Admin</Badge>
+            <Button variant="outline" className="h-10" onClick={handleRefreshData}>Refresh</Button>
+            <Button variant="outline" className="h-10" onClick={() => navigate('/')}>Home</Button>
+            <Button variant="outline" className="h-10" onClick={handleSignOut}>Sign Out</Button>
           </div>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -202,100 +189,40 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Debug Info Card */}
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader>
-                <CardTitle className="text-blue-900">Debug Information</CardTitle>
-                <CardDescription className="text-blue-700">
-                  Connection status and data counts for troubleshooting
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <strong>DB Connection:</strong> {connectionStatus}
-                  </div>
-                  <div>
-                    <strong>Partners Found:</strong> {stats?.totalPartners || 0}
-                  </div>
-                  <div>
-                    <strong>Users Found:</strong> {stats?.totalUsers || 0}
-                  </div>
-                  <div>
-                    <strong>Offers Found:</strong> {stats?.totalOffers || 0}
-                  </div>
-                </div>
-                <p className="text-xs text-blue-600 mt-2">
-                  If counts show 0, check browser console for detailed error logs or run the RLS fix SQL script.
-                </p>
-              </CardContent>
-            </Card>
+            <SectionCard
+              title="System Status"
+              description="Connection and counts"
+              accent="blue"
+            >
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div><strong>DB Connection:</strong> {connectionStatus}</div>
+                <div><strong>Partners Found:</strong> {stats?.totalPartners || 0}</div>
+                <div><strong>Users Found:</strong> {stats?.totalUsers || 0}</div>
+                <div><strong>Offers Found:</strong> {stats?.totalOffers || 0}</div>
+              </div>
+              <p className="text-xs text-blue-600 mt-3">If counts show 0, check console logs or apply RLS fix SQL.</p>
+            </SectionCard>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Partners</CardTitle>
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalPartners || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Active business partners
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Registered customers
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Offers</CardTitle>
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.totalOffers || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Available offers
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Partners</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-orange-600">{stats?.pendingPartners || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Awaiting approval
-                  </p>
-                </CardContent>
-              </Card>
+              <SectionCard accent="green" title="Total Partners" description="Active business partners">
+                <div className="text-3xl font-black">{stats?.totalPartners || 0}</div>
+              </SectionCard>
+              <SectionCard accent="green" title="Total Users" description="Registered customers">
+                <div className="text-3xl font-black">{stats?.totalUsers || 0}</div>
+              </SectionCard>
+              <SectionCard accent="green" title="Active Offers" description="Available offers">
+                <div className="text-3xl font-black">{stats?.totalOffers || 0}</div>
+              </SectionCard>
+              <SectionCard accent="orange" title="Pending Partners" description="Awaiting approval">
+                <div className="text-3xl font-black text-orange-600">{stats?.pendingPartners || 0}</div>
+              </SectionCard>
             </div>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common administrative tasks</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
+            <SectionCard title="Quick Actions" description="Common administrative tasks" accent="none">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 rounded-xl"
                   onClick={() => setActiveTab('pending')}
                 >
                   <AlertTriangle className="h-6 w-6" />
@@ -304,26 +231,24 @@ export default function AdminDashboard() {
                     <Badge variant="destructive">{stats.pendingPartners} pending</Badge>
                   )}
                 </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 rounded-xl"
                   onClick={() => setActiveTab('new-users')}
                 >
                   <UserCheck className="h-6 w-6" />
                   Check New Users
                 </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="h-20 flex flex-col gap-2"
+                <Button
+                  variant="outline"
+                  className="h-24 flex flex-col gap-2 rounded-xl"
                   onClick={() => setActiveTab('offers')}
                 >
                   <Package className="h-6 w-6" />
                   Manage Offers
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
           </TabsContent>
 
           <TabsContent value="partners">
@@ -351,6 +276,6 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </PageShell>
   );
 }
