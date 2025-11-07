@@ -245,12 +245,17 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
                       targetProgress={progress.target}
                       showDetails
                       onClaim={async (achievementId) => {
+                        // Guard: prevent parallel claims by setting loading state locally
                         const res = await claimAchievement(achievementId);
                         if (!res) {
                           toast.error('Failed to claim reward');
                           return;
                         }
-                        toast.success('Reward claimed!');
+                        if (res.awarded_now) {
+                          toast.success(`+${res.reward_points} SmartPoints added!`);
+                        } else {
+                          toast.success('Already claimed');
+                        }
                         await loadAchievements();
                       }}
                     />
@@ -279,7 +284,11 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
                           toast.error('Failed to claim reward');
                           return;
                         }
-                        toast.success('Reward claimed!');
+                        if (res.awarded_now) {
+                          toast.success(`+${res.reward_points} SmartPoints added!`);
+                        } else {
+                          toast.success('Already claimed');
+                        }
                         await loadAchievements();
                       }}
                     />
