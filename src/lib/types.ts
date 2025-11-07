@@ -143,3 +143,35 @@ export interface PenaltyInfo {
   remainingTime?: string;
   penaltyCount: number;
 }
+
+// Gamification / Achievements
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+export type AchievementCategory = 'milestone' | 'social' | 'engagement' | 'savings';
+
+export interface AchievementDefinitionType {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // emoji
+  category: AchievementCategory;
+  tier: AchievementTier;
+  requirement: {
+    type: string; // reservations | money_saved | category | unique_partners | partner_loyalty | streak | referrals
+    count?: number;
+    amount?: number;
+    days?: number;
+    name?: string; // category name
+  };
+  reward_points: number;
+  is_active?: boolean;
+}
+
+export interface UserAchievementType {
+  id?: string; // row id (if exists)
+  user_id: string;
+  achievement_id: string;
+  unlocked_at: string;
+  is_new?: boolean;
+  viewed_at?: string | null;
+  achievement?: AchievementDefinitionType; // joined definition
+}

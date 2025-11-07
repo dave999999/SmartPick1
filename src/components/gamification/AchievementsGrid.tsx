@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AchievementBadge } from './AchievementBadge';
-import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement, getUserStats } from '@/lib/gamification-api';
+import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement, getUserStats, markAchievementViewed } from '@/lib/gamification-api';
 import { Award, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface AchievementsGridProps {
   userId: string;
@@ -15,6 +16,7 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
   const [allAchievements, setAllAchievements] = useState<AchievementDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     loadAchievements();
@@ -39,9 +41,68 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
     }
   };
 
+  // Realtime: listen for new achievements
+  useEffect(() => {
+    if (!userId) return;
+    // Cleanup existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    const channel = supabase
+      .channel(`achievements-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'user_achievements',
+          filter: `user_id=eq.${userId}`
+        },
+        async (payload) => {
+          // Refresh data
+          const [userAch, stats] = await Promise.all([
+            getUserAchievements(userId),
+            getUserStats(userId)
+          ]);
+          setUserAchievements(userAch);
+          setUserStats(stats);
+
+          // Toast
+          const achievement = allAchievements.find(a => a.id === payload.new.achievement_id);
+          const name = achievement?.name || 'Achievement Unlocked';
+          const icon = achievement?.icon || '🎉';
+          const points = achievement?.reward_points || 0;
+          toast.success(`${icon} ${name} +${points} points`);
+        }
+      )
+      .subscribe((status) => {
+        // no-op, but could log if needed
+      });
+    channelRef.current = channel;
+    return () => {
+      if (channelRef.current) supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    };
+  }, [userId, allAchievements]);
+
   const getUserAchievementForDefinition = (defId: string): UserAchievement | undefined => {
     return userAchievements.find(ua => ua.achievement_id === defId);
   };
+
+  // Auto mark newly viewed achievements (remove NEW badge after showing toast)
+  useEffect(() => {
+    const newlyUnlocked = userAchievements.filter(a => a.is_new);
+    if (newlyUnlocked.length === 0) return;
+    // Mark them viewed (fire and forget)
+    newlyUnlocked.forEach(async (ua) => {
+      try {
+        await markAchievementViewed(ua.achievement_id, userId);
+      } catch (e) {
+        console.warn('Failed to mark achievement viewed', ua.achievement_id, e);
+      }
+    });
+  }, [userAchievements, userId]);
 
   // Calculate progress for an achievement based on its requirement type
   const calculateProgress = (achievement: AchievementDefinition): { current: number; target: number } => {
