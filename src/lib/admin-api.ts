@@ -32,39 +32,36 @@ export const testAdminConnection = async () => {
   }
 };
 
-// Admin authentication check - modified to be less restrictive for testing
+// Strict admin authentication check
 export const checkAdminAccess = async () => {
   if (isDemoMode) {
-    console.log('Admin API: Demo mode - skipping admin check');
+    console.log('Admin API: Demo mode - skipping strict admin check');
     return null;
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError) throw new Error(`Auth error: ${authError.message}`);
   if (!user) throw new Error('Not authenticated');
-  
-  console.log('Admin API: Checking admin access for user:', user.email);
-  
-  // Check if user is admin - more flexible check
-  const { data: profile, error } = await supabase
+
+  console.log('Admin API: Verifying admin role for user:', user.email);
+
+  const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single();
-    
-  console.log('Admin API: User profile check:', { profile, error });
-    
-  if (error) {
-    console.warn('Admin API: Could not fetch user profile, proceeding anyway for testing');
-    return user; // Allow access for testing if profile fetch fails
+
+  if (profileError) {
+    console.error('Admin API: Failed to fetch user profile for admin check', profileError);
+    throw new Error('Admin profile verification failed');
   }
-  
+
   const userRole = profile?.role?.toUpperCase();
   if (userRole !== 'ADMIN') {
-    console.warn('Admin API: User is not admin but allowing access for testing');
-    // For testing purposes, allow access even if not admin
-    // throw new Error('Admin access required');
+    console.warn('Admin API: Access denied - user is not ADMIN');
+    throw new Error('Admin access required');
   }
-  
+
   return user;
 };
 
@@ -77,9 +74,7 @@ export const getAllPartners = async () => {
   
   try {
     console.log('Admin API: Fetching all partners...');
-    
-    // Skip admin check for testing
-    // await checkAdminAccess();
+    await checkAdminAccess();
     
     const { data, error, count } = await supabase
       .from('partners')
@@ -108,6 +103,7 @@ export const getPendingPartners = async () => {
   
   try {
     console.log('Admin API: Fetching pending partners...');
+    await checkAdminAccess();
     
     const { data, error } = await supabase
       .from('partners')
@@ -132,6 +128,7 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
   
   try {
     console.log('Admin API: Updating partner:', partnerId, updates);
+    await checkAdminAccess();
     
     const { data, error } = await supabase
       .from('partners')
@@ -153,6 +150,7 @@ export const deletePartner = async (partnerId: string) => {
     throw new Error('Demo mode: Please configure Supabase');
   }
   
+  await checkAdminAccess();
   const { error } = await supabase
     .from('partners')
     .delete()
@@ -162,18 +160,22 @@ export const deletePartner = async (partnerId: string) => {
 };
 
 export const approvePartner = async (partnerId: string) => {
+  await checkAdminAccess();
   return updatePartner(partnerId, { status: 'APPROVED' });
 };
 
 export const pausePartner = async (partnerId: string) => {
+  await checkAdminAccess();
   return updatePartner(partnerId, { status: 'PAUSED' });
 };
 
 export const unpausePartner = async (partnerId: string) => {
+  await checkAdminAccess();
   return updatePartner(partnerId, { status: 'APPROVED' });
 };
 
 export const disablePartner = async (partnerId: string) => {
+  await checkAdminAccess();
   return updatePartner(partnerId, { status: 'BLOCKED' });
 };
 
@@ -186,9 +188,7 @@ export const getAllUsers = async () => {
   
   try {
     console.log('Admin API: Fetching all users...');
-    
-    // Skip admin check for testing
-    // await checkAdminAccess();
+    await checkAdminAccess();
     
     const { data, error, count } = await supabase
       .from('users')
@@ -218,6 +218,7 @@ export const getNewUsers = async () => {
   const fourDaysAgo = new Date();
   fourDaysAgo.setDate(fourDaysAgo.getDate() - 4);
   
+  await checkAdminAccess();
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -233,6 +234,7 @@ export const updateUser = async (userId: string, updates: Partial<User>) => {
     throw new Error('Demo mode: Please configure Supabase');
   }
   
+  await checkAdminAccess();
   const { data, error } = await supabase
     .from('users')
     .update(updates)
@@ -249,6 +251,7 @@ export const deleteUser = async (userId: string) => {
     throw new Error('Demo mode: Please configure Supabase');
   }
   
+  await checkAdminAccess();
   const { error } = await supabase
     .from('users')
     .delete()
@@ -258,10 +261,12 @@ export const deleteUser = async (userId: string) => {
 };
 
 export const disableUser = async (userId: string) => {
+  await checkAdminAccess();
   return updateUser(userId, { status: 'DISABLED' });
 };
 
 export const enableUser = async (userId: string) => {
+  await checkAdminAccess();
   return updateUser(userId, { status: 'ACTIVE' });
 };
 
@@ -272,6 +277,7 @@ export const getBannedUsers = async () => {
   }
 
   try {
+    await checkAdminAccess();
     const { data, error } = await supabase
       .from('users')
       .select('*')
@@ -292,6 +298,7 @@ export const unbanUser = async (userId: string) => {
   }
 
   try {
+    await checkAdminAccess();
     const { error } = await supabase
       .from('users')
       .update({
@@ -316,6 +323,7 @@ export const getAllOffers = async () => {
   }
   
   try {
+    await checkAdminAccess();
     const { data, error } = await supabase
       .from('offers')
       .select(`
@@ -337,6 +345,7 @@ export const getPartnerOffers = async (partnerId: string) => {
     return [];
   }
   
+  await checkAdminAccess();
   const { data, error } = await supabase
     .from('offers')
     .select('*')
@@ -352,6 +361,7 @@ export const updateOffer = async (offerId: string, updates: Partial<Offer>) => {
     throw new Error('Demo mode: Please configure Supabase');
   }
   
+  await checkAdminAccess();
   const { data, error } = await supabase
     .from('offers')
     .update(updates)
@@ -368,6 +378,7 @@ export const deleteOffer = async (offerId: string) => {
     throw new Error('Demo mode: Please configure Supabase');
   }
   
+  await checkAdminAccess();
   const { error } = await supabase
     .from('offers')
     .delete()
@@ -377,18 +388,22 @@ export const deleteOffer = async (offerId: string) => {
 };
 
 export const pauseOffer = async (offerId: string) => {
+  await checkAdminAccess();
   return updateOffer(offerId, { status: 'PAUSED' });
 };
 
 export const resumeOffer = async (offerId: string) => {
+  await checkAdminAccess();
   return updateOffer(offerId, { status: 'ACTIVE' });
 };
 
 export const disableOffer = async (offerId: string) => {
+  await checkAdminAccess();
   return updateOffer(offerId, { status: 'EXPIRED' });
 };
 
 export const enableOffer = async (offerId: string) => {
+  await checkAdminAccess();
   return updateOffer(offerId, { status: 'ACTIVE' });
 };
 
@@ -406,6 +421,7 @@ export const getDashboardStats = async () => {
 
   try {
     console.log('Admin API: Fetching dashboard stats...');
+    await checkAdminAccess();
 
     // Get all counts in parallel
     const [partnersResult, usersResult, offersResult, pendingPartnersResult] = await Promise.all([
