@@ -39,6 +39,44 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
 
 export const isDemoMode = DEMO_MODE;
 
+// Optional wrapper to instrument and/or block users.upsert calls which can trigger 409 conflicts.
+// - VITE_DEBUG_USER_UPSERT=true -> logs stack traces when users.upsert is invoked
+// - VITE_BLOCK_USER_UPSERT=true -> short-circuits users.upsert to a no-op (no network call)
+(() => {
+  const debug = (import.meta as any).env?.VITE_DEBUG_USER_UPSERT === 'true';
+  const block = (import.meta as any).env?.VITE_BLOCK_USER_UPSERT === 'true';
+  if (!debug && !block) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const originalFrom: any = (supabase as any).from.bind(supabase);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (supabase as any).from = (table: string) => {
+    const query: any = originalFrom(table);
+
+    if (table === 'users' && query.upsert) {
+      const originalUpsert = query.upsert.bind(query);
+
+      query.upsert = (...args: any[]) => {
+        if (debug) {
+          const stack = new Error().stack?.split('\n').slice(2, 8).join('\n');
+          console.warn('[DEBUG] Detected users.upsert invocation. Args:', args, '\nStack:', stack);
+        }
+
+        if (block) {
+          // Mimic a successful response without performing the request
+          return Promise.resolve({ data: null, error: null, status: 200, statusText: 'blocked' });
+        }
+
+        return originalUpsert(...args);
+      };
+    }
+    return query;
+  };
+
+  if (debug) console.info('[DEBUG] users.upsert instrumentation enabled');
+  if (block) console.info('[DEBUG] users.upsert is currently blocked (no-op)');
+})();
+
 // Auth helpers
 export const signInWithEmail = async (email: string, password: string) => {
   if (DEMO_MODE) {

@@ -34,7 +34,7 @@ createRoot(document.getElementById('root')!).render(
 // ============================================
 // PWA Service Worker Registration
 // ============================================
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && (import.meta as any).env?.VITE_DISABLE_SW !== 'true') {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
 			.register('/service-worker.js')
