@@ -2,13 +2,16 @@ import { Reservation } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Phone, User, CheckCircle, Package, XCircle } from 'lucide-react';
+import { Clock, MapPin, User, CheckCircle, Package, XCircle } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+ 
+
+type ExtendedReservation = Reservation & { customer?: { name?: string; phone?: string } };
 
 interface EnhancedActiveReservationsProps {
-  reservations: Reservation[];
-  onMarkAsPickedUp: (reservation: Reservation) => void;
-  onMarkAsNoShow: (reservation: Reservation) => void;
+  reservations: ExtendedReservation[];
+  onMarkAsPickedUp: (r: Reservation) => void;
+  onMarkAsNoShow: (r: Reservation) => void;
   processingIds: Set<string>;
 }
 
@@ -106,17 +109,7 @@ export default function EnhancedActiveReservations({
                           {reservation.customer?.name || 'Customer'}
                         </span>
                       </div>
-                      {reservation.customer?.phone && (
-                        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                          <Phone className="w-3 h-3 flex-shrink-0" />
-                          <a
-                            href={`tel:${reservation.customer.phone}`}
-                            className="hover:text-blue-600 truncate"
-                          >
-                            {reservation.customer.phone}
-                          </a>
-                        </div>
-                      )}
+                      {/* Do not show customer phone to partners for privacy */}
                     </div>
 
                     {/* Time Badge */}

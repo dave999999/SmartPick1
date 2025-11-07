@@ -515,6 +515,19 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
                       <p className="text-xs text-gray-500 mb-3">
                         {location.offers.length} offer{location.offers.length > 1 ? 's' : ''} available
                       </p>
+                      <div className="mb-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Custom event so parent can open a modal with all partner offers
+                            const detail = { partnerId: location.partnerId, partnerName: location.partnerName };
+                            window.dispatchEvent(new CustomEvent('smartpick:viewPartnerOffers', { detail }));
+                          }}
+                          className="w-full text-center text-xs font-semibold bg-[#00C896] hover:bg-[#00b285] text-white py-2 rounded-md shadow-sm transition"
+                        >
+                          View All Items from {location.partnerName}
+                        </button>
+                      </div>
                       
                       <div className="space-y-3">
                         {location.offers.map((offer) => {
