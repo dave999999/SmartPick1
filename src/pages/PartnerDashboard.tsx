@@ -140,13 +140,25 @@ export default function PartnerDashboard() {
 
   // Get business closing time as Date
   const getClosingTime = (): Date | null => {
-    if (partner?.business_hours && typeof partner.business_hours === 'object' && 'close' in partner.business_hours) {
-      const closingTime = (partner.business_hours as { close: string }).close;
-      const [hours, minutes] = closingTime.split(':').map(Number);
+    // First check if partner operates 24/7
+    if (partner?.open_24h) {
+      return null; // No closing time for 24/7 businesses
+    }
+
+    // Use partner's closing_time field
+    if (partner?.closing_time) {
+      const [hours, minutes] = partner.closing_time.split(':').map(Number);
       const closing = new Date();
       closing.setHours(hours, minutes, 0, 0);
+
+      // If closing time is in the past today, it means tomorrow
+      if (closing < new Date()) {
+        closing.setDate(closing.getDate() + 1);
+      }
+
       return closing;
     }
+
     return null;
   };
 
@@ -278,17 +290,29 @@ export default function PartnerDashboard() {
       let pickupStart: Date = now;
       let pickupEnd: Date = now;
 
+      console.log('Creating offer with business settings:', {
+        is24HourBusiness,
+        autoExpire6h,
+        opening_time: partner?.opening_time,
+        closing_time: partner?.closing_time,
+        open_24h: partner?.open_24h,
+      });
+
       if (is24HourBusiness && autoExpire6h) {
         // 24-hour business: live next 12 hours
         pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
+        console.log('24/7 business: Offer will be live for 12 hours until', pickupEnd);
       } else {
         const closing = getClosingTime();
+        console.log('Regular business closing time:', closing);
         if (closing && closing > now) {
           // Live until closing time today
           pickupEnd = closing;
+          console.log('Offer will be live until closing time:', pickupEnd);
         } else {
           // Fallback if closing unknown/past: default to +2 hours
           pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+          console.log('Using fallback: Offer will be live for 2 hours until', pickupEnd);
         }
       }
 
