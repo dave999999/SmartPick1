@@ -1,0 +1,302 @@
+import { useState, useEffect } from 'react';
+import { Partner } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Clock, MapPin, Phone, Mail, Building2, Save, X } from 'lucide-react';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+
+interface EditPartnerProfileProps {
+  partner: Partner;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onUpdate: () => void;
+}
+
+export default function EditPartnerProfile({ partner, open, onOpenChange, onUpdate }: EditPartnerProfileProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    business_name: partner.business_name || '',
+    business_type: partner.business_type || 'RESTAURANT',
+    phone: partner.phone || '',
+    email: partner.email || '',
+    address: partner.address || '',
+    description: partner.description || '',
+    opening_time: partner.opening_time || '',
+    closing_time: partner.closing_time || '',
+    open_24h: partner.open_24h || false,
+  });
+
+  useEffect(() => {
+    if (partner) {
+      setFormData({
+        business_name: partner.business_name || '',
+        business_type: partner.business_type || 'RESTAURANT',
+        phone: partner.phone || '',
+        email: partner.email || '',
+        address: partner.address || '',
+        description: partner.description || '',
+        opening_time: partner.opening_time || '',
+        closing_time: partner.closing_time || '',
+        open_24h: partner.open_24h || false,
+      });
+    }
+  }, [partner]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from('partners')
+        .update({
+          business_name: formData.business_name,
+          business_type: formData.business_type,
+          phone: formData.phone,
+          email: formData.email,
+          address: formData.address,
+          description: formData.description,
+          opening_time: formData.open_24h ? null : formData.opening_time,
+          closing_time: formData.open_24h ? null : formData.closing_time,
+          open_24h: formData.open_24h,
+        })
+        .eq('id', partner.id);
+
+      if (error) throw error;
+
+      toast.success('Profile updated successfully!');
+      onUpdate();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4 py-4">
+      {/* Business Name */}
+      <div className="space-y-2">
+        <Label htmlFor="business_name" className="flex items-center gap-2">
+          <Building2 className="w-4 h-4" />
+          Business Name *
+        </Label>
+        <Input
+          id="business_name"
+          value={formData.business_name}
+          onChange={(e) => setFormData({ ...formData, business_name: e.target.value })}
+          required
+          className="text-base" // Better for mobile
+        />
+      </div>
+
+      {/* Business Type */}
+      <div className="space-y-2">
+        <Label htmlFor="business_type">Business Type *</Label>
+        <select
+          id="business_type"
+          value={formData.business_type}
+          onChange={(e) => setFormData({ ...formData, business_type: e.target.value as any })}
+          className="w-full px-3 py-2 border rounded-md text-base"
+          required
+        >
+          <option value="BAKERY">🥖 Bakery</option>
+          <option value="RESTAURANT">🍽️ Restaurant</option>
+          <option value="CAFE">☕ Cafe</option>
+          <option value="GROCERY">🛒 Grocery</option>
+          <option value="FAST_FOOD">🍔 Fast Food</option>
+          <option value="ALCOHOL">🍷 Alcohol</option>
+        </select>
+      </div>
+
+      {/* Phone */}
+      <div className="space-y-2">
+        <Label htmlFor="phone" className="flex items-center gap-2">
+          <Phone className="w-4 h-4" />
+          Phone Number *
+        </Label>
+        <Input
+          id="phone"
+          type="tel"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          required
+          className="text-base"
+        />
+      </div>
+
+      {/* Email */}
+      <div className="space-y-2">
+        <Label htmlFor="email" className="flex items-center gap-2">
+          <Mail className="w-4 h-4" />
+          Email *
+        </Label>
+        <Input
+          id="email"
+          type="email"
+          value={formData.email}
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          required
+          className="text-base"
+        />
+      </div>
+
+      {/* Address */}
+      <div className="space-y-2">
+        <Label htmlFor="address" className="flex items-center gap-2">
+          <MapPin className="w-4 h-4" />
+          Address *
+        </Label>
+        <Textarea
+          id="address"
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          required
+          className="text-base min-h-[80px]"
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="description">Business Description</Label>
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          placeholder="Tell customers about your business..."
+          className="text-base min-h-[100px]"
+        />
+      </div>
+
+      {/* Operating Hours */}
+      <div className="space-y-3 pt-4 border-t">
+        <Label className="flex items-center gap-2 text-base font-semibold">
+          <Clock className="w-4 h-4" />
+          Operating Hours
+        </Label>
+
+        {/* 24/7 Checkbox */}
+        <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg">
+          <Checkbox
+            id="open_24h"
+            checked={formData.open_24h}
+            onCheckedChange={(checked) => setFormData({ ...formData, open_24h: checked as boolean })}
+          />
+          <Label htmlFor="open_24h" className="text-sm cursor-pointer font-medium">
+            Open 24 hours / 7 days
+          </Label>
+        </div>
+
+        {/* Time inputs - only show if not 24/7 */}
+        {!formData.open_24h && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="opening_time" className="text-sm">Opening Time</Label>
+              <Input
+                id="opening_time"
+                type="time"
+                value={formData.opening_time}
+                onChange={(e) => setFormData({ ...formData, opening_time: e.target.value })}
+                className="text-base"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="closing_time" className="text-sm">Closing Time</Label>
+              <Input
+                id="closing_time"
+                type="time"
+                value={formData.closing_time}
+                onChange={(e) => setFormData({ ...formData, closing_time: e.target.value })}
+                className="text-base"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons - Mobile Optimized */}
+      <div className="flex flex-col-reverse sm:flex-row gap-2 pt-4 sticky bottom-0 bg-white pb-safe">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          className="w-full sm:w-auto"
+          disabled={isSubmitting}
+        >
+          <X className="w-4 h-4 mr-2" />
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          className="w-full sm:w-auto bg-[#00C896] hover:bg-[#00B588]"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+
+  // Use Sheet for mobile, Dialog for desktop
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="bottom" className="h-[90vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Edit Business Profile</SheetTitle>
+            <SheetDescription>
+              Update your business information and operating hours
+            </SheetDescription>
+          </SheetHeader>
+          {formContent}
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Business Profile</DialogTitle>
+          <DialogDescription>
+            Update your business information and operating hours
+          </DialogDescription>
+        </DialogHeader>
+        {formContent}
+      </DialogContent>
+    </Dialog>
+  );
+}

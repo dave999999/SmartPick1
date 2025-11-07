@@ -50,6 +50,11 @@ import { toast } from 'sonner';
 import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown, Camera } from 'lucide-react';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import QRScanner from '@/components/QRScanner';
+import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
+import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
+import QuickActions from '@/components/partner/QuickActions';
+import EnhancedOffersTable from '@/components/partner/EnhancedOffersTable';
+import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -62,6 +67,7 @@ export default function PartnerDashboard() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -901,21 +907,30 @@ const generate24HourOptions = (): string[] => {
               <p className="text-[11px] md:text-xs text-neutral-500">Partner Dashboard</p>
             </div>
           </div>
-          <div className="hidden md:flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              className="h-11 rounded-full"
+              className="h-9 md:h-11 rounded-full text-xs md:text-sm"
+              onClick={() => setIsEditProfileOpen(true)}
+            >
+              <Edit className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Edit Profile</span>
+              <span className="sm:hidden">Edit</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="hidden md:flex h-11 rounded-full"
               onClick={() => navigate('/')}
             >
               🏠 Customer View
             </Button>
             <Button
               variant="outline"
-              className="h-11 rounded-full"
+              className="h-9 md:h-11 rounded-full"
               onClick={handleSignOut}
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+              <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-0 md:mr-2" />
+              <span className="hidden md:inline">Sign Out</span>
             </Button>
           </div>
         </div>
@@ -939,62 +954,44 @@ const generate24HourOptions = (): string[] => {
           </div>
         )}
 
-        {/* Summary Bar - Enhanced with Mint Theme */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-gray-600">📦 Offers Live</CardTitle>
-              <Package className="w-5 h-5 text-[#00C896]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-                {isPending ? '—' : stats.activeOffers}
-              </div>
-              {isPending && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-                  <Lock className="w-3 h-3" />
-                  <span>Available after approval</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Enhanced Stats Cards */}
+        {!isPending && (
+          <EnhancedStatsCards
+            stats={{
+              activeOffers: stats.activeOffers,
+              reservationsToday: stats.reservationsToday,
+              itemsPickedUp: stats.itemsPickedUp,
+              revenue: analytics.revenue,
+            }}
+            className="mb-6 md:mb-8"
+          />
+        )}
 
-          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-gray-600">✅ Picked Up Today</CardTitle>
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl md:text-4xl font-bold text-green-600">
-                {isPending ? '—' : stats.itemsPickedUp}
-              </div>
-              {isPending && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-                  <Lock className="w-3 h-3" />
-                  <span>Available after approval</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className={`rounded-2xl border-[#E8F9F4] shadow-lg hover:shadow-xl transition-all duration-300 ${isPending ? 'opacity-60' : 'hover:scale-[1.02]'}`}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-              <CardTitle className="text-sm font-medium text-gray-600">💰 SmartPick Revenue</CardTitle>
-              <DollarSign className="w-5 h-5 text-purple-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl md:text-4xl font-bold text-purple-600">
-                {isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}
-              </div>
-              {isPending && (
-                <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-                  <Lock className="w-3 h-3" />
-                  <span>Available after approval</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {isPending && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
+            {[
+              { icon: Package, label: 'Offers Live', color: 'text-blue-600' },
+              { icon: ShoppingBag, label: 'Picked Up', color: 'text-green-600' },
+              { icon: TrendingUp, label: 'Items Sold', color: 'text-purple-600' },
+              { icon: DollarSign, label: 'Revenue', color: 'text-coral-600' },
+            ].map((stat, index) => {
+              const Icon = stat.icon;
+              return (
+                <Card key={index} className="opacity-60">
+                  <CardContent className="p-4 text-center">
+                    <Icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
+                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
+                    <p className="text-2xl font-bold text-gray-400">—</p>
+                    <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-500">
+                      <Lock className="w-3 h-3" />
+                      <span>After approval</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
@@ -1372,94 +1369,35 @@ const generate24HourOptions = (): string[] => {
           </Dialog>
         </div>
 
-        {/* Active Reservations - Card-based Layout */}
-        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-              🛎️ Active Reservations
-              {isPending && <Lock className="w-5 h-5 text-gray-400" />}
-            </CardTitle>
-            <CardDescription className="text-sm md:text-base">
-              {isPending ? 'This section will be available after approval' : 'Customers waiting for pickup'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isPending ? (
+        {/* Active Reservations - Enhanced Mobile-First */}
+        {isPending ? (
+          <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg opacity-60">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                🛎️ Active Reservations
+                <Lock className="w-5 h-5 text-gray-400" />
+              </CardTitle>
+              <CardDescription className="text-sm md:text-base">
+                This section will be available after approval
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="text-center py-8 md:py-12">
                 <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500 mb-2 text-sm md:text-base">Reservations will appear here once your account is approved</p>
                 <p className="text-xs md:text-sm text-gray-400">You'll be able to manage customer pickups and validate QR codes</p>
               </div>
-            ) : reservations.length === 0 ? (
-              <div className="text-center py-8 md:py-12">
-                <ShoppingBag className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2 text-sm md:text-base">No active reservations</p>
-                <p className="text-xs md:text-sm text-gray-400">When customers reserve your offers, they'll appear here</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {reservations.map((reservation) => (
-                  <Card key={reservation.id} className="rounded-xl border-[#E8F9F4] hover:border-[#00C896] transition-all duration-300 hover:shadow-lg">
-                    <CardContent className="p-4 md:p-5">
-                      <div className="space-y-3">
-                        {/* Customer Info */}
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-semibold text-gray-900">{reservation.customer?.name || 'Customer'}</p>
-                            <p className="text-xs md:text-sm text-gray-500">{reservation.customer?.email}</p>
-                          </div>
-                          <Badge className="bg-[#00C896] hover:bg-[#00B588] text-white">
-                            {reservation.quantity}x
-                          </Badge>
-                        </div>
-
-                        {/* Offer Title */}
-                        <div className="bg-[#F9FFFB] rounded-lg p-3">
-                          <p className="font-medium text-gray-900 text-sm md:text-base">{reservation.offer?.title}</p>
-                        </div>
-
-                        {/* Pickup Time */}
-                        {reservation.offer?.pickup_start && (
-                          <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
-                            <Clock className="w-4 h-4 text-[#00C896]" />
-                            <span>
-                              {formatDateTime(reservation.offer.pickup_start)} - {formatDateTime(reservation.offer.pickup_end || reservation.offer.pickup_start)}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* QR Code */}
-                        <div className="flex items-center gap-2">
-                          <QrCode className="w-4 h-4 text-gray-400" />
-                          <code className="text-xs bg-gray-100 px-3 py-1 rounded-full font-mono">{reservation.qr_code}</code>
-                        </div>
-
-                        {/* Action Button */}
-                        <Button
-                          className="w-full rounded-full bg-green-500 hover:bg-green-600 text-white font-semibold transition-all duration-300 hover:scale-[1.02]"
-                          onClick={() => handleMarkAsPickedUp(reservation)}
-                          disabled={processingIds.has(reservation.id)}
-                        >
-                          {processingIds.has(reservation.id) ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              ✅ Mark as Picked Up
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="mb-6 md:mb-8">
+            <EnhancedActiveReservations
+              reservations={reservations}
+              onMarkAsPickedUp={handleMarkAsPickedUp}
+              processingIds={processingIds}
+            />
+          </div>
+        )}
 
         {/* Your Offers with Filter Tabs */}
         <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
@@ -1999,6 +1937,29 @@ const generate24HourOptions = (): string[] => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Quick Actions - Mobile Bottom Bar */}
+      {!isPending && (
+        <QuickActions
+          onNewOffer={() => {
+            setIsCreateDialogOpen(true);
+            setImageFiles([]);
+            setImagePreviews([]);
+            setFormErrors({});
+          }}
+          onScanQR={() => setQrScannerOpen(true)}
+        />
+      )}
+
+      {/* Edit Partner Profile Dialog */}
+      {partner && (
+        <EditPartnerProfile
+          partner={partner}
+          open={isEditProfileOpen}
+          onOpenChange={setIsEditProfileOpen}
+          onUpdate={loadPartnerData}
+        />
+      )}
     </div>
   );
 }
