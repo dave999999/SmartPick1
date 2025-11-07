@@ -31,6 +31,19 @@ interface EditPartnerProfileProps {
   onUpdate: () => void;
 }
 
+// Generate time options in 30-minute intervals (24-hour format)
+const generateTimeOptions = (): string[] => {
+  const options: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 30) {
+      const hourStr = hour.toString().padStart(2, '0');
+      const minuteStr = minute.toString().padStart(2, '0');
+      options.push(`${hourStr}:${minuteStr}`);
+    }
+  }
+  return options;
+};
+
 export default function EditPartnerProfile({ partner, open, onOpenChange, onUpdate }: EditPartnerProfileProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +80,27 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
     setIsSubmitting(true);
 
     try {
+      // Validate business hours if not 24/7
+      if (!formData.open_24h) {
+        if (!formData.opening_time || !formData.closing_time) {
+          toast.error('Please set both opening and closing times');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Validate closing time is after opening time
+        const [openHour, openMin] = formData.opening_time.split(':').map(Number);
+        const [closeHour, closeMin] = formData.closing_time.split(':').map(Number);
+        const openMinutes = openHour * 60 + openMin;
+        const closeMinutes = closeHour * 60 + closeMin;
+
+        if (closeMinutes <= openMinutes) {
+          toast.error('Closing time must be after opening time');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('partners')
         .update({
@@ -209,29 +243,59 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
           </Label>
         </div>
 
-        {/* Time inputs - only show if not 24/7 */}
+        {/* Time dropdowns - only show if not 24/7 */}
         {!formData.open_24h && (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="opening_time" className="text-sm">Opening Time</Label>
-              <Input
-                id="opening_time"
-                type="time"
-                value={formData.opening_time}
-                onChange={(e) => setFormData({ ...formData, opening_time: e.target.value })}
-                className="text-base"
-              />
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="opening_time" className="text-sm">Opening Time</Label>
+                <select
+                  id="opening_time"
+                  value={formData.opening_time}
+                  onChange={(e) => setFormData({ ...formData, opening_time: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md text-base bg-white"
+                  required={!formData.open_24h}
+                >
+                  <option value="">Select time...</option>
+                  {generateTimeOptions().map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="closing_time" className="text-sm">Closing Time</Label>
+                <select
+                  id="closing_time"
+                  value={formData.closing_time}
+                  onChange={(e) => setFormData({ ...formData, closing_time: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-md text-base bg-white"
+                  required={!formData.open_24h}
+                >
+                  <option value="">Select time...</option>
+                  {generateTimeOptions().map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="closing_time" className="text-sm">Closing Time</Label>
-              <Input
-                id="closing_time"
-                type="time"
-                value={formData.closing_time}
-                onChange={(e) => setFormData({ ...formData, closing_time: e.target.value })}
-                className="text-base"
-              />
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs text-blue-900">
+                ℹ️ <strong>Important:</strong> Your offers will be automatically set to expire at your closing time.
+              </p>
             </div>
+          </>
+        )}
+
+        {/* Info for 24/7 businesses */}
+        {formData.open_24h && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-xs text-green-900">
+              ℹ️ <strong>24/7 Operation:</strong> Your offers will be live for 12 hours from creation.
+            </p>
           </div>
         )}
       </div>
