@@ -10,6 +10,7 @@ interface AchievementBadgeProps {
   showDetails?: boolean;
   currentProgress?: number; // Current value (e.g., 3 reservations out of 5)
   targetProgress?: number;  // Target value (e.g., 5 reservations)
+  onClaim?: (achievementId: string) => void;
 }
 
 export function AchievementBadge({ 
@@ -17,10 +18,12 @@ export function AchievementBadge({
   userAchievement, 
   showDetails = false,
   currentProgress = 0,
-  targetProgress = 1
+  targetProgress = 1,
+  onClaim
 }: AchievementBadgeProps) {
   const isUnlocked = !!userAchievement;
   const isNew = userAchievement?.is_new || false;
+  const rewardClaimed = userAchievement?.reward_claimed || false;
   const tierColor = getAchievementTierColor(definition.tier);
   
   // Calculate progress percentage
@@ -139,6 +142,25 @@ export function AchievementBadge({
           <span className={`text-xs font-semibold ${isUnlocked ? 'text-[#4CC9A8]' : 'text-gray-500'}`}>
             +{definition.reward_points} points
           </span>
+        </div>
+      )}
+
+      {/* Claim button (unlocked but not claimed) */}
+      {isUnlocked && !rewardClaimed && definition.reward_points > 0 && (
+        <div className="mt-3 flex justify-center">
+          <button
+            onClick={() => onClaim && onClaim(definition.id)}
+            className="px-3 py-1 text-xs font-semibold rounded-full bg-[#4CC9A8] text-white hover:bg-[#3ab791] shadow-sm transition"
+          >
+            Claim Reward
+          </button>
+        </div>
+      )}
+
+      {/* Claimed indicator */}
+      {isUnlocked && rewardClaimed && (
+        <div className="mt-3 text-center">
+          <span className="text-xs font-semibold text-green-600">Reward claimed</span>
         </div>
       )}
 
