@@ -1,18 +1,32 @@
 import { AchievementDefinition, UserAchievement, getAchievementTierColor } from '@/lib/gamification-api';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Sparkles } from 'lucide-react';
+import { Lock, Sparkles, Trophy, Target, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Progress } from '@/components/ui/progress';
 
 interface AchievementBadgeProps {
   definition: AchievementDefinition;
   userAchievement?: UserAchievement;
   showDetails?: boolean;
+  currentProgress?: number; // Current value (e.g., 3 reservations out of 5)
+  targetProgress?: number;  // Target value (e.g., 5 reservations)
 }
 
-export function AchievementBadge({ definition, userAchievement, showDetails = false }: AchievementBadgeProps) {
+export function AchievementBadge({ 
+  definition, 
+  userAchievement, 
+  showDetails = false,
+  currentProgress = 0,
+  targetProgress = 1
+}: AchievementBadgeProps) {
   const isUnlocked = !!userAchievement;
   const isNew = userAchievement?.is_new || false;
   const tierColor = getAchievementTierColor(definition.tier);
+  
+  // Calculate progress percentage
+  const progressPercentage = targetProgress > 0 
+    ? Math.min(100, Math.round((currentProgress / targetProgress) * 100))
+    : 0;
 
   return (
     <motion.div
@@ -22,7 +36,7 @@ export function AchievementBadge({ definition, userAchievement, showDetails = fa
       className={`relative p-4 rounded-xl border-2 transition-all ${
         isUnlocked
           ? 'bg-gradient-to-br from-white to-gray-50 border-[#4CC9A8] shadow-md'
-          : 'bg-gray-100 border-gray-300 opacity-60'
+          : 'bg-gray-50 border-gray-300'
       }`}
     >
       {/* New Badge */}
@@ -42,17 +56,26 @@ export function AchievementBadge({ definition, userAchievement, showDetails = fa
       {/* Icon */}
       <div className="flex items-center justify-center mb-3">
         <div
-          className={`relative w-16 h-16 flex items-center justify-center rounded-full ${
+          className={`relative w-16 h-16 flex items-center justify-center rounded-full transition-all ${
             isUnlocked
-              ? 'bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9]'
+              ? 'bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9] shadow-lg'
               : 'bg-gray-200'
           }`}
-          style={isUnlocked ? { borderColor: tierColor, borderWidth: '3px' } : {}}
+          style={isUnlocked ? { borderColor: tierColor, borderWidth: '3px', borderStyle: 'solid' } : {}}
         >
           {isUnlocked ? (
-            <span className="text-4xl">{definition.icon}</span>
+            <span className="text-4xl" role="img" aria-label={definition.name}>
+              {definition.icon}
+            </span>
           ) : (
-            <Lock className="w-6 h-6 text-gray-400" />
+            <div className="relative">
+              <span className="text-3xl opacity-30" role="img" aria-label={definition.name}>
+                {definition.icon}
+              </span>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Lock className="w-5 h-5 text-gray-500" />
+              </div>
+            </div>
           )}
 
           {/* Sparkle effect for unlocked */}
@@ -71,8 +94,8 @@ export function AchievementBadge({ definition, userAchievement, showDetails = fa
 
       {/* Name */}
       <h4
-        className={`text-center font-bold mb-1 ${
-          isUnlocked ? 'text-gray-900' : 'text-gray-500'
+        className={`text-center font-bold mb-1 text-sm ${
+          isUnlocked ? 'text-gray-900' : 'text-gray-600'
         }`}
       >
         {definition.name}
@@ -85,11 +108,27 @@ export function AchievementBadge({ definition, userAchievement, showDetails = fa
         </p>
       )}
 
+      {/* Progress Bar (only show for locked achievements) */}
+      {!isUnlocked && targetProgress > 0 && (
+        <div className="mt-3 space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500 font-medium">Progress</span>
+            <span className="text-[#4CC9A8] font-bold">
+              {currentProgress}/{targetProgress}
+            </span>
+          </div>
+          <Progress value={progressPercentage} className="h-2" />
+          <div className="text-center">
+            <span className="text-xs text-gray-400">{progressPercentage}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Tier Badge */}
-      <div className="flex justify-center">
+      <div className="flex justify-center mt-2">
         <Badge
           variant="outline"
-          className="text-xs capitalize"
+          className="text-xs capitalize font-semibold"
           style={{
             borderColor: tierColor,
             color: tierColor,
@@ -103,7 +142,7 @@ export function AchievementBadge({ definition, userAchievement, showDetails = fa
       {/* Reward Points */}
       {definition.reward_points > 0 && (
         <div className="mt-2 text-center">
-          <span className="text-xs font-semibold text-[#4CC9A8]">
+          <span className={`text-xs font-semibold ${isUnlocked ? 'text-[#4CC9A8]' : 'text-gray-500'}`}>
             +{definition.reward_points} points
           </span>
         </div>
