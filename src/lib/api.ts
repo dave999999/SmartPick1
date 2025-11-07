@@ -780,33 +780,39 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     throw new Error('Cannot cancel a picked up reservation');
   }
 
-  // Restore offer quantity
-  const { data: offer } = await supabase
-    .from('offers')
-    .select('quantity_available')
-    .eq('id', reservation.offer_id)
-    .single();
+  // For EXPIRED reservations, just mark as cancelled without restoring quantity or refunding points
+  // (they expired naturally, so quantity was never taken and no refund is needed)
+  const isExpired = reservation.status === 'EXPIRED';
 
-  if (offer) {
-    await supabase
+  if (!isExpired) {
+    // Restore offer quantity (only for non-expired reservations)
+    const { data: offer } = await supabase
       .from('offers')
-      .update({ quantity_available: offer.quantity_available + reservation.quantity })
-      .eq('id', reservation.offer_id);
-  }
+      .select('quantity_available')
+      .eq('id', reservation.offer_id)
+      .single();
 
-  // REFUND POINTS - Give back points based on quantity (5 points per unit)
-  const POINTS_PER_RESERVATION = 5;
-  const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
+    if (offer) {
+      await supabase
+        .from('offers')
+        .update({ quantity_available: offer.quantity_available + reservation.quantity })
+        .eq('id', reservation.offer_id);
+    }
 
-  console.log('💰 Attempting to refund points:', {
-    userId: reservation.customer_id,
-    amount: totalPointsToRefund,
-    quantity: reservation.quantity,
-    reservationId
-  });
+    // REFUND POINTS - Give back points based on quantity (5 points per unit)
+    // Only refund for active cancellations, not for expired items
+    const POINTS_PER_RESERVATION = 5;
+    const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
 
-  const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
-    p_user_id: reservation.customer_id,
+    console.log('💰 Attempting to refund points:', {
+      userId: reservation.customer_id,
+      amount: totalPointsToRefund,
+      quantity: reservation.quantity,
+      reservationId
+    });
+
+    const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
+      p_user_id: reservation.customer_id,
     p_amount: totalPointsToRefund,
     p_reason: 'refund',
     p_metadata: {
@@ -818,15 +824,18 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     }
   });
 
-  if (refundError) {
-    console.error('❌ Error refunding points:', refundError);
-    console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
-    // Don't throw - still cancel the reservation even if refund fails
+    if (refundError) {
+      console.error('❌ Error refunding points:', refundError);
+      console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
+      // Don't throw - still cancel the reservation even if refund fails
+    } else {
+      console.log('✅ Points refunded successfully:', refundResult);
+    }
   } else {
-    console.log('✅ Points refunded successfully:', refundResult);
+    console.log('ℹ️ Skipping quantity restore and point refund for EXPIRED reservation');
   }
 
-  // Cancel reservation
+  // Cancel reservation (or just mark expired ones as cancelled to remove from UI)
   const { error } = await supabase
     .from('reservations')
     .update({ status: 'CANCELLED' })
