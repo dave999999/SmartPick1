@@ -63,20 +63,14 @@ export function AchievementBadge({
           }`}
           style={isUnlocked ? { borderColor: tierColor, borderWidth: '3px', borderStyle: 'solid' } : {}}
         >
-          {isUnlocked ? (
-            <span className="text-4xl" role="img" aria-label={definition.name}>
-              {definition.icon}
-            </span>
-          ) : (
-            <div className="relative">
-              <span className="text-3xl opacity-30" role="img" aria-label={definition.name}>
-                {definition.icon}
-              </span>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Lock className="w-5 h-5 text-gray-500" />
-              </div>
-            </div>
-          )}
+          {/* Always show the emoji */}
+          <span 
+            className={`text-4xl ${!isUnlocked ? 'opacity-40 grayscale' : ''}`}
+            role="img" 
+            aria-label={definition.name}
+          >
+            {definition.icon}
+          </span>
 
           {/* Sparkle effect for unlocked */}
           {isUnlocked && isNew && (
@@ -108,8 +102,8 @@ export function AchievementBadge({
         </p>
       )}
 
-      {/* Progress Bar (only show for locked achievements) */}
-      {!isUnlocked && targetProgress > 0 && (
+      {/* Progress Bar (only show for locked achievements with valid progress) */}
+      {!isUnlocked && targetProgress > 0 && currentProgress < targetProgress && (
         <div className="mt-3 space-y-1">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500 font-medium">Progress</span>
