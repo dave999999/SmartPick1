@@ -771,9 +771,10 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     throw new Error('Reservation not found');
   }
 
-  // Don't allow cancelling already cancelled reservations
+  // If already cancelled, nothing to do - just return successfully
   if (reservation.status === 'CANCELLED') {
-    throw new Error('Reservation already cancelled');
+    console.log('ℹ️ Reservation already cancelled, no action needed');
+    return;
   }
 
   // For EXPIRED or PICKED_UP reservations, just mark as cancelled to remove from UI
