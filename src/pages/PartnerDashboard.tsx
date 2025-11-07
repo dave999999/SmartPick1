@@ -55,6 +55,10 @@ import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedOffersTable from '@/components/partner/EnhancedOffersTable';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
+import PartnerAnalyticsCharts from '@/components/partner/PartnerAnalyticsCharts';
+import PartnerPayoutInfo from '@/components/partner/PartnerPayoutInfo';
+import QRScanFeedback from '@/components/partner/QRScanFeedback';
+import { applyNoShowPenalty } from '@/lib/penalty-system';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -78,6 +82,7 @@ export default function PartnerDashboard() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [lastQrResult, setLastQrResult] = useState<null | 'success' | 'error'>(null);
   const [useBusinessHours, setUseBusinessHours] = useState(false);
   const [pickupStartSlot, setPickupStartSlot] = useState('');
   const [pickupEndSlot, setPickupEndSlot] = useState('');
@@ -657,6 +662,25 @@ export default function PartnerDashboard() {
   }
 };
 
+  const handleMarkAsNoShow = async (reservation: Reservation) => {
+    if (processingIds.has(reservation.id)) return;
+    try {
+      setProcessingIds(prev => new Set(prev).add(reservation.id));
+      const res = await applyNoShowPenalty(reservation.customer_id, reservation.id);
+      if (res.success) {
+        toast.success(res.message || 'No-show recorded and penalty applied');
+        await loadPartnerData();
+      } else {
+        toast.error(res.message || 'Failed to apply penalty');
+      }
+    } catch (error) {
+      console.error('Error applying no-show penalty:', error);
+      toast.error('Failed to apply penalty');
+    } finally {
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
+    }
+  };
+
   const handleValidateQR = async () => {
     if (!qrInput.trim()) {
       toast.error('Please enter a QR code');
@@ -669,11 +693,14 @@ export default function PartnerDashboard() {
         await handleMarkAsPickedUp(result.reservation);
         setQrInput('');
         setQrScannerOpen(false);
+        setLastQrResult('success');
       } else {
         toast.error(result.error || 'Invalid QR code');
+        setLastQrResult('error');
       }
     } catch (error) {
       toast.error('Failed to validate QR code');
+      setLastQrResult('error');
     }
   };
 
@@ -1325,11 +1352,11 @@ const generate24HourOptions = (): string[] => {
 
               <Tabs defaultValue="camera" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="camera" className="flex items-center gap-2">
+                  <TabsTrigger value="camera" aria-label="Camera QR scan" className="flex items-center gap-2">
                     <Camera className="w-4 h-4" />
                     Camera Scan
                   </TabsTrigger>
-                  <TabsTrigger value="manual" className="flex items-center gap-2">
+                  <TabsTrigger value="manual" aria-label="Manual QR entry" className="flex items-center gap-2">
                     <QrCode className="w-4 h-4" />
                     Manual Entry
                   </TabsTrigger>
@@ -1354,13 +1381,16 @@ const generate24HourOptions = (): string[] => {
                           setQrInput('');
                           setQrScannerOpen(false);
                           toast.success('Pickup confirmed successfully!');
+                          setLastQrResult('success');
                         } else {
                           console.error('QR validation failed:', result.error);
                           toast.error(result.error || 'Invalid QR code');
+                          setLastQrResult('error');
                         }
                       } catch (error) {
                         console.error('Error validating QR code:', error);
                         toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        setLastQrResult('error');
                       }
                     }}
                     onError={(error) => {
@@ -1373,6 +1403,7 @@ const generate24HourOptions = (): string[] => {
                 <TabsContent value="manual" className="space-y-4 mt-4">
                   <div className="space-y-4">
                     <Input
+                      aria-label="Enter QR code manually"
                       placeholder="SP-2024-XY7K9"
                       value={qrInput}
                       onChange={(e) => setQrInput(e.target.value)}
@@ -1380,12 +1411,14 @@ const generate24HourOptions = (): string[] => {
                       className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
                     />
                     <Button
+                      aria-label="Validate QR code and confirm pickup"
                       onClick={handleValidateQR}
                       className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     >
                       <CheckCircle className="w-5 h-5 mr-2" />
                       Validate & Confirm Pickup
                     </Button>
+                    {lastQrResult && <QRScanFeedback result={lastQrResult} />}
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1418,13 +1451,14 @@ const generate24HourOptions = (): string[] => {
             <EnhancedActiveReservations
               reservations={reservations}
               onMarkAsPickedUp={handleMarkAsPickedUp}
+              onMarkAsNoShow={handleMarkAsNoShow}
               processingIds={processingIds}
             />
           </div>
         )}
 
         {/* Your Offers with Filter Tabs */}
-        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
+  <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
@@ -1623,6 +1657,13 @@ const generate24HourOptions = (): string[] => {
             )}
           </CardContent>
         </Card>
+
+        {!isPending && partner && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+            <PartnerAnalyticsCharts partnerId={partner.id} />
+            <PartnerPayoutInfo partnerId={partner.id} />
+          </div>
+        )}
 
         {/* Analytics Summary - Collapsible */}
         <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>

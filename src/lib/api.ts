@@ -1,3 +1,5 @@
+// Partner analytics exports
+export { getPartnerAnalytics, getPartnerPayoutInfo } from './api/partner-analytics';
 import { supabase, isDemoMode } from './supabase';
 import { Offer, Reservation, Partner, CreateOfferDTO, OfferFilters, User, PenaltyInfo } from './types';
 import { mockOffers, mockPartners } from './mockData';
@@ -335,9 +337,30 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase to create offers');
   }
-  
-  // Upload images first
-  const imageUrls = await uploadImages(offerData.images, 'offer-images');
+  // Basic validation & normalization
+  if (!partnerId) throw new Error('partnerId required');
+  if (!offerData.title || offerData.title.trim().length < 3) throw new Error('Title too short');
+  if (offerData.smart_price <= 0 || offerData.original_price <= 0) throw new Error('Prices must be positive');
+  if (offerData.smart_price >= offerData.original_price) throw new Error('Smart price must be less than original price');
+  if (offerData.quantity_total <= 0) throw new Error('Quantity must be > 0');
+
+  // Defensive: ensure pickup window makes sense
+  const start = offerData.pickup_window.start;
+  const end = offerData.pickup_window.end;
+  if (end <= start) throw new Error('Pickup end must be after start');
+  const now = new Date();
+  if (start < now) {
+    // Allow slight clock skew (5 min)
+    const skewMs = 5 * 60 * 1000;
+    if (now.getTime() - start.getTime() > skewMs) {
+      throw new Error('Pickup start must be in the future');
+    }
+  }
+
+  // Upload images first (empty array supported)
+  const imageUrls = offerData.images && offerData.images.length
+    ? await uploadImages(offerData.images, 'offer-images')
+    : [];
 
   const { data, error } = await supabase
     .from('offers')
@@ -439,6 +462,33 @@ export const createReservation = async (
     throw new Error(`You can only have ${MAX_ACTIVE_RESERVATIONS} active reservation at a time. Please pick up your current reservation before making a new one.`);
   }
 
+  // Validate offer availability & fetch offer atomically for constraints
+  const { data: offerData, error: offerError } = await supabase
+    .from('offers')
+    .select('id, quantity_available, pickup_start, pickup_end, status, partner_id')
+    .eq('id', offerId)
+    .single();
+
+  if (offerError || !offerData) {
+    throw new Error('Offer not found');
+  }
+  if (offerData.status !== 'ACTIVE') {
+    throw new Error('Offer is not active');
+  }
+
+  // Check pickup window validity
+  const now = new Date();
+  if (offerData.pickup_start && new Date(offerData.pickup_start) > now) {
+    throw new Error('Pickup window has not started yet');
+  }
+  if (offerData.pickup_end && new Date(offerData.pickup_end) <= now) {
+    throw new Error('Offer has expired');
+  }
+
+  if (quantity > offerData.quantity_available) {
+    throw new Error('Requested quantity exceeds availability');
+  }
+
   // Enforce maximum quantity limit
   if (quantity > MAX_RESERVATION_QUANTITY) {
     throw new Error(ERROR_MESSAGES.MAX_RESERVATIONS_REACHED);
@@ -467,14 +517,28 @@ export const createReservation = async (
 
   // Use atomic database function to prevent race conditions
   // This function locks the offer row and updates quantity in a single transaction
-  const { data, error } = await supabase.rpc('create_reservation_atomic', {
+  // Attempt secure signature (without p_customer_id)
+  let { data, error } = await supabase.rpc('create_reservation_atomic', {
     p_offer_id: offerId,
-    p_customer_id: customerId,
     p_quantity: quantity,
     p_qr_code: qrCode,
     p_total_price: totalPrice,
     p_expires_at: expiresAt.toISOString(),
   });
+
+  // Fallback to legacy signature if migration not yet applied
+  if (error && /p_customer_id|function create_reservation_atomic/i.test(error.message || '')) {
+    const legacy = await supabase.rpc('create_reservation_atomic', {
+      p_offer_id: offerId,
+      p_customer_id: customerId,
+      p_quantity: quantity,
+      p_qr_code: qrCode,
+      p_total_price: totalPrice,
+      p_expires_at: expiresAt.toISOString(),
+    });
+    data = legacy.data;
+    error = legacy.error;
+  }
 
   if (error) {
     // Handle specific error messages from the database function
@@ -581,13 +645,20 @@ export const getPartnerReservations = async (partnerId: string): Promise<Reserva
   return data as Reservation[];
 };
 
-export const validateQRCode = async (qrCode: string): Promise<{ valid: boolean; reservation?: Reservation; error?: string }> => {
+interface QRValidationResult { valid: boolean; reservation?: Reservation; error?: string }
+export const validateQRCode = async (qrCode: string): Promise<QRValidationResult> => {
   if (isDemoMode) {
     return { valid: false, error: 'Demo mode: Please configure Supabase' };
   }
 
-  console.log('validateQRCode called with:', qrCode);
-  console.log('Current time:', new Date().toISOString());
+  // Basic format sanity check (prefix + length)
+  const normalized = qrCode.trim();
+  if (!/^SP-/i.test(normalized)) {
+    return { valid: false, error: 'Unrecognized QR code format' };
+  }
+  if (normalized.length < 8) {
+    return { valid: false, error: 'QR code too short' };
+  }
 
   const { data, error } = await supabase
     .from('reservations')
@@ -658,17 +729,17 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   // Send pickup notification to partner (don't block on this)
   // Note: notification_preferences uses user_id, not partner_id
-  const partnerUserId = reservation.partner?.user_id;
-  if (partnerUserId && reservation.customer && reservation.offer) {
-    const customerName = reservation.customer.name || 'Customer';
-    const offerTitle = reservation.offer.title || 'Offer';
+  // Notification safety: nested joins may come back as arrays; normalize defensively
+  const partnerRecord: any = Array.isArray(reservation.partner) ? reservation.partner[0] : reservation.partner;
+  const customerRecord: any = (reservation as any).customer ? (Array.isArray((reservation as any).customer) ? (reservation as any).customer[0] : (reservation as any).customer) : null;
+  const offerRecord: any = reservation.offer ? (Array.isArray(reservation.offer) ? reservation.offer[0] : reservation.offer) : null;
 
-    notifyPartnerPickupComplete(
-      partnerUserId,
-      customerName,
-      offerTitle,
-      reservation.quantity
-    ).catch(err => console.error('Failed to send pickup notification:', err));
+  const partnerUserId = partnerRecord?.user_id;
+  if (partnerUserId && customerRecord && offerRecord) {
+    const customerName = customerRecord.name || 'Customer';
+    const offerTitle = offerRecord.title || 'Offer';
+    notifyPartnerPickupComplete(partnerUserId, customerName, offerTitle, reservation.quantity)
+      .catch(err => console.error('Failed to send pickup notification:', err));
   }
 
   return data as Reservation;
@@ -843,7 +914,7 @@ export const relistOffer = async (offerId: string) => {
 
 export const getPartnerStats = async (partnerId: string) => {
   if (isDemoMode) {
-    return mockStats;
+    return { activeOffers: 0, reservationsToday: 0, itemsPickedUp: 0 };
   }
   
   const today = new Date();
@@ -1151,6 +1222,23 @@ export const subscribeToOffers = (callback: (payload: unknown) => void) => {
     .subscribe();
 };
 
+// Subscribe to partner reservations for realtime dashboard updates
+export const subscribeToPartnerReservations = (partnerId: string, callback: (payload: unknown) => void) => {
+  if (isDemoMode) {
+    return { unsubscribe: () => {} };
+  }
+  
+  return supabase
+    .channel(`public:reservations:partner:${partnerId}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'reservations',
+      filter: `partner_id=eq.${partnerId}`,
+    }, callback)
+    .subscribe();
+};
+
 export const subscribeToReservations = (customerId: string, callback: (payload: unknown) => void) => {
   if (isDemoMode) {
     return { unsubscribe: () => {} };
@@ -1220,6 +1308,11 @@ export const resolveOfferImageUrl = (url?: string, category?: string): string =>
   if (!url) return '';
 
   const trimmed = url.trim();
+
+  // Basic sanitization: prevent directory traversal attempts
+  if (trimmed.includes('..')) {
+    return '';
+  }
 
   // Absolute URLs (already public)
   if (/^https?:\/\//i.test(trimmed)) return trimmed;

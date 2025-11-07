@@ -78,7 +78,9 @@ export default function EnhancedOffersTable({
                     <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                       <img
                         src={imageUrl}
-                        alt={offer.title}
+                        alt={offer.title + ' offer image'}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>

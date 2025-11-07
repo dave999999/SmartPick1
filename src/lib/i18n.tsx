@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
+// Supported languages (Russian removed per request)
 type Language = 'en' | 'ka';
 
 interface I18nContextType {
@@ -197,6 +198,8 @@ const translations: Record<Language, Record<string, string>> = {
   // Recently Viewed
   'recent.title': 'Recently Viewed',
   'recent.empty': 'No recently viewed items',
+  // Home page
+  'home.welcome': 'Welcome to SmartPick',
   },
   ka: {
     // Header
@@ -384,13 +387,16 @@ const translations: Record<Language, Record<string, string>> = {
   // Recently Viewed
   'recent.title': 'ბოლოს ნანახი',
   'recent.empty': 'არ არის ბოლოს ნანახი',
+  // Home page
+  'home.welcome': 'კეთილი იყოს თქვენი მობრძანება SmartPick-ში',
   },
 };
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('smartpick-language');
-    return (saved as Language) || 'en';
+    // Gracefully fall back if an old 'ru' value is still in localStorage
+    return saved === 'ka' ? 'ka' : 'en';
   });
 
   const setLanguage = (lang: Language) => {
@@ -399,7 +405,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   };
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    return translations[language][key] ?? translations.en[key] ?? key;
   };
 
   return (
