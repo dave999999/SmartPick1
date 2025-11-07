@@ -642,6 +642,9 @@ export default function PartnerDashboard() {
   try {
     setProcessingIds(prev => new Set(prev).add(reservation.id));
 
+    // Optimistically remove from UI to prevent repeat clicks
+    setReservations(prev => prev.filter(r => r.id !== reservation.id));
+
     // ✅ Only update reservation status in database
     await markAsPickedUp(reservation.id);
 
@@ -666,6 +669,8 @@ export default function PartnerDashboard() {
     if (processingIds.has(reservation.id)) return;
     try {
       setProcessingIds(prev => new Set(prev).add(reservation.id));
+      // Optimistically remove to prevent multiple penalty applications
+      setReservations(prev => prev.filter(r => r.id !== reservation.id));
       const res = await applyNoShowPenalty(reservation.customer_id, reservation.id);
       if (res.success) {
         toast.success(res.message || 'No-show recorded and penalty applied');

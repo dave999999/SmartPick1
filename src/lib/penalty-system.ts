@@ -130,10 +130,12 @@ export async function applyNoShowPenalty(userId: string, reservationId: string) 
     if (updateError) throw updateError;
 
     // Mark reservation as no-show
+    // Also force status to EXPIRED so it disappears from active list (schema allows EXPIRED)
     const { error: reservationError } = await supabase
       .from('reservations')
       .update({
         no_show: true,
+        status: 'EXPIRED'
       })
       .eq('id', reservationId);
 
