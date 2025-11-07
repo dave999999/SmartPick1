@@ -585,23 +585,36 @@ export const validateQRCode = async (qrCode: string): Promise<{ valid: boolean; 
   if (isDemoMode) {
     return { valid: false, error: 'Demo mode: Please configure Supabase' };
   }
-  
+
+  console.log('validateQRCode called with:', qrCode);
+  console.log('Current time:', new Date().toISOString());
+
   const { data, error } = await supabase
     .from('reservations')
     .select(`
       *,
       offer:offers(*),
-      customer:users(name, email, phone)
+      customer:users(name, email, phone),
+      partner:partners(*)
     `)
     .eq('qr_code', qrCode)
     .eq('status', 'ACTIVE')
     .gt('expires_at', new Date().toISOString())
     .single();
 
-  if (error || !data) {
+  console.log('Supabase query result:', { data, error });
+
+  if (error) {
+    console.error('Supabase error:', error);
+    return { valid: false, error: `Database error: ${error.message}` };
+  }
+
+  if (!data) {
+    console.error('No reservation found for QR code:', qrCode);
     return { valid: false, error: 'Invalid or expired QR code' };
   }
 
+  console.log('Valid reservation found:', data.id);
   return { valid: true, reservation: data as Reservation };
 };
 
