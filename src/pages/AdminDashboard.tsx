@@ -14,6 +14,8 @@ import { OffersManagement } from '@/components/admin/OffersManagement';
 import { PendingPartners } from '@/components/admin/PendingPartners';
 import { NewUsers } from '@/components/admin/NewUsers';
 import { BannedUsers } from '@/components/admin/BannedUsers';
+import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
+import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -171,7 +173,7 @@ export default function AdminDashboard() {
 
       <div className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 xl:grid-cols-12 gap-1">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="partners">Partners</TabsTrigger>
             <TabsTrigger value="pending">
@@ -186,6 +188,11 @@ export default function AdminDashboard() {
             <TabsTrigger value="new-users">New Users</TabsTrigger>
             <TabsTrigger value="banned">Banned</TabsTrigger>
             <TabsTrigger value="offers">Offers</TabsTrigger>
+            <TabsTrigger value="moderation">Moderation</TabsTrigger>
+            <TabsTrigger value="financial">Finance</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="audit">Audit</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -273,6 +280,32 @@ export default function AdminDashboard() {
 
           <TabsContent value="offers">
             <OffersManagement onStatsUpdate={loadStats} />
+          </TabsContent>
+
+          <TabsContent value="moderation">
+            <OfferModerationPanel />
+          </TabsContent>
+
+          <TabsContent value="financial">
+            <FinancialDashboardPanel />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <SectionCard title="Analytics & Insights" description="Platform-wide analytics and trends" accent="blue">
+              <p className="text-gray-600">Feature coming soon: Analytics dashboard will show user growth charts, category performance, completion rates, and geographic distribution.</p>
+            </SectionCard>
+          </TabsContent>
+
+          <TabsContent value="health">
+            <SectionCard title="System Health" description="Monitor system performance and errors" accent="red">
+              <p className="text-gray-600">Feature coming soon: System health monitoring will track errors, performance metrics, suspicious activity, and database health.</p>
+            </SectionCard>
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <SectionCard title="Audit Logs" description="Security and administrative action tracking" accent="purple">
+              <p className="text-gray-600">Feature coming soon: Audit logs will track all administrative actions, user activity, and security events for compliance and debugging.</p>
+            </SectionCard>
           </TabsContent>
         </Tabs>
       </div>

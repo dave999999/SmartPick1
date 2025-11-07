@@ -94,6 +94,12 @@ export interface Offer {
   expires_at: string;
   scheduled_publish_at?: string;
   partner?: Partner;
+  // Admin moderation fields
+  is_flagged?: boolean;
+  flagged_reason?: string;
+  is_featured?: boolean;
+  featured_until?: string;
+  admin_notes?: string;
 }
 
 export interface Reservation {
@@ -175,3 +181,6 @@ export interface UserAchievementType {
   viewed_at?: string | null;
   achievement?: AchievementDefinitionType; // joined definition
 }
+
+// Re-export admin types
+export * from './types/admin';
