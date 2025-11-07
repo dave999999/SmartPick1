@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Navigation, Maximize2, Minimize2 } from 'lucide-react';
 import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
+import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import FavoriteButton from '@/components/FavoriteButton';
 import { toast } from 'sonner';
 
@@ -272,34 +273,34 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
   const getTimeRemaining = (expiresAt?: string) => {
     const now = new Date();
-    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const expires = new Date(target);
     const diff = expires.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (diff <= 0) return 'Expired';
     if (hours > 0) return `${hours}h ${minutes}m left`;
     return `${minutes}m left`;
   };
 
   const isExpiringSoon = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const diff = new Date(target).getTime() - new Date().getTime();
     return diff > 0 && diff < 60 * 60 * 1000; // Less than 1 hour
   };
 
   const isExpired = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     return new Date(target).getTime() <= new Date().getTime();
   };
 
-  // Unified expiry getter: prefer DB field, fallback to auto field, then default +6h
+  // Unified expiry getter: prefer DB field, fallback to auto field, then default +12h
   const getOfferExpiry = (offer: Offer): string => {
     return (
       (offer as any)?.expires_at ||
       (offer as any)?.auto_expire_in ||
-      new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString()
+      new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString()
     );
   };
 
