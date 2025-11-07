@@ -558,13 +558,7 @@ export default function MyPicks() {
                             </CardDescription>
                           </div>
                         </div>
-                        {isExpired(reservation.expires_at) ? (
-                          <Badge variant="secondary" className="bg-red-100 text-red-800">
-                            Expired
-                          </Badge>
-                        ) : (
-                          getStatusBadge(reservation.status)
-                        )}
+                        {getStatusBadge(reservation.status)}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
