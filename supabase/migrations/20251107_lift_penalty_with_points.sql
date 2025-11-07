@@ -3,7 +3,7 @@
 -- Costs: 30 points for 1st penalty (30min), 90 points for 2nd (90min)
 -- 3rd (24hr) cannot be lifted, permanent ban cannot be lifted.
 
-CREATE OR REPLACE FUNCTION lift_penalty_with_points()
+CREATE OR REPLACE FUNCTION public.lift_penalty_with_points()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -82,5 +82,5 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION lift_penalty_with_points IS 'Atomically lifts a 30min/90min penalty by spending SmartPoints (30/90).';
-GRANT EXECUTE ON FUNCTION lift_penalty_with_points TO authenticated;
+COMMENT ON FUNCTION public.lift_penalty_with_points IS 'Atomically lifts a 30min/90min penalty by spending SmartPoints (30/90).';
+GRANT EXECUTE ON FUNCTION public.lift_penalty_with_points TO authenticated;

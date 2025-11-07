@@ -292,7 +292,7 @@ export async function clearUserPenalty(userId: string, clearBan: boolean = false
 export async function liftPenaltyWithPoints(userId: string) {
   try {
     // Use secure RPC that derives auth.uid(), deducts points atomically and clears penalty
-    const { data, error } = await supabase.rpc('lift_penalty_with_points');
+    let { data, error } = await supabase.rpc('lift_penalty_with_points');
 
     if (error) {
       console.error('RPC lift_penalty_with_points error:', error);
@@ -305,6 +305,19 @@ export async function liftPenaltyWithPoints(userId: string) {
         lower.includes('404 not found') ||
         lower.includes('pgrst116') // PostgREST missing function code
       ) {
+        // Retry with schema-qualified name once
+        try {
+          const retry = await supabase.rpc('public.lift_penalty_with_points');
+          if (!retry.error) {
+            data = retry.data as any;
+            error = null as any;
+          }
+        } catch (e) {
+          // ignore, will fall through to guidance
+        }
+      }
+
+      if (error) {
         return {
           success: false,
           migrationMissing: true,
@@ -312,7 +325,6 @@ export async function liftPenaltyWithPoints(userId: string) {
             'Penalty lift function not deployed yet. Apply migration supabase/migrations/20251107_lift_penalty_with_points.sql in Supabase SQL editor, then retry.',
         } as any;
       }
-      return { success: false, message: msg };
     }
 
     const result = (data || {}) as { success: boolean; balance?: number; message?: string };
