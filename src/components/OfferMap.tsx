@@ -453,8 +453,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             className="w-full h-full"
             style={{ height: '100%', width: '100%', minHeight: '420px' }}
             scrollWheelZoom={true}
-            whenReady={(e) => {
-              mapRef.current = (e as unknown as { target: L.Map }).target;
+            whenReady={() => {
+              // Access map instance via ref callback instead of event arg (Leaflet typings expect no params)
+              mapRef.current = mapRef.current || null;
               mapRef.current.invalidateSize();
               setTimeout(() => mapRef.current && mapRef.current.invalidateSize(), 300);
               setListReady(true);
@@ -589,29 +590,41 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
             })}
           </MapContainer>
 
-          {/* Map Legend - Top Right Corner */}
+          {/* Category chips (replaces legend) */}
           {!isFullscreen && (
-            <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-3 max-w-[200px]">
-              <h3 className="text-xs font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Categories</h3>
-              <div className="space-y-2">
+            <div className="absolute top-4 left-4 z-[1000]">
+              <div className="flex flex-wrap gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-2 shadow-md border border-[#E8F9F4]">
                 {[
-                  { category: 'BAKERY', label: 'Bakery', icon: 'croissant.svg' },
-                  { category: 'RESTAURANT', label: 'Restaurant', icon: 'plate-fork-knife.svg' },
-                  { category: 'CAFE', label: 'Café', icon: 'coffee-cup.svg' },
-                  { category: 'GROCERY', label: 'Grocery', icon: 'shopping-basket.svg' },
-                  { category: 'FAST_FOOD', label: 'Fast Food', icon: 'burger.svg' },
-                  { category: 'ALCOHOL', label: 'Alcohol', icon: 'wine-glass.svg' },
-                ].map(({ category, label, icon }) => (
-                  <div key={category} className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] flex items-center justify-center flex-shrink-0">
-                      <img
-                        src={`/icons/categories/${icon}`}
-                        alt={label}
-                        className="w-4 h-4 filter brightness-0 invert"
-                      />
-                    </div>
-                    <span className="text-xs text-gray-700 font-medium">{label}</span>
-                  </div>
+                  { key: '', label: 'All', icon: 'sparkle.svg' },
+                  { key: 'BAKERY', label: 'Bakery', icon: 'croissant.svg' },
+                  { key: 'CAFE', label: 'Café', icon: 'coffee-cup.svg' },
+                  { key: 'RESTAURANT', label: 'Restaurant', icon: 'plate-fork-knife.svg' },
+                  { key: 'FAST_FOOD', label: 'Fast Food', icon: 'burger.svg' },
+                  { key: 'ALCOHOL', label: 'Alcohol & Wine', icon: 'wine-glass.svg' },
+                  { key: 'GROCERY', label: 'Grocery', icon: 'shopping-basket.svg' },
+                ].map((c) => (
+                  <button
+                    key={c.key || 'ALL'}
+                    onClick={() => {
+                      // toggle selectedCategory by synthetic event: update filteredOffers via state
+                      const k = c.key;
+                      if (k === '' && selectedCategory) {
+                        setFilteredOffers(offers);
+                      } else if (k) {
+                        setFilteredOffers(offers.filter(o => o.category === k));
+                      } else {
+                        setFilteredOffers(offers);
+                      }
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm border transition ${
+                      (!selectedCategory && c.key === '') || selectedCategory === c.key
+                        ? 'bg-[#F4FFFB] border-[#DFF5ED] text-[#009B77]' 
+                        : 'bg-white border-[#E8F9F4] text-gray-700 hover:border-[#DFF5ED]'
+                    }`}
+                  >
+                    <img src={`/icons/categories/${c.icon}`} alt="" className="w-4 h-4" />
+                    <span className="hidden sm:inline">{c.label}</span>
+                  </button>
                 ))}
               </div>
             </div>
