@@ -55,6 +55,10 @@ export interface Partner {
   telegram?: string;
   whatsapp?: string;
   business_hours?: BusinessHours;
+  // Optional flat-hour fields used in PartnerDashboard
+  opening_time?: string; // e.g. "09:00"
+  closing_time?: string; // e.g. "18:00"
+  open_24h?: boolean;
   status: PartnerStatus;
   images: string[];
   approved_for_upload?: boolean;

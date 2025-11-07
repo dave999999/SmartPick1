@@ -2,18 +2,20 @@ import { Reservation } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, MapPin, Phone, User, CheckCircle, Package } from 'lucide-react';
+import { Clock, MapPin, Phone, User, CheckCircle, Package, XCircle } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface EnhancedActiveReservationsProps {
   reservations: Reservation[];
   onMarkAsPickedUp: (reservation: Reservation) => void;
+  onMarkAsNoShow: (reservation: Reservation) => void;
   processingIds: Set<string>;
 }
 
 export default function EnhancedActiveReservations({
   reservations,
   onMarkAsPickedUp,
+  onMarkAsNoShow,
   processingIds,
 }: EnhancedActiveReservationsProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -38,6 +40,12 @@ export default function EnhancedActiveReservations({
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     return `${hours}h ${remainingMinutes}m remaining`;
+  };
+
+  const isExpired = (expiresAt: string) => {
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    return expires.getTime() - now.getTime() <= 0;
   };
 
   if (reservations.length === 0) {
@@ -154,24 +162,73 @@ export default function EnhancedActiveReservations({
                     <p className="font-mono font-bold text-sm">{reservation.qr_code}</p>
                   </div>
 
-                  {/* Action Button */}
-                  <Button
-                    onClick={() => onMarkAsPickedUp(reservation)}
-                    disabled={isProcessing}
-                    className="w-full bg-green-600 hover:bg-green-700 h-11 sm:h-12"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        ✅ Mark as Picked Up
-                      </>
-                    )}
-                  </Button>
+                  {/* Action Buttons */}
+                  {isExpired(reservation.expires_at) ? (
+                    // Show both buttons for expired reservations
+                    <div className="space-y-2">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
+                        <p className="text-xs text-red-700 font-medium text-center">
+                          ⚠️ This reservation has expired
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Button
+                          onClick={() => onMarkAsPickedUp(reservation)}
+                          disabled={isProcessing}
+                          className="w-full bg-green-600 hover:bg-green-700 h-11"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Picked Up
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => onMarkAsNoShow(reservation)}
+                          disabled={isProcessing}
+                          variant="destructive"
+                          className="w-full h-11"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Didn't Show Up
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    // Single button for active reservations
+                    <Button
+                      onClick={() => onMarkAsPickedUp(reservation)}
+                      disabled={isProcessing}
+                      className="w-full bg-green-600 hover:bg-green-700 h-11 sm:h-12"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          ✅ Mark as Picked Up
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -1,14 +1,4 @@
-﻿import createMiddleware from 'next-intl/middleware';
-
-export default createMiddleware({
-  // Supported languages
-  locales: ['en', 'ka', 'ru'],
-
-  // Default language
-  defaultLocale: 'en'
-});
-
-// Apply middleware to all pages except system paths
-export const config = {
-  matcher: ['/((?!api|_next|.*\\..*).*)']
-};
+﻿// No-op middleware placeholder to keep TypeScript happy in Vite project.
+// next-intl middleware removed; this file is not used by the app runtime.
+export default function noop() { return; }
+export const config = { matcher: [] };

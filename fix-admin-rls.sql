@@ -7,20 +7,27 @@ BEGIN;
 -- This will allow the admin dashboard to read data without RLS restrictions
 
 -- For partners table
-DROP POLICY IF EXISTS "allow_read_all_partners" ON partners;
-CREATE POLICY "allow_read_all_partners" ON partners FOR SELECT USING (true);
 
--- For users table  
-DROP POLICY IF EXISTS "allow_read_all_users" ON users;
-CREATE POLICY "allow_read_all_users" ON users FOR SELECT USING (true);
+-- Admin-specific policies (role-based access)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'admin') THEN
+        CREATE ROLE admin;
+    END IF;
+END
+$$;
 
--- For offers table (admin needs to see all offers)
-DROP POLICY IF EXISTS "allow_read_all_offers" ON offers;
-CREATE POLICY "allow_read_all_offers" ON offers FOR SELECT USING (true);
+DROP POLICY IF EXISTS "admin_read_partners" ON partners;
+CREATE POLICY "admin_read_partners" ON partners FOR SELECT TO admin USING (true);
 
--- For reservations table (admin needs to see all reservations)
-DROP POLICY IF EXISTS "allow_read_all_reservations" ON reservations;
-CREATE POLICY "allow_read_all_reservations" ON reservations FOR SELECT USING (true);
+DROP POLICY IF EXISTS "admin_read_users" ON users;
+CREATE POLICY "admin_read_users" ON users FOR SELECT TO admin USING (true);
+
+DROP POLICY IF EXISTS "admin_read_offers" ON offers;
+CREATE POLICY "admin_read_offers" ON offers FOR SELECT TO admin USING (true);
+
+DROP POLICY IF EXISTS "admin_read_reservations" ON reservations;
+CREATE POLICY "admin_read_reservations" ON reservations FOR SELECT TO admin USING (true);
 
 -- Enable RLS on all tables (if not already enabled)
 ALTER TABLE partners ENABLE ROW LEVEL SECURITY;

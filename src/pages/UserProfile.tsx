@@ -21,8 +21,34 @@ import { StreakTracker } from '@/components/gamification/StreakTracker';
 import { UserLevelCard } from '@/components/gamification/UserLevelCard';
 import { ReferralCard } from '@/components/gamification/ReferralCard';
 import { AchievementsGrid } from '@/components/gamification/AchievementsGrid';
+import { checkUserPenaltyStatus, PenaltyStatus } from '@/lib/penalty-system';
 import { getUserStats, UserStats } from '@/lib/gamification-api';
 import { motion } from 'framer-motion';
+
+function PenaltyStatusBlock({ userId, fallbackUntil }: { userId: string; fallbackUntil?: string }) {
+  const [status, setStatus] = useState<PenaltyStatus | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    checkUserPenaltyStatus(userId)
+      .then(s => { if (mounted) setStatus(s); })
+      .catch(err => console.warn('Failed to load penalty status', err));
+    return () => { mounted = false; };
+  }, [userId]);
+  if (!status) {
+    return fallbackUntil ? (
+      <p className="text-sm text-orange-700">Penalty active until: {fallbackUntil}</p>
+    ) : null;
+  }
+  if (status.isBanned) {
+    return <p className="text-sm text-red-700 font-semibold">Account permanently banned due to repeated no-shows. Contact support.</p>;
+  }
+  if (status.isPenalized && status.penaltyUntil) {
+    return (
+      <p className="text-sm text-orange-700">Penalty active until: {new Date(status.penaltyUntil).toLocaleString()} ({status.penaltyMessage})</p>
+    );
+  }
+  return <p className="text-sm text-green-700">No active penalty.</p>;
+}
 
 export default function UserProfile() {
   const [user, setUser] = useState<User | null>(null);
@@ -293,7 +319,7 @@ export default function UserProfile() {
               </motion.div>
             )}
 
-            {/* Penalty Warning (if applicable) */}
+            {/* Penalty Warning (dynamic) */}
             {user.penalty_count && user.penalty_count > 0 && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -310,11 +336,7 @@ export default function UserProfile() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {user.penalty_until && (
-                      <p className="text-sm text-orange-700">
-                        Penalty active until: {formatDate(user.penalty_until)}
-                      </p>
-                    )}
+                    <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} />
                   </CardContent>
                 </Card>
               </motion.div>
