@@ -771,20 +771,16 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     throw new Error('Reservation not found');
   }
 
-  // Don't allow cancelling already cancelled or picked up reservations
+  // Don't allow cancelling already cancelled reservations
   if (reservation.status === 'CANCELLED') {
     throw new Error('Reservation already cancelled');
   }
 
-  if (reservation.status === 'PICKED_UP') {
-    throw new Error('Cannot cancel a picked up reservation');
-  }
+  // For EXPIRED or PICKED_UP reservations, just mark as cancelled to remove from UI
+  // No quantity restore or point refund needed (already completed or expired)
+  const shouldSkipRefund = reservation.status === 'EXPIRED' || reservation.status === 'PICKED_UP';
 
-  // For EXPIRED reservations, just mark as cancelled without restoring quantity or refunding points
-  // (they expired naturally, so quantity was never taken and no refund is needed)
-  const isExpired = reservation.status === 'EXPIRED';
-
-  if (!isExpired) {
+  if (!shouldSkipRefund) {
     // Restore offer quantity (only for non-expired reservations)
     const { data: offer } = await supabase
       .from('offers')
@@ -832,10 +828,12 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       console.log('✅ Points refunded successfully:', refundResult);
     }
   } else {
-    console.log('ℹ️ Skipping quantity restore and point refund for EXPIRED reservation');
+    console.log(`ℹ️ Skipping quantity restore and point refund for ${reservation.status} reservation`);
   }
 
-  // Cancel reservation (or just mark expired ones as cancelled to remove from UI)
+  // Mark reservation as cancelled to remove from UI
+  // For active reservations: quantity restored and points refunded
+  // For expired/picked up: just dismissed from history (no refund needed)
   const { error } = await supabase
     .from('reservations')
     .update({ status: 'CANCELLED' })
