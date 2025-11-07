@@ -1317,23 +1317,33 @@ const generate24HourOptions = (): string[] => {
                 <TabsContent value="camera" className="space-y-4 mt-4">
                   <QRScanner
                     onScan={async (code) => {
-                      setQrInput(code);
+                      // Clean and normalize the scanned code
+                      const cleanCode = code.trim();
+                      console.log('QR Code scanned:', cleanCode);
+                      setQrInput(cleanCode);
+
                       // Automatically validate the scanned code
                       try {
-                        const result = await validateQRCode(code);
+                        console.log('Validating QR code:', cleanCode);
+                        const result = await validateQRCode(cleanCode);
+                        console.log('Validation result:', result);
+
                         if (result.valid && result.reservation) {
                           await handleMarkAsPickedUp(result.reservation);
                           setQrInput('');
                           setQrScannerOpen(false);
                           toast.success('Pickup confirmed successfully!');
                         } else {
+                          console.error('QR validation failed:', result.error);
                           toast.error(result.error || 'Invalid QR code');
                         }
                       } catch (error) {
-                        toast.error('Failed to validate QR code');
+                        console.error('Error validating QR code:', error);
+                        toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
                       }
                     }}
                     onError={(error) => {
+                      console.error('QR Scanner error:', error);
                       toast.error(error);
                     }}
                   />
