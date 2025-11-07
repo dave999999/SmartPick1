@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AchievementBadge } from './AchievementBadge';
-import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement } from '@/lib/gamification-api';
+import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAchievement, getUserStats } from '@/lib/gamification-api';
 import { Award, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [allAchievements, setAllAchievements] = useState<AchievementDefinition[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userStats, setUserStats] = useState<any>(null);
 
   useEffect(() => {
     loadAchievements();
@@ -22,12 +23,14 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
   const loadAchievements = async () => {
     setLoading(true);
     try {
-      const [userAch, allAch] = await Promise.all([
+      const [userAch, allAch, stats] = await Promise.all([
         getUserAchievements(userId),
-        getAllAchievements()
+        getAllAchievements(),
+        getUserStats(userId)
       ]);
       setUserAchievements(userAch);
       setAllAchievements(allAch);
+      setUserStats(stats);
     } catch (error) {
       console.error('Error loading achievements:', error);
       toast.error('Failed to load achievements');
@@ -38,6 +41,52 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
 
   const getUserAchievementForDefinition = (defId: string): UserAchievement | undefined => {
     return userAchievements.find(ua => ua.achievement_id === defId);
+  };
+
+  // Calculate progress for an achievement based on its requirement type
+  const calculateProgress = (achievement: AchievementDefinition): { current: number; target: number } => {
+    if (!userStats || !achievement.requirement) {
+      return { current: 0, target: 1 };
+    }
+
+    const req = achievement.requirement;
+    
+    switch (req.type) {
+      case 'reservations':
+        return {
+          current: userStats.total_reservations || 0,
+          target: req.count || 1
+        };
+      
+      case 'money_saved':
+        return {
+          current: Math.floor(userStats.total_money_saved || 0),
+          target: req.amount || 1
+        };
+      
+      case 'streak':
+        return {
+          current: userStats.current_streak_days || 0,
+          target: req.days || 1
+        };
+      
+      case 'referrals':
+        return {
+          current: userStats.total_referrals || 0,
+          target: req.count || 1
+        };
+      
+      // For category-specific or partner-specific achievements, we'd need more detailed data
+      // For now, return 0 progress if not unlocked
+      case 'category':
+      case 'unique_partners':
+      case 'partner_loyalty':
+        // These would require additional queries or stats fields
+        return { current: 0, target: req.count || 1 };
+      
+      default:
+        return { current: 0, target: 1 };
+    }
   };
 
   const unlockedCount = userAchievements.length;
@@ -110,14 +159,19 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {allAchievements.map((achievement) => (
-                  <AchievementBadge
-                    key={achievement.id}
-                    definition={achievement}
-                    userAchievement={getUserAchievementForDefinition(achievement.id)}
-                    showDetails
-                  />
-                ))}
+                {allAchievements.map((achievement) => {
+                  const progress = calculateProgress(achievement);
+                  return (
+                    <AchievementBadge
+                      key={achievement.id}
+                      definition={achievement}
+                      userAchievement={getUserAchievementForDefinition(achievement.id)}
+                      currentProgress={progress.current}
+                      targetProgress={progress.target}
+                      showDetails
+                    />
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -125,14 +179,19 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
           {Object.entries(achievementsByCategory).map(([category, achievements]) => (
             <TabsContent key={category} value={category} className="mt-6">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {achievements.map((achievement) => (
-                  <AchievementBadge
-                    key={achievement.id}
-                    definition={achievement}
-                    userAchievement={getUserAchievementForDefinition(achievement.id)}
-                    showDetails
-                  />
-                ))}
+                {achievements.map((achievement) => {
+                  const progress = calculateProgress(achievement);
+                  return (
+                    <AchievementBadge
+                      key={achievement.id}
+                      definition={achievement}
+                      userAchievement={getUserAchievementForDefinition(achievement.id)}
+                      currentProgress={progress.current}
+                      targetProgress={progress.target}
+                      showDetails
+                    />
+                  );
+                })}
               </div>
             </TabsContent>
           ))}
