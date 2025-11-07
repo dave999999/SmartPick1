@@ -771,45 +771,50 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     throw new Error('Reservation not found');
   }
 
-  // If already cancelled, nothing to do - just return successfully
-  if (reservation.status === 'CANCELLED') {
-    console.log('ℹ️ Reservation already cancelled, no action needed');
+  // For history items (PICKED_UP, EXPIRED, CANCELLED), DELETE them completely
+  const isHistoryItem = ['PICKED_UP', 'EXPIRED', 'CANCELLED'].includes(reservation.status);
+
+  if (isHistoryItem) {
+    console.log(`🗑️ Deleting ${reservation.status} reservation from history`);
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', reservationId);
+
+    if (error) throw error;
     return;
   }
 
-  // For EXPIRED or PICKED_UP reservations, just mark as cancelled to remove from UI
-  // No quantity restore or point refund needed (already completed or expired)
-  const shouldSkipRefund = reservation.status === 'EXPIRED' || reservation.status === 'PICKED_UP';
+  // For ACTIVE reservations - refund points and restore quantity before cancelling
+  console.log('📦 Cancelling active reservation with refund');
 
-  if (!shouldSkipRefund) {
-    // Restore offer quantity (only for non-expired reservations)
-    const { data: offer } = await supabase
+  // Restore offer quantity
+  const { data: offer } = await supabase
+    .from('offers')
+    .select('quantity_available')
+    .eq('id', reservation.offer_id)
+    .single();
+
+  if (offer) {
+    await supabase
       .from('offers')
-      .select('quantity_available')
-      .eq('id', reservation.offer_id)
-      .single();
+      .update({ quantity_available: offer.quantity_available + reservation.quantity })
+      .eq('id', reservation.offer_id);
+  }
 
-    if (offer) {
-      await supabase
-        .from('offers')
-        .update({ quantity_available: offer.quantity_available + reservation.quantity })
-        .eq('id', reservation.offer_id);
-    }
+  // REFUND POINTS - Give back points based on quantity (5 points per unit)
+  const POINTS_PER_RESERVATION = 5;
+  const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
 
-    // REFUND POINTS - Give back points based on quantity (5 points per unit)
-    // Only refund for active cancellations, not for expired items
-    const POINTS_PER_RESERVATION = 5;
-    const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
+  console.log('💰 Attempting to refund points:', {
+    userId: reservation.customer_id,
+    amount: totalPointsToRefund,
+    quantity: reservation.quantity,
+    reservationId
+  });
 
-    console.log('💰 Attempting to refund points:', {
-      userId: reservation.customer_id,
-      amount: totalPointsToRefund,
-      quantity: reservation.quantity,
-      reservationId
-    });
-
-    const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
-      p_user_id: reservation.customer_id,
+  const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
+    p_user_id: reservation.customer_id,
     p_amount: totalPointsToRefund,
     p_reason: 'refund',
     p_metadata: {
@@ -821,24 +826,63 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     }
   });
 
-    if (refundError) {
-      console.error('❌ Error refunding points:', refundError);
-      console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
-      // Don't throw - still cancel the reservation even if refund fails
-    } else {
-      console.log('✅ Points refunded successfully:', refundResult);
-    }
+  if (refundError) {
+    console.error('❌ Error refunding points:', refundError);
+    console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
+    // Don't throw - still cancel the reservation even if refund fails
   } else {
-    console.log(`ℹ️ Skipping quantity restore and point refund for ${reservation.status} reservation`);
+    console.log('✅ Points refunded successfully:', refundResult);
   }
 
-  // Mark reservation as cancelled to remove from UI
-  // For active reservations: quantity restored and points refunded
-  // For expired/picked up: just dismissed from history (no refund needed)
+  // Mark active reservation as cancelled
   const { error } = await supabase
     .from('reservations')
     .update({ status: 'CANCELLED' })
     .eq('id', reservationId);
+
+  if (error) throw error;
+};
+
+/**
+ * Auto-cleanup old history items (PICKED_UP, EXPIRED, CANCELLED) older than 10 days
+ */
+export const cleanupOldHistory = async (userId: string): Promise<void> => {
+  if (isDemoMode) return;
+
+  try {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('customer_id', userId)
+      .in('status', ['PICKED_UP', 'EXPIRED', 'CANCELLED'])
+      .lt('created_at', tenDaysAgo.toISOString());
+
+    if (error) {
+      console.error('Error cleaning up old history:', error);
+    } else {
+      console.log('✨ Auto-cleaned old history items (10+ days)');
+    }
+  } catch (error) {
+    console.error('Error in cleanupOldHistory:', error);
+  }
+};
+
+/**
+ * Clear all history items for a user (PICKED_UP, EXPIRED, CANCELLED)
+ */
+export const clearAllHistory = async (userId: string): Promise<void> => {
+  if (isDemoMode) {
+    throw new Error('Demo mode: Please configure Supabase');
+  }
+
+  const { error } = await supabase
+    .from('reservations')
+    .delete()
+    .eq('customer_id', userId)
+    .in('status', ['PICKED_UP', 'EXPIRED', 'CANCELLED']);
 
   if (error) throw error;
 };
