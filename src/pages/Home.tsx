@@ -1,22 +1,70 @@
 ﻿import { useI18n } from '@/lib/i18n';
+import { Sparkles, Navigation, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PageShell } from '@/components/layout/PageShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { SectionCard } from '@/components/layout/SectionCard';
+import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const { t, setLanguage, language } = useI18n();
+  const navigate = useNavigate();
+
   return (
-    <div className="text-center mt-10">
-      <h1 className="text-3xl font-bold">{t('home.welcome')}</h1>
-      <div className="mt-4 space-x-3" role="group" aria-label="Language selection">
-        <button
-          onClick={() => setLanguage('en')}
-          className={`px-3 py-1 rounded ${language === 'en' ? 'bg-gray-300' : 'bg-gray-200'}`}
-          aria-pressed={language === 'en'}
-        >🇬🇧 English</button>
-        <button
-          onClick={() => setLanguage('ka')}
-          className={`px-3 py-1 rounded ${language === 'ka' ? 'bg-gray-300' : 'bg-gray-200'}`}
-          aria-pressed={language === 'ka'}
-        >🇬🇪 ქართული</button>
+    <PageShell>
+      <PageHeader
+        title={<><Sparkles className="w-6 h-6 text-[#4CC9A8]" /> SmartPick</>}
+        right={
+          <div className="flex items-center gap-2" role="group" aria-label="Language selection">
+            <button
+              onClick={() => setLanguage('en')}
+              className={`px-3 py-1 rounded text-sm ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
+              aria-pressed={language === 'en'}
+            >EN</button>
+            <button
+              onClick={() => setLanguage('ka')}
+              className={`px-3 py-1 rounded text-sm ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
+              aria-pressed={language === 'ka'}
+            >KA</button>
+          </div>
+        }
+      />
+
+      {/* Hero Section */}
+      <section className="py-12">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
+            {t('home.welcome')}
+          </h1>
+          <p className="mt-4 text-gray-600 text-lg">
+            Discover last‑minute food offers near you and save with SmartPoints.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3">
+            <Button
+              className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-md"
+              onClick={() => navigate('/')}
+            >
+              <Navigation className="w-4 h-4 mr-2" /> Explore Nearby
+            </Button>
+            <Button variant="outline" className="rounded-full" onClick={() => navigate('/profile')}>
+              Go to Profile <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Props */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <SectionCard title="Save Smart" description="Get great food for less" accent="green">
+          <p className="text-gray-700">Pick up quality meals at a smart price while reducing waste.</p>
+        </SectionCard>
+        <SectionCard title="Earn Points" description="SmartPoints for actions" accent="blue">
+          <p className="text-gray-700">Collect points and unlock rewards with pickups, streaks, and referrals.</p>
+        </SectionCard>
+        <SectionCard title="Support Local" description="Help nearby partners" accent="orange">
+          <p className="text-gray-700">Discover hidden gems in your city and support local businesses.</p>
+        </SectionCard>
       </div>
-    </div>
+    </PageShell>
   );
 }
