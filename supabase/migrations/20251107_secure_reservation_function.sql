@@ -1,7 +1,7 @@
 -- Secure create_reservation_atomic: derive customer_id from auth.uid() instead of client-supplied param
 -- This replaces the previous version that accepted p_customer_id to prevent impersonation.
 
-CREATE OR REPLACE FUNCTION create_reservation_atomic(
+CREATE OR REPLACE FUNCTION public.create_reservation_atomic(
   p_offer_id UUID,
   p_quantity INTEGER,
   p_qr_code TEXT,
@@ -94,7 +94,6 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION create_reservation_atomic IS
+COMMENT ON FUNCTION public.create_reservation_atomic(UUID, INTEGER, TEXT, NUMERIC, TIMESTAMPTZ) IS
   'Atomically creates a reservation and decrements offer quantity. Customer is derived from auth.uid() to prevent impersonation.';
-
-GRANT EXECUTE ON FUNCTION create_reservation_atomic TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_reservation_atomic(UUID, INTEGER, TEXT, NUMERIC, TIMESTAMPTZ) TO authenticated;
