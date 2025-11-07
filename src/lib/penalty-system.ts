@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { emitPointsChange } from './pointsEventBus';
 
 /**
  * Penalty System for No-Show Customers
@@ -290,99 +291,21 @@ export async function clearUserPenalty(userId: string, clearBan: boolean = false
  */
 export async function liftPenaltyWithPoints(userId: string) {
   try {
-    // Get current user status
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('penalty_count, penalty_until, is_banned, points_balance')
-      .eq('id', userId)
-      .single();
+    // Use secure RPC that derives auth.uid(), deducts points atomically and clears penalty
+    const { data, error } = await supabase.rpc('lift_penalty_with_points');
 
-    if (userError) throw userError;
-    if (!user) throw new Error('User not found');
-
-    // Check if banned
-    if (user.is_banned) {
-      return {
-        success: false,
-        message: 'Permanent bans cannot be lifted with points. Contact support.',
-      };
+    if (error) {
+      console.error('RPC lift_penalty_with_points error:', error);
+      return { success: false, message: error.message || 'Failed to lift penalty' };
     }
 
-    // Check if penalty is active
-    if (!user.penalty_until) {
-      return {
-        success: false,
-        message: 'No active penalty to lift',
-      };
+    const result = (data || {}) as { success: boolean; balance?: number; message?: string };
+    if (result.success && typeof result.balance === 'number') {
+      emitPointsChange(result.balance, userId);
+      return { success: true, message: result.message || 'Penalty lifted', newBalance: result.balance };
     }
 
-    const penaltyExpiry = new Date(user.penalty_until);
-    const now = new Date();
-
-    if (penaltyExpiry <= now) {
-      return {
-        success: false,
-        message: 'Penalty has already expired',
-      };
-    }
-
-    // Calculate cost based on penalty count (previous offense level)
-    const penaltyCount = user.penalty_count || 0;
-    let pointsCost = 0;
-
-    if (penaltyCount === 1) {
-      pointsCost = 30; // 30 points for 30min penalty
-    } else if (penaltyCount === 2) {
-      pointsCost = 90; // 90 points for 90min penalty
-    } else {
-      // 24hr+ penalties cannot be lifted with points
-      return {
-        success: false,
-        message: 'This penalty cannot be lifted with points. You must wait it out.',
-      };
-    }
-
-    // Check if user has enough points
-    const currentBalance = user.points_balance || 0;
-    if (currentBalance < pointsCost) {
-      return {
-        success: false,
-        message: `Insufficient points. Need ${pointsCost} points, you have ${currentBalance}.`,
-        pointsNeeded: pointsCost,
-        pointsAvailable: currentBalance,
-      };
-    }
-
-    // Deduct points and clear penalty
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({
-        penalty_until: null,
-        points_balance: currentBalance - pointsCost,
-      })
-      .eq('id', userId);
-
-    if (updateError) throw updateError;
-
-    // Log the transaction
-    const { error: txError } = await supabase
-      .from('smartpoints_transactions')
-      .insert({
-        user_id: userId,
-        amount: -pointsCost,
-        transaction_type: 'PENALTY_LIFT',
-        description: `Lifted ${penaltyCount === 1 ? '30min' : '90min'} penalty early`,
-        status: 'COMPLETED',
-      });
-
-    if (txError) console.warn('Failed to log penalty lift transaction:', txError);
-
-    return {
-      success: true,
-      message: `Penalty lifted! ${pointsCost} points deducted.`,
-      pointsSpent: pointsCost,
-      newBalance: currentBalance - pointsCost,
-    };
+    return { success: false, message: result.message || 'Failed to lift penalty' };
   } catch (error) {
     console.error('Error lifting penalty with points:', error);
     return {
