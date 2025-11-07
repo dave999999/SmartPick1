@@ -254,10 +254,13 @@ export default function MyPicks() {
       // Add partner contact info if available
       if (reservation.partner) {
         doc.text(t('receipt.partnerContact'), 20, 160);
-        if (reservation.partner.email) {
+        // Hide partner contact for customers in receipt export
+        // Only include if user is admin (showContact flag could be added later)
+        const showContact = user.role === 'ADMIN';
+        if (showContact && reservation.partner.email) {
           doc.text(`${t('receipt.email')} ${reservation.partner.email}`, 20, 175);
         }
-        if (reservation.partner.phone) {
+        if (showContact && reservation.partner.phone) {
           doc.text(`${t('receipt.phone')} ${reservation.partner.phone}`, 20, 190);
         }
       }
@@ -428,13 +431,13 @@ export default function MyPicks() {
                                       {reservation.partner.address}
                                     </div>
                                   )}
-                                  {reservation.partner?.phone && (
+                                  {user.role === 'ADMIN' && reservation.partner?.phone && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                       <Phone className="h-4 w-4" />
                                       {reservation.partner.phone}
                                     </div>
                                   )}
-                                  {reservation.partner?.email && (
+                                  {user.role === 'ADMIN' && reservation.partner?.email && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                       <Mail className="h-4 w-4" />
                                       {reservation.partner.email}

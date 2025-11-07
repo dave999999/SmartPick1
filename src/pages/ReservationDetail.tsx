@@ -17,6 +17,8 @@ export default function ReservationDetail() {
   const navigate = useNavigate();
   const { t } = useI18n();
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
   useEffect(() => {
     loadReservation();
   }, [id]);
@@ -38,6 +40,7 @@ export default function ReservationDetail() {
         return;
       }
 
+      setIsAdmin(user.role === 'ADMIN');
       const reservations = await getCustomerReservations(user.id);
       const found = reservations.find(r => r.id === id);
       
@@ -102,8 +105,9 @@ export default function ReservationDetail() {
   
   // Get partner address and contact - support both flat and nested structures
   const partnerAddress = reservation.partner?.address || reservation.partner?.location?.address || '';
-  const partnerPhone = reservation.partner?.phone || reservation.partner?.contact?.phone || '';
-  const partnerEmail = reservation.partner?.email || reservation.partner?.contact?.email || '';
+  // Hide partner contact info from non-admins
+  const partnerPhone = isAdmin ? (reservation.partner?.phone || reservation.partner?.contact?.phone || '') : '';
+  const partnerEmail = isAdmin ? (reservation.partner?.email || reservation.partner?.contact?.email || '') : '';
   
   // Get partner coordinates for directions
   const partnerLat = reservation.partner?.latitude || reservation.partner?.location?.latitude;
@@ -210,7 +214,7 @@ export default function ReservationDetail() {
             )}
 
             {/* Contact */}
-            {(partnerPhone || partnerEmail) && (
+            {isAdmin && (partnerPhone || partnerEmail) && (
               <div className="border-t pt-4">
                 <p className="font-medium text-gray-700 mb-2">{t('contact.partner')}</p>
                 <div className="space-y-2">
