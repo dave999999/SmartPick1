@@ -296,7 +296,23 @@ export async function liftPenaltyWithPoints(userId: string) {
 
     if (error) {
       console.error('RPC lift_penalty_with_points error:', error);
-      return { success: false, message: error.message || 'Failed to lift penalty' };
+      const msg = error.message || 'Failed to lift penalty';
+      // Detect missing function (schema cache / 404) and surface actionable guidance
+      const lower = msg.toLowerCase();
+      if (
+        lower.includes('could not find the function') ||
+        lower.includes('schema cache') ||
+        lower.includes('404 not found') ||
+        lower.includes('pgrst116') // PostgREST missing function code
+      ) {
+        return {
+          success: false,
+          migrationMissing: true,
+          message:
+            'Penalty lift function not deployed yet. Apply migration supabase/migrations/20251107_lift_penalty_with_points.sql in Supabase SQL editor, then retry.',
+        } as any;
+      }
+      return { success: false, message: msg };
     }
 
     const result = (data || {}) as { success: boolean; balance?: number; message?: string };
