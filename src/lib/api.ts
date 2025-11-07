@@ -517,7 +517,7 @@ export const createReservation = async (
 
   // Use atomic database function to prevent race conditions
   // This function locks the offer row and updates quantity in a single transaction
-  // Attempt secure signature (without p_customer_id)
+  // Attempt secure signature (no p_customer_id; server derives auth.uid())
   let { data, error } = await supabase.rpc('create_reservation_atomic', {
     p_offer_id: offerId,
     p_quantity: quantity,
@@ -526,8 +526,13 @@ export const createReservation = async (
     p_expires_at: expiresAt.toISOString(),
   });
 
-  // Fallback to legacy signature if migration not yet applied
-  if (error && /p_customer_id|function create_reservation_atomic/i.test(error.message || '')) {
+  // If function missing or still expecting p_customer_id, retry legacy signature
+  if (
+    error && (
+      /p_customer_id|function create_reservation_atomic/i.test(error.message || '') ||
+      /could not find the function|404 not found|pgrst116/i.test(error.message || '')
+    )
+  ) {
     const legacy = await supabase.rpc('create_reservation_atomic', {
       p_offer_id: offerId,
       p_customer_id: customerId,
@@ -541,13 +546,17 @@ export const createReservation = async (
   }
 
   if (error) {
-    // Handle specific error messages from the database function
-    if (error.message?.includes('Insufficient quantity')) {
+    const msg = error.message || '';
+    if (msg.includes('Insufficient quantity')) {
       throw new Error(ERROR_MESSAGES.INSUFFICIENT_QUANTITY);
-    } else if (error.message?.includes('not active')) {
+    } else if (msg.includes('not active') || msg.includes('expired')) {
       throw new Error(ERROR_MESSAGES.OFFER_EXPIRED);
-    } else if (error.message?.includes('expired')) {
-      throw new Error(ERROR_MESSAGES.OFFER_EXPIRED);
+    } else if (/could not find the function|404 not found|pgrst116/i.test(msg)) {
+      throw new Error(
+        'Reservation system migration not applied yet. Please run supabase/migrations/20251107_secure_reservation_function.sql.'
+      );
+    } else if (msg.includes('Authentication required')) {
+      throw new Error('Please sign in again to reserve this offer.');
     }
     throw error;
   }
