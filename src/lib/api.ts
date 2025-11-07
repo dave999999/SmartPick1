@@ -42,7 +42,20 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
       .maybeSingle();
 
     if (!userData) {
-      // Attempt to upsert a minimal profile to keep the app functional even if trigger didn't run
+      // Newly signed-up user race: wait briefly for trigger
+      for (let attempt = 0; attempt < 3; attempt++) {
+        await new Promise(r => setTimeout(r, 250));
+        const { data: retry } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (retry) {
+          return { user: retry as User };
+        }
+      }
+
+      // Trigger still hasn't created profile; attempt manual insert
       const minimal = {
         id: user.id,
         email: user.email ?? '',
@@ -50,9 +63,22 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
         role: 'CUSTOMER',
         status: 'ACTIVE',
       } as Partial<User>;
-      await supabase.from('users').upsert(minimal, { onConflict: 'id' });
 
-      // Re-fetch after upsert
+      const { error: insertError } = await supabase.from('users').insert(minimal);
+      if (insertError) {
+        // If it's a duplicate/constraint race, fetch again instead of failing hard
+        const { data: afterInsert } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (afterInsert) {
+          return { user: afterInsert as User };
+        }
+        return { user: null, error: insertError };
+      }
+
+      // Insert succeeded; fetch full row (policies should allow it)
       const { data: created } = await supabase
         .from('users')
         .select('*')
