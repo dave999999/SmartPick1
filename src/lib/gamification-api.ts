@@ -15,6 +15,9 @@ export interface UserStats {
   longest_streak_days: number;
   last_activity_date: string;
   total_referrals: number;
+    category_counts: Record<string, number>;
+    unique_partners_visited: number;
+    partner_visit_counts: Record<string, number>;
   created_at: string;
   updated_at: string;
 }

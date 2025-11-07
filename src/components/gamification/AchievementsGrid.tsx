@@ -76,13 +76,27 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
           target: req.count || 1
         };
       
-      // For category-specific or partner-specific achievements, we'd need more detailed data
-      // For now, return 0 progress if not unlocked
       case 'category':
+          const categoryCount = userStats.category_counts?.[req.name] || 0;
+          return {
+            current: categoryCount,
+            target: req.count || 1
+          };
+      
       case 'unique_partners':
+          return {
+            current: userStats.unique_partners_visited || 0,
+            target: req.count || 1
+          };
+      
       case 'partner_loyalty':
-        // These would require additional queries or stats fields
-        return { current: 0, target: req.count || 1 };
+          const maxPartnerVisits = userStats.partner_visit_counts
+              ? Math.max(...Object.values(userStats.partner_visit_counts).map(v => Number(v) || 0), 0)
+            : 0;
+          return {
+            current: maxPartnerVisits,
+            target: req.count || 1
+          };
       
       default:
         return { current: 0, target: 1 };
