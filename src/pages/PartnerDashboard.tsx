@@ -55,7 +55,6 @@ import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedOffersTable from '@/components/partner/EnhancedOffersTable';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
-import PartnerAnalyticsCharts from '@/components/partner/PartnerAnalyticsCharts';
 import PartnerPayoutInfo from '@/components/partner/PartnerPayoutInfo';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import { applyNoShowPenalty } from '@/lib/penalty-system';
@@ -1666,51 +1665,12 @@ const generate24HourOptions = (): string[] => {
         </Card>
 
         {!isPending && partner && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-            <PartnerAnalyticsCharts partnerId={partner.id} />
+          <div className="grid grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8">
             <PartnerPayoutInfo partnerId={partner.id} />
           </div>
         )}
 
-        {/* Analytics Summary - Collapsible */}
-        <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-              <TrendingUp className="w-5 h-5" />
-              📊 {t('partner.dashboard.analytics.title')}
-              {isPending && <Lock className="w-5 h-5 text-gray-400" />}
-            </CardTitle>
-            <CardDescription className="text-sm md:text-base">
-              {isPending ? t('partner.dashboard.analytics.pending') : t('partner.dashboard.analytics.subtitle')}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center bg-[#F9FFFB] rounded-xl p-4">
-                <div className="text-2xl md:text-3xl font-bold text-[#00C896]">{isPending ? '—' : analytics.totalOffers}</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalOffers')}</div>
-              </div>
-                <div className="text-center bg-[#FFF9F5] rounded-xl p-4">
-                  <div className="text-2xl md:text-3xl font-bold text-orange-600">{isPending ? '—' : analytics.totalReservations}</div>
-                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalReservations')}</div>
-                </div>
-                <div className="text-center bg-green-50 rounded-xl p-4">
-                  <div className="text-2xl md:text-3xl font-bold text-green-600">{isPending ? '—' : analytics.itemsSold}</div>
-                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.itemsSold')}</div>
-                </div>
-                <div className="text-center bg-purple-50 rounded-xl p-4">
-                  <div className="text-2xl md:text-3xl font-bold text-purple-600">{isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}</div>
-                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalRevenue')}</div>
-                </div>
-            </div>
-            {isPending && (
-              <div className="flex items-center justify-center gap-2 mt-4 text-xs md:text-sm text-gray-500">
-                <Lock className="w-4 h-4" />
-                <span>{t('partner.dashboard.analytics.pending')}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Trends / analytics summary removed as requested */}
 
         {/* Notification Settings - Telegram */}
         {partner && (
