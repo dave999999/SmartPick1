@@ -738,21 +738,25 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   if (reservationError) throw reservationError;
 
+  console.log('🔍 Calling partner_mark_as_picked_up with reservation ID:', reservationId);
+
   // Try using database function first (bypasses RLS)
   const { data: rpcData, error: rpcError } = await supabase
     .rpc('partner_mark_as_picked_up', {
       p_reservation_id: reservationId
     });
 
+  console.log('📡 RPC Response:', { data: rpcData, error: rpcError });
+
   let updateResult;
-  
+
   // If function doesn't exist, fall back to direct update
   if (rpcError && rpcError.message?.includes('function')) {
-    console.warn('Function not found, using direct update fallback');
-    
+    console.warn('⚠️ Function not found, using direct update fallback');
+
     // Clear penalty first
     await clearPenalty(reservation.customer_id);
-    
+
     // Direct update - this might fail due to RLS
     const { data, error } = await supabase
       .from('reservations')
@@ -763,21 +767,28 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
       .eq('id', reservationId)
       .select()
       .single();
-      
+
     if (error) throw error;
     updateResult = data;
   } else if (rpcError) {
-    console.error('partner_mark_as_picked_up RPC error details:', {
+    console.error('❌ partner_mark_as_picked_up RPC ERROR:', {
       message: rpcError.message,
       details: rpcError.details,
       hint: rpcError.hint,
       code: rpcError.code,
-      fullError: rpcError
+      fullError: JSON.stringify(rpcError)
     });
-    throw new Error(rpcError.message || rpcError.details || 'Failed to mark as picked up');
+
+    // Show user-friendly error
+    const errorMessage = rpcError.message || rpcError.details || 'Failed to mark as picked up';
+    alert(`Error marking as picked up:\n${errorMessage}\n\nCheck browser console for details.`);
+
+    throw new Error(errorMessage);
   } else {
+    console.log('✅ RPC Success! Data:', rpcData);
     // RPC function returns an array (RETURNS TABLE), get first element
     updateResult = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : rpcData;
+    console.log('✅ Update result:', updateResult);
   }
 
   // Send pickup notification to partner (don't block on this)
