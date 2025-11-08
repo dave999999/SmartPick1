@@ -818,37 +818,53 @@ export default function PartnerApplication() {
           <CardContent>
             {/* Progress Indicator */}
             <div className="mb-8">
-              <div className="flex items-center justify-between mb-4">
-                {steps.map((step, index) => (
-                  <div key={step.number} className="flex items-center flex-1">
-                    <div className="flex flex-col items-center flex-1">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
-                          currentStep > step.number
-                            ? 'bg-green-500 text-white'
-                            : currentStep === step.number
-                            ? 'bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30'
-                            : 'bg-gray-200 text-gray-500'
-                        }`}
-                      >
-                        {currentStep > step.number ? '✓' : step.icon}
-                      </div>
-                      <span className={`text-xs mt-2 font-medium ${
-                        currentStep === step.number ? 'text-[#4CC9A8]' : 'text-gray-500'
-                      }`}>
-                        {step.title}
-                      </span>
-                    </div>
-                    {index < steps.length - 1 && (
-                      <div className={`h-1 flex-1 mx-2 transition-all ${
-                        currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
-                      }`} />
-                    )}
+              {/* Mobile: Simple step counter */}
+              <div className="block md:hidden text-center mb-6">
+                <div className="flex justify-center items-center gap-2 mb-2">
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30">
+                    {steps[currentStep - 1].icon}
                   </div>
-                ))}
+                </div>
+                <h3 className="text-lg font-semibold text-[#4CC9A8] mb-1">{steps[currentStep - 1].title}</h3>
+                <p className="text-sm text-gray-600">
+                  {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
+                </p>
               </div>
-              <div className="text-center text-sm text-gray-600">
-                {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
+
+              {/* Desktop: Full horizontal stepper */}
+              <div className="hidden md:block">
+                <div className="flex items-center justify-between mb-4">
+                  {steps.map((step, index) => (
+                    <div key={step.number} className="flex items-center flex-1">
+                      <div className="flex flex-col items-center flex-1">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
+                            currentStep > step.number
+                              ? 'bg-green-500 text-white'
+                              : currentStep === step.number
+                              ? 'bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30'
+                              : 'bg-gray-200 text-gray-500'
+                          }`}
+                        >
+                          {currentStep > step.number ? '✓' : step.icon}
+                        </div>
+                        <span className={`text-xs mt-2 font-medium text-center ${
+                          currentStep === step.number ? 'text-[#4CC9A8]' : 'text-gray-500'
+                        }`}>
+                          {step.title}
+                        </span>
+                      </div>
+                      {index < steps.length - 1 && (
+                        <div className={`h-1 flex-1 mx-2 transition-all ${
+                          currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
+                        }`} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="text-center text-sm text-gray-600">
+                  {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
+                </div>
               </div>
             </div>
 

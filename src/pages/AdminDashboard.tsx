@@ -173,27 +173,30 @@ export default function AdminDashboard() {
 
       <div className="pt-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7 xl:grid-cols-12 gap-1">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="partners">Partners</TabsTrigger>
-            <TabsTrigger value="pending">
-              Pending
-              {stats && stats.pendingPartners > 0 && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
-                  {stats.pendingPartners}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="new-users">New Users</TabsTrigger>
-            <TabsTrigger value="banned">Banned</TabsTrigger>
-            <TabsTrigger value="offers">Offers</TabsTrigger>
-            <TabsTrigger value="moderation">Moderation</TabsTrigger>
-            <TabsTrigger value="financial">Finance</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="audit">Audit</TabsTrigger>
-          </TabsList>
+          {/* Mobile: Horizontal scroll tabs */}
+          <div className="overflow-x-auto md:overflow-visible -mx-4 px-4">
+            <TabsList className="inline-flex md:grid w-auto md:w-full min-w-max md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-1">
+              <TabsTrigger value="overview" className="whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="partners" className="whitespace-nowrap">Partners</TabsTrigger>
+              <TabsTrigger value="pending" className="whitespace-nowrap">
+                Pending
+                {stats && stats.pendingPartners > 0 && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 text-xs">
+                    {stats.pendingPartners}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="users" className="whitespace-nowrap">Users</TabsTrigger>
+              <TabsTrigger value="new-users" className="whitespace-nowrap">New Users</TabsTrigger>
+              <TabsTrigger value="banned" className="whitespace-nowrap">Banned</TabsTrigger>
+              <TabsTrigger value="offers" className="whitespace-nowrap">Offers</TabsTrigger>
+              <TabsTrigger value="moderation" className="whitespace-nowrap">Moderation</TabsTrigger>
+              <TabsTrigger value="financial" className="whitespace-nowrap">Finance</TabsTrigger>
+              <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
+              <TabsTrigger value="health" className="whitespace-nowrap">Health</TabsTrigger>
+              <TabsTrigger value="audit" className="whitespace-nowrap">Audit</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             <SectionCard

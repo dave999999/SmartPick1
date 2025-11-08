@@ -505,24 +505,13 @@ export default function MyPicks() {
                         </div>
                       )}
 
-                      <div className="flex gap-2 flex-wrap">
-                        {timers[reservation.id] && (
-                          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 w-full">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-yellow-600" />
-                              <span className="text-sm font-medium text-yellow-800">
-                                Time remaining: {timers[reservation.id]}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                        <div className="flex gap-2 flex-wrap">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
                           <Button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleShowQR(reservation);
                             }}
-                            className="h-11 bg-mint-600 hover:bg-mint-700 flex-1 sm:flex-none"
+                            className="h-11 bg-mint-600 hover:bg-mint-700 w-full"
                           >
                             <QrCode className="h-4 w-4 mr-2" />
                             {t('mypicks.showQr')}
@@ -535,7 +524,7 @@ export default function MyPicks() {
                                   e.stopPropagation();
                                   handleCancel(reservation.id);
                                 }}
-                                className="h-11 flex-1 sm:flex-none"
+                                className="h-11 w-full"
                               >
                                 <XCircle className="h-4 w-4 mr-2" />
                                 {t('mypicks.cancel')}
@@ -546,7 +535,7 @@ export default function MyPicks() {
                                   e.stopPropagation();
                                   handleGetDirections(reservation);
                                 }}
-                                className="h-11 flex-1 sm:flex-none"
+                                className="h-11 w-full"
                               >
                                 <MapPin className="h-4 w-4 mr-2" />
                                 {t('mypicks.getDirections')}
@@ -560,13 +549,12 @@ export default function MyPicks() {
                                 handleConfirmPickup(reservation.id);
                               }}
                               disabled={confirmingPickup === reservation.id}
-                              className="h-11 bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none"
+                              className="h-11 bg-blue-600 hover:bg-blue-700 w-full sm:col-span-2"
                             >
                               <CheckCircle2 className="h-4 w-4 mr-2" />
                               {confirmingPickup === reservation.id ? t('mypicks.confirming') : t('mypicks.confirmPickup')}
                             </Button>
                           )}
-                        </div>
                       </div>
                     </CardContent>
                   </Card>

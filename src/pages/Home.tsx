@@ -13,7 +13,14 @@ export default function Home() {
   return (
     <PageShell>
       <PageHeader
-        title={<><Sparkles className="w-6 h-6 text-[#4CC9A8]" /> SmartPick</>}
+        title={
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+          >
+            <Sparkles className="w-6 h-6 text-[#4CC9A8]" /> SmartPick
+          </button>
+        }
         right={
           <div className="flex items-center gap-2" role="group" aria-label="Language selection">
             <button
@@ -39,14 +46,14 @@ export default function Home() {
           <p className="mt-4 text-gray-600 text-lg">
             {t('home.subtitle')}
           </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Button
-              className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-md"
+              className="w-full sm:w-auto bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-md"
               onClick={() => navigate('/')}
             >
               <Navigation className="w-4 h-4 mr-2" /> {t('home.exploreNearby')}
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => navigate('/profile')}>
+            <Button variant="outline" className="w-full sm:w-auto rounded-full" onClick={() => navigate('/profile')}>
               {t('home.goToProfile')} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
