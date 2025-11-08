@@ -14,7 +14,7 @@ import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, Target, ShoppingCart } from 'lucide-react';
+import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, MousePointerClick, MapPin } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -441,10 +441,10 @@ export default function Index() {
               <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-lg md:rounded-2xl blur-md md:blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
               <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border border-[#00C896] md:border-2 rounded-lg md:rounded-2xl p-2 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
                 <div className="w-7 h-7 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00C896] rounded-full flex items-center justify-center">
-                  <Target className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
+                  <MousePointerClick className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
                 <h3 className="text-xs md:text-xl font-bold text-[#00C896] mb-0 md:mb-1">Reserve</h3>
-                <p className="text-xs text-gray-400 hidden md:block">Pick your deal</p>
+                <p className="text-xs text-gray-400 hidden md:block">Click to reserve</p>
               </div>
             </div>
 
@@ -456,10 +456,10 @@ export default function Index() {
               <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-lg md:rounded-2xl blur-md md:blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
               <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border border-[#00e6a8] md:border-2 rounded-lg md:rounded-2xl p-2 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
                 <div className="w-7 h-7 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00e6a8] rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
+                  <MapPin className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
                 <h3 className="text-xs md:text-xl font-bold text-[#00e6a8] mb-0 md:mb-1">Pick Up</h3>
-                <p className="text-xs text-gray-400 hidden md:block">Enjoy your choice</p>
+                <p className="text-xs text-gray-400 hidden md:block">Visit location</p>
               </div>
             </div>
           </div>
