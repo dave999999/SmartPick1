@@ -13,15 +13,22 @@ This is the easiest and most reliable method:
 1. **Go to Supabase SQL Editor:**
    - Visit: https://supabase.com/dashboard/project/***REMOVED_PROJECT_ID***/sql/new
 
-2. **Apply First Migration:**
+2. **Apply First Migration (Partner Points System):**
    - Open `supabase/migrations/20251108_partner_points_system.sql`
    - Copy the ENTIRE file contents
    - Paste into Supabase SQL Editor
    - Click "Run" (or press Ctrl+Enter)
    - Wait for success message
 
-3. **Apply Second Migration:**
+3. **Apply Second Migration (Point Transfer on Pickup):**
    - Open `supabase/migrations/20251108_partner_point_transfer.sql`
+   - Copy the ENTIRE file contents
+   - Paste into Supabase SQL Editor (new query)
+   - Click "Run"
+   - Wait for success message
+
+4. **Apply Third Migration (Points Deduction for Reservations):**
+   - Open `supabase/migrations/20251108_add_points_to_reservation.sql`
    - Copy the ENTIRE file contents
    - Paste into Supabase SQL Editor (new query)
    - Click "Run"
