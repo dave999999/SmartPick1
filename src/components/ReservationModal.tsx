@@ -51,7 +51,7 @@ export default function ReservationModal({
   const isProcessingRef = useRef(false);
   const lastClickTimeRef = useRef(0);
 
-  const POINTS_PER_RESERVATION = 15; // Fixed cost per reservation (handled by database)
+  const POINTS_PER_UNIT = 5; // 5 points per unit (quantity-based pricing)
   const DEBOUNCE_MS = 2000; // 2 second debounce
 
   useEffect(() => {
@@ -67,10 +67,11 @@ export default function ReservationModal({
     }
   }, [open, user, offer]);
 
-  // Update insufficient points check (fixed 15 points per reservation)
+  // Update insufficient points check (quantity-based: 5 points per unit)
   useEffect(() => {
-    setInsufficientPoints(pointsBalance < POINTS_PER_RESERVATION);
-  }, [pointsBalance]);
+    const totalNeeded = POINTS_PER_UNIT * quantity;
+    setInsufficientPoints(pointsBalance < totalNeeded);
+  }, [pointsBalance, quantity]);
 
   const loadPointsBalance = async () => {
     if (!user) return;
@@ -78,7 +79,8 @@ export default function ReservationModal({
       const userPoints = await getUserPoints(user.id);
       const balance = userPoints?.balance ?? 0;
       setPointsBalance(balance);
-      setInsufficientPoints(balance < POINTS_PER_RESERVATION);
+      const totalNeeded = POINTS_PER_UNIT * quantity;
+      setInsufficientPoints(balance < totalNeeded);
     } catch (error) {
       console.error('Error loading points balance:', error);
     }
@@ -139,7 +141,7 @@ export default function ReservationModal({
     console.log('🔵 Reserve button clicked', callId, {
       timeSinceLastClick: now - lastClickTimeRef.current,
       quantity,
-      pointsNeeded: POINTS_PER_RESERVATION * quantity
+      pointsNeeded: POINTS_PER_UNIT * quantity
     });
 
     try {
@@ -175,11 +177,12 @@ export default function ReservationModal({
         return;
       }
 
-      // Check SmartPoints balance (fixed 15 points per reservation)
-      if (pointsBalance < POINTS_PER_RESERVATION) {
+      // Check SmartPoints balance (quantity-based: 5 points per unit)
+      const totalPointsNeeded = POINTS_PER_UNIT * quantity;
+      if (pointsBalance < totalPointsNeeded) {
         setInsufficientPoints(true);
         setShowBuyPointsModal(true);
-        toast.error(`⚠️ You need ${POINTS_PER_RESERVATION} SmartPoints to create a reservation. Buy more to continue!`);
+        toast.error(`⚠️ You need ${totalPointsNeeded} SmartPoints to reserve ${quantity} unit(s) (${POINTS_PER_UNIT} pts each). Buy more to continue!`);
         isProcessingRef.current = false;
         return;
       }
@@ -188,17 +191,18 @@ export default function ReservationModal({
       console.log('✅ Starting reservation process...');
 
       // NOTE: Points deduction is now handled internally by create_reservation_atomic
-      // The database function deducts 15 points automatically during reservation creation
+      // The database function deducts points based on quantity (5 points per unit)
       console.log('📝 Creating reservation (points will be deducted automatically)...');
       const reservation = await createReservation(offer.id, user.id, quantity);
       console.log('✅ Reservation created:', reservation.id);
 
       // Update local balance (deduct the points locally for immediate UI feedback)
-      const newBalance = pointsBalance - 15; // Fixed 15 points per reservation
+      const pointsDeducted = POINTS_PER_UNIT * quantity;
+      const newBalance = pointsBalance - pointsDeducted;
       setPointsBalance(newBalance);
 
       toast.success(
-        `✅ Reservation confirmed! 15 SmartPoints deducted. New balance: ${newBalance}`
+        `✅ Reservation confirmed! ${pointsDeducted} SmartPoints deducted (${quantity} × ${POINTS_PER_UNIT}). New balance: ${newBalance}`
       );
 
       // Reset locks before navigation (success path)
@@ -384,7 +388,8 @@ export default function ReservationModal({
             </div>
             <div className="text-right">
               <p className="text-xs text-gray-600">This will cost</p>
-              <p className="text-lg font-bold text-[#4CC9A8]">{POINTS_PER_RESERVATION * quantity} Points</p>
+              <p className="text-lg font-bold text-[#4CC9A8]">{POINTS_PER_UNIT * quantity} Points</p>
+              <p className="text-xs text-gray-500">{quantity} × {POINTS_PER_UNIT} pts/unit</p>
             </div>
           </div>
 
@@ -395,7 +400,7 @@ export default function ReservationModal({
               <AlertDescription className="text-orange-900">
                 <strong>⚠️ Insufficient SmartPoints</strong>
                 <p className="mt-1">
-                  You need {POINTS_PER_RESERVATION * quantity} SmartPoints to reserve {quantity} unit(s).
+                  You need {POINTS_PER_UNIT * quantity} SmartPoints to reserve {quantity} unit(s) ({POINTS_PER_UNIT} pts each).
                   Buy 100 points for ₾1 to continue.
                 </p>
                 <Button
