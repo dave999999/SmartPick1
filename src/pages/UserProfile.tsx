@@ -422,7 +422,7 @@ export default function UserProfile() {
                     ) : (
                       <div className="space-y-2">
                         <div className="bg-gray-800/50 rounded-lg p-2 md:p-3 border border-green-700">
-                          <p className="text-xs md:text-sm font-semibold text-green-300 mb-1">✓ {t('profile.goodStanding')}</p>
+                          <p className="text-xs md:text-sm font-semibold text-gray-900 mb-1">✓ {t('profile.goodStanding')}</p>
                           <p className="text-xs md:text-sm text-green-400">{t('penalty.noneActive')}</p>
                         </div>
                         <p className="text-xs text-green-400">{t('penalty.encouragement')}</p>

@@ -51,6 +51,9 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.loading': 'Loading Smart Picks...',
     'browse.noOffers': 'No offers available at the moment.',
     'browse.checkBack': 'Check back soon for new Smart Picks!',
+    'browse.discoverDeals': 'Discover Amazing Deals',
+    'browse.clickReserve': 'Click to reserve',
+    'browse.visitLocation': 'Visit location',
   // Categories
   'category.All': 'All',
   'category.BAKERY': 'Bakery',
@@ -192,6 +195,7 @@ const translations: Record<Language, Record<string, string>> = {
   'profile.cancel': 'Cancel',
   'profile.updateSuccess': 'Profile updated successfully',
   'profile.updateError': 'Failed to update profile',
+  'profile.goodStanding': 'Account in Good Standing',
 
   // Favorites
   'favorites.title': 'My Favorites',
@@ -497,6 +501,14 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.dashboard.analytics.pending': 'Analytics will be available after approval',
   'partner.dashboard.analytics.subtitle': 'Your complete SmartPick performance metrics',
   'partner.dashboard.fallback.untitledOffer': 'Untitled Offer',
+  'partner.dashboard.pickup.autoSetTimes': 'We set times automatically based on your business hours:',
+  'partner.dashboard.pickup.untilClosing': 'until closing',
+  'partner.dashboard.pickup.ifDailyHours': 'if you have set daily hours, or',
+  'partner.dashboard.pickup.next12Hours': 'next 12 hours',
+  'partner.dashboard.pickup.if24h': 'if you operate 24/7.',
+  'partner.dashboard.edit.dialogTitle': '✏️ Edit Offer',
+  'partner.dashboard.edit.dialogDescription': 'Update your offer details',
+  'partner.dashboard.edit.currentImage': 'Current image:',
   },
   ka: {
     // Header
@@ -537,6 +549,9 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.loading': 'იტვირთება ჭკვიანი არჩევანი...',
     'browse.noOffers': 'ამ მომენტში შეთავაზებები არ არის ხელმისაწვდომი.',
     'browse.checkBack': 'შემოწმე მალე ახალი შეთავაზებებისთვის!',
+    'browse.discoverDeals': 'აღმოაჩინე საუკეთესო შეთავაზებები',
+    'browse.clickReserve': 'აირჩიე შეთავაზება',
+    'browse.visitLocation': 'გაანაღდე',
   // Categories
   'category.All': 'ყველა',
   'category.BAKERY': 'ფუნთუშეული',
@@ -678,6 +693,7 @@ const translations: Record<Language, Record<string, string>> = {
   'profile.cancel': 'გაუქმება',
   'profile.updateSuccess': 'პროფილი წარმატებით განახლდა',
   'profile.updateError': 'პროფილის განახლება ვერ მოხერხდა',
+  'profile.goodStanding': 'ანგარიში კარგ მდგომარეობაშია',
 
   // Favorites
   'favorites.title': 'ჩემი ფავორიტები',
@@ -983,6 +999,14 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.dashboard.analytics.pending': 'ანალიტიკა ხელმისაწვდომი იქნება დამტკიცების შემდეგ',
   'partner.dashboard.analytics.subtitle': 'თქვენი სრული SmartPick შესრულების მეტრიკები',
   'partner.dashboard.fallback.untitledOffer': 'უსახელო შეთავაზება',
+  'partner.dashboard.pickup.autoSetTimes': 'დრო ავტომატურად დგინდება თქვენი სამუშაო საათების მიხედვით:',
+  'partner.dashboard.pickup.untilClosing': 'დახურვამდე',
+  'partner.dashboard.pickup.ifDailyHours': 'თუ განსაზღვრული გაქვთ დღიური საათები, ან',
+  'partner.dashboard.pickup.next12Hours': 'შემდეგი 12 საათი',
+  'partner.dashboard.pickup.if24h': 'თუ მუშაობთ 24/7.',
+  'partner.dashboard.edit.dialogTitle': '✏️ შეთავაზების რედაქტირება',
+  'partner.dashboard.edit.dialogDescription': 'განაახლე შეთავაზების დეტალები',
+  'partner.dashboard.edit.currentImage': 'მიმდინარე სურათი:',
   },
 };
 
