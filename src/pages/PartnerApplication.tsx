@@ -15,6 +15,7 @@ import { supabase, isDemoMode } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useI18n } from '@/lib/i18n';
 
 const BUSINESS_TYPES = [
   { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
@@ -101,6 +102,7 @@ interface AddressSuggestion {
 
 export default function PartnerApplication() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -118,10 +120,10 @@ export default function PartnerApplication() {
 
   const totalSteps = 4;
   const steps = [
-    { number: 1, title: 'Account', icon: '🔐' },
-    { number: 2, title: 'Location', icon: '📍' },
-    { number: 3, title: 'Business Info', icon: '🏪' },
-    { number: 4, title: 'Contact', icon: '📞' },
+    { number: 1, title: t('partner.step.account'), icon: '🔐' },
+    { number: 2, title: t('partner.step.location'), icon: '📍' },
+    { number: 3, title: t('partner.step.business'), icon: '🏪' },
+    { number: 4, title: t('partner.step.contact'), icon: '📞' },
   ];
 
   // Address autocomplete
@@ -208,7 +210,7 @@ export default function PartnerApplication() {
 
   const handleUseCurrentLocation = () => {
     if ('geolocation' in navigator) {
-      toast.loading('Getting your location...');
+  toast.loading(t('partner.toast.gettingLocation'));
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
@@ -222,16 +224,16 @@ export default function PartnerApplication() {
           reverseGeocode(position.coords.latitude, position.coords.longitude);
 
           toast.dismiss();
-          toast.success('Location updated!');
+          toast.success(t('partner.toast.locationUpdated'));
         },
         (error) => {
           toast.dismiss();
-          toast.error('Could not get your location. Please select manually on the map.');
+          toast.error(t('partner.toast.locationFailed'));
           console.error('Geolocation error:', error);
         }
       );
     } else {
-      toast.error('Geolocation is not supported by your browser');
+  toast.error(t('partner.toast.geoUnsupported'));
     }
   };
 
@@ -267,9 +269,9 @@ export default function PartnerApplication() {
         setAddressSuggestions(data);
         setShowAddressSuggestions(true);
       } else {
-        setAddressSuggestions([]);
-        setShowAddressSuggestions(false);
-        toast.error('No matching addresses found');
+  setAddressSuggestions([]);
+  setShowAddressSuggestions(false);
+  toast.error(t('partner.toast.noAddresses'));
       }
     } catch (error) {
       console.error('Error searching address:', error);
@@ -346,7 +348,7 @@ export default function PartnerApplication() {
 
   const checkEmailExists = async (email: string) => {
     if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
+  setEmailError(t('partner.error.invalidEmail'));
       return;
     }
 
@@ -367,7 +369,7 @@ export default function PartnerApplication() {
         .single();
 
       if (userData || partnerData) {
-        setEmailError('This email is already registered. Please log in instead.');
+  setEmailError(t('partner.error.emailExists'));
       }
     } catch (error) {
       console.error('Error checking email:', error);
@@ -395,32 +397,32 @@ export default function PartnerApplication() {
     if (step === 1) {
       // Account Creation
       if (!formData.email) {
-        errors.email = 'Please fill out this field.';
+        errors.email = t('partner.error.required');
       } else if (!validateEmail(formData.email)) {
-        errors.email = 'Please enter a valid email address.';
+        errors.email = t('partner.error.invalidEmail');
       } else if (emailError) {
         errors.email = emailError;
       }
 
       if (!formData.password) {
-        errors.password = 'Please fill out this field.';
+        errors.password = t('partner.error.required');
       } else if (!validatePassword(formData.password)) {
-        errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
+        errors.password = t('partner.error.passwordWeak');
       }
 
       if (!formData.confirmPassword) {
-        errors.confirmPassword = 'Please fill out this field.';
+        errors.confirmPassword = t('partner.error.required');
       } else if (formData.password !== formData.confirmPassword) {
         errors.confirmPassword = 'Passwords do not match.';
       }
     } else if (step === 2) {
       // Location
       if (!formData.address) {
-        errors.address = 'Please fill out this field.';
+        errors.address = t('partner.error.required');
       }
 
       if (!formData.city) {
-        errors.city = 'Please fill out this field.';
+        errors.city = t('partner.error.required');
       }
 
       if (!formData.latitude || !formData.longitude) {
@@ -429,7 +431,7 @@ export default function PartnerApplication() {
     } else if (step === 3) {
       // Business Information
       if (!formData.business_name) {
-        errors.business_name = 'Please fill out this field.';
+        errors.business_name = t('partner.error.required');
       }
 
       if (!formData.business_type) {
@@ -437,7 +439,7 @@ export default function PartnerApplication() {
       }
 
       if (!formData.description) {
-        errors.description = 'Please fill out this field.';
+        errors.description = t('partner.error.required');
       }
 
       const isOpen24h = open24h === true || formData.open_24h === true;
@@ -462,7 +464,7 @@ export default function PartnerApplication() {
     } else if (step === 4) {
       // Contact Information
       if (!formData.phone) {
-        errors.phone = 'Please fill out this field.';
+        errors.phone = t('partner.error.required');
       }
 
       if (!acceptedTerms) {
@@ -496,27 +498,27 @@ export default function PartnerApplication() {
     const errors: Record<string, string> = {};
 
     if (!formData.email) {
-      errors.email = 'Please fill out this field.';
+      errors.email = t('partner.error.required');
     } else if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid email address.';
+      errors.email = t('partner.error.invalidEmail');
     } else if (emailError) {
       errors.email = emailError;
     }
 
     if (!formData.password) {
-      errors.password = 'Please fill out this field.';
+      errors.password = t('partner.error.required');
     } else if (!validatePassword(formData.password)) {
-      errors.password = 'Password must be at least 8 characters with 1 number and 1 uppercase letter.';
+      errors.password = t('partner.error.passwordWeak');
     }
 
     if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please fill out this field.';
+      errors.confirmPassword = t('partner.error.required');
     } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match.';
     }
 
     if (!formData.business_name) {
-      errors.business_name = 'Please fill out this field.';
+      errors.business_name = t('partner.error.required');
     }
 
     if (!formData.business_type) {
@@ -524,7 +526,7 @@ export default function PartnerApplication() {
     }
 
     if (!formData.description) {
-      errors.description = 'Please fill out this field.';
+      errors.description = t('partner.error.required');
     }
 
     const isOpen24h = open24h === true || formData.open_24h === true;
@@ -548,15 +550,15 @@ export default function PartnerApplication() {
     }
 
     if (!formData.address) {
-      errors.address = 'Please fill out this field.';
+      errors.address = t('partner.error.required');
     }
 
     if (!formData.city) {
-      errors.city = 'Please fill out this field.';
+      errors.city = t('partner.error.required');
     }
 
     if (!formData.phone) {
-      errors.phone = 'Please fill out this field.';
+      errors.phone = t('partner.error.required');
     }
 
     if (!formData.latitude || !formData.longitude) {
@@ -608,8 +610,8 @@ export default function PartnerApplication() {
         if (authError.message.includes('already registered') ||
             authError.message.includes('duplicate') ||
             authError.message.includes('already exists')) {
-          toast.error('This email is already registered. Please log in instead.');
-          setEmailError('This email is already registered. Please log in instead.');
+          toast.error(t('partner.error.emailExists'));
+          setEmailError(t('partner.error.emailExists'));
           return;
         }
         toast.error(`Account creation failed: ${authError.message}`);
@@ -769,14 +771,9 @@ export default function PartnerApplication() {
                 <CheckCircle2 className="w-10 h-10 text-green-600" />
               </div>
             </div>
-            <DialogTitle className="text-center text-2xl">Application Submitted!</DialogTitle>
+            <DialogTitle className="text-center text-2xl">{t('partner.dialog.submittedTitle')}</DialogTitle>
             <DialogDescription className="text-center text-base pt-2">
-              ✅ Application received!<br />
-              ჩვენი გუნდი დაგიკავშირდებათ მალე.
-              <br /><br />
-              Please check your email to verify your account.
-              <br /><br />
-              Redirecting to home in 4 seconds...
+              ✅ {t('partner.dialog.submittedDescription')}
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -787,7 +784,7 @@ export default function PartnerApplication() {
         <div className="container mx-auto px-4 py-4">
           <Button variant="ghost" onClick={() => navigate('/')} className="mb-2">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
+            {t('mypicks.backToHome')}
           </Button>
         </div>
       </header>
@@ -811,7 +808,7 @@ export default function PartnerApplication() {
             <div className="flex items-center gap-3 mb-2">
               <Store className="w-8 h-8 text-[#4CC9A8]" />
               <div>
-                <CardTitle className="text-3xl">Become a SmartPick Partner</CardTitle>
+                <CardTitle className="text-3xl">{t('partner.becomeTitle')}</CardTitle>
                 <CardDescription className="text-base mt-1">
                   Join our platform to reach more customers with smart-time offers
                 </CardDescription>
@@ -851,7 +848,7 @@ export default function PartnerApplication() {
                 ))}
               </div>
               <div className="text-center text-sm text-gray-600">
-                Step {currentStep} of {totalSteps}
+                {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
               </div>
             </div>
 
@@ -861,11 +858,11 @@ export default function PartnerApplication() {
               <div className="space-y-4 p-6 bg-[#E8F9F4] rounded-lg border-2 border-[#4CC9A8]/30">
                 <div className="flex items-center gap-2 mb-2">
                   <Shield className="w-5 h-5 text-[#4CC9A8]" />
-                  <h3 className="text-lg font-semibold text-gray-900">Create Your Partner Account</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.account')}</h3>
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email Address (Your Login ID) *</Label>
+                  <Label htmlFor="email">{t('partner.form.email')} *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -880,7 +877,7 @@ export default function PartnerApplication() {
                     className={`bg-white ${fieldErrors.email ? 'border-red-500' : ''}`}
                   />
                   {isCheckingEmail && (
-                    <p className="text-xs text-gray-500 mt-1">Checking email availability...</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('partner.emailChecking')}</p>
                   )}
                   {(emailError || fieldErrors.email) && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -891,6 +888,7 @@ export default function PartnerApplication() {
                   {!emailError && !fieldErrors.email && formData.email && validateEmail(formData.email) && !isCheckingEmail && (
                     <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
+                      {/* Simplified success text could be localized if needed */}
                       Email is available
                     </p>
                   )}
@@ -982,7 +980,7 @@ export default function PartnerApplication() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📍</span>
-                  <h3 className="text-lg font-semibold text-gray-900">Business Location</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.location')}</h3>
                 </div>
 
                 <div className="relative">
@@ -1028,7 +1026,7 @@ export default function PartnerApplication() {
                   )}
 
                   {isLoadingAddress && (
-                    <p className="text-xs text-gray-500 mt-1">Searching addresses...</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('partner.addressSearching')}</p>
                   )}
                 </div>
 
@@ -1118,7 +1116,7 @@ export default function PartnerApplication() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🏪</span>
-                  <h3 className="text-lg font-semibold text-gray-900">Business Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.business')}</h3>
                 </div>
 
                 <div>
@@ -1310,7 +1308,7 @@ export default function PartnerApplication() {
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📞</span>
-                  <h3 className="text-lg font-semibold text-gray-900">Contact Information</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.contact')}</h3>
                 </div>
 
                 <div>

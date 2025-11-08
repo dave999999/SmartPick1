@@ -66,6 +66,7 @@ function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; on
 }
 
 function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: string; fallbackUntil?: string; onUpdate?: () => void }) {
+  const { t } = useI18n();
   const [status, setStatus] = useState<PenaltyStatus | null>(null);
   const [isLifting, setIsLifting] = useState(false);
 
@@ -120,8 +121,8 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
   if (status.isBanned) {
     return (
       <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4">
-        <p className="text-sm text-red-800 font-bold">🚫 Permanently Banned</p>
-        <p className="text-xs text-red-600 mt-1">Contact support for assistance</p>
+  <p className="text-sm text-red-800 font-bold">🚫 {t('penalty.banned')}</p>
+  <p className="text-xs text-red-600 mt-1">{t('penalty.contactSupport')}</p>
       </div>
     );
   }
@@ -143,11 +144,11 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
             size="sm"
           >
             {isLifting ? (
-              'Processing...'
+              t('penalty.processing')
             ) : (
               <>
                 <Coins className="w-4 h-4 mr-2" />
-                Lift Penalty ({pointsCost} points)
+                {t('penalty.lift')} ({pointsCost} points)
               </>
             )}
           </Button>
@@ -155,7 +156,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
         {!canLift && penaltyCount >= 3 && (
           <div className="text-xs text-orange-700 bg-orange-100/50 p-2 rounded text-center">
-            ⏳ This penalty cannot be lifted early. You must wait.
+            ⏳ {t('penalty.cannotLift')}
           </div>
         )}
       </div>
@@ -164,7 +165,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
   return (
     <div className="bg-green-100 border-2 border-green-300 rounded-lg p-3">
-      <p className="text-sm text-green-800 font-semibold">✓ No active penalty</p>
+      <p className="text-sm text-green-800 font-semibold">✓ {t('penalty.noneActive')}</p>
     </div>
   );
 }
@@ -187,7 +188,7 @@ export default function UserProfile() {
     try {
       const { user: currentUser } = await getCurrentUser();
       if (!currentUser) {
-        toast.error('Please sign in');
+  toast.error(t('generic.signInRequired'));
         navigate('/');
         return;
       }
@@ -207,7 +208,7 @@ export default function UserProfile() {
       }
     } catch (error) {
       console.error('Error loading user:', error);
-      toast.error('Failed to load profile');
+  toast.error(t('generic.failedLoadProfile'));
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -335,10 +336,10 @@ export default function UserProfile() {
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            {userStats && <TabsTrigger value="achievements">Achievements</TabsTrigger>}
-            {userStats && <TabsTrigger value="wallet">Wallet</TabsTrigger>}
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
+            {userStats && <TabsTrigger value="achievements">{t('profile.tabs.achievements')}</TabsTrigger>}
+            {userStats && <TabsTrigger value="wallet">{t('profile.tabs.wallet')}</TabsTrigger>}
+            <TabsTrigger value="settings">{t('profile.tabs.settings')}</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
