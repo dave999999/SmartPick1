@@ -237,6 +237,7 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.points.slotPurchased': 'Successfully purchased slot! New total:',
   'partner.points.purchaseFailed': 'Failed to purchase slot',
   'partner.points.slotLimitReached': 'Offer slot limit reached. Maximum slots:',
+  'partner.points.needMoreSlots': 'All offer slots are full. Purchase more slots to continue.',
   // User Profile tabs & penalty messages
   'profile.tabs.overview': 'Overview',
   'profile.tabs.achievements': 'Achievements',
@@ -704,6 +705,7 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.points.slotPurchased': 'სლოტი წარმატებით შეძენილია! ახალი რაოდენობა:',
   'partner.points.purchaseFailed': 'სლოტის შეძენა ვერ მოხერხდა',
   'partner.points.slotLimitReached': 'სლოტების ლიმიტი ამოიწურა. მაქსიმალური სლოტები:',
+  'partner.points.needMoreSlots': 'ყველა სლოტი სავსეა. შეიძინე დამატებითი სლოტები გასაგრძელებლად.',
   'notFound.goBack': 'უკან დაბრუნება',
   // Partner Dashboard - Notifications
   'partner.dashboard.notifications.title': 'გაფრთხილების პარამეტრები',
