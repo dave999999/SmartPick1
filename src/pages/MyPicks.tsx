@@ -718,9 +718,16 @@ export default function MyPicks() {
               {t('dialog.qr.description')}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-center py-6">
+          <div className="flex flex-col items-center py-6">
             {qrCodeData && (
-              <img src={qrCodeData} alt="QR Code" className="w-64 h-64" />
+              <>
+                <img src={qrCodeData} alt="QR Code" className="w-64 h-64" />
+                {showQRCode && reservations.find(r => r.id === showQRCode)?.qr_code && (
+                  <p className="mt-4 text-lg font-mono font-bold text-gray-900">
+                    {reservations.find(r => r.id === showQRCode)?.qr_code}
+                  </p>
+                )}
+              </>
             )}
           </div>
         </DialogContent>
