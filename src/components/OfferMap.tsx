@@ -134,15 +134,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   const [listReady, setListReady] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Categories in Wolt style
+  // Categories in Wolt style with vibrant colors
   const categories = [
-    { value: '', emoji: '🌍', labelKey: 'category.All' },
-    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY' },
-    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE' },
-    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT' },
-    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD' },
-    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL' },
-    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY' },
+    { value: '', emoji: '🌍', labelKey: 'category.All', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD', color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
+    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
+    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY', color: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)' },
   ];
 
   // Default center: Tbilisi, Georgia
@@ -434,19 +434,19 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
   return (
     <div className="w-full space-y-4">
-      {/* Modern Control Panel - Wolt Style */}
-      <div className="px-4 md:px-6 py-4 space-y-4">
+      {/* Modern Control Panel - Wolt Style Dark */}
+      <div className="bg-gray-900 px-4 md:px-6 py-6 space-y-5 rounded-t-3xl">
         {/* Near Me Button and Offer Count */}
         <div className="flex items-center justify-between">
           <Button
             variant="default"
             onClick={handleNearMe}
-            className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 px-6 py-2.5 font-semibold text-sm"
+            className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 px-6 py-2.5 font-semibold text-sm"
           >
             <Navigation className="w-4 h-4 mr-2" />
             Near Me
           </Button>
-          <div className="text-sm text-gray-600 font-medium flex items-center gap-2">
+          <div className="text-sm text-gray-300 font-medium flex items-center gap-2">
             <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] text-white font-bold text-xs shadow-sm">
               {displayOffers.length}
             </span>
@@ -454,9 +454,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
           </div>
         </div>
 
-        {/* Wolt-Style Category Pills */}
+        {/* Wolt-Style Category Cubes */}
         {onCategorySelect && (
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((category) => {
               const isActive = selectedCategory === category.value;
               return (
@@ -464,15 +464,21 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   key={category.value}
                   onClick={() => onCategorySelect(category.value)}
                   className={`
-                    flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 border-2
-                    ${isActive
-                      ? 'bg-[#00C896] border-[#00C896] text-white shadow-md scale-105'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-[#00C896] hover:bg-gray-50'
-                    }
+                    flex-shrink-0 flex flex-col items-center gap-2 transition-all duration-200
+                    ${isActive ? 'scale-110' : 'hover:scale-105'}
                   `}
                 >
-                  <span className="text-xl">{category.emoji}</span>
-                  <span className="font-semibold text-sm whitespace-nowrap">
+                  {/* Colorful Cube */}
+                  <div
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 ${
+                      isActive ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-900' : ''
+                    }`}
+                    style={{ background: category.color }}
+                  >
+                    <span className="text-3xl">{category.emoji}</span>
+                  </div>
+                  {/* Label */}
+                  <span className="font-semibold text-xs text-white whitespace-nowrap">
                     {t(category.labelKey)}
                   </span>
                 </button>
