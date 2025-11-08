@@ -139,9 +139,9 @@ export default function ReserveOffer() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
-    if (diff <= 0) return 'Expired';
-    if (hours > 0) return `${hours}h ${minutes}m left`;
-    return `${minutes}m left`;
+    if (diff <= 0) return t('timer.expired');
+    if (hours > 0) return `${hours}h ${minutes}m ${t('timer.left') ?? 'left'}`;
+    return `${minutes}m ${t('timer.left') ?? 'left'}`;
   };
 
   if (isLoading) {
@@ -206,10 +206,10 @@ export default function ReserveOffer() {
               <Alert className="bg-red-50 border-red-200">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-900">
-                  <strong>Account Penalty Active</strong>
+                  <strong>{t('penalty.accountPenaltyActive')}</strong>
                   <p className="mt-1">
-                    You missed {penaltyInfo.penaltyCount} pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}. 
-                    Reservations are blocked for: <strong>{countdown}</strong>
+                    {t('penalty.missedPrefix')} {penaltyInfo.penaltyCount} {t('penalty.missedSuffix')}
+                    {' '}{t('penalty.blockedFor')} <strong>{countdown}</strong>
                   </p>
                 </AlertDescription>
               </Alert>
@@ -220,7 +220,7 @@ export default function ReserveOffer() {
               <Alert className="bg-orange-50 border-orange-200">
                 <Clock className="h-4 w-4 text-orange-600" />
                 <AlertDescription className="text-orange-900">
-                  <strong>Hurry!</strong> This offer expires soon: {getTimeRemaining(offer.expires_at)}
+                  <strong>{t('offer.hurry')}</strong> {t('map.showingAvailable')}: {getTimeRemaining(offer.expires_at)}
                 </AlertDescription>
               </Alert>
             )}
@@ -239,7 +239,7 @@ export default function ReserveOffer() {
                 </div>
               </div>
               <p className="text-xs text-gray-500">
-                Save {((1 - offer.smart_price / offer.original_price) * 100).toFixed(0)}% with SmartPick
+                {t('offer.savePrefix')}{((1 - offer.smart_price / offer.original_price) * 100).toFixed(0)}{t('offer.saveSuffix')}
               </p>
             </div>
 
@@ -279,14 +279,14 @@ export default function ReserveOffer() {
                   <Plus className="h-4 w-4" />
                 </Button>
                 <span className="text-sm text-gray-500">
-                  {offer.quantity_available} available
+                  {offer.quantity_available} {t('offer.availableSuffix')}
                 </span>
               </div>
             </div>
 
             {/* Total */}
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border-2 border-gray-200">
-              <span className="text-lg font-medium">Total Price</span>
+              <span className="text-lg font-medium">{t('label.totalPrice')}</span>
               <span className="text-3xl font-bold text-mint-600">{totalPrice.toFixed(2)} GEL</span>
             </div>
 
@@ -296,7 +296,7 @@ export default function ReserveOffer() {
                 <div className="flex items-center gap-2 text-gray-700">
                   <Clock className="w-5 h-5 text-mint-600" />
                   <div>
-                    <p className="font-medium">Pickup Window</p>
+                    <p className="font-medium">{t('label.pickupWindow')}</p>
                     <p className="text-sm text-gray-600">
                       {formatTime(pickupStart)} - {formatTime(pickupEnd)}
                     </p>
@@ -331,18 +331,17 @@ export default function ReserveOffer() {
               }
             >
               {isReserving 
-                ? 'Creating Reservation...' 
+                ? t('reservation.creating') 
                 : penaltyInfo?.isUnderPenalty 
-                ? `Blocked - ${countdown}` 
-                : 'Confirm Reservation'}
+                ? `${t('reservation.blocked')} ${countdown}` 
+                : t('reservation.confirm')}
             </Button>
 
             <p className="text-xs text-gray-500 text-center">
-              Your reservation will be held for 30 minutes. You'll receive a QR code for pickup.
+              {t('reservation.heldNotice')}
               {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
                 <span className="block mt-1 text-orange-600 font-medium">
-                  ⚠️ You have {penaltyInfo.penaltyCount} missed pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}. 
-                  Missing this one will result in a penalty.
+                  ⚠️ {t('reservation.penaltyWarningPrefix')} {penaltyInfo.penaltyCount} {t('reservation.penaltyWarningSuffix')}
                 </span>
               )}
             </p>

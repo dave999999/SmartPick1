@@ -241,7 +241,7 @@ export default function ReservationDetail() {
                 className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleCancel}
               >
-                Cancel Reservation
+                {t('button.cancelReservation')}
               </Button>
             )}
           </CardContent>

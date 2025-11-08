@@ -59,9 +59,11 @@ import PartnerAnalyticsCharts from '@/components/partner/PartnerAnalyticsCharts'
 import PartnerPayoutInfo from '@/components/partner/PartnerPayoutInfo';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import { applyNoShowPenalty } from '@/lib/penalty-system';
+import { useI18n } from '@/lib/i18n';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
+  const { t } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -185,7 +187,7 @@ export default function PartnerDashboard() {
 
       const partnerData = await getPartnerByUserId(user.id);
       if (!partnerData) {
-        toast.error('Partner profile not found');
+  toast.error(t('partner.dashboard.toast.partnerNotFound'));
         navigate('/partner/apply');
         return;
       }
@@ -226,13 +228,13 @@ export default function PartnerDashboard() {
         });
       } else {
         // Status is REJECTED or other
-        toast.error('Your partner application was not approved');
+  toast.error(t('partner.dashboard.toast.applicationRejected'));
         navigate('/');
         return;
       }
     } catch (error) {
       console.error('Error loading partner data:', error);
-      toast.error('Failed to load dashboard');
+  toast.error(t('partner.dashboard.toast.loadFail'));
     } finally {
       setIsLoading(false);
     }
@@ -247,7 +249,7 @@ export default function PartnerDashboard() {
       setIsSubmitting(true);
 
       // Extract and validate title and description with defaults
-      const title = (formData.get('title') as string)?.trim() || "Untitled Offer";
+  const title = (formData.get('title') as string)?.trim() || t('partner.dashboard.fallback.untitledOffer');
       const description = (formData.get('description') as string)?.trim() || "No description provided";
 
       // Validate price
@@ -393,7 +395,7 @@ export default function PartnerDashboard() {
         }
 
         if (error) throw error;
-        toast.success(isScheduled ? 'Offer scheduled successfully!' : 'Offer created successfully!');
+  toast.success(isScheduled ? t('partner.dashboard.toast.offerScheduled') : t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
         setImageFiles([]);
         setImagePreviews([]);
@@ -409,7 +411,7 @@ export default function PartnerDashboard() {
     } catch (error) {
       console.error('Error creating offer:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Failed to create offer: ${errorMessage}`);
+  toast.error(`${t('partner.dashboard.toast.offerCreateFailed')}: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -502,7 +504,7 @@ export default function PartnerDashboard() {
       };
 
       await updateOffer(editingOffer.id, updates);
-      toast.success('✅ Offer updated successfully!');
+  toast.success(t('partner.dashboard.toast.offerUpdated'));
       setIsEditDialogOpen(false);
       setEditingOffer(null);
       setImageFiles([]);
@@ -510,7 +512,7 @@ export default function PartnerDashboard() {
       loadPartnerData();
     } catch (error) {
       console.error('Error updating offer:', error);
-      toast.error('Failed to update offer');
+  toast.error(t('partner.dashboard.toast.offerUpdateFailed'));
     }
   };
 
@@ -525,10 +527,10 @@ export default function PartnerDashboard() {
         quantity_available: offer?.quantity_total || 0
       });
       await loadPartnerData();
-      toast.success('Quantity refreshed successfully');
+  toast.success(t('partner.dashboard.toast.quantityRefreshed'));
     } catch (error) {
       console.error('Error refreshing quantity:', error);
-      toast.error('Failed to refresh quantity');
+  toast.error(t('partner.dashboard.toast.quantityRefreshFailed'));
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -589,12 +591,12 @@ export default function PartnerDashboard() {
           });
         }
 
-        toast.success('New offer created successfully');
+    toast.success(t('partner.dashboard.toast.offerCreated'));
         await loadPartnerData();
       }
     } catch (error) {
       console.error('Error creating new offer:', error);
-      toast.error('Failed to create new offer');
+  toast.error(t('partner.dashboard.toast.offerCreateFailed'));
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -611,10 +613,10 @@ export default function PartnerDashboard() {
       setProcessingIds(prev => new Set(prev).add(offerId));
       const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
       await updateOffer(offerId, { status: newStatus });
-      toast.success(`Offer ${newStatus.toLowerCase()}`);
+  toast.success(t('partner.dashboard.toast.toggleSuccess'));
       loadPartnerData();
     } catch (error) {
-      toast.error('Failed to update offer');
+  toast.error(t('partner.dashboard.toast.toggleFailed'));
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -625,14 +627,14 @@ export default function PartnerDashboard() {
   };
 
   const handleDeleteOffer = async (offerId: string) => {
-    if (!confirm('Are you sure you want to delete this offer?')) return;
+  if (!confirm(t('partner.dashboard.confirm.deleteOffer'))) return;
     
     try {
       await deleteOffer(offerId);
-      toast.success('Offer deleted');
+  toast.success(t('partner.dashboard.toast.offerDeleted'));
       loadPartnerData();
     } catch (error) {
-      toast.error('Failed to delete offer');
+  toast.error(t('partner.dashboard.toast.offerDeleteFailed'));
     }
   };
 
@@ -651,11 +653,11 @@ export default function PartnerDashboard() {
     // ❌ Do NOT modify offer quantity or status here
     // Offer quantity was already decreased when the reservation was made
 
-    toast.success('Pickup confirmed successfully!');
+  toast.success(t('partner.dashboard.toast.pickupConfirmed'));
     loadPartnerData();
   } catch (error) {
     console.error('Error marking as picked up:', error);
-    toast.error('Failed to confirm pickup');
+  toast.error(t('partner.dashboard.toast.pickupFailed'));
   } finally {
     setProcessingIds(prev => {
       const newSet = new Set(prev);
@@ -673,10 +675,10 @@ export default function PartnerDashboard() {
       setReservations(prev => prev.filter(r => r.id !== reservation.id));
       const res = await applyNoShowPenalty(reservation.customer_id, reservation.id);
       if (res.success) {
-        toast.success(res.message || 'No-show recorded and penalty applied');
+  toast.success(res.message || 'No-show recorded and penalty applied'); // TODO: i18n penalty messages
         await loadPartnerData();
       } else {
-        toast.error(res.message || 'Failed to apply penalty');
+  toast.error(res.message || 'Failed to apply penalty'); // TODO: i18n penalty messages
       }
     } catch (error) {
       console.error('Error applying no-show penalty:', error);
@@ -688,7 +690,7 @@ export default function PartnerDashboard() {
 
   const handleValidateQR = async () => {
     if (!qrInput.trim()) {
-      toast.error('Please enter a QR code');
+  toast.error(t('partner.dashboard.toast.qrEnter'));
       return;
     }
 
@@ -700,11 +702,11 @@ export default function PartnerDashboard() {
         setQrScannerOpen(false);
         setLastQrResult('success');
       } else {
-        toast.error(result.error || 'Invalid QR code');
+  toast.error(result.error || t('partner.dashboard.toast.qrInvalid'));
         setLastQrResult('error');
       }
     } catch (error) {
-      toast.error('Failed to validate QR code');
+  toast.error(t('partner.dashboard.toast.qrValidateFailed'));
       setLastQrResult('error');
     }
   };
@@ -872,7 +874,7 @@ export default function PartnerDashboard() {
     const originalPriceInput = document.getElementById('original_price') as HTMLInputElement;
     const smartPriceInput = document.getElementById('smart_price') as HTMLInputElement;
     
-    if (!titleInput?.value.trim()) errors.title = 'Please fill this field';
+  if (!titleInput?.value.trim()) errors.title = t('partner.dashboard.error.fieldRequired');
     if (!descInput?.value.trim()) errors.description = 'Please fill this field';
     
     if (!quantityInput?.value || parseInt(quantityInput.value) < 1) errors.quantity = 'Please fill this field';
@@ -944,7 +946,7 @@ const generate24HourOptions = (): string[] => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">Loading dashboard...</p>
+  <p className="text-gray-500">{t('partner.dashboard.load')}</p>
       </div>
     );
   }
@@ -960,7 +962,7 @@ const generate24HourOptions = (): string[] => {
               <h1 className="text-lg md:text-xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                 {partner?.business_name}
               </h1>
-              <p className="text-[11px] md:text-xs text-neutral-500">Partner Dashboard</p>
+              <p className="text-[11px] md:text-xs text-neutral-500">{t('partner.dashboard.title')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -970,15 +972,15 @@ const generate24HourOptions = (): string[] => {
               onClick={() => setIsEditProfileOpen(true)}
             >
               <Edit className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Edit Profile</span>
-              <span className="sm:hidden">Edit</span>
+              <span className="hidden sm:inline">{t('partner.dashboard.editProfile')}</span>
+              <span className="sm:hidden">{t('partner.dashboard.edit')}</span>
             </Button>
             <Button
               variant="outline"
               className="hidden md:flex h-11 rounded-full"
               onClick={() => navigate('/')}
             >
-              🏠 Customer View
+              🏠 {t('partner.dashboard.customerView')}
             </Button>
             <Button
               variant="outline"
@@ -986,7 +988,7 @@ const generate24HourOptions = (): string[] => {
               onClick={handleSignOut}
             >
               <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-0 md:mr-2" />
-              <span className="hidden md:inline">Sign Out</span>
+              <span className="hidden md:inline">{t('partner.dashboard.signOut')}</span>
             </Button>
           </div>
         </div>
@@ -1001,8 +1003,8 @@ const generate24HourOptions = (): string[] => {
               <AlertDescription className="text-yellow-900">
                 <div className="flex items-center justify-between">
                   <div>
-                    <strong className="text-lg">🕓 Your partner application is under review.</strong>
-                    <p className="mt-1">You'll be notified once approved. Meanwhile, you can explore the dashboard interface below.</p>
+                    <strong className="text-lg">{t('partner.dashboard.pending.title')}</strong>
+                    <p className="mt-1">{t('partner.dashboard.pending.text')}</p>
                   </div>
                 </div>
               </AlertDescription>
@@ -1026,10 +1028,10 @@ const generate24HourOptions = (): string[] => {
         {isPending && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
             {[
-              { icon: Package, label: 'Offers Live', color: 'text-blue-600' },
-              { icon: ShoppingBag, label: 'Picked Up', color: 'text-green-600' },
-              { icon: TrendingUp, label: 'Items Sold', color: 'text-purple-600' },
-              { icon: DollarSign, label: 'Revenue', color: 'text-coral-600' },
+              { icon: Package, label: t('partner.dashboard.cards.offersLive'), color: 'text-blue-600' },
+              { icon: ShoppingBag, label: t('partner.dashboard.cards.pickedUp'), color: 'text-green-600' },
+              { icon: TrendingUp, label: t('partner.dashboard.cards.itemsSold'), color: 'text-purple-600' },
+              { icon: DollarSign, label: t('partner.dashboard.cards.revenue'), color: 'text-coral-600' },
             ].map((stat, index) => {
               const Icon = stat.icon;
               return (
@@ -1040,7 +1042,7 @@ const generate24HourOptions = (): string[] => {
                     <p className="text-2xl font-bold text-gray-400">—</p>
                     <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-500">
                       <Lock className="w-3 h-3" />
-                      <span>After approval</span>
+                      <span>{t('partner.dashboard.pending.afterApproval')}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -1069,39 +1071,39 @@ const generate24HourOptions = (): string[] => {
                 disabled={isPending}
               >
                 <Plus className="w-5 h-5 mr-2" />
-                ✨ New Smart-Time Offer
+                {t('partner.dashboard.newOffer')}
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-                  ✨ Create New Offer
+                  {t('partner.dashboard.dialog.createTitle')}
                 </DialogTitle>
-                <DialogDescription className="text-sm md:text-base">Add a fresh Smart-Time offer for your customers</DialogDescription>
+                <DialogDescription className="text-sm md:text-base">{t('partner.dashboard.dialog.createDescription')}</DialogDescription>
               </DialogHeader>
 
               {/* Single Page Form Header */}
               <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] p-4 rounded-xl border-l-4 border-[#00C896] mb-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-1">📝 Complete Offer Details</h3>
-                <p className="text-sm text-gray-600">Fill in all information to create your Smart-Time offer</p>
+                <h3 className="font-semibold text-gray-900 mb-1">📝 {t('partner.dashboard.section.basic')}</h3>
+                <p className="text-sm text-gray-600">{t('partner.dashboard.dialog.createDescription')}</p>
               </div>
 
               <form onSubmit={handleCreateOffer} className="space-y-6">
                 {/* Basic Info Section */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Basic Information</h4>
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.basic')}</h4>
 
                     <div>
                       <Label htmlFor="title" className="flex items-center gap-2 text-base font-semibold mb-2">
                         <Utensils className="w-4 h-4 text-[#4CC9A8]" />
-                        Offer Title *
+                        {t('partner.dashboard.label.offerTitle')}
                       </Label>
                       <Input
                         id="title"
                         name="title"
                         required
-                        placeholder="e.g., Fresh Khachapuri"
+                        placeholder={t('partner.dashboard.placeholder.title')}
                         className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                       />
                       {formErrors.title && <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>}
@@ -1110,13 +1112,13 @@ const generate24HourOptions = (): string[] => {
                     <div>
                       <Label htmlFor="description" className="flex items-center gap-2 text-base font-semibold mb-2">
                         <MessageSquare className="w-4 h-4 text-[#4CC9A8]" />
-                        Description *
+                        {t('partner.dashboard.label.description')}
                       </Label>
                       <Textarea
                         id="description"
                         name="description"
                         required
-                        placeholder="Describe your offer in detail..."
+                        placeholder={t('partner.dashboard.placeholder.description')}
                         className="text-base min-h-[100px] rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
                       />
                       {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
@@ -1126,14 +1128,14 @@ const generate24HourOptions = (): string[] => {
                     <div>
                       <Label className="flex items-center gap-2 text-base font-semibold mb-2">
                         <Package className="w-4 h-4 text-[#4CC9A8]" />
-                        Category
+                        {t('partner.dashboard.label.category')}
                       </Label>
                       <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] border border-[#DFF5ED] rounded-xl px-4 py-6 flex items-center gap-2">
                         <span className="text-2xl">{getCategoryIcon(partner?.business_type || 'RESTAURANT')}</span>
                         <span className="text-base font-medium text-gray-900">{partner?.business_type || 'RESTAURANT'}</span>
-                        <span className="text-sm text-[#00C896] ml-2">(auto-filled)</span>
+                        <span className="text-sm text-[#00C896] ml-2">{t('partner.dashboard.category.auto')}</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Category is automatically set based on your business type</p>
+                      <p className="text-xs text-gray-500 mt-1">{t('partner.dashboard.category.hint')}</p>
                     </div>
 
                     {/* Choose Image (opens library modal) */}
@@ -1143,7 +1145,7 @@ const generate24HourOptions = (): string[] => {
                         onClick={() => setShowImageModal(true)}
                         className="w-full rounded-lg bg-[#00C896] py-2 font-medium text-white transition hover:bg-[#009B77]"
                       >
-                        🖼 Choose Image
+                        {t('partner.dashboard.chooseImage')}
                       </button>
                       {selectedLibraryImage && (
                         <img
@@ -1168,13 +1170,13 @@ const generate24HourOptions = (): string[] => {
 
                 {/* Pricing & Quantity Section */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Pricing & Quantity</h4>
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.pricing')}</h4>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="quantity" className="flex items-center gap-2 text-base font-semibold mb-2">
                           <Hash className="w-4 h-4 text-[#4CC9A8]" />
-                          Quantity *
+                          {t('partner.dashboard.label.quantity')}
                         </Label>
                         <Input
                           id="quantity"
@@ -1193,7 +1195,7 @@ const generate24HourOptions = (): string[] => {
                       <div>
                         <Label htmlFor="original_price" className="flex items-center gap-2 text-base font-semibold mb-2">
                           <DollarSign className="w-4 h-4 text-gray-500" />
-                          Original Price *
+                          {t('partner.dashboard.label.originalPrice')}
                         </Label>
                         <div className="relative">
                           <Input
@@ -1212,7 +1214,7 @@ const generate24HourOptions = (): string[] => {
                       <div>
                         <Label htmlFor="smart_price" className="flex items-center gap-2 text-base font-semibold mb-2">
                           <DollarSign className="w-4 h-4 text-[#4CC9A8]" />
-                          Smart Price *
+                          {t('partner.dashboard.label.smartPrice')}
                         </Label>
                         <div className="relative">
                           <Input
@@ -1250,7 +1252,7 @@ const generate24HourOptions = (): string[] => {
 
                 {/* Pickup timing is set automatically */}
                 <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Pickup Time</h4>
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.pickupTime')}</h4>
                   <p className="text-sm text-gray-600">
                     We set times automatically based on your business hours:
                     {" "}
@@ -1262,7 +1264,7 @@ const generate24HourOptions = (): string[] => {
 
                 {/* Offer Scheduling Section */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">Schedule Publishing</h4>
+                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.schedule')}</h4>
 
                   <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <Checkbox
@@ -1276,7 +1278,7 @@ const generate24HourOptions = (): string[] => {
                       }}
                     />
                     <Label htmlFor="is_scheduled" className="text-sm cursor-pointer font-medium">
-                      Schedule this offer for later
+                      {t('partner.dashboard.schedule.toggleLabel')}
                     </Label>
                   </div>
 
@@ -1284,7 +1286,7 @@ const generate24HourOptions = (): string[] => {
                     <div>
                       <Label htmlFor="scheduled_publish_at" className="flex items-center gap-2 text-base font-semibold mb-2">
                         <Calendar className="w-4 h-4 text-[#4CC9A8]" />
-                        Publish Date & Time *
+                        {t('partner.dashboard.label.publishDateTime')}
                       </Label>
                       <Input
                         id="scheduled_publish_at"
@@ -1310,7 +1312,7 @@ const generate24HourOptions = (): string[] => {
                     onClick={() => setIsCreateDialogOpen(false)}
                     className="flex-1 py-6 text-base rounded-full border-[#E8F9F4] hover:border-gray-400"
                   >
-                    Cancel
+                    {t('partner.dashboard.button.cancel')}
                   </Button>
 
                   <Button
@@ -1321,12 +1323,12 @@ const generate24HourOptions = (): string[] => {
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Creating Offer...
+                        {t('partner.dashboard.button.creatingOffer')}
                       </>
                     ) : (
                       <>
                         <Plus className="w-5 h-5 mr-2" />
-                        Create Offer
+                        {t('partner.dashboard.button.createOffer')}
                       </>
                     )}
                   </Button>
@@ -1343,27 +1345,27 @@ const generate24HourOptions = (): string[] => {
                 disabled={isPending}
               >
                 <QrCode className="w-5 h-5 mr-2" />
-                📱 Scan QR Code
+                📱 {t('partner.dashboard.qr.scanTitle')}
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-2xl max-w-lg">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-                  📱 Validate Pickup
+                  📱 {t('partner.dashboard.qr.validateTitle')}
                 </DialogTitle>
-                <DialogDescription className="text-base">Scan or enter the customer's QR code to confirm pickup</DialogDescription>
+                <DialogDescription className="text-base">{t('partner.dashboard.qr.descriptionPartner')}</DialogDescription>
               </DialogHeader>
 
               <Tabs defaultValue="camera" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="camera" aria-label="Camera QR scan" className="flex items-center gap-2">
+                  <TabsTrigger value="camera" aria-label={t('partner.dashboard.qr.aria.camera')} className="flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    Camera Scan
+                    {t('partner.dashboard.qr.tab.camera')}
                   </TabsTrigger>
-                  <TabsTrigger value="manual" aria-label="Manual QR entry" className="flex items-center gap-2">
+                  <TabsTrigger value="manual" aria-label={t('partner.dashboard.qr.aria.manual')} className="flex items-center gap-2">
                     <QrCode className="w-4 h-4" />
-                    Manual Entry
+                    {t('partner.dashboard.qr.tab.manual')}
                   </TabsTrigger>
                 </TabsList>
 
@@ -1385,7 +1387,7 @@ const generate24HourOptions = (): string[] => {
                           await handleMarkAsPickedUp(result.reservation);
                           setQrInput('');
                           setQrScannerOpen(false);
-                          toast.success('Pickup confirmed successfully!');
+                          toast.success(t('partner.dashboard.toast.pickupConfirmed'));
                           setLastQrResult('success');
                         } else {
                           console.error('QR validation failed:', result.error);
@@ -1416,12 +1418,12 @@ const generate24HourOptions = (): string[] => {
                       className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
                     />
                     <Button
-                      aria-label="Validate QR code and confirm pickup"
+                      aria-label={t('partner.dashboard.qr.validateAction')}
                       onClick={handleValidateQR}
                       className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     >
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Validate & Confirm Pickup
+                      {t('partner.dashboard.qr.validateAction')}
                     </Button>
                     {lastQrResult && <QRScanFeedback result={lastQrResult} />}
                   </div>
@@ -1436,18 +1438,18 @@ const generate24HourOptions = (): string[] => {
           <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg opacity-60">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-                🛎️ Active Reservations
+                🛎️ {t('partner.dashboard.active.title')}
                 <Lock className="w-5 h-5 text-gray-400" />
               </CardTitle>
               <CardDescription className="text-sm md:text-base">
-                This section will be available after approval
+                {t('partner.dashboard.active.pending')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="text-center py-8 md:py-12">
                 <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2 text-sm md:text-base">Reservations will appear here once your account is approved</p>
-                <p className="text-xs md:text-sm text-gray-400">You'll be able to manage customer pickups and validate QR codes</p>
+                <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.active.pendingReservations')}</p>
+                <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.qr.helperText')}</p>
               </div>
             </CardContent>
           </Card>
@@ -1539,27 +1541,27 @@ const generate24HourOptions = (): string[] => {
                 <p className="text-xs md:text-sm text-gray-400">Create smart-time offers and reach more customers</p>
               </div>
             ) : offers.length === 0 ? (
-              <div className="text-center py-8 md:py-12">
-                <Package className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2 text-sm md:text-base">No offers yet. Create your first one!</p>
-                <p className="text-xs md:text-sm text-gray-400">Start offering Smart-Time deals to attract customers</p>
-              </div>
+                <div className="text-center py-8 md:py-12">
+                  <Package className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.empty.noOffers')}</p>
+                  <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.offers.emptyCta')}</p>
+                </div>
             ) : filteredOffers.length === 0 ? (
               <div className="text-center py-8 md:py-12">
                 <Filter className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-sm md:text-base">No {offerFilter} offers found</p>
+                <p className="text-gray-500 text-sm md:text-base">{t('partner.dashboard.filter.none')}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-[#E8F9F4]">
-                      <TableHead className="text-gray-700 font-semibold">Title</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">Category</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">Price</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">Available</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">Status</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">Actions</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.title')}</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.category')}</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.price')}</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.available')}</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.status')}</TableHead>
+                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1611,7 +1613,7 @@ const generate24HourOptions = (): string[] => {
                               className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
                               onClick={() => handleToggleOffer(offer.id, offer.status)}
                               disabled={processingIds.has(offer.id)}
-                              title={offer.status === 'ACTIVE' ? 'Pause' : 'Activate'}
+                              title={offer.status === 'ACTIVE' ? t('partner.dashboard.action.pause') : t('partner.dashboard.action.activate')}
                             >
                               {offer.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                             </Button>
@@ -1621,7 +1623,7 @@ const generate24HourOptions = (): string[] => {
                               className="rounded-full border-[#E8F9F4] hover:border-blue-500 hover:bg-blue-50"
                               onClick={() => handleRefreshQuantity(offer.id)}
                               disabled={processingIds.has(offer.id)}
-                              title="Refresh quantity"
+                              title={t('partner.dashboard.action.refreshQty')}
                             >
                               <RefreshCw className="w-4 h-4" />
                             </Button>
@@ -1630,7 +1632,7 @@ const generate24HourOptions = (): string[] => {
                               className="rounded-full bg-green-500 hover:bg-green-600 text-white"
                               onClick={() => handleCreateNewFromOld(offer)}
                               disabled={processingIds.has(offer.id)}
-                              title="Clone offer"
+                              title={t('partner.dashboard.action.clone')}
                             >
                               <Plus className="w-4 h-4" />
                             </Button>
@@ -1639,7 +1641,7 @@ const generate24HourOptions = (): string[] => {
                               variant="outline"
                               className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
                               onClick={() => openEditDialog(offer)}
-                              title="Edit"
+                              title={t('partner.dashboard.action.edit')}
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
@@ -1648,7 +1650,7 @@ const generate24HourOptions = (): string[] => {
                               variant="outline"
                               className="rounded-full border-[#E8F9F4] hover:border-red-500 hover:bg-red-50"
                               onClick={() => handleDeleteOffer(offer.id)}
-                              title="Delete"
+                              title={t('partner.dashboard.action.delete')}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -1675,36 +1677,36 @@ const generate24HourOptions = (): string[] => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
               <TrendingUp className="w-5 h-5" />
-              📊 Analytics Overview
+              📊 {t('partner.dashboard.analytics.title')}
               {isPending && <Lock className="w-5 h-5 text-gray-400" />}
             </CardTitle>
             <CardDescription className="text-sm md:text-base">
-              {isPending ? 'Analytics will be available after approval' : 'Your complete SmartPick performance metrics'}
+              {isPending ? t('partner.dashboard.analytics.pending') : t('partner.dashboard.analytics.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center bg-[#F9FFFB] rounded-xl p-4">
                 <div className="text-2xl md:text-3xl font-bold text-[#00C896]">{isPending ? '—' : analytics.totalOffers}</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Offers Created</div>
+                <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalOffers')}</div>
               </div>
-              <div className="text-center bg-[#FFF9F5] rounded-xl p-4">
-                <div className="text-2xl md:text-3xl font-bold text-orange-600">{isPending ? '—' : analytics.totalReservations}</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Reservations</div>
-              </div>
-              <div className="text-center bg-green-50 rounded-xl p-4">
-                <div className="text-2xl md:text-3xl font-bold text-green-600">{isPending ? '—' : analytics.itemsSold}</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">Items Sold</div>
-              </div>
-              <div className="text-center bg-purple-50 rounded-xl p-4">
-                <div className="text-2xl md:text-3xl font-bold text-purple-600">{isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}</div>
-                <div className="text-xs md:text-sm text-gray-600 mt-1">Total Revenue</div>
-              </div>
+                <div className="text-center bg-[#FFF9F5] rounded-xl p-4">
+                  <div className="text-2xl md:text-3xl font-bold text-orange-600">{isPending ? '—' : analytics.totalReservations}</div>
+                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalReservations')}</div>
+                </div>
+                <div className="text-center bg-green-50 rounded-xl p-4">
+                  <div className="text-2xl md:text-3xl font-bold text-green-600">{isPending ? '—' : analytics.itemsSold}</div>
+                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.itemsSold')}</div>
+                </div>
+                <div className="text-center bg-purple-50 rounded-xl p-4">
+                  <div className="text-2xl md:text-3xl font-bold text-purple-600">{isPending ? '—' : `${analytics.revenue.toFixed(2)} ₾`}</div>
+                  <div className="text-xs md:text-sm text-gray-600 mt-1">{t('partner.dashboard.analytics.totalRevenue')}</div>
+                </div>
             </div>
             {isPending && (
               <div className="flex items-center justify-center gap-2 mt-4 text-xs md:text-sm text-gray-500">
                 <Lock className="w-4 h-4" />
-                <span>Full analytics will be unlocked once your application is approved</span>
+                <span>{t('partner.dashboard.analytics.pending')}</span>
               </div>
             )}
           </CardContent>
@@ -1778,7 +1780,7 @@ const generate24HourOptions = (): string[] => {
                     name="description"
                     required
                     defaultValue={editingOffer.description}
-                    placeholder="Describe your offer / აღწერეთ თქვენი შეთავაზება"
+                    placeholder={t('partner.dashboard.placeholder.descriptionEdit')}
                     className="mt-1 min-h-[100px] resize-y"
                   />
                 </div>
@@ -1787,23 +1789,23 @@ const generate24HourOptions = (): string[] => {
               {/* 💰 Pricing & Quantity Section */}
               <div className="space-y-4">
                 <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
-                  <span>💰</span> Pricing & Quantity
+                  <span>💰</span> {t('partner.dashboard.section.pricing')}
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="edit_category" className="text-sm font-semibold">Category</Label>
+                    <Label htmlFor="edit_category" className="text-sm font-semibold">{t('partner.dashboard.label.category')}</Label>
                     <Input
                       id="edit_category"
                       value={partner?.business_type || editingOffer.category}
                       disabled
                       className="mt-1 bg-gray-50 cursor-not-allowed"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Auto-set based on business type</p>
+                    <p className="text-xs text-gray-500 mt-1">{t('partner.dashboard.autoSetCategory')}</p>
                   </div>
 
                   <div>
-                    <Label htmlFor="edit_quantity" className="text-sm font-semibold">Quantity</Label>
+                    <Label htmlFor="edit_quantity" className="text-sm font-semibold">{t('partner.dashboard.label.quantity')}</Label>
                     <Input
                       id="edit_quantity"
                       name="quantity"
@@ -1819,7 +1821,7 @@ const generate24HourOptions = (): string[] => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="edit_original_price" className="text-sm font-semibold">
-                      Original Price (₾)
+                      {t('partner.dashboard.label.originalPriceCurrency')}
                     </Label>
                     <Input
                       id="edit_original_price"
@@ -1834,7 +1836,7 @@ const generate24HourOptions = (): string[] => {
 
                   <div>
                     <Label htmlFor="edit_smart_price" className="text-sm font-semibold">
-                      Smart Price (₾)
+                      {t('partner.dashboard.label.smartPriceCurrency')}
                     </Label>
                     <Input
                       id="edit_smart_price"
@@ -1849,9 +1851,7 @@ const generate24HourOptions = (): string[] => {
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    💡 <strong>Tip:</strong> Smart price is typically ~50% of original. Adjust as needed!
-                  </p>
+                  <p className="text-sm text-blue-800">{t('partner.dashboard.tip.smartPrice')}</p>
                 </div>
               </div>
 
