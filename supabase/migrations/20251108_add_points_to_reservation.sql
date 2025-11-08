@@ -130,7 +130,7 @@ BEGIN
     p_qr_code,
     p_quantity,
     p_total_price,
-    'ACTIVE',
+    'PENDING',
     p_expires_at,
     v_points_cost
   )
@@ -145,7 +145,7 @@ BEGIN
     'qr_code', p_qr_code,
     'quantity', p_quantity,
     'total_price', p_total_price,
-    'status', 'ACTIVE',
+    'status', 'PENDING',
     'expires_at', p_expires_at,
     'points_spent', v_points_cost,
     'created_at', NOW()
