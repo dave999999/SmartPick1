@@ -16,6 +16,9 @@ import {
   uploadImages,
   processOfferImages,
   resolveOfferImageUrl,
+  getPartnerPoints,
+  purchaseOfferSlot,
+  type PartnerPoints,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
@@ -67,6 +70,9 @@ export default function PartnerDashboard() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [stats, setStats] = useState({ activeOffers: 0, reservationsToday: 0, itemsPickedUp: 0 });
   const [analytics, setAnalytics] = useState({ totalOffers: 0, totalReservations: 0, itemsSold: 0, revenue: 0 });
+  const [partnerPoints, setPartnerPoints] = useState<PartnerPoints | null>(null);
+  const [isPurchaseSlotDialogOpen, setIsPurchaseSlotDialogOpen] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
@@ -203,15 +209,17 @@ export default function PartnerDashboard() {
 
       // If approved, load full dashboard data
       if (normalizedStatus === 'APPROVED') {
-        const [offersData, reservationsData, statsData] = await Promise.all([
+        const [offersData, reservationsData, statsData, pointsData] = await Promise.all([
           getPartnerOffers(partnerData.id),
           getPartnerReservations(partnerData.id),
           getPartnerStats(partnerData.id),
+          getPartnerPoints(user.id),
         ]);
 
         setOffers(offersData);
         setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
         setStats(statsData);
+        setPartnerPoints(pointsData);
 
         // Calculate analytics
         const totalReservations = reservationsData.length;
@@ -245,6 +253,16 @@ export default function PartnerDashboard() {
 
     try {
       setIsSubmitting(true);
+
+      // Check offer slot limit
+      if (partnerPoints) {
+        const activeOfferCount = offers.filter(o => o.status === 'ACTIVE' || o.status === 'SCHEDULED').length;
+        if (activeOfferCount >= partnerPoints.offer_slots) {
+          toast.error(`${t('partner.points.slotLimitReached')} ${partnerPoints.offer_slots}`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       // Extract and validate title and description with defaults
   const title = (formData.get('title') as string)?.trim() || t('partner.dashboard.fallback.untitledOffer');
@@ -929,6 +947,41 @@ const generate24HourOptions = (): string[] => {
     return generateTimeSlots(minEndTime, maxEndTime);
   };
 
+  // Purchase additional offer slot handler
+  const handlePurchaseSlot = async () => {
+    if (!partnerPoints) return;
+
+    const nextSlotCost = (partnerPoints.offer_slots - 3) * 50;
+
+    if (partnerPoints.balance < nextSlotCost) {
+      toast.error(t('partner.points.insufficientBalance'));
+      return;
+    }
+
+    try {
+      setIsPurchasing(true);
+      const result = await purchaseOfferSlot();
+
+      if (result.success) {
+        toast.success(`${t('partner.points.slotPurchased')} ${result.new_slots}`);
+        // Refresh points
+        const user = await getCurrentUser();
+        if (user.user) {
+          const updatedPoints = await getPartnerPoints(user.user.id);
+          setPartnerPoints(updatedPoints);
+        }
+        setIsPurchaseSlotDialogOpen(false);
+      } else {
+        toast.error(result.message || t('partner.points.purchaseFailed'));
+      }
+    } catch (error) {
+      console.error('Error purchasing slot:', error);
+      toast.error(t('partner.points.purchaseFailed'));
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
   // Filter offers based on selected filter
   const filteredOffers = offers.filter(offer => {
     const displayStatus = getOfferDisplayStatus(offer);
@@ -964,6 +1017,20 @@ const generate24HourOptions = (): string[] => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Partner Points Display */}
+            {partnerPoints && (
+              <Button
+                variant="outline"
+                onClick={() => setIsPurchaseSlotDialogOpen(true)}
+                className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00C896] to-[#009B77] text-white rounded-full border-none hover:from-[#00B588] hover:to-[#008866] hover:scale-105 transition-all"
+              >
+                <DollarSign className="w-4 h-4" />
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-xs font-semibold">{partnerPoints.balance} {t('partner.points.points')}</span>
+                  <span className="text-[10px] opacity-90">{partnerPoints.offer_slots} {t('partner.points.slots')}</span>
+                </div>
+              </Button>
+            )}
             <Button
               variant="outline"
               className="h-9 md:h-11 rounded-full text-xs md:text-sm"
@@ -1985,6 +2052,58 @@ const generate24HourOptions = (): string[] => {
           onUpdate={loadPartnerData}
         />
       )}
+
+      {/* Purchase Offer Slot Dialog */}
+      <Dialog open={isPurchaseSlotDialogOpen} onOpenChange={setIsPurchaseSlotDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('partner.points.purchaseSlot')}</DialogTitle>
+            <DialogDescription>
+              {t('partner.points.purchaseSlotDesc')}
+            </DialogDescription>
+          </DialogHeader>
+          {partnerPoints && (
+            <div className="space-y-4 py-4">
+              <div className="bg-gradient-to-r from-[#E8F9F4] to-[#C9F9E9] p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">{t('partner.points.currentBalance')}</span>
+                  <span className="text-lg font-bold text-[#00C896]">{partnerPoints.balance}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">{t('partner.points.currentSlots')}</span>
+                  <span className="text-lg font-bold text-[#00C896]">{partnerPoints.offer_slots}</span>
+                </div>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-blue-900">{t('partner.points.nextSlotCost')}</span>
+                  <span className="text-xl font-bold text-blue-600">{(partnerPoints.offer_slots - 3) * 50}</span>
+                </div>
+                <p className="text-xs text-blue-700 mt-2">{t('partner.points.costIncreases')}</p>
+              </div>
+              {partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50 && (
+                <Alert className="bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-800">
+                    {t('partner.points.insufficientBalance')}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsPurchaseSlotDialogOpen(false)}>
+              {t('partner.points.cancel')}
+            </Button>
+            <Button
+              onClick={handlePurchaseSlot}
+              disabled={isPurchasing || !partnerPoints || partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50}
+              className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white"
+            >
+              {isPurchasing ? t('partner.points.purchasing') : t('partner.points.confirmPurchase')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
