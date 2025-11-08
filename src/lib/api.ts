@@ -755,8 +755,14 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     if (error) throw error;
     updateResult = data;
   } else if (rpcError) {
-    console.error('partner_mark_as_picked_up error:', rpcError);
-    throw rpcError;
+    console.error('partner_mark_as_picked_up RPC error details:', {
+      message: rpcError.message,
+      details: rpcError.details,
+      hint: rpcError.hint,
+      code: rpcError.code,
+      fullError: rpcError
+    });
+    throw new Error(rpcError.message || rpcError.details || 'Failed to mark as picked up');
   } else {
     updateResult = rpcData;
   }
