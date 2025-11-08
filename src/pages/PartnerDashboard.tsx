@@ -1672,10 +1672,10 @@ const generate24HourOptions = (): string[] => {
           <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-                📲 Notification Settings
+                📲 {t('partner.dashboard.notifications.title')}
               </CardTitle>
               <CardDescription className="text-sm md:text-base">
-                Get instant notifications about reservations and orders
+                {t('partner.dashboard.notifications.subtitle')}
               </CardDescription>
             </CardHeader>
             <CardContent>
