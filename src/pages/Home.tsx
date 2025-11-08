@@ -37,17 +37,17 @@ export default function Home() {
             {t('home.welcome')}
           </h1>
           <p className="mt-4 text-gray-600 text-lg">
-            Discover last‑minute food offers near you and save with SmartPoints.
+            {t('home.subtitle')}
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Button
               className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-md"
               onClick={() => navigate('/')}
             >
-              <Navigation className="w-4 h-4 mr-2" /> Explore Nearby
+              <Navigation className="w-4 h-4 mr-2" /> {t('home.exploreNearby')}
             </Button>
             <Button variant="outline" className="rounded-full" onClick={() => navigate('/profile')}>
-              Go to Profile <ArrowRight className="w-4 h-4 ml-2" />
+              {t('home.goToProfile')} <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>
@@ -55,14 +55,14 @@ export default function Home() {
 
       {/* Value Props */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <SectionCard title="Save Smart" description="Get great food for less" accent="green">
-          <p className="text-gray-700">Pick up quality meals at a smart price while reducing waste.</p>
+        <SectionCard title={t('home.value.save.title')} description={t('home.value.save.description')} accent="green">
+          <p className="text-gray-700">{t('home.value.save.body')}</p>
         </SectionCard>
-        <SectionCard title="Earn Points" description="SmartPoints for actions" accent="blue">
-          <p className="text-gray-700">Collect points and unlock rewards with pickups, streaks, and referrals.</p>
+        <SectionCard title={t('home.value.points.title')} description={t('home.value.points.description')} accent="blue">
+          <p className="text-gray-700">{t('home.value.points.body')}</p>
         </SectionCard>
-        <SectionCard title="Support Local" description="Help nearby partners" accent="orange">
-          <p className="text-gray-700">Discover hidden gems in your city and support local businesses.</p>
+        <SectionCard title={t('home.value.support.title')} description={t('home.value.support.description')} accent="orange">
+          <p className="text-gray-700">{t('home.value.support.body')}</p>
         </SectionCard>
       </div>
     </PageShell>

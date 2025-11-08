@@ -11,8 +11,15 @@ lerna-debug.log*
 .env
 .env.local
 .env.development
+.env.production
 .env*.local
-# Note: .env.production is tracked for maintenance mode flag only
+
+# SECURITY: Files with hardcoded credentials (NEVER commit!)
+create-admin.js
+create-admin-simple.js
+create-dummy-data.js
+*.service.js
+*-credentials.js
 
 # Build output
 node_modules

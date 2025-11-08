@@ -107,10 +107,10 @@ export default function MyPicks() {
   const handleEnableReminders = async () => {
     const granted = await requestPermission();
     if (granted) {
-      toast.success('Pickup reminders enabled!');
+      toast.success(t('mypicks.remindersEnabled'));
       scheduleMultipleReminders(reservations);
     } else {
-      toast.error('Notification permission denied');
+      toast.error(t('mypicks.permissionDenied'));
     }
   };
 
@@ -333,11 +333,11 @@ export default function MyPicks() {
                 onClick={() => navigate('/')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+                {t('mypicks.backToHome')}
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Smart Picks</h1>
-                <p className="text-gray-600">Your reservations and pickup history</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('mypicks.title')}</h1>
+                <p className="text-gray-600">{t('mypicks.subtitle')}</p>
               </div>
             </div>
 
@@ -352,12 +352,12 @@ export default function MyPicks() {
                     onClick={handleEnableReminders}
                   >
                     <Bell className="h-4 w-4" />
-                    Enable Pickup Reminders
+                    {t('mypicks.enableReminders')}
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
                     <Bell className="h-4 w-4" />
-                    <span className="font-medium">Reminders Active</span>
+                    <span className="font-medium">{t('mypicks.remindersActive')}</span>
                   </div>
                 )}
               </>
@@ -370,10 +370,10 @@ export default function MyPicks() {
         <Tabs defaultValue="active" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="active">
-              Active Picks ({activeReservations.length})
+              {t('mypicks.tab.active')} ({activeReservations.length})
             </TabsTrigger>
             <TabsTrigger value="history">
-              History ({historyReservations.length})
+              {t('mypicks.tab.history')} ({historyReservations.length})
             </TabsTrigger>
           </TabsList>
 
@@ -383,13 +383,13 @@ export default function MyPicks() {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Clock className="h-16 w-16 text-gray-400 mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No Active Picks
+                    {t('mypicks.emptyActive.title')}
                   </h3>
                   <p className="text-gray-600 mb-6 text-center">
-                    You don't have any active reservations. Browse offers to make your first pick!
+                    {t('mypicks.emptyActive.text')}
                   </p>
                   <Button onClick={() => navigate('/')} className="bg-mint-600 hover:bg-mint-700">
-                    Browse Offers
+                    {t('mypicks.browseOffers')}
                   </Button>
                 </CardContent>
               </Card>
@@ -454,11 +454,11 @@ export default function MyPicks() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-500">Quantity:</span>
+                          <span className="text-gray-500">{t('mypicks.quantity')}</span>
                           <p className="font-medium">{reservation.quantity}</p>
                         </div>
                         <div>
-                          <span className="text-gray-500">Total:</span>
+                          <span className="text-gray-500">{t('mypicks.total')}</span>
                           <p className="font-medium">{formatPrice(reservation.total_price || 0)}</p>
                         </div>
                       </div>
@@ -468,7 +468,7 @@ export default function MyPicks() {
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-yellow-600" />
                             <span className="text-sm font-medium text-yellow-800">
-                              Time remaining: {timers[reservation.id]}
+                              {t('mypicks.timeRemaining')} {timers[reservation.id]}
                             </span>
                           </div>
                         </div>
@@ -494,7 +494,7 @@ export default function MyPicks() {
                             className="h-11 bg-mint-600 hover:bg-mint-700 flex-1 sm:flex-none"
                           >
                             <QrCode className="h-4 w-4 mr-2" />
-                            Show QR
+                            {t('mypicks.showQr')}
                           </Button>
                           {reservation.status === 'ACTIVE' && (
                             <>
@@ -507,7 +507,7 @@ export default function MyPicks() {
                                 className="h-11 flex-1 sm:flex-none"
                               >
                                 <XCircle className="h-4 w-4 mr-2" />
-                                Cancel
+                                {t('mypicks.cancel')}
                               </Button>
                               <Button
                                 variant="outline"
@@ -518,7 +518,7 @@ export default function MyPicks() {
                                 className="h-11 flex-1 sm:flex-none"
                               >
                                 <MapPin className="h-4 w-4 mr-2" />
-                                Get Directions
+                                {t('mypicks.getDirections')}
                               </Button>
                             </>
                           )}
@@ -537,10 +537,10 @@ export default function MyPicks() {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Clock className="h-16 w-16 text-gray-400 mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No History Yet
+                    {t('mypicks.emptyHistory.title')}
                   </h3>
                   <p className="text-gray-600 text-center">
-                    Your pickup history will appear here once you start using SmartPick.
+                    {t('mypicks.emptyHistory.text')}
                   </p>
                 </CardContent>
               </Card>
@@ -553,7 +553,7 @@ export default function MyPicks() {
                     className="bg-red-600 hover:bg-red-700"
                   >
                     <XCircle className="h-4 w-4 mr-2" />
-                    Clear All History
+                    {t('mypicks.clearAllHistory')}
                   </Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -587,10 +587,10 @@ export default function MyPicks() {
                           )}
                           <div>
                             <CardTitle className="text-lg">
-                              {reservation.offer?.title || 'Unknown Item'}
+                              {reservation.offer?.title || t('fallback.unknown')}
                             </CardTitle>
                             <CardDescription>
-                              {reservation.partner?.business_name || 'Unknown Partner'}
+                              {reservation.partner?.business_name || t('fallback.unknownPartner')}
                             </CardDescription>
                           </div>
                         </div>
@@ -600,18 +600,18 @@ export default function MyPicks() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-500">Quantity:</span>
+                          <span className="text-gray-500">{t('mypicks.quantity')}</span>
                           <p className="font-medium">{reservation.quantity}</p>
                         </div>
                         <div>
-                          <span className="text-gray-500">Total:</span>
+                          <span className="text-gray-500">{t('mypicks.total')}</span>
                           <p className="font-medium">{formatPrice(reservation.total_price || 0)}</p>
                         </div>
                       </div>
                       
                       {reservation.picked_up_at && (
                         <div className="text-sm">
-                          <span className="text-gray-500">Picked up:</span>
+                          <span className="text-gray-500">{t('label.pickedUpAt')}:</span>
                           <p className="font-medium">{formatDateTime(reservation.picked_up_at)}</p>
                         </div>
                       )}
@@ -625,7 +625,7 @@ export default function MyPicks() {
                               className="h-11 flex-1 sm:flex-none"
                             >
                               <Star className="h-4 w-4 mr-2" />
-                              Rate
+                              {t('mypicks.rate')}
                             </Button>
                             <Button
                               variant="outline"
@@ -633,7 +633,7 @@ export default function MyPicks() {
                               className="h-11 flex-1 sm:flex-none"
                             >
                               <Download className="h-4 w-4 mr-2" />
-                              Receipt
+                              {t('mypicks.receipt')}
                             </Button>
                           </>
                         )}
@@ -652,10 +652,10 @@ export default function MyPicks() {
           <Card className="mt-8">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                📲 Notification Settings
+                {t('mypicks.notification.settingsTitle')}
               </CardTitle>
               <CardDescription>
-                Get instant Telegram notifications about your orders
+                {t('mypicks.notification.settingsSubtitle')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -669,9 +669,9 @@ export default function MyPicks() {
       <Dialog open={!!showQRCode} onOpenChange={() => setShowQRCode(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>QR Code for Pickup</DialogTitle>
+            <DialogTitle>{t('dialog.qr.title')}</DialogTitle>
             <DialogDescription>
-              Show this QR code to the partner for quick pickup verification.
+              {t('dialog.qr.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center py-6">
@@ -686,14 +686,14 @@ export default function MyPicks() {
       <Dialog open={!!showRating} onOpenChange={() => setShowRating(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Rate Your Experience</DialogTitle>
+            <DialogTitle>{t('dialog.rate.title')}</DialogTitle>
             <DialogDescription>
-              How was your experience with this partner?
+              {t('dialog.rate.description')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Rating</label>
+              <label className="text-sm font-medium">{t('dialog.rate.rating')}</label>
               <div className="flex gap-1 mt-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -707,9 +707,9 @@ export default function MyPicks() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium">Comment (Optional)</label>
+              <label className="text-sm font-medium">{t('dialog.rate.commentOptional')}</label>
               <Textarea
-                placeholder="Share your experience..."
+                placeholder={t('dialog.rate.commentPlaceholder')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 className="mt-2"
@@ -721,14 +721,14 @@ export default function MyPicks() {
                 onClick={() => setShowRating(null)}
                 className="h-11 flex-1"
               >
-                Cancel
+                {t('dialog.cancel')}
               </Button>
               <Button
                 onClick={handleRatePartner}
                 disabled={submittingRating}
                 className="h-11 flex-1 bg-mint-600 hover:bg-mint-700"
               >
-                {submittingRating ? 'Submitting...' : 'Submit Rating'}
+                {submittingRating ? t('dialog.submitting') : t('dialog.submitRating')}
               </Button>
             </div>
           </div>
@@ -739,10 +739,9 @@ export default function MyPicks() {
       <Dialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Clear All History?</DialogTitle>
+            <DialogTitle>{t('mypicks.clearHistory.dialogTitle')}</DialogTitle>
             <DialogDescription>
-              This will permanently delete all your picked up, expired, and cancelled reservations from your history.
-              This action cannot be undone.
+              {t('mypicks.clearHistory.dialogText')}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 mt-4">
@@ -752,7 +751,7 @@ export default function MyPicks() {
               className="h-11 flex-1"
               disabled={clearingHistory}
             >
-              Cancel
+              {t('dialog.cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -763,12 +762,12 @@ export default function MyPicks() {
               {clearingHistory ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Clearing...
+                  {t('mypicks.clearHistory.clearing')}
                 </>
               ) : (
                 <>
                   <XCircle className="h-4 w-4 mr-2" />
-                  Clear History
+                  {t('mypicks.clearHistory.clear')}
                 </>
               )}
             </Button>
