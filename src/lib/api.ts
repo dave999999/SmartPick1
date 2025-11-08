@@ -1405,3 +1405,89 @@ export const resolveOfferImageUrl = (url?: string, category?: string): string =>
     return trimmed;
   }
 };
+
+// Partner Points API
+export interface PartnerPoints {
+  user_id: string;
+  balance: number;
+  offer_slots: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PartnerPointTransaction {
+  id: string;
+  partner_id: string;
+  change: number;
+  reason: string;
+  balance_before: number;
+  balance_after: number;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('partner_points')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      logger.error('Failed to fetch partner points', { error, userId });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in getPartnerPoints', { error, userId });
+    throw error;
+  }
+};
+
+export const getPartnerPointTransactions = async (
+  partnerId: string,
+  limit = 50
+): Promise<PartnerPointTransaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('partner_point_transactions')
+      .select('*')
+      .eq('partner_id', partnerId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      logger.error('Failed to fetch partner point transactions', { error, partnerId });
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    logger.error('Error in getPartnerPointTransactions', { error, partnerId });
+    throw error;
+  }
+};
+
+export const purchaseOfferSlot = async (): Promise<{
+  success: boolean;
+  message?: string;
+  new_slots?: number;
+  cost?: number;
+  balance?: number;
+}> => {
+  try {
+    const { data, error } = await supabase.rpc('purchase_partner_offer_slot');
+
+    if (error) {
+      logger.error('Failed to purchase offer slot', { error });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in purchaseOfferSlot', { error });
+    throw error;
+  }
+};
