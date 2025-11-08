@@ -7,7 +7,7 @@
 
 BEGIN;
 
--- Ensure the supabase_admin role exists before creating the policy
+-- Create a permissive insert policy for the trigger owner's role (supabase_admin) if missing.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
@@ -15,14 +15,12 @@ BEGIN
       SELECT 1 FROM pg_policies 
       WHERE schemaname = 'public' AND tablename = 'users' AND policyname = 'Allow supabase_admin trigger insert'
     ) THEN
-      EXECUTE $$CREATE POLICY "Allow supabase_admin trigger insert" ON public.users
-        FOR INSERT TO supabase_admin
-        WITH CHECK (true)$$;
+      EXECUTE 'CREATE POLICY "Allow supabase_admin trigger insert" ON public.users FOR INSERT TO supabase_admin WITH CHECK (true)';
     END IF;
   END IF;
 END$$;
 
--- Also allow postgres if it owns objects in this project
+-- Create a permissive insert policy for postgres (sometimes owns auth/users) if missing.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'postgres') THEN
@@ -30,9 +28,7 @@ BEGIN
       SELECT 1 FROM pg_policies 
       WHERE schemaname = 'public' AND tablename = 'users' AND policyname = 'Allow postgres trigger insert'
     ) THEN
-      EXECUTE $$CREATE POLICY "Allow postgres trigger insert" ON public.users
-        FOR INSERT TO postgres
-        WITH CHECK (true)$$;
+      EXECUTE 'CREATE POLICY "Allow postgres trigger insert" ON public.users FOR INSERT TO postgres WITH CHECK (true)';
     END IF;
   END IF;
 END$$;
