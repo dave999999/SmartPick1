@@ -14,7 +14,7 @@ import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon } from 'lucide-react';
+import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, Target, ShoppingCart } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -426,39 +426,39 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Modern Welcome Section */}
-      <div className="max-w-7xl mx-auto px-4 pt-8 md:pt-12 pb-4 md:pb-8">
-        <div className="text-center mb-6 md:mb-10 space-y-4 md:space-y-8">
+      {/* Modern Welcome Section - Compact for Mobile */}
+      <div className="max-w-7xl mx-auto px-4 pt-4 md:pt-12 pb-2 md:pb-8">
+        <div className="text-center mb-3 md:mb-10 space-y-2 md:space-y-8">
           {/* Main Title - Ultra Vibrant */}
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-3 md:mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
+          <h2 className="text-3xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-2 md:mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
             Discover Amazing Deals
           </h2>
 
-          {/* How it Works - Compact for Mobile, Full for Desktop */}
-          <div className="flex items-center justify-center gap-2 md:gap-6 max-w-4xl mx-auto">
+          {/* How it Works - Ultra Compact for Mobile */}
+          <div className="flex items-center justify-center gap-1.5 md:gap-6 max-w-4xl mx-auto">
             {/* Step 1: Reserve */}
-            <div className="group relative flex-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-xl md:rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896] rounded-xl md:rounded-2xl p-3 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
-                <div className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00C896] rounded-full flex items-center justify-center">
-                  <span className="text-lg md:text-2xl">🎯</span>
+            <div className="group relative flex-1 max-w-[140px] md:max-w-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-lg md:rounded-2xl blur-md md:blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border border-[#00C896] md:border-2 rounded-lg md:rounded-2xl p-2 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
+                <div className="w-7 h-7 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00C896] rounded-full flex items-center justify-center">
+                  <Target className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
-                <h3 className="text-sm md:text-xl font-bold text-[#00C896] mb-0 md:mb-1">Reserve</h3>
+                <h3 className="text-xs md:text-xl font-bold text-[#00C896] mb-0 md:mb-1">Reserve</h3>
                 <p className="text-xs text-gray-400 hidden md:block">Pick your deal</p>
               </div>
             </div>
 
             {/* Arrow */}
-            <div className="text-xl md:text-3xl text-[#00C896] animate-pulse">→</div>
+            <div className="text-base md:text-3xl text-[#00C896] animate-pulse">→</div>
 
             {/* Step 2: Pick Up */}
-            <div className="group relative flex-1">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-xl md:rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00e6a8] rounded-xl md:rounded-2xl p-3 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
-                <div className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00e6a8] rounded-full flex items-center justify-center">
-                  <span className="text-lg md:text-2xl">🛍️</span>
+            <div className="group relative flex-1 max-w-[140px] md:max-w-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-lg md:rounded-2xl blur-md md:blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border border-[#00e6a8] md:border-2 rounded-lg md:rounded-2xl p-2 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
+                <div className="w-7 h-7 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00e6a8] rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
-                <h3 className="text-sm md:text-xl font-bold text-[#00e6a8] mb-0 md:mb-1">Pick Up</h3>
+                <h3 className="text-xs md:text-xl font-bold text-[#00e6a8] mb-0 md:mb-1">Pick Up</h3>
                 <p className="text-xs text-gray-400 hidden md:block">Enjoy your choice</p>
               </div>
             </div>

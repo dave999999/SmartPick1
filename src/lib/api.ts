@@ -750,27 +750,8 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   let updateResult;
 
-  // If function doesn't exist, fall back to direct update
-  if (rpcError && rpcError.message?.includes('function')) {
-    console.warn('⚠️ Function not found, using direct update fallback');
-
-    // Clear penalty first
-    await clearPenalty(reservation.customer_id);
-
-    // Direct update - this might fail due to RLS
-    const { data, error } = await supabase
-      .from('reservations')
-      .update({
-        status: 'PICKED_UP',
-        picked_up_at: new Date().toISOString(),
-      })
-      .eq('id', reservationId)
-      .select()
-      .single();
-
-    if (error) throw error;
-    updateResult = data;
-  } else if (rpcError) {
+  // If RPC errors for any reason, throw (no silent table update)
+  if (rpcError) {
     console.error('❌ partner_mark_as_picked_up RPC ERROR:', {
       message: rpcError.message,
       details: rpcError.details,
@@ -1613,3 +1594,4 @@ export const userCancelReservationWithSplit = async (reservationId: string): Pro
     throw error;
   }
 };
+
