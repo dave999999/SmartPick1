@@ -82,6 +82,7 @@ export default function PartnerDashboard() {
   const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+  const [isProcessingQR, setIsProcessingQR] = useState(false);
   const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
@@ -1452,13 +1453,21 @@ const generate24HourOptions = (): string[] => {
                 <TabsContent value="camera" className="space-y-4 mt-4">
                   <QRScanner
                     onScan={async (code) => {
-                      // Clean and normalize the scanned code
-                      const cleanCode = code.trim();
-                      console.log('QR Code scanned:', cleanCode);
-                      setQrInput(cleanCode);
+                      // Prevent multiple simultaneous scans
+                      if (isProcessingQR) {
+                        console.log('Already processing a QR code, ignoring...');
+                        return;
+                      }
 
-                      // Automatically validate and mark as picked up
+                      setIsProcessingQR(true);
+                      
                       try {
+                        // Clean and normalize the scanned code
+                        const cleanCode = code.trim();
+                        console.log('QR Code scanned:', cleanCode);
+                        setQrInput(cleanCode);
+
+                        // Automatically validate and mark as picked up
                         console.log('Validating QR code:', cleanCode);
                         const result = await validateQRCode(cleanCode, true);
                         console.log('Validation result:', result);
@@ -1478,6 +1487,9 @@ const generate24HourOptions = (): string[] => {
                         console.error('Error validating QR code:', error);
                         toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         setLastQrResult('error');
+                      } finally {
+                        // Reset processing flag after a delay to allow scanner to stop
+                        setTimeout(() => setIsProcessingQR(false), 1000);
                       }
                     }}
                     onError={(error) => {
