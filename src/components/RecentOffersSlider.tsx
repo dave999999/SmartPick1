@@ -128,10 +128,10 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
   return (
     <div ref={containerRef} className="w-full bg-white border-t border-[#E8F9F4] rounded-b-2xl shadow-lg py-6 px-4 md:px-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-500 mt-1">Fresh picks just added to SmartPick</p>
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">{title}</h2>
+          <p className="text-sm md:text-base text-gray-600 mt-1.5 font-medium">Fresh picks just added to SmartPick</p>
         </div>
 
         {/* Desktop Navigation Arrows */}
