@@ -115,6 +115,8 @@ export interface Reservation {
   updated_at: string;
   expires_at: string;
   picked_up_at?: string;
+  points_spent?: number;
+  user_confirmed_pickup?: boolean;
   offer?: Offer;
   partner?: Partner;
 }
