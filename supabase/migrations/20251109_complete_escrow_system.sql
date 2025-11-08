@@ -259,8 +259,6 @@ DO UPDATE SET
   offer_slots = GREATEST(EXCLUDED.offer_slots, partner_points.offer_slots),
   updated_at = NOW();
 
-RAISE NOTICE '✅ Restored partner points: 873 points, 6 slots';
-
 -- ============================================================================
 -- PART 5: VERIFICATION QUERY
 -- ============================================================================
@@ -278,6 +276,27 @@ BEGIN
 
   SELECT COUNT(*) INTO v_count FROM reservations WHERE status = 'PICKED_UP' AND points_spent > 0;
   RAISE NOTICE '📊 Total PICKED_UP reservations with points: %', v_count;
+
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE '✅ POINT ESCROW SYSTEM READY';
+  RAISE NOTICE '============================================================================';
+  RAISE NOTICE 'Flow:';
+  RAISE NOTICE '1. User reserves → Points deducted from user_points (✅ already working)';
+  RAISE NOTICE '2. Points stored in reservations.points_spent (✅ escrow)';
+  RAISE NOTICE '3. Partner scans QR → partner_mark_as_picked_up() called';
+  RAISE NOTICE '4. Function transfers points from escrow → partner_points.balance (✅ NOW WORKING)';
+  RAISE NOTICE '5. Transaction logged in partner_point_transactions (✅ audit trail)';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Security:';
+  RAISE NOTICE '- RLS DISABLED on partner_points tables';
+  RAISE NOTICE '- Functions use SECURITY DEFINER (bypass RLS)';
+  RAISE NOTICE '- Access granted to authenticated + service_role';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Test it:';
+  RAISE NOTICE '1. Create a reservation as a user';
+  RAISE NOTICE '2. Partner scans QR code';
+  RAISE NOTICE '3. Check partner_points table - balance should increase!';
+  RAISE NOTICE '============================================================================';
 END $$;
 
 COMMIT;
@@ -290,27 +309,3 @@ SELECT
   offer_slots,
   updated_at
 FROM partner_points;
-
-RAISE NOTICE '
-============================================================================
-✅ POINT ESCROW SYSTEM READY
-============================================================================
-
-Flow:
-1. User reserves → Points deducted from user_points (✅ already working)
-2. Points stored in reservations.points_spent (✅ escrow)
-3. Partner scans QR → partner_mark_as_picked_up() called
-4. Function transfers points from escrow → partner_points.balance (✅ NOW WORKING)
-5. Transaction logged in partner_point_transactions (✅ audit trail)
-
-Security:
-- RLS DISABLED on partner_points tables
-- Functions use SECURITY DEFINER (bypass RLS)
-- Access granted to authenticated + service_role
-
-Test it:
-1. Create a reservation as a user
-2. Partner scans QR code
-3. Check partner_points table - balance should increase!
-============================================================================
-';
