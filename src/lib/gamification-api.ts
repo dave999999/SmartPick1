@@ -123,7 +123,7 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
       .from('user_stats')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching user stats:', error);
@@ -317,10 +317,15 @@ export async function getUserReferralCode(userId: string): Promise<string | null
       .from('users')
       .select('referral_code')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching referral code:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.warn('User not found for referral code lookup:', userId);
       return null;
     }
 
