@@ -239,7 +239,7 @@ export default function Index() {
       {/* Splash Screen - Shows on first visit */}
       <SplashScreen />
 
-      <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
+      <div className="min-h-screen bg-gradient-to-br from-white via-[#F0FFF9] via-[#E8F9F4] to-[#D4F4EA]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
 
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -426,20 +426,18 @@ export default function Index() {
         </div>
       </header>
 
-      {/* Category Bar - Sticky below header */}
-      <CategoryBar
-        selectedCategory={selectedCategory}
-        onCategorySelect={setSelectedCategory}
-      />
-
-      {/* Welcome Section */}
-      <div className="max-w-7xl mx-auto px-4 pt-6 pb-4">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text mb-2">
-            Discover Fresh Deals Near You
+      {/* Modern Welcome Section */}
+      <div className="max-w-7xl mx-auto px-4 pt-8 pb-6">
+        <div className="text-center mb-8 space-y-3">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#E8F9F4] to-[#D4F4EA] px-4 py-2 rounded-full mb-2">
+            <span className="text-2xl animate-bounce">✨</span>
+            <span className="text-sm font-semibold text-[#00A37A]">Fresh Deals Every Day</span>
+          </div>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-[#00C896] via-[#00B588] to-[#009B77] text-transparent bg-clip-text mb-3 leading-tight">
+            Discover Amazing Deals<br className="hidden sm:block" /> Near You
           </h2>
-          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-            Save money on quality food from local businesses. Browse the map to find exclusive deals nearby.
+          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Save money on quality food from local businesses. <span className="font-semibold text-[#00A37A]">Browse the map</span> to find exclusive deals nearby.
           </p>
         </div>
 
@@ -486,12 +484,14 @@ export default function Index() {
               offers={filteredOffers}
               onOfferClick={handleOfferClick}
               selectedCategory={selectedCategory}
+              onCategorySelect={setSelectedCategory}
               onLocationChange={setUserLocation}
             />
             {/* Recently Added Offers Slider - Below Map */}
             <RecentOffersSlider
               offers={filteredOffers}
               onOfferClick={handleOfferClick}
+              title="🔥 Hot Deals Right Now"
             />
           </>
         )}

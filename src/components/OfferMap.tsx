@@ -11,6 +11,7 @@ import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import FavoriteButton from '@/components/FavoriteButton';
 import { toast } from 'sonner';
+import { useI18n } from '@/lib/i18n';
 
 // Fix Leaflet default marker icon issue
 const DefaultIcon = L.Icon.Default.prototype as L.Icon & { _getIconUrl?: () => string };
@@ -96,6 +97,7 @@ interface OfferMapProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
   selectedCategory?: string;
+  onCategorySelect?: (category: string) => void;
   highlightedOfferId?: string;
   onLocationChange?: (location: [number, number] | null) => void;
 }
@@ -119,7 +121,8 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export default function OfferMap({ offers, onOfferClick, selectedCategory, highlightedOfferId, onLocationChange }: OfferMapProps) {
+export default function OfferMap({ offers, onOfferClick, selectedCategory, onCategorySelect, highlightedOfferId, onLocationChange }: OfferMapProps) {
+  const { t } = useI18n();
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   // Always show map, including on mobile
   const [showMap, setShowMap] = useState(true);
@@ -130,6 +133,17 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   const mapRef = useRef<L.Map | null>(null);
   const [listReady, setListReady] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  // Categories in Wolt style
+  const categories = [
+    { value: '', emoji: '🌍', labelKey: 'category.All' },
+    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY' },
+    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE' },
+    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT' },
+    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD' },
+    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL' },
+    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY' },
+  ];
 
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
@@ -419,24 +433,53 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
   };
 
   return (
-    <div className="w-full space-y-6">
-      {/* Near Me Control - Prominent and Floating */}
-      <div className="flex flex-wrap gap-3 items-center justify-between px-4 md:px-6 py-4">
-        <Button
-          variant="default"
-          onClick={handleNearMe}
-          className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 px-6 py-3 font-semibold"
-        >
-          <Navigation className="w-4 h-4 mr-2" />
-          📍 Near Me
-        </Button>
-        <div className="text-sm md:text-base text-[#6E7A78] font-medium flex items-center gap-2">
-          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] text-white font-bold text-sm shadow-sm">
-            {displayOffers.length}
-          </span>
-          <span className="hidden sm:inline">Smart Picks {userLocation ? 'near you' : 'available'}</span>
-          <span className="sm:hidden">{displayOffers.length} picks</span>
+    <div className="w-full space-y-4">
+      {/* Modern Control Panel - Wolt Style */}
+      <div className="px-4 md:px-6 py-4 space-y-4">
+        {/* Near Me Button and Offer Count */}
+        <div className="flex items-center justify-between">
+          <Button
+            variant="default"
+            onClick={handleNearMe}
+            className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 px-6 py-2.5 font-semibold text-sm"
+          >
+            <Navigation className="w-4 h-4 mr-2" />
+            Near Me
+          </Button>
+          <div className="text-sm text-gray-600 font-medium flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] text-white font-bold text-xs shadow-sm">
+              {displayOffers.length}
+            </span>
+            <span className="hidden sm:inline">{userLocation ? 'Near you' : 'Available'}</span>
+          </div>
         </div>
+
+        {/* Wolt-Style Category Pills */}
+        {onCategorySelect && (
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {categories.map((category) => {
+              const isActive = selectedCategory === category.value;
+              return (
+                <button
+                  key={category.value}
+                  onClick={() => onCategorySelect(category.value)}
+                  className={`
+                    flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 border-2
+                    ${isActive
+                      ? 'bg-[#00C896] border-[#00C896] text-white shadow-md scale-105'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-[#00C896] hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <span className="text-xl">{category.emoji}</span>
+                  <span className="font-semibold text-sm whitespace-nowrap">
+                    {t(category.labelKey)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Interactive Map - Centered with elegant frame */}
@@ -670,6 +713,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
 
         .smartpick-marker:active .marker-circle {
           transform: scale(0.95);
+        }
+
+        /* Hide scrollbar for category pills */
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
 
         @media (prefers-reduced-motion: reduce) {
