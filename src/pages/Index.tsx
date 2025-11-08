@@ -26,14 +26,14 @@ function LanguageButtons() {
       <button
         aria-label="English"
         onClick={() => setLanguage('en')}
-        className={`px-2 py-1 rounded text-sm ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
+        className={`px-2 py-1 rounded text-sm font-medium ${language === 'en' ? 'bg-[#00C896] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
       >
         EN
       </button>
       <button
         aria-label="Georgian"
         onClick={() => setLanguage('ka')}
-        className={`px-2 py-1 rounded text-sm ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
+        className={`px-2 py-1 rounded text-sm font-medium ${language === 'ka' ? 'bg-[#00C896] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
       >
         KA
       </button>
@@ -239,10 +239,10 @@ export default function Index() {
       {/* Splash Screen - Shows on first visit */}
       <SplashScreen />
 
-      <div className="min-h-screen bg-gradient-to-br from-white via-[#F0FFF9] via-[#E8F9F4] to-[#D4F4EA]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
 
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
+      <header className="bg-gray-900 border-b border-gray-800 sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           {/* Logo and Title */}
           <button
@@ -259,7 +259,7 @@ export default function Index() {
               <h1 className="text-xl md:text-2xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                 SmartPick
               </h1>
-              <p className="text-[11px] md:text-xs text-neutral-500 hidden sm:block">Smart choice every day</p>
+              <p className="text-[11px] md:text-xs text-gray-400 hidden sm:block">Smart choice every day</p>
             </div>
           </button>
 
@@ -274,7 +274,7 @@ export default function Index() {
             <LanguageButtons />
             {user ? (
               <>
-                <span className="text-sm text-gray-600 hidden lg:inline">Hello, {user.name}</span>
+                <span className="text-sm text-gray-300 hidden lg:inline">Hello, {user.name}</span>
                 {user.role === 'ADMIN' && (
                   <Button
                     variant="outline"
@@ -322,8 +322,8 @@ export default function Index() {
                 </SheetHeader>
                 <div className="flex flex-col gap-4 mt-6">
                   {/* Language Buttons in Mobile Menu */}
-                  <div className="flex items-center gap-2 pb-4 border-b">
-                    <span className="text-sm text-gray-600">Language:</span>
+                  <div className="flex items-center gap-2 pb-4 border-b border-gray-700">
+                    <span className="text-sm text-gray-400">Language:</span>
                     <LanguageButtons />
                   </div>
 
@@ -340,7 +340,7 @@ export default function Index() {
 
                   {user ? (
                     <>
-                      <div className="text-sm text-gray-600 pb-2 border-b">
+                      <div className="text-sm text-gray-300 pb-2 border-b border-gray-700">
                         Hello, {user.name}
                       </div>
 
@@ -429,15 +429,15 @@ export default function Index() {
       {/* Modern Welcome Section */}
       <div className="max-w-7xl mx-auto px-4 pt-8 pb-6">
         <div className="text-center mb-8 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#E8F9F4] to-[#D4F4EA] px-4 py-2 rounded-full mb-2">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00C896]/20 to-[#009B77]/20 border border-[#00C896]/30 px-4 py-2 rounded-full mb-2">
             <span className="text-2xl animate-bounce">✨</span>
-            <span className="text-sm font-semibold text-[#00A37A]">Fresh Deals Every Day</span>
+            <span className="text-sm font-semibold text-[#00C896]">Fresh Deals Every Day</span>
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-[#00C896] via-[#00B588] to-[#009B77] text-transparent bg-clip-text mb-3 leading-tight">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-[#00C896] via-[#00e6a8] to-[#00ffbb] text-transparent bg-clip-text mb-3 leading-tight">
             Discover Amazing Deals<br className="hidden sm:block" /> Near You
           </h2>
-          <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Save money on quality food from local businesses. <span className="font-semibold text-[#00A37A]">Browse the map</span> to find exclusive deals nearby.
+          <p className="text-base md:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
+            Save money on quality food from local businesses. <span className="font-semibold text-[#00C896]">Browse the map</span> to find exclusive deals nearby.
           </p>
         </div>
 
@@ -469,14 +469,14 @@ export default function Index() {
       <section id="map-view" className="w-full">
         {isLoading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#4CC9A8] mx-auto mb-4"></div>
-            <p className="text-sm md:text-base text-gray-500">{t('browse.loading')}</p>
+            <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#00C896] mx-auto mb-4"></div>
+            <p className="text-sm md:text-base text-gray-300">{t('browse.loading')}</p>
           </div>
         ) : offers.length === 0 ? (
-          <div className="text-center py-12">
-            <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-base md:text-lg text-gray-500">{t('browse.noOffers')}</p>
-            <p className="text-xs md:text-sm text-gray-400 mt-2">{t('browse.checkBack')}</p>
+          <div className="text-center py-12 bg-gray-900/50 rounded-2xl">
+            <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-base md:text-lg text-gray-300">{t('browse.noOffers')}</p>
+            <p className="text-xs md:text-sm text-gray-500 mt-2">{t('browse.checkBack')}</p>
           </div>
         ) : (
           <>
@@ -522,20 +522,20 @@ export default function Index() {
       />
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 md:py-12">
+      <footer className="bg-black border-t border-gray-800 text-white py-8 md:py-12">
         <div className="container mx-auto px-4">
           <div className="text-center mb-6 md:mb-8">
             <div className="flex items-center justify-center gap-2 mb-3 md:mb-4">
-              <ShoppingBag className="w-6 h-6 md:w-8 md:h-8 text-[#4CC9A8]" />
+              <ShoppingBag className="w-6 h-6 md:w-8 md:h-8 text-[#00C896]" />
               <h4 className="text-xl md:text-2xl font-bold">
-                <span style={{ color: '#FFFFFF' }}>Smart</span><span style={{ color: '#2FB673' }}>Pick</span>
+                <span style={{ color: '#FFFFFF' }}>Smart</span><span style={{ color: '#00C896' }}>Pick</span>
               </h4>
             </div>
             <p className="text-sm md:text-base text-gray-400 max-w-2xl mx-auto leading-relaxed px-2">
               {t('footer.description')}
             </p>
           </div>
-          
+
           <div className="border-t border-gray-800 pt-6 md:pt-8 text-center">
             <p className="text-xs md:text-sm text-gray-500">
               {t('footer.copyright')}
