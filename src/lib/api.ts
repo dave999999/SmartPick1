@@ -732,7 +732,10 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
       p_reservation_id: reservationId
     });
 
-  if (error) throw error;
+  if (error) {
+    console.error('partner_mark_as_picked_up error:', error);
+    throw error;
+  }
 
   // Send pickup notification to partner (don't block on this)
   // Note: notification_preferences uses user_id, not partner_id
