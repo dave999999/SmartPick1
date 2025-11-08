@@ -726,19 +726,11 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   if (reservationError) throw reservationError;
 
-  // Clear penalty on successful pickup
-  await clearPenalty(reservation.customer_id);
-
-  // ✅ Only update reservation status — do NOT touch offer quantity again
+  // Call database function to handle everything atomically (bypasses RLS, clears penalty)
   const { data, error } = await supabase
-    .from('reservations')
-    .update({
-      status: 'PICKED_UP',
-      picked_up_at: new Date().toISOString(),
-    })
-    .eq('id', reservationId)
-    .select()
-    .single();
+    .rpc('partner_mark_as_picked_up', {
+      p_reservation_id: reservationId
+    });
 
   if (error) throw error;
 
