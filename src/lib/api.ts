@@ -19,6 +19,7 @@ import {
   QR_CODE_MARGIN,
 } from './constants';
 import { notifyPartnerNewReservation, notifyCustomerReservationConfirmed, notifyPartnerPickupComplete } from './telegram';
+import { logger } from './logger';
 
 // Auth functions
 export const getCurrentUser = async (): Promise<{ user: User | null; error?: unknown }> => {
@@ -503,9 +504,10 @@ export const createReservation = async (
     throw new Error('Quantity must be at least 1');
   }
 
-  // Generate unique QR code
+  // Generate unique QR code using cryptographically secure random
   const timestamp = Date.now();
-  const qrCode = `SP-${timestamp.toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  const randomPart = crypto.randomUUID().substring(0, 8).toUpperCase();
+  const qrCode = `SP-${timestamp.toString(36).toUpperCase()}-${randomPart}`;
 
   // Set expiration to 30 minutes from now
   const expiresAt = new Date();
@@ -686,7 +688,7 @@ export const validateQRCode = async (qrCode: string): Promise<QRValidationResult
     .gt('expires_at', new Date().toISOString())
     .single();
 
-  console.log('Supabase query result:', { data, error });
+  logger.log('Supabase query result:', { data, error });
 
   if (error) {
     console.error('Supabase error:', error);
@@ -698,7 +700,7 @@ export const validateQRCode = async (qrCode: string): Promise<QRValidationResult
     return { valid: false, error: 'Invalid or expired QR code' };
   }
 
-  console.log('Valid reservation found:', data.id);
+  logger.log('Valid reservation found:', data.id);
   return { valid: true, reservation: data as Reservation };
 };
 
@@ -779,7 +781,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   const isHistoryItem = ['PICKED_UP', 'EXPIRED', 'CANCELLED'].includes(reservation.status);
 
   if (isHistoryItem) {
-    console.log(`🗑️ Deleting ${reservation.status} reservation from history`);
+    logger.log(`Deleting ${reservation.status} reservation from history`);
     const { error } = await supabase
       .from('reservations')
       .delete()
@@ -790,7 +792,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   }
 
   // For ACTIVE reservations - refund points and restore quantity before cancelling
-  console.log('📦 Cancelling active reservation with refund');
+  logger.log('Cancelling active reservation with refund');
 
   // Restore offer quantity
   const { data: offer } = await supabase
@@ -810,7 +812,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   const POINTS_PER_RESERVATION = 5;
   const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
 
-  console.log('💰 Attempting to refund points:', {
+  logger.log('Attempting to refund points:', {
     userId: reservation.customer_id,
     amount: totalPointsToRefund,
     quantity: reservation.quantity,
@@ -835,7 +837,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
     // Don't throw - still cancel the reservation even if refund fails
   } else {
-    console.log('✅ Points refunded successfully:', refundResult);
+    logger.log('Points refunded successfully:', refundResult);
   }
 
   // Mark active reservation as cancelled
@@ -867,7 +869,7 @@ export const cleanupOldHistory = async (userId: string): Promise<void> => {
     if (error) {
       console.error('Error cleaning up old history:', error);
     } else {
-      console.log('✨ Auto-cleaned old history items (10+ days)');
+      logger.log('Auto-cleaned old history items (10+ days)');
     }
   } catch (error) {
     console.error('Error in cleanupOldHistory:', error);
@@ -1155,7 +1157,7 @@ export const uploadImages = async (files: File[], bucket: string): Promise<strin
     // Use MIME type for extension (more secure than trusting filename)
     const ext = getExtensionFromMimeType(file.type);
     const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
+    const randomId = crypto.randomUUID().replace(/-/g, '').substring(0, 13);
     const fileName = `${timestamp}-${randomId}.${ext}`;
 
     const { data, error } = await supabase.storage
@@ -1198,7 +1200,7 @@ export const uploadPartnerImages = async (files: File[], partnerId: string): Pro
     // Use MIME type for extension (more secure than trusting filename)
     const ext = getExtensionFromMimeType(file.type);
     const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2, 15);
+    const randomId = crypto.randomUUID().replace(/-/g, '').substring(0, 13);
     const fileName = `partners/${partnerId}/uploads/${timestamp}-${randomId}.${ext}`;
 
     const { data, error } = await supabase.storage
