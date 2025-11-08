@@ -145,8 +145,11 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       if (error) throw error;
 
       if (data.user) {
-        // Apply referral code if provided
+        // Apply referral code AFTER a short delay to let trigger complete
         if (referralCode.trim()) {
+          // Wait for profile creation trigger to finish (up to 2s)
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           const result = await applyReferralCode(data.user.id, referralCode.trim());
           if (result.success) {
             toast.success(`🎉 Account created! Welcome bonus: 100 points. Your friend received ${result.pointsAwarded} points!`);
