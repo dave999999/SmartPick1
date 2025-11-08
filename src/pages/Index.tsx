@@ -245,7 +245,10 @@ export default function Index() {
       <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           {/* Logo and Title */}
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+          >
             <img
               src="/icon1.png"
               alt="SmartPick icon"
@@ -258,7 +261,7 @@ export default function Index() {
               </h1>
               <p className="text-[11px] md:text-xs text-neutral-500 hidden sm:block">Smart choice every day</p>
             </div>
-          </div>
+          </button>
 
           {/* Desktop Navigation - Hidden on Mobile */}
           <div className="hidden md:flex items-center gap-2">
