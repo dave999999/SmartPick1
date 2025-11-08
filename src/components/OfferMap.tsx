@@ -439,9 +439,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
         </div>
       </div>
 
-      {/* Interactive Map - Compact height for better UX */}
+      {/* Interactive Map - Centered with elegant frame */}
       {showMap && (
-        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[400px] md:h-[500px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`relative mx-auto ${isFullscreen ? 'fixed inset-0 z-50 bg-white w-full' : 'w-[95%] md:w-[85%] lg:w-[80%] h-[450px] md:h-[550px]'} rounded-2xl overflow-hidden border-4 border-white shadow-2xl transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`} style={{ boxShadow: '0 8px 32px rgba(0, 200, 150, 0.15), 0 0 0 1px rgba(0, 200, 150, 0.1)' }}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
