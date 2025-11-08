@@ -1,5 +1,5 @@
--- COMPLETE POINT ESCROW SYSTEM - Guaranteed to work
--- This migration ensures points flow: User Reserve → Escrow → Partner Pickup → Partner Wallet
+﻿-- COMPLETE POINT ESCROW SYSTEM - Guaranteed to work
+-- This migration ensures points flow: User Reserve â†’ Escrow â†’ Partner Pickup â†’ Partner Wallet
 
 BEGIN;
 
@@ -86,14 +86,12 @@ SET search_path = public
 AS $$
 DECLARE
   v_partner_id UUID;
-  v_pre RECORD;     -- reservation before update (for diagnostics)
   v_updated RECORD; -- reservation row after guarded update
   v_current_user_id UUID;
   v_current_balance INT;
   v_new_balance INT;
   v_points_to_transfer INT;
   v_tx_exists BOOLEAN := FALSE;
-  v_grace_interval INTERVAL := interval '10 minutes';
 BEGIN
   -- Get current user ID (the partner who's scanning)
   v_current_user_id := auth.uid();
@@ -102,7 +100,7 @@ BEGIN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
-  RAISE NOTICE '🔍 Partner % attempting to mark reservation % as picked up', v_current_user_id, p_reservation_id;
+  RAISE NOTICE 'ðŸ” Partner % attempting to mark reservation % as picked up', v_current_user_id, p_reservation_id;
 
   -- Get current user's partner ID from partners table
   SELECT p.id INTO v_partner_id
@@ -113,43 +111,10 @@ BEGIN
     RAISE EXCEPTION 'User % is not a registered partner', v_current_user_id;
   END IF;
 
-  RAISE NOTICE '✅ Partner ID: %', v_partner_id;
+  RAISE NOTICE 'âœ… Partner ID: %', v_partner_id;
 
   -- ========================================================================
-  -- Validation: fetch the reservation for clearer error messages
-  -- ========================================================================
-  SELECT * INTO v_pre
-  FROM reservations r
-  WHERE r.id = p_reservation_id;
-
-  IF v_pre IS NULL THEN
-    RAISE EXCEPTION 'Reservation % not found', p_reservation_id;
-  END IF;
-
-  IF v_pre.partner_id <> v_partner_id THEN
-    RAISE EXCEPTION 'Reservation % is not owned by this partner (expected %, got %)', p_reservation_id, v_partner_id, v_pre.partner_id;
-  END IF;
-
-  IF v_pre.status <> 'ACTIVE' THEN
-    -- If it's already PICKED_UP by this partner, proceed to transfer (idempotent path)
-    IF v_pre.status = 'PICKED_UP' AND v_pre.partner_id = v_partner_id THEN
-      v_updated := v_pre; -- skip UPDATE, continue to transfer if missing
-      RAISE NOTICE 'Reservation % already PICKED_UP, attempting idempotent transfer if missing', p_reservation_id;
-      GOTO skip_update;
-    END IF;
-    RAISE EXCEPTION 'Reservation % not ACTIVE (current status: %)', p_reservation_id, v_pre.status;
-  END IF;
-
-  IF v_pre.picked_up_at IS NOT NULL THEN
-    RAISE EXCEPTION 'Reservation % already picked up at %', p_reservation_id, v_pre.picked_up_at;
-  END IF;
-
-  IF v_pre.expires_at IS NOT NULL AND v_pre.expires_at <= NOW() - v_grace_interval THEN
-    RAISE EXCEPTION 'Reservation % expired at % (grace % minutes)', p_reservation_id, v_pre.expires_at, EXTRACT(EPOCH FROM v_grace_interval)/60;
-  END IF;
-
-  -- ========================================================================
-  -- Guarded UPDATE: enforce ACTIVE, not expired (with grace), not picked
+  -- Guarded UPDATE: ensure correct owner, status ACTIVE, not expired, not picked yet
   -- Locks and returns the updated row for safe, idempotent processing.
   -- ========================================================================
   UPDATE reservations r
@@ -159,19 +124,15 @@ BEGIN
     AND r.partner_id = v_partner_id
     AND r.status = 'ACTIVE'
     AND (r.picked_up_at IS NULL)
-    AND (
-      r.expires_at IS NULL OR r.expires_at > NOW() - v_grace_interval
-    )
+    AND (r.expires_at IS NULL OR r.expires_at > NOW())
   RETURNING r.*
   INTO v_updated;
 
   IF v_updated IS NULL THEN
-    RAISE EXCEPTION 'Reservation % could not be updated (race condition or state changed)', p_reservation_id;
+    RAISE EXCEPTION 'Reservation % not found or not eligible for pickup (owner/status/expiry)', p_reservation_id;
   END IF;
 
-  <<skip_update>>
-
-  RAISE NOTICE '📋 Updated reservation: customer=%, partner=%, points_spent=%',
+  RAISE NOTICE 'ðŸ“‹ Updated reservation: customer=%, partner=%, points_spent=%',
     v_updated.customer_id, v_updated.partner_id, v_updated.points_spent;
 
   -- ========================================================================
@@ -181,7 +142,7 @@ BEGIN
   -- If legacy reservations have NULL points_spent, fall back to 5 pts/unit\r\n  v_points_to_transfer := COALESCE(v_updated.points_spent, GREATEST(0, COALESCE(v_updated.quantity, 0) * 5));
 
   IF v_points_to_transfer IS NULL OR v_points_to_transfer <= 0 THEN
-    RAISE NOTICE '⚠️ No points to transfer (points_spent = %)', v_points_to_transfer;
+    RAISE NOTICE 'âš ï¸ No points to transfer (points_spent = %)', v_points_to_transfer;
   ELSE
     -- Prevent duplicate transfers: check audit log by reservation_id
     SELECT EXISTS (
@@ -193,9 +154,9 @@ BEGIN
     ) INTO v_tx_exists;
 
     IF v_tx_exists THEN
-      RAISE NOTICE 'ℹ️ Points already transferred for reservation %, skipping transfer', p_reservation_id;
+      RAISE NOTICE 'â„¹ï¸ Points already transferred for reservation %, skipping transfer', p_reservation_id;
     ELSE
-      RAISE NOTICE '💰 Transferring % points to partner wallet', v_points_to_transfer;
+      RAISE NOTICE 'ðŸ’° Transferring % points to partner wallet', v_points_to_transfer;
 
       -- Get current partner balance (lock the row)
       SELECT balance INTO v_current_balance
@@ -205,7 +166,7 @@ BEGIN
 
       -- If partner has no points record yet, create one
       IF v_current_balance IS NULL THEN
-        RAISE NOTICE '📝 Creating new partner_points record for user %', v_current_user_id;
+        RAISE NOTICE 'ðŸ“ Creating new partner_points record for user %', v_current_user_id;
 
         v_current_balance := 0;
         v_new_balance := v_points_to_transfer;
@@ -213,10 +174,10 @@ BEGIN
         INSERT INTO public.partner_points (user_id, balance, offer_slots, updated_at, created_at)
         VALUES (v_current_user_id, v_new_balance, 3, NOW(), NOW());
 
-        RAISE NOTICE '✅ Created partner_points: balance=%', v_new_balance;
+        RAISE NOTICE 'âœ… Created partner_points: balance=%', v_new_balance;
       ELSE
         -- Update existing balance
-        RAISE NOTICE '📝 Updating existing balance: % → %', v_current_balance, v_current_balance + v_points_to_transfer;
+        RAISE NOTICE 'ðŸ“ Updating existing balance: % â†’ %', v_current_balance, v_current_balance + v_points_to_transfer;
 
         v_new_balance := v_current_balance + v_points_to_transfer;
 
@@ -225,7 +186,7 @@ BEGIN
             updated_at = NOW()
         WHERE user_id = v_current_user_id;
 
-        RAISE NOTICE '✅ Updated partner_points: balance=%', v_new_balance;
+        RAISE NOTICE 'âœ… Updated partner_points: balance=%', v_new_balance;
       END IF;
 
       -- Log the transaction for audit trail
@@ -254,12 +215,12 @@ BEGIN
         NOW()
       );
 
-      RAISE NOTICE '✅ Logged transaction: % points added to partner %', v_points_to_transfer, v_current_user_id;
+      RAISE NOTICE 'âœ… Logged transaction: % points added to partner %', v_points_to_transfer, v_current_user_id;
     END IF;
   END IF;
 
   -- Return the updated reservation
-  RAISE NOTICE '🎉 Pickup complete! Returning reservation data';
+  RAISE NOTICE 'ðŸŽ‰ Pickup complete! Returning reservation data';
 
   RETURN QUERY
   SELECT
@@ -284,7 +245,7 @@ GRANT EXECUTE ON FUNCTION partner_mark_as_picked_up(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION partner_mark_as_picked_up(UUID) TO service_role;
 
 COMMENT ON FUNCTION partner_mark_as_picked_up IS
-'Partner scans QR → Marks reservation as PICKED_UP → Transfers points from escrow (reservations.points_spent) to partner wallet (partner_points.balance)';
+'Partner scans QR â†’ Marks reservation as PICKED_UP â†’ Transfers points from escrow (reservations.points_spent) to partner wallet (partner_points.balance)';
 
 -- ============================================================================
 -- PART 4: RESTORE EXISTING PARTNER DATA
@@ -309,23 +270,23 @@ DECLARE
   v_count INT;
 BEGIN
   SELECT COUNT(*) INTO v_count FROM partner_points;
-  RAISE NOTICE '📊 Total partner_points records: %', v_count;
+  RAISE NOTICE 'ðŸ“Š Total partner_points records: %', v_count;
 
   SELECT COUNT(*) INTO v_count FROM partner_point_transactions;
-  RAISE NOTICE '📊 Total transactions: %', v_count;
+  RAISE NOTICE 'ðŸ“Š Total transactions: %', v_count;
 
   SELECT COUNT(*) INTO v_count FROM reservations WHERE status = 'PICKED_UP' AND points_spent > 0;
-  RAISE NOTICE '📊 Total PICKED_UP reservations with points: %', v_count;
+  RAISE NOTICE 'ðŸ“Š Total PICKED_UP reservations with points: %', v_count;
 
   RAISE NOTICE '============================================================================';
-  RAISE NOTICE '✅ POINT ESCROW SYSTEM READY';
+  RAISE NOTICE 'âœ… POINT ESCROW SYSTEM READY';
   RAISE NOTICE '============================================================================';
   RAISE NOTICE 'Flow:';
-  RAISE NOTICE '1. User reserves → Points deducted from user_points (✅ already working)';
-  RAISE NOTICE '2. Points stored in reservations.points_spent (✅ escrow)';
-  RAISE NOTICE '3. Partner scans QR → partner_mark_as_picked_up() called';
-  RAISE NOTICE '4. Function transfers points from escrow → partner_points.balance (✅ NOW WORKING)';
-  RAISE NOTICE '5. Transaction logged in partner_point_transactions (✅ audit trail)';
+  RAISE NOTICE '1. User reserves â†’ Points deducted from user_points (âœ… already working)';
+  RAISE NOTICE '2. Points stored in reservations.points_spent (âœ… escrow)';
+  RAISE NOTICE '3. Partner scans QR â†’ partner_mark_as_picked_up() called';
+  RAISE NOTICE '4. Function transfers points from escrow â†’ partner_points.balance (âœ… NOW WORKING)';
+  RAISE NOTICE '5. Transaction logged in partner_point_transactions (âœ… audit trail)';
   RAISE NOTICE '';
   RAISE NOTICE 'Security:';
   RAISE NOTICE '- RLS DISABLED on partner_points tables';
@@ -349,4 +310,5 @@ SELECT
   offer_slots,
   updated_at
 FROM partner_points;
+
 
