@@ -661,7 +661,7 @@ export const getPartnerReservations = async (partnerId: string): Promise<Reserva
 };
 
 interface QRValidationResult { valid: boolean; reservation?: Reservation; error?: string }
-export const validateQRCode = async (qrCode: string): Promise<QRValidationResult> => {
+export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean = false): Promise<QRValidationResult> => {
   if (isDemoMode) {
     return { valid: false, error: 'Demo mode: Please configure Supabase' };
   }
@@ -701,6 +701,18 @@ export const validateQRCode = async (qrCode: string): Promise<QRValidationResult
   }
 
   logger.log('Valid reservation found:', data.id);
+
+  // If autoMarkAsPickedUp is true, automatically mark the reservation as picked up
+  if (autoMarkAsPickedUp) {
+    try {
+      const updatedReservation = await markAsPickedUp(data.id);
+      return { valid: true, reservation: updatedReservation };
+    } catch (markError: any) {
+      console.error('Error marking as picked up:', markError);
+      return { valid: false, error: `Failed to mark as picked up: ${markError.message}` };
+    }
+  }
+
   return { valid: true, reservation: data as Reservation };
 };
 

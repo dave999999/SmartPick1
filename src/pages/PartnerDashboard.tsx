@@ -724,12 +724,14 @@ export default function PartnerDashboard() {
     }
 
     try {
-      const result = await validateQRCode(qrInput);
+      // Validate and automatically mark as picked up
+      const result = await validateQRCode(qrInput, true);
       if (result.valid && result.reservation) {
-        await handleMarkAsPickedUp(result.reservation);
         setQrInput('');
         setQrScannerOpen(false);
         setLastQrResult('success');
+        toast.success(t('partner.dashboard.toast.pickupConfirmed'));
+        loadPartnerData(); // Refresh the dashboard
       } else {
   toast.error(result.error || t('partner.dashboard.toast.qrInvalid'));
         setLastQrResult('error');
@@ -1455,18 +1457,18 @@ const generate24HourOptions = (): string[] => {
                       console.log('QR Code scanned:', cleanCode);
                       setQrInput(cleanCode);
 
-                      // Automatically validate the scanned code
+                      // Automatically validate and mark as picked up
                       try {
                         console.log('Validating QR code:', cleanCode);
-                        const result = await validateQRCode(cleanCode);
+                        const result = await validateQRCode(cleanCode, true);
                         console.log('Validation result:', result);
 
                         if (result.valid && result.reservation) {
-                          await handleMarkAsPickedUp(result.reservation);
                           setQrInput('');
                           setQrScannerOpen(false);
                           toast.success(t('partner.dashboard.toast.pickupConfirmed'));
                           setLastQrResult('success');
+                          loadPartnerData(); // Refresh dashboard
                         } else {
                           console.error('QR validation failed:', result.error);
                           toast.error(result.error || 'Invalid QR code');
