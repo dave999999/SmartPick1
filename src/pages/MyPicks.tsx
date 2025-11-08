@@ -8,8 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X, Bell, BellOff } from 'lucide-react';
-import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation, cleanupOldHistory, clearAllHistory } from '@/lib/api';
+import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X, Bell, BellOff, CheckCircle2 } from 'lucide-react';
+import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation, cleanupOldHistory, clearAllHistory, userConfirmPickup, userCancelReservationWithSplit } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
@@ -30,6 +30,7 @@ export default function MyPicks() {
   const [timers, setTimers] = useState<Record<string, string>>({});
   const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
   const [clearingHistory, setClearingHistory] = useState(false);
+  const [confirmingPickup, setConfirmingPickup] = useState<string | null>(null);
   const navigate = useNavigate();
   const { t } = useI18n();
   const { permission, requestPermission, scheduleMultipleReminders, hasPermission } = usePickupReminders();
@@ -149,16 +150,46 @@ export default function MyPicks() {
     }
   };
 
-  const handleCancel = async (reservationId: string) => {
-  if (!confirm(t('confirm.cancelReservation'))) return;
+  const handleConfirmPickup = async (reservationId: string) => {
+    if (!confirm(t('confirm.confirmPickup'))) return;
     
     try {
-      await cancelReservation(reservationId);
-  toast.success(t('toast.reservationCancelled'));
-      loadReservations(); // Refresh the list
+      setConfirmingPickup(reservationId);
+      const result = await userConfirmPickup(reservationId);
+      
+      if (result.success) {
+        toast.success(`${t('toast.pickupConfirmed')} ${result.points_transferred} ${t('toast.pointsTransferred')}`);
+        loadReservations(); // Refresh the list
+      } else {
+        toast.error(t('toast.failedConfirmPickup'));
+      }
+    } catch (error) {
+      console.error('Error confirming pickup:', error);
+      toast.error(t('toast.failedConfirmPickup'));
+    } finally {
+      setConfirmingPickup(null);
+    }
+  };
+
+  const handleCancel = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) return;
+
+    // Use the new split function that does 50/50
+    if (!confirm(t('confirm.cancelReservationSplit'))) return;
+    
+    try {
+      const result = await userCancelReservationWithSplit(reservationId);
+      
+      if (result.success) {
+        toast.success(`${t('toast.reservationCancelledSplit')} ${result.partner_received} ${t('toast.toPartner')}, ${result.user_refunded} ${t('toast.refunded')}`);
+        loadReservations(); // Refresh the list
+      } else {
+        toast.error(t('toast.failedCancelReservation'));
+      }
     } catch (error) {
       console.error('Error canceling reservation:', error);
-  toast.error(t('toast.failedCancelReservation'));
+      toast.error(t('toast.failedCancelReservation'));
     }
   };
 
@@ -521,6 +552,19 @@ export default function MyPicks() {
                                 {t('mypicks.getDirections')}
                               </Button>
                             </>
+                          )}
+                          {reservation.status === 'PICKED_UP' && !reservation.user_confirmed_pickup && (
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleConfirmPickup(reservation.id);
+                              }}
+                              disabled={confirmingPickup === reservation.id}
+                              className="h-11 bg-blue-600 hover:bg-blue-700 flex-1 sm:flex-none"
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              {confirmingPickup === reservation.id ? t('mypicks.confirming') : t('mypicks.confirmPickup')}
+                            </Button>
                           )}
                         </div>
                       </div>
