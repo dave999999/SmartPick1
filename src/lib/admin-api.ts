@@ -1,9 +1,10 @@
 import { supabase, isDemoMode } from './supabase';
 import type { User, Partner, Offer } from './types';
+import { logger } from './logger';
 
 // Test connection function
 export const testAdminConnection = async () => {
-  console.log('Admin API: Testing connection...');
+  logger.log('Admin API: Testing connection...');
   
   try {
     // Test basic connection
@@ -11,11 +12,11 @@ export const testAdminConnection = async () => {
       .from('partners')
       .select('count', { count: 'exact', head: true });
     
-    console.log('Admin API: Connection test result:', { testData, testError });
+    logger.log('Admin API: Connection test result:', { testData, testError });
     
     // Test current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    console.log('Admin API: Current user:', { user: user?.email, userError });
+    logger.log('Admin API: Current user:', { user: user?.email, userError });
     
     return {
       connected: !testError,
@@ -35,7 +36,7 @@ export const testAdminConnection = async () => {
 // Strict admin authentication check
 export const checkAdminAccess = async () => {
   if (isDemoMode) {
-    console.log('Admin API: Demo mode - skipping strict admin check');
+    logger.log('Admin API: Demo mode - skipping strict admin check');
     return null;
   }
 
@@ -43,7 +44,7 @@ export const checkAdminAccess = async () => {
   if (authError) throw new Error(`Auth error: ${authError.message}`);
   if (!user) throw new Error('Not authenticated');
 
-  console.log('Admin API: Verifying admin role for user:', user.email);
+  logger.log('Admin API: Verifying admin role for user:', user.email);
 
   const { data: profile, error: profileError } = await supabase
     .from('users')
@@ -68,12 +69,12 @@ export const checkAdminAccess = async () => {
 // Partners Management
 export const getAllPartners = async () => {
   if (isDemoMode) {
-    console.log('Admin API: Demo mode - returning empty array');
+    logger.log('Admin API: Demo mode - returning empty array');
     return [];
   }
   
   try {
-    console.log('Admin API: Fetching all partners...');
+    logger.log('Admin API: Fetching all partners...');
     await checkAdminAccess();
     
     const { data, error, count } = await supabase
@@ -81,14 +82,14 @@ export const getAllPartners = async () => {
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
-    console.log('Admin API: Partners query result:', { data, error, count });
+    logger.log('Admin API: Partners query result:', { data, error, count });
 
     if (error) {
       console.error('Admin API: Error fetching partners:', error);
       throw error;
     }
 
-    console.log('Admin API: Successfully fetched partners:', data?.length || 0);
+    logger.log('Admin API: Successfully fetched partners:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('Admin API: Exception in getAllPartners:', error);
@@ -102,7 +103,7 @@ export const getPendingPartners = async () => {
   }
   
   try {
-    console.log('Admin API: Fetching pending partners...');
+    logger.log('Admin API: Fetching pending partners...');
     await checkAdminAccess();
     
     const { data, error } = await supabase
@@ -111,7 +112,7 @@ export const getPendingPartners = async () => {
       .eq('status', 'PENDING')
       .order('created_at', { ascending: false });
       
-    console.log('Admin API: Pending partners result:', { data, error });
+    logger.log('Admin API: Pending partners result:', { data, error });
     
     if (error) throw error;
     return data || [];
@@ -127,7 +128,7 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
   }
   
   try {
-    console.log('Admin API: Updating partner:', partnerId, updates);
+    logger.log('Admin API: Updating partner:', partnerId, updates);
     await checkAdminAccess();
     
     const { data, error } = await supabase
@@ -182,7 +183,7 @@ export const disablePartner = async (partnerId: string) => {
 // Users Management
 export const getAllUsers = async () => {
   if (isDemoMode) {
-    console.log('Admin API: Demo mode - returning empty array');
+    logger.log('Admin API: Demo mode - returning empty array');
     return [];
   }
   

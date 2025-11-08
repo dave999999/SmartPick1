@@ -122,8 +122,8 @@ export const QR_CODE_MARGIN = 2;
 // PASSWORD VALIDATION
 // ============================================================================
 
-/** Minimum password length */
-export const MIN_PASSWORD_LENGTH = 8;
+/** Minimum password length (must match AuthDialog validation) */
+export const MIN_PASSWORD_LENGTH = 12;
 
 /** Maximum password length */
 export const MAX_PASSWORD_LENGTH = 128;
