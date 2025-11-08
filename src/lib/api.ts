@@ -776,7 +776,8 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     });
     throw new Error(rpcError.message || rpcError.details || 'Failed to mark as picked up');
   } else {
-    updateResult = rpcData;
+    // RPC function returns an array (RETURNS TABLE), get first element
+    updateResult = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : rpcData;
   }
 
   // Send pickup notification to partner (don't block on this)
