@@ -342,33 +342,33 @@ export default function MyPicks() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-mint-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your picks...</p>
+          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-[#00C896] mx-auto"></div>
+          <p className="mt-4 text-sm md:text-base text-gray-300">Loading your picks...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="bg-gray-900 border-b border-gray-800 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between py-3 md:py-4">
+            <div className="flex items-center gap-2 md:gap-4">
               <Button
                 variant="ghost"
-                className="h-11"
+                className="h-9 md:h-11 text-gray-300 hover:text-white hover:bg-gray-800"
                 onClick={() => navigate('/')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                {t('mypicks.backToHome')}
+                <span className="hidden sm:inline">{t('mypicks.backToHome')}</span>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{t('mypicks.title')}</h1>
-                <p className="text-gray-600">{t('mypicks.subtitle')}</p>
+                <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">{t('mypicks.title')}</h1>
+                <p className="text-xs md:text-sm text-gray-400 hidden md:block">{t('mypicks.subtitle')}</p>
               </div>
             </div>
 
@@ -379,16 +379,16 @@ export default function MyPicks() {
                   <Button
                     variant="outline"
                     size="default"
-                    className="h-11 gap-2"
+                    className="h-9 md:h-11 gap-2 border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800 hidden sm:flex"
                     onClick={handleEnableReminders}
                   >
                     <Bell className="h-4 w-4" />
-                    {t('mypicks.enableReminders')}
+                    <span className="hidden md:inline">{t('mypicks.enableReminders')}</span>
                   </Button>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                  <div className="hidden sm:flex items-center gap-2 text-sm text-green-400 bg-green-900/30 px-3 md:px-4 py-2 rounded-lg border border-green-700">
                     <Bell className="h-4 w-4" />
-                    <span className="font-medium">{t('mypicks.remindersActive')}</span>
+                    <span className="font-medium hidden md:inline">{t('mypicks.remindersActive')}</span>
                   </div>
                 )}
               </>
@@ -397,7 +397,7 @@ export default function MyPicks() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
         <Tabs defaultValue="active" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="active">
