@@ -42,7 +42,7 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
       .maybeSingle();
 
     if (!userData) {
-      // Newly signed-up user race: wait briefly for trigger
+      // Newly signed-up user race: wait briefly for trigger to create profile
       for (let attempt = 0; attempt < 3; attempt++) {
         await new Promise(r => setTimeout(r, 250));
         const { data: retry } = await supabase
@@ -55,36 +55,10 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
         }
       }
 
-      // Trigger still hasn't created profile; attempt manual insert
-      const minimal = {
-        id: user.id,
-        email: user.email ?? '',
-        name: (user.user_metadata as any)?.name || user.email || 'User',
-        role: 'CUSTOMER',
-        status: 'ACTIVE',
-      } as Partial<User>;
-
-      const { error: insertError } = await supabase.from('users').insert(minimal);
-      if (insertError) {
-        // If it's a duplicate/constraint race, fetch again instead of failing hard
-        const { data: afterInsert } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle();
-        if (afterInsert) {
-          return { user: afterInsert as User };
-        }
-        return { user: null, error: insertError };
-      }
-
-      // Insert succeeded; fetch full row (policies should allow it)
-      const { data: created } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      return { user: created as User };
+      // Profile still doesn't exist after retries; trigger may have failed
+      // Return null instead of attempting manual insert (which causes 409)
+      console.warn('Profile row missing for auth user', user.id);
+      return { user: null, error: new Error('Profile not found after signup') };
     }
 
     if (userError) return { user: null, error: userError };
