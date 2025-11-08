@@ -97,14 +97,14 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
       } else {
         // If backend function is missing, provide clearer UI and avoid repeat attempts
         if ((result as any).migrationMissing) {
-          toast.error('Backend function not deployed yet. Please apply the Supabase migration and try again.');
+          toast.error(t('profile.backendFunctionMissing'));
         } else {
           toast.error(result.message);
         }
       }
     } catch (error) {
-      console.error('Error lifting penalty:', error);
-      toast.error('Failed to lift penalty');
+  console.error('Error lifting penalty:', error);
+  toast.error(t('penalty.liftFailed'));
     } finally {
       setIsLifting(false);
     }
@@ -379,7 +379,7 @@ export default function UserProfile() {
                           )}
                           <Badge variant="outline" className="gap-1">
                             <Calendar className="w-3 h-3" />
-                            Member since {formatDate(user.created_at)}
+                            {t('profile.memberSince')} {formatDate(user.created_at)}
                           </Badge>
                         </div>
                       </div>
@@ -397,7 +397,7 @@ export default function UserProfile() {
                     <CardTitle className={`text-lg flex items-center gap-2 ${
                       user.penalty_count && user.penalty_count > 0 ? 'text-orange-700' : 'text-green-700'
                     }`}>
-                      {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} Account Status
+                      {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} {t('profile.accountStatus')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -405,27 +405,27 @@ export default function UserProfile() {
                       <div className="space-y-3">
                         <div className="bg-white/50 rounded-lg p-3 border border-orange-200">
                           <p className="text-sm font-semibold text-orange-800 mb-2">
-                            Penalty Points: {user.penalty_count}
+                            {t('penalty.pointsLabel')} {user.penalty_count}
                           </p>
                           <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} onUpdate={loadUser} />
                         </div>
                         <div className="text-xs text-orange-600 bg-orange-100/50 p-2 rounded">
-                          <p className="font-semibold mb-1">Escalation:</p>
+                          <p className="font-semibold mb-1">{t('penalty.escalation')}</p>
                           <ul className="space-y-0.5 pl-3">
-                            <li>1st: 30 min (30 pts to lift)</li>
-                            <li>2nd: 90 min (90 pts to lift)</li>
-                            <li>3rd: 24 hours (no lift)</li>
-                            <li>4th+: Permanent ban</li>
+                            <li>{t('penalty.firstPenalty')}</li>
+                            <li>{t('penalty.secondPenalty')}</li>
+                            <li>{t('penalty.thirdPenalty')}</li>
+                            <li>{t('penalty.fourthPenalty')}</li>
                           </ul>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         <div className="bg-white/50 rounded-lg p-3 border border-green-200">
-                          <p className="text-sm font-semibold text-green-800 mb-1">✓ Good Standing</p>
-                          <p className="text-sm text-green-700">No active penalties</p>
+                          <p className="text-sm font-semibold text-green-800 mb-1">✓ {t('profile.goodStanding')}</p>
+                          <p className="text-sm text-green-700">{t('penalty.noneActive')}</p>
                         </div>
-                        <p className="text-xs text-green-600">Keep up the great work picking up your reservations on time!</p>
+                        <p className="text-xs text-green-600">{t('penalty.encouragement')}</p>
                       </div>
                     )}
                   </CardContent>
@@ -520,9 +520,9 @@ export default function UserProfile() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Edit className="w-5 h-5 text-[#4CC9A8]" />
-                    Edit Profile
+                    {t('profile.editCard.title')}
                   </CardTitle>
-                  <CardDescription>Update your personal information</CardDescription>
+                  <CardDescription>{t('profile.editCard.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isEditing ? (
@@ -562,7 +562,7 @@ export default function UserProfile() {
                           disabled={isSaving}
                           className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
                         >
-                          {isSaving ? 'Saving...' : t('profile.saveChanges')}
+                          {isSaving ? t('profile.saving') : t('profile.saveChanges')}
                         </Button>
                         <Button
                           onClick={handleCancel}
