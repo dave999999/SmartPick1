@@ -76,13 +76,46 @@ BEGIN
       p_reservation_id, v_reservation.status;
   END IF;
 
-  -- Simple UPDATE - just change status to PICKED_UP
-  -- This does NOT trigger gamification (only user_confirmed_pickup does)
+  -- Update status to PICKED_UP
   UPDATE reservations
   SET 
     status = 'PICKED_UP',
     picked_up_at = NOW()
   WHERE reservations.id = p_reservation_id;
+
+  -- Transfer points from escrow to partner immediately
+  -- partner_points table uses user_id (auth.users id), not partner table id
+  -- Add points to partner's wallet (points_spent was deducted from user on reservation)
+  INSERT INTO partner_points (user_id, balance, updated_at)
+  VALUES (v_current_user_id, v_reservation.points_spent, NOW())
+  ON CONFLICT (user_id) 
+  DO UPDATE SET 
+    balance = partner_points.balance + v_reservation.points_spent,
+    updated_at = NOW();
+
+  -- Log the partner point transaction
+  INSERT INTO partner_point_transactions (
+    partner_id,
+    change,
+    reason,
+    balance_before,
+    balance_after,
+    metadata
+  )
+  SELECT
+    v_current_user_id,
+    v_reservation.points_spent,
+    'reservation_pickup',
+    COALESCE(pp.balance - v_reservation.points_spent, 0),
+    COALESCE(pp.balance, v_reservation.points_spent),
+    jsonb_build_object(
+      'reservation_id', p_reservation_id,
+      'offer_id', v_reservation.offer_id,
+      'customer_id', v_reservation.customer_id,
+      'quantity', v_reservation.quantity
+    )
+  FROM partner_points pp
+  WHERE pp.user_id = v_current_user_id;
 
   -- Return the updated reservation
   RETURN QUERY
@@ -107,7 +140,7 @@ $$;
 GRANT EXECUTE ON FUNCTION partner_mark_as_picked_up(UUID) TO authenticated;
 
 COMMENT ON FUNCTION partner_mark_as_picked_up IS 
-'Allows partner to mark reservation as picked up. Does NOT award points - points are only awarded when user confirms pickup.';
+'Allows partner to mark reservation as picked up. Immediately transfers points from escrow to partner wallet. User gamification points are awarded separately when user confirms.';
 
 -- 3. Verify the user_confirm_pickup function exists and awards points correctly
 -- This should be the ONLY place where gamification is triggered

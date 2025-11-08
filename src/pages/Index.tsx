@@ -429,8 +429,18 @@ export default function Index() {
         onCategorySelect={setSelectedCategory}
       />
 
-      {/* Search and Filters */}
-      <div className="max-w-7xl mx-auto px-4 pt-4">
+      {/* Welcome Section */}
+      <div className="max-w-7xl mx-auto px-4 pt-6 pb-4">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text mb-2">
+            Discover Fresh Deals Near You
+          </h2>
+          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+            Save money on quality food from local businesses. Browse the map to find exclusive deals nearby.
+          </p>
+        </div>
+
+        {/* Search and Filters */}
         <SearchAndFilters
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
