@@ -18,6 +18,7 @@ import {
   resolveOfferImageUrl,
   getPartnerPoints,
   purchaseOfferSlot,
+  partnerMarkNoShow,
   type PartnerPoints,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -688,20 +689,25 @@ export default function PartnerDashboard() {
 
   const handleMarkAsNoShow = async (reservation: Reservation) => {
     if (processingIds.has(reservation.id)) return;
+    
+    if (!confirm(t('confirm.markNoShow'))) return;
+    
     try {
       setProcessingIds(prev => new Set(prev).add(reservation.id));
       // Optimistically remove to prevent multiple penalty applications
       setReservations(prev => prev.filter(r => r.id !== reservation.id));
-      const res = await applyNoShowPenalty(reservation.customer_id, reservation.id);
-      if (res.success) {
-  toast.success(res.message || 'No-show recorded and penalty applied'); // TODO: i18n penalty messages
+      
+      const result = await partnerMarkNoShow(reservation.id);
+      
+      if (result.success) {
+        toast.success(`${t('toast.noShowMarked')} ${result.points_transferred} ${t('toast.pointsReceived')}`);
         await loadPartnerData();
       } else {
-  toast.error(res.message || 'Failed to apply penalty'); // TODO: i18n penalty messages
+        toast.error(t('toast.failedMarkNoShow'));
       }
     } catch (error) {
-      console.error('Error applying no-show penalty:', error);
-      toast.error('Failed to apply penalty');
+      console.error('Error marking no-show:', error);
+      toast.error(t('toast.failedMarkNoShow'));
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
     }
