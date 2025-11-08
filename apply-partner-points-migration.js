@@ -36,6 +36,7 @@ const SUPABASE_URL = 'https://ggzhtpaxnhwcilomswtm.supabase.co';
 // Read the migration SQL files
 const migration1Path = path.join(__dirname, 'supabase', 'migrations', '20251108_partner_points_system.sql');
 const migration2Path = path.join(__dirname, 'supabase', 'migrations', '20251108_partner_point_transfer.sql');
+const migration3Path = path.join(__dirname, 'supabase', 'migrations', '20251108_add_points_to_reservation.sql');
 
 console.log('🔄 Applying partner points system migrations...\n');
 
@@ -104,6 +105,13 @@ async function main() {
     const migration2SQL = fs.readFileSync(migration2Path, 'utf8');
     await applyMigration(migration2SQL, '20251108_partner_point_transfer.sql');
 
+    console.log('\n⏳ Waiting 2 seconds before next migration...');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Apply third migration (points deduction for reservations)
+    const migration3SQL = fs.readFileSync(migration3Path, 'utf8');
+    await applyMigration(migration3SQL, '20251108_add_points_to_reservation.sql');
+
     console.log('\n');
     console.log('═'.repeat(80));
     console.log('🎉 SUCCESS! Partner Points System is now live!');
@@ -112,6 +120,7 @@ async function main() {
     console.log('  ✅ partner_points table (tracks balance and offer slots)');
     console.log('  ✅ partner_point_transactions table (audit log)');
     console.log('  ✅ Welcome bonus: 1000 points on partner approval');
+    console.log('  ✅ Reservation cost: 15 points per reservation (auto-deducted)');
     console.log('  ✅ Pickup rewards: Points transfer from users to partners');
     console.log('  ✅ Slot system: 4 default slots, purchase more with escalating costs');
     console.log('  ✅ RLS policies and security functions');
