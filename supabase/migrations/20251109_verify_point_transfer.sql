@@ -9,6 +9,14 @@ SELECT * FROM partner_points LIMIT 10;
 SELECT 'Partner Point Transactions Check' as check_name;
 SELECT * FROM partner_point_transactions ORDER BY created_at DESC LIMIT 10;
 
+-- 2b. Check for duplicate pickup transactions (should be none due to unique index)
+SELECT 'Duplicate reservation_pickup transactions (should be zero)' as check_name;
+SELECT metadata->>'reservation_id' AS reservation_id, partner_id, COUNT(*) AS cnt
+FROM partner_point_transactions
+WHERE reason = 'reservation_pickup'
+GROUP BY metadata->>'reservation_id', partner_id
+HAVING COUNT(*) > 1;
+
 -- 3. Check reservations with points_spent
 SELECT 'Reservations with Points' as check_name;
 SELECT
@@ -57,6 +65,16 @@ SELECT
   pp.updated_at
 FROM partner_points pp
 JOIN partners p ON p.user_id = pp.user_id;
+
+-- 8. Index presence
+SELECT 'Index Presence' as check_name;
+SELECT indexname FROM pg_indexes WHERE schemaname='public' AND indexname IN (
+  'idx_reservations_customer_id',
+  'idx_reservations_partner_status',
+  'idx_reservations_expires_at',
+  'uniq_reservations_qr_code',
+  'uniq_ppt_pickup_per_reservation'
+);
 
 -- 7. OPTIONAL: Manual point transfer for existing PICKED_UP reservations
 -- UNCOMMENT AND RUN THIS IF POINTS ARE MISSING:

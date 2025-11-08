@@ -431,7 +431,7 @@ export default function Index() {
         <div className="text-center mb-3 md:mb-10 space-y-2 md:space-y-8">
           {/* Main Title - Ultra Vibrant */}
           <h2 className="text-3xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-2 md:mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
-            Discover Amazing Deals
+            {t('browse.discoverDeals')}
           </h2>
 
           {/* How it Works - Ultra Compact for Mobile */}
@@ -444,7 +444,7 @@ export default function Index() {
                   <MousePointerClick className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
                 <h3 className="text-xs md:text-xl font-bold text-[#00C896] mb-0 md:mb-1">Reserve</h3>
-                <p className="text-xs text-gray-400 hidden md:block">Click to reserve</p>
+                <p className="text-xs text-gray-400 hidden md:block">{t('browse.clickReserve')}</p>
               </div>
             </div>
 
@@ -459,7 +459,7 @@ export default function Index() {
                   <MapPin className="w-3.5 h-3.5 md:w-6 md:h-6 text-white" />
                 </div>
                 <h3 className="text-xs md:text-xl font-bold text-[#00e6a8] mb-0 md:mb-1">Pick Up</h3>
-                <p className="text-xs text-gray-400 hidden md:block">Visit location</p>
+                <p className="text-xs text-gray-400 hidden md:block">{t('browse.visitLocation')}</p>
               </div>
             </div>
           </div>

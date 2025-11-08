@@ -1336,11 +1336,11 @@ const generate24HourOptions = (): string[] => {
                 <div className="space-y-2">
                   <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.pickupTime')}</h4>
                   <p className="text-sm text-gray-600">
-                    We set times automatically based on your business hours:
+                    {t('partner.dashboard.pickup.autoSetTimes')}
                     {" "}
-                    <span className="font-medium">until closing</span> if you have set daily hours, or
+                    <span className="font-medium">{t('partner.dashboard.pickup.untilClosing')}</span> {t('partner.dashboard.pickup.ifDailyHours')}
                     {" "}
-                    <span className="font-medium">next 12 hours</span> if you operate 24/7.
+                    <span className="font-medium">{t('partner.dashboard.pickup.next12Hours')}</span> {t('partner.dashboard.pickup.if24h')}
                   </p>
                 </div>
 
@@ -1635,8 +1635,8 @@ const generate24HourOptions = (): string[] => {
             {isPending ? (
               <div className="text-center py-8 md:py-12">
                 <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2 text-sm md:text-base">You'll be able to create and manage offers once approved</p>
-                <p className="text-xs md:text-sm text-gray-400">Create smart-time offers and reach more customers</p>
+                <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.pending.offersDisabled')}</p>
+                <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.pending.createReach')}</p>
               </div>
             ) : offers.length === 0 ? (
                 <div className="text-center py-8 md:py-12">
@@ -1800,9 +1800,9 @@ const generate24HourOptions = (): string[] => {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-              ✏️ Edit Offer
+              {t('partner.dashboard.edit.dialogTitle')}
             </DialogTitle>
-            <DialogDescription className="text-base">Update your offer details</DialogDescription>
+            <DialogDescription className="text-base">{t('partner.dashboard.edit.dialogDescription')}</DialogDescription>
           </DialogHeader>
           {editingOffer && (
             <form onSubmit={handleEditOffer} className="space-y-6">
@@ -1951,7 +1951,7 @@ const generate24HourOptions = (): string[] => {
                 {/* Current Image Preview */}
                 {editingOffer.images && editingOffer.images.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">Current image:</p>
+                    <p className="text-sm text-gray-600 mb-2">{t('partner.dashboard.edit.currentImage')}</p>
                     <img
                       src={resolveOfferImageUrl(editingOffer.images[0], editingOffer.category)}
                       alt="Current offer"
