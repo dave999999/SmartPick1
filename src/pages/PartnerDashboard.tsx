@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, Reservation, Partner, CreateOfferDTO } from '@/lib/types';
 import {
@@ -83,6 +83,7 @@ export default function PartnerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [isProcessingQR, setIsProcessingQR] = useState(false);
+  const isProcessingQRRef = useRef(false); // Use ref for immediate synchronous check
   const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
@@ -1453,12 +1454,14 @@ const generate24HourOptions = (): string[] => {
                 <TabsContent value="camera" className="space-y-4 mt-4">
                   <QRScanner
                     onScan={async (code) => {
-                      // Prevent multiple simultaneous scans
-                      if (isProcessingQR) {
+                      // Use ref for immediate synchronous check to prevent race conditions
+                      if (isProcessingQRRef.current) {
                         console.log('Already processing a QR code, ignoring...');
                         return;
                       }
 
+                      // Set ref immediately (synchronous) to block other scans
+                      isProcessingQRRef.current = true;
                       setIsProcessingQR(true);
                       
                       try {
@@ -1489,7 +1492,10 @@ const generate24HourOptions = (): string[] => {
                         setLastQrResult('error');
                       } finally {
                         // Reset processing flag after a delay to allow scanner to stop
-                        setTimeout(() => setIsProcessingQR(false), 1000);
+                        setTimeout(() => {
+                          isProcessingQRRef.current = false;
+                          setIsProcessingQR(false);
+                        }, 2000); // Longer delay to ensure scanner stops
                       }
                     }}
                     onError={(error) => {
