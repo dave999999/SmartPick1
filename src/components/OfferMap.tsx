@@ -439,14 +439,14 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, highl
         </div>
       </div>
 
-      {/* Interactive Map - Reduced height for slider below */}
+      {/* Interactive Map - Compact height for better UX */}
       {showMap && (
-        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[60vh] md:h-[70vh] min-h-[400px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`relative w-full ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : 'h-[400px] md:h-[500px]'} rounded-t-2xl overflow-hidden border border-[#E8F9F4] shadow-lg transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}>
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
             className="w-full h-full"
-            style={{ height: '100%', width: '100%', minHeight: '420px' }}
+            style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
             whenReady={() => {
               try {
