@@ -726,15 +726,39 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   if (reservationError) throw reservationError;
 
-  // Call database function to handle everything atomically (bypasses RLS, clears penalty)
-  const { data, error } = await supabase
+  // Try using database function first (bypasses RLS)
+  const { data: rpcData, error: rpcError } = await supabase
     .rpc('partner_mark_as_picked_up', {
       p_reservation_id: reservationId
     });
 
-  if (error) {
-    console.error('partner_mark_as_picked_up error:', error);
-    throw error;
+  let updateResult;
+  
+  // If function doesn't exist, fall back to direct update
+  if (rpcError && rpcError.message?.includes('function')) {
+    console.warn('Function not found, using direct update fallback');
+    
+    // Clear penalty first
+    await clearPenalty(reservation.customer_id);
+    
+    // Direct update - this might fail due to RLS
+    const { data, error } = await supabase
+      .from('reservations')
+      .update({
+        status: 'PICKED_UP',
+        picked_up_at: new Date().toISOString(),
+      })
+      .eq('id', reservationId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    updateResult = data;
+  } else if (rpcError) {
+    console.error('partner_mark_as_picked_up error:', rpcError);
+    throw rpcError;
+  } else {
+    updateResult = rpcData;
   }
 
   // Send pickup notification to partner (don't block on this)
@@ -752,7 +776,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
       .catch(err => console.error('Failed to send pickup notification:', err));
   }
 
-  return data as Reservation;
+  return updateResult as Reservation;
 };
 
 
