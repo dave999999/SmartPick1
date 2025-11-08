@@ -427,35 +427,39 @@ export default function Index() {
       </header>
 
       {/* Modern Welcome Section */}
-      <div className="max-w-7xl mx-auto px-4 pt-12 pb-8">
-        <div className="text-center mb-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 pt-8 md:pt-12 pb-4 md:pb-8">
+        <div className="text-center mb-6 md:mb-10 space-y-4 md:space-y-8">
           {/* Main Title - Ultra Vibrant */}
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-3 md:mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
             Discover Amazing Deals
           </h2>
 
-          {/* How it Works - Stylish Flow */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 max-w-4xl mx-auto">
+          {/* How it Works - Compact for Mobile, Full for Desktop */}
+          <div className="flex items-center justify-center gap-2 md:gap-6 max-w-4xl mx-auto">
             {/* Step 1: Reserve */}
-            <div className="group relative flex-1 w-full sm:w-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896] rounded-2xl p-6 transform transition-all duration-300 group-hover:scale-105 group-hover:border-[#00ffbb]">
-                <div className="text-4xl mb-3">🎯</div>
-                <h3 className="text-xl font-bold text-[#00C896] mb-1">Reserve Offer</h3>
-                <p className="text-sm text-gray-400">Pick your deal</p>
+            <div className="group relative flex-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-xl md:rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896] rounded-xl md:rounded-2xl p-3 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
+                <div className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00C896] rounded-full flex items-center justify-center">
+                  <span className="text-lg md:text-2xl">🎯</span>
+                </div>
+                <h3 className="text-sm md:text-xl font-bold text-[#00C896] mb-0 md:mb-1">Reserve</h3>
+                <p className="text-xs text-gray-400 hidden md:block">Pick your deal</p>
               </div>
             </div>
 
             {/* Arrow */}
-            <div className="text-3xl text-[#00C896] rotate-90 sm:rotate-0 animate-pulse">→</div>
+            <div className="text-xl md:text-3xl text-[#00C896] animate-pulse">→</div>
 
             {/* Step 2: Pick Up */}
-            <div className="group relative flex-1 w-full sm:w-auto">
-              <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00e6a8] rounded-2xl p-6 transform transition-all duration-300 group-hover:scale-105 group-hover:border-[#00ffbb]">
-                <div className="text-4xl mb-3">🛍️</div>
-                <h3 className="text-xl font-bold text-[#00e6a8] mb-1">Pick Up</h3>
-                <p className="text-sm text-gray-400">Enjoy your smart choice</p>
+            <div className="group relative flex-1">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-xl md:rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00e6a8] rounded-xl md:rounded-2xl p-3 md:p-6 transform transition-all duration-300 hover:scale-105 hover:border-[#00ffbb]">
+                <div className="w-8 h-8 md:w-12 md:h-12 mx-auto mb-1 md:mb-3 bg-[#00e6a8] rounded-full flex items-center justify-center">
+                  <span className="text-lg md:text-2xl">🛍️</span>
+                </div>
+                <h3 className="text-sm md:text-xl font-bold text-[#00e6a8] mb-0 md:mb-1">Pick Up</h3>
+                <p className="text-xs text-gray-400 hidden md:block">Enjoy your choice</p>
               </div>
             </div>
           </div>
