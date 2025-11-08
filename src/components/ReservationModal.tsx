@@ -20,7 +20,7 @@ import { Clock, MapPin, AlertCircle, Minus, Plus, Share2, Coins, Shield } from '
 import { toast } from 'sonner';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
-import { checkSufficientPoints, deductPoints, getUserPoints } from '@/lib/smartpoints-api';
+import { getUserPoints } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
 
 interface ReservationModalProps {
@@ -51,7 +51,7 @@ export default function ReservationModal({
   const isProcessingRef = useRef(false);
   const lastClickTimeRef = useRef(0);
 
-  const POINTS_PER_RESERVATION = 5;
+  const POINTS_PER_RESERVATION = 15; // Fixed cost per reservation (handled by database)
   const DEBOUNCE_MS = 2000; // 2 second debounce
 
   useEffect(() => {
@@ -67,11 +67,10 @@ export default function ReservationModal({
     }
   }, [open, user, offer]);
 
-  // Update insufficient points check when quantity changes
+  // Update insufficient points check (fixed 15 points per reservation)
   useEffect(() => {
-    const totalNeeded = POINTS_PER_RESERVATION * quantity;
-    setInsufficientPoints(pointsBalance < totalNeeded);
-  }, [quantity, pointsBalance]);
+    setInsufficientPoints(pointsBalance < POINTS_PER_RESERVATION);
+  }, [pointsBalance]);
 
   const loadPointsBalance = async () => {
     if (!user) return;
@@ -79,8 +78,7 @@ export default function ReservationModal({
       const userPoints = await getUserPoints(user.id);
       const balance = userPoints?.balance ?? 0;
       setPointsBalance(balance);
-      const totalNeeded = POINTS_PER_RESERVATION * quantity;
-      setInsufficientPoints(balance < totalNeeded);
+      setInsufficientPoints(balance < POINTS_PER_RESERVATION);
     } catch (error) {
       console.error('Error loading points balance:', error);
     }
@@ -177,14 +175,11 @@ export default function ReservationModal({
         return;
       }
 
-      // Calculate total points needed based on quantity
-      const totalPointsNeeded = POINTS_PER_RESERVATION * quantity;
-
-      // Check SmartPoints balance
-      if (pointsBalance < totalPointsNeeded) {
+      // Check SmartPoints balance (fixed 15 points per reservation)
+      if (pointsBalance < POINTS_PER_RESERVATION) {
         setInsufficientPoints(true);
         setShowBuyPointsModal(true);
-        toast.error(`⚠️ You need ${totalPointsNeeded} SmartPoints to reserve ${quantity} unit(s). Buy more to continue!`);
+        toast.error(`⚠️ You need ${POINTS_PER_RESERVATION} SmartPoints to create a reservation. Buy more to continue!`);
         isProcessingRef.current = false;
         return;
       }
@@ -192,41 +187,18 @@ export default function ReservationModal({
       setIsReserving(true);
       console.log('✅ Starting reservation process...');
 
-      // Deduct SmartPoints first (multiply by quantity)
-      console.log('💰💰💰 DEDUCTING POINTS', callId, {
-        userId: user.id,
-        amount: totalPointsNeeded,
-        quantity,
-        timestamp: new Date().toISOString()
-      });
-
-      const pointsResult = await deductPoints(
-        user.id,
-        totalPointsNeeded,
-        'reservation',
-        { offer_id: offer.id, offer_title: offer.title, quantity }
-      );
-
-      console.log('💰 Points deduction result', callId, ':', pointsResult);
-
-      if (!pointsResult.success) {
-        console.error('❌ Points deduction failed:', pointsResult.error);
-        toast.error(pointsResult.error || 'Failed to deduct SmartPoints');
-        setIsReserving(false);
-        isProcessingRef.current = false;
-        return;
-      }
-
-      // Create reservation
-      console.log('📝 Creating reservation...');
+      // NOTE: Points deduction is now handled internally by create_reservation_atomic
+      // The database function deducts 15 points automatically during reservation creation
+      console.log('📝 Creating reservation (points will be deducted automatically)...');
       const reservation = await createReservation(offer.id, user.id, quantity);
       console.log('✅ Reservation created:', reservation.id);
 
-      // Update local balance
-      setPointsBalance(pointsResult.balance ?? 0);
+      // Update local balance (deduct the points locally for immediate UI feedback)
+      const newBalance = pointsBalance - 15; // Fixed 15 points per reservation
+      setPointsBalance(newBalance);
 
       toast.success(
-        `✅ Reservation confirmed! ${totalPointsNeeded} SmartPoints used (${quantity} × ${POINTS_PER_RESERVATION}). Balance: ${pointsResult.balance}`
+        `✅ Reservation confirmed! 15 SmartPoints deducted. New balance: ${newBalance}`
       );
 
       // Reset locks before navigation (success path)
