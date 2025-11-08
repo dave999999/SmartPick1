@@ -675,9 +675,13 @@ export default function PartnerDashboard() {
 
   toast.success(t('partner.dashboard.toast.pickupConfirmed'));
     loadPartnerData();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error marking as picked up:', error);
-  toast.error(t('partner.dashboard.toast.pickupFailed'));
+    // Show detailed error message
+    const errorMsg = error?.message || error?.error?.message || 'Unknown error';
+    toast.error(`Failed to mark as picked up: ${errorMsg}`);
+    // Restore reservation in UI since it failed
+    loadPartnerData();
   } finally {
     setProcessingIds(prev => {
       const newSet = new Set(prev);
