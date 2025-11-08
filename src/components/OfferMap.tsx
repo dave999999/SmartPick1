@@ -134,15 +134,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   const [listReady, setListReady] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Categories in Wolt style with vibrant colors
+  // Categories - Unique SmartPick style with brand colors
   const categories = [
-    { value: '', emoji: '🌍', labelKey: 'category.All', color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY', color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE', color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT', color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
-    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD', color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
-    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL', color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
-    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY', color: 'linear-gradient(135deg, #ffd89b 0%, #19547b 100%)' },
+    { value: '', emoji: '🌍', labelKey: 'category.All', bgColor: 'bg-gradient-to-br from-[#00C896] to-[#009B77]' },
+    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY', bgColor: 'bg-gradient-to-br from-orange-400 to-orange-600' },
+    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE', bgColor: 'bg-gradient-to-br from-amber-600 to-amber-800' },
+    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT', bgColor: 'bg-gradient-to-br from-red-500 to-pink-600' },
+    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD', bgColor: 'bg-gradient-to-br from-yellow-400 to-orange-500' },
+    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL', bgColor: 'bg-gradient-to-br from-purple-500 to-purple-700' },
+    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY', bgColor: 'bg-gradient-to-br from-blue-500 to-blue-700' },
   ];
 
   // Default center: Tbilisi, Georgia
@@ -454,7 +454,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
           </div>
         </div>
 
-        {/* Wolt-Style Category Cubes */}
+        {/* SmartPick Category Pills - Unique Design */}
         {onCategorySelect && (
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {categories.map((category) => {
@@ -464,21 +464,17 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   key={category.value}
                   onClick={() => onCategorySelect(category.value)}
                   className={`
-                    flex-shrink-0 flex flex-col items-center gap-2 transition-all duration-200
-                    ${isActive ? 'scale-110' : 'hover:scale-105'}
+                    flex-shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-200
+                    ${isActive
+                      ? `${category.bgColor} shadow-xl scale-105 ring-2 ring-white/30`
+                      : 'bg-gray-800/60 hover:bg-gray-800 shadow-md hover:shadow-lg hover:scale-105 border border-gray-700'
+                    }
                   `}
                 >
-                  {/* Colorful Cube */}
-                  <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 ${
-                      isActive ? 'ring-4 ring-white ring-offset-2 ring-offset-gray-900' : ''
-                    }`}
-                    style={{ background: category.color }}
-                  >
-                    <span className="text-3xl">{category.emoji}</span>
-                  </div>
+                  {/* Icon */}
+                  <span className="text-2xl leading-none">{category.emoji}</span>
                   {/* Label */}
-                  <span className="font-semibold text-xs text-white whitespace-nowrap">
+                  <span className="font-semibold text-sm text-white whitespace-nowrap">
                     {t(category.labelKey)}
                   </span>
                 </button>
