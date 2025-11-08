@@ -427,18 +427,38 @@ export default function Index() {
       </header>
 
       {/* Modern Welcome Section */}
-      <div className="max-w-7xl mx-auto px-4 pt-8 pb-6">
-        <div className="text-center mb-8 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-[#00C896]/20 to-[#009B77]/20 border border-[#00C896]/30 px-4 py-2 rounded-full mb-2">
-            <span className="text-2xl animate-bounce">✨</span>
-            <span className="text-sm font-semibold text-[#00C896]">Fresh Deals Every Day</span>
-          </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-[#00C896] via-[#00e6a8] to-[#00ffbb] text-transparent bg-clip-text mb-3 leading-tight">
-            Discover Amazing Deals<br className="hidden sm:block" /> Near You
+      <div className="max-w-7xl mx-auto px-4 pt-12 pb-8">
+        <div className="text-center mb-10 space-y-8">
+          {/* Main Title - Ultra Vibrant */}
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-black bg-gradient-to-r from-[#00ffbb] via-[#00C896] to-[#00e6a8] text-transparent bg-clip-text mb-6 leading-tight animate-pulse" style={{ animationDuration: '3s' }}>
+            Discover Amazing Deals
           </h2>
-          <p className="text-base md:text-lg text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Save money on quality food from local businesses. <span className="font-semibold text-[#00C896]">Browse the map</span> to find exclusive deals nearby.
-          </p>
+
+          {/* How it Works - Stylish Flow */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 max-w-4xl mx-auto">
+            {/* Step 1: Reserve */}
+            <div className="group relative flex-1 w-full sm:w-auto">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00C896] to-[#00e6a8] rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896] rounded-2xl p-6 transform transition-all duration-300 group-hover:scale-105 group-hover:border-[#00ffbb]">
+                <div className="text-4xl mb-3">🎯</div>
+                <h3 className="text-xl font-bold text-[#00C896] mb-1">Reserve Offer</h3>
+                <p className="text-sm text-gray-400">Pick your deal</p>
+              </div>
+            </div>
+
+            {/* Arrow */}
+            <div className="text-3xl text-[#00C896] rotate-90 sm:rotate-0 animate-pulse">→</div>
+
+            {/* Step 2: Pick Up */}
+            <div className="group relative flex-1 w-full sm:w-auto">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00e6a8] to-[#00ffbb] rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00e6a8] rounded-2xl p-6 transform transition-all duration-300 group-hover:scale-105 group-hover:border-[#00ffbb]">
+                <div className="text-4xl mb-3">🛍️</div>
+                <h3 className="text-xl font-bold text-[#00e6a8] mb-1">Pick Up</h3>
+                <p className="text-sm text-gray-400">Enjoy your smart choice</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Search and Filters */}
