@@ -302,8 +302,8 @@ export default function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4CC9A8]"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C896]"></div>
       </div>
     );
   }
@@ -311,21 +311,21 @@ export default function UserProfile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
+      <header className="bg-gray-900 border-b border-gray-800 shadow-lg sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/')}
-              className="h-10 w-10"
+              className="h-9 w-9 md:h-10 md:w-10 text-gray-300 hover:text-white hover:bg-gray-800"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-[#4CC9A8]" />
+            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text flex items-center gap-2">
+              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#00C896]" />
               {t('profile.title')}
             </h1>
           </div>
@@ -333,7 +333,7 @@ export default function UserProfile() {
       </header>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
             <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
@@ -350,34 +350,34 @@ export default function UserProfile() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 {/* Profile Info - Left/Center (2 cols on large screens) */}
-                <Card className="shadow-xl border-2 border-[#4CC9A8]/30 bg-gradient-to-br from-white to-[#EFFFF8] lg:col-span-2">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row items-center gap-6">
-                      <Avatar className="h-28 w-28 border-4 border-[#4CC9A8] shadow-lg">
-                        <AvatarFallback className="bg-gradient-to-br from-[#4CC9A8] to-[#3db891] text-white text-4xl font-bold">
+                <Card className="shadow-xl border-2 border-[#00C896]/30 bg-gradient-to-br from-gray-800 to-gray-900 lg:col-span-2">
+                  <CardContent className="pt-4 md:pt-6">
+                    <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                      <Avatar className="h-20 w-20 md:h-28 md:w-28 border-4 border-[#00C896] shadow-lg">
+                        <AvatarFallback className="bg-gradient-to-br from-[#00C896] to-[#009B77] text-white text-2xl md:text-4xl font-bold">
                           {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-4xl font-black text-gray-900 mb-2">{user.name}</h2>
-                        <p className="text-lg text-gray-600 mb-3">{user.email}</p>
+                        <h2 className="text-2xl md:text-4xl font-black text-white mb-2">{user.name}</h2>
+                        <p className="text-base md:text-lg text-gray-300 mb-3">{user.email}</p>
                         <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
                           <Badge
                             variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
-                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-[#4CC9A8] text-white'}
+                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-[#00C896] text-white'}
                           >
                             {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
                             {user.role}
                           </Badge>
                           {user.phone && (
-                            <Badge variant="outline" className="gap-1">
+                            <Badge variant="outline" className="gap-1 border-gray-600 text-gray-300">
                               <Phone className="w-3 h-3" />
                               {user.phone}
                             </Badge>
                           )}
-                          <Badge variant="outline" className="gap-1">
+                          <Badge variant="outline" className="gap-1 border-gray-600 text-gray-300">
                             <Calendar className="w-3 h-3" />
                             {t('profile.memberSince')} {formatDate(user.created_at)}
                           </Badge>
@@ -389,27 +389,27 @@ export default function UserProfile() {
 
                 {/* Penalty Status - Right (1 col on large screens) */}
                 <Card className={`shadow-xl border-2 ${
-                  user.penalty_count && user.penalty_count > 0 
-                    ? 'border-orange-300 bg-gradient-to-br from-orange-50 to-red-50' 
-                    : 'border-green-300 bg-gradient-to-br from-green-50 to-emerald-50'
+                  user.penalty_count && user.penalty_count > 0
+                    ? 'border-orange-400 bg-gradient-to-br from-orange-900/40 to-red-900/40'
+                    : 'border-green-400 bg-gradient-to-br from-green-900/40 to-emerald-900/40'
                 }`}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className={`text-lg flex items-center gap-2 ${
-                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-700' : 'text-green-700'
+                  <CardHeader className="pb-2 md:pb-3">
+                    <CardTitle className={`text-base md:text-lg flex items-center gap-2 ${
+                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-300' : 'text-green-300'
                     }`}>
                       {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} {t('profile.accountStatus')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {user.penalty_count && user.penalty_count > 0 ? (
-                      <div className="space-y-3">
-                        <div className="bg-white/50 rounded-lg p-3 border border-orange-200">
-                          <p className="text-sm font-semibold text-orange-800 mb-2">
+                      <div className="space-y-2 md:space-y-3">
+                        <div className="bg-gray-800/50 rounded-lg p-2 md:p-3 border border-orange-700">
+                          <p className="text-xs md:text-sm font-semibold text-orange-300 mb-2">
                             {t('penalty.pointsLabel')} {user.penalty_count}
                           </p>
                           <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} onUpdate={loadUser} />
                         </div>
-                        <div className="text-xs text-orange-600 bg-orange-100/50 p-2 rounded">
+                        <div className="text-xs text-orange-300 bg-orange-900/30 p-2 rounded">
                           <p className="font-semibold mb-1">{t('penalty.escalation')}</p>
                           <ul className="space-y-0.5 pl-3">
                             <li>{t('penalty.firstPenalty')}</li>
@@ -421,11 +421,11 @@ export default function UserProfile() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="bg-white/50 rounded-lg p-3 border border-green-200">
-                          <p className="text-sm font-semibold text-green-800 mb-1">✓ {t('profile.goodStanding')}</p>
-                          <p className="text-sm text-green-700">{t('penalty.noneActive')}</p>
+                        <div className="bg-gray-800/50 rounded-lg p-2 md:p-3 border border-green-700">
+                          <p className="text-xs md:text-sm font-semibold text-green-300 mb-1">✓ {t('profile.goodStanding')}</p>
+                          <p className="text-xs md:text-sm text-green-400">{t('penalty.noneActive')}</p>
                         </div>
-                        <p className="text-xs text-green-600">{t('penalty.encouragement')}</p>
+                        <p className="text-xs text-green-400">{t('penalty.encouragement')}</p>
                       </div>
                     )}
                   </CardContent>
@@ -516,41 +516,41 @@ export default function UserProfile() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="shadow-lg">
+              <Card className="shadow-lg bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896]/30">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Edit className="w-5 h-5 text-[#4CC9A8]" />
+                  <CardTitle className="flex items-center gap-2 text-white">
+                    <Edit className="w-5 h-5 text-[#00C896]" />
                     {t('profile.editCard.title')}
                   </CardTitle>
-                  <CardDescription>{t('profile.editCard.subtitle')}</CardDescription>
+                  <CardDescription className="text-gray-400">{t('profile.editCard.subtitle')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {isEditing ? (
                     // Edit Mode
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">{t('profile.name')}</Label>
+                        <Label htmlFor="name" className="text-gray-300">{t('profile.name')}</Label>
                         <div className="relative">
                           <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 bg-gray-700 border-gray-600 text-white"
                             placeholder="Enter your name"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="phone">{t('profile.phone')}</Label>
+                        <Label htmlFor="phone" className="text-gray-300">{t('profile.phone')}</Label>
                         <div className="relative">
                           <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                           <Input
                             id="phone"
                             value={formData.phone}
                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            className="pl-10"
+                            className="pl-10 bg-gray-700 border-gray-600 text-white"
                             placeholder="+995 XXX XXX XXX"
                           />
                         </div>
@@ -560,7 +560,7 @@ export default function UserProfile() {
                         <Button
                           onClick={handleSave}
                           disabled={isSaving}
-                          className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
+                          className="flex-1 bg-[#00C896] hover:bg-[#009B77]"
                         >
                           {isSaving ? t('profile.saving') : t('profile.saveChanges')}
                         </Button>
@@ -568,7 +568,7 @@ export default function UserProfile() {
                           onClick={handleCancel}
                           disabled={isSaving}
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
                         >
                           {t('profile.cancel')}
                         </Button>
@@ -579,39 +579,39 @@ export default function UserProfile() {
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
                             <Mail className="w-4 h-4" />
                             <span>{t('profile.email')}</span>
                           </div>
-                          <p className="text-gray-900 font-medium">{user.email}</p>
+                          <p className="text-white font-medium">{user.email}</p>
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
                             <Phone className="w-4 h-4" />
                             <span>{t('profile.phone')}</span>
                           </div>
-                          <p className="text-gray-900 font-medium">
+                          <p className="text-white font-medium">
                             {user.phone || 'Not provided'}
                           </p>
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
                             <Calendar className="w-4 h-4" />
                             <span>{t('profile.memberSince')}</span>
                           </div>
-                          <p className="text-gray-900 font-medium">
+                          <p className="text-white font-medium">
                             {formatDate(user.created_at)}
                           </p>
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-2 text-sm text-gray-400">
                             <Shield className="w-4 h-4" />
                             <span>{t('profile.role')}</span>
                           </div>
-                          <p className="text-gray-900 font-medium capitalize">
+                          <p className="text-white font-medium capitalize">
                             {user.role.toLowerCase()}
                           </p>
                         </div>
@@ -619,7 +619,7 @@ export default function UserProfile() {
 
                       <Button
                         onClick={() => setIsEditing(true)}
-                        className="w-full md:w-auto bg-[#4CC9A8] hover:bg-[#3db891]"
+                        className="w-full md:w-auto bg-[#00C896] hover:bg-[#009B77]"
                       >
                         <Edit className="w-4 h-4 mr-2" />
                         {t('profile.editProfile')}
