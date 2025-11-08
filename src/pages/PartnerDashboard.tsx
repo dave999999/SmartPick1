@@ -258,7 +258,10 @@ export default function PartnerDashboard() {
       if (partnerPoints) {
         const activeOfferCount = offers.filter(o => o.status === 'ACTIVE' || o.status === 'SCHEDULED').length;
         if (activeOfferCount >= partnerPoints.offer_slots) {
-          toast.error(`${t('partner.points.slotLimitReached')} ${partnerPoints.offer_slots}`);
+          // Close create dialog and open purchase dialog
+          setIsCreateDialogOpen(false);
+          setIsPurchaseSlotDialogOpen(true);
+          toast.info(t('partner.points.needMoreSlots'));
           setIsSubmitting(false);
           return;
         }
