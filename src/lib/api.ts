@@ -1491,3 +1491,71 @@ export const purchaseOfferSlot = async (): Promise<{
     throw error;
   }
 };
+
+// Points Escrow System
+export const userConfirmPickup = async (reservationId: string): Promise<{
+  success: boolean;
+  message?: string;
+  points_transferred?: number;
+}> => {
+  try {
+    const { data, error } = await supabase.rpc('user_confirm_pickup', {
+      p_reservation_id: reservationId
+    });
+
+    if (error) {
+      logger.error('Failed to confirm pickup', { error, reservationId });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in userConfirmPickup', { error, reservationId });
+    throw error;
+  }
+};
+
+export const partnerMarkNoShow = async (reservationId: string): Promise<{
+  success: boolean;
+  message?: string;
+  points_transferred?: number;
+}> => {
+  try {
+    const { data, error } = await supabase.rpc('partner_mark_no_show', {
+      p_reservation_id: reservationId
+    });
+
+    if (error) {
+      logger.error('Failed to mark no-show', { error, reservationId });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in partnerMarkNoShow', { error, reservationId });
+    throw error;
+  }
+};
+
+export const userCancelReservationWithSplit = async (reservationId: string): Promise<{
+  success: boolean;
+  message?: string;
+  partner_received?: number;
+  user_refunded?: number;
+}> => {
+  try {
+    const { data, error } = await supabase.rpc('user_cancel_reservation_split', {
+      p_reservation_id: reservationId
+    });
+
+    if (error) {
+      logger.error('Failed to cancel reservation', { error, reservationId });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in userCancelReservationWithSplit', { error, reservationId });
+    throw error;
+  }
+};
