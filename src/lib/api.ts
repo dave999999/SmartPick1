@@ -1466,6 +1466,8 @@ export interface PartnerPointTransaction {
 
 export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | null> => {
   try {
+    console.log('🔍 getPartnerPoints called with userId:', userId);
+
     const { data, error } = await supabase
       .from('partner_points')
       .select('*')
@@ -1473,12 +1475,15 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
       .maybeSingle();
 
     if (error) {
+      console.error('❌ getPartnerPoints error:', error);
       logger.error('Failed to fetch partner points', { error, userId });
       throw error;
     }
 
+    console.log('✅ getPartnerPoints result:', data);
     return data;
   } catch (error) {
+    console.error('❌ getPartnerPoints exception:', error);
     logger.error('Error in getPartnerPoints', { error, userId });
     throw error;
   }
