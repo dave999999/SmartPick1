@@ -1,0 +1,180 @@
+export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean = false): Promise<QRValidationResult> => {
+  if (isDemoMode) {
+    return { valid: false, error: 'Demo mode: Please configure Supabase' };
+  }
+
+  // Basic format sanity check (prefix + length)
+  const normalized = qrCode.trim();
+  if (!/^SP-/i.test(normalized)) {
+    return { valid: false, error: 'Unrecognized QR code format' };
+  }
+  if (normalized.length < 8) {
+    return { valid: false, error: 'QR code too short' };
+  }
+
+  const { data, error } = await supabase
+    .from('reservations')
+    .select(`
+      *,
+      offer:offers(*),
+      customer:users(name, email),
+      partner:partners(*)
+    `)
+    .eq('qr_code', qrCode)
+    .eq('status', 'ACTIVE')
+    .gt('expires_at', new Date().toISOString())
+    .single();
+
+  logger.log('Supabase query result:', { data, error });
+
+  if (error) {
+    console.error('Supabase error:', error);
+    return { valid: false, error: `Database error: ${error.message}` };
+  }
+
+  if (!data) {
+    console.error('No reservation found for QR code:', qrCode);
+    return { valid: false, error: 'Invalid or expired QR code' };
+  }
+
+  logger.log('Valid reservation found:', data.id);
+
+  // If autoMarkAsPickedUp is true, automatically mark the reservation as picked up
+  if (autoMarkAsPickedUp) {
+    try {
+      const updatedReservation = await markAsPickedUp(data.id);
+      return { valid: true, reservation: updatedReservation };
+    } catch (markError: any) {
+      console.error('Error marking as picked up:', markError);
+      return { valid: false, error: `Failed to mark as picked up: ${markError.message}` };
+    }
+  }
+
+  return { valid: true, reservation: data as Reservation };
+};
+
+export const markAsPickedUp = async (reservationId: string): Promise<Reservation> => {
+  if (isDemoMode) {
+    throw new Error('Demo mode: Please configure Supabase');
+  }
+
+  // Get reservation details first with customer and offer info
+  const { data: reservation, error: reservationError } = await supabase
+    .from('reservations')
+    .select(`
+      offer_id,
+      quantity,
+      customer_id,
+      partner_id,
+      customer:users(name),
+      offer:offers(title),
+      partner:partners(user_id)
+    `)
+    .eq('id', reservationId)
+    .single();
+
+  if (reservationError) throw reservationError;
+
+  console.log('🔍 Calling partner_mark_as_picked_up with reservation ID:', reservationId);
+
+  // Try using database function first (bypasses RLS)
+  const { data: rpcData, error: rpcError } = await supabase
+    .rpc('partner_mark_as_picked_up', {
+      p_reservation_id: reservationId
+    });
+
+  console.log('📡 RPC Response:', { data: rpcData, error: rpcError });
+
+  let updateResult;
+
+  // If RPC errors for any reason, throw (no silent table update)
+  if (rpcError) {
+    console.error('❌ partner_mark_as_picked_up RPC ERROR:', {
+      message: rpcError.message,
+      details: rpcError.details,
+      hint: rpcError.hint,
+      code: rpcError.code,
+      fullError: JSON.stringify(rpcError)
+    });
+
+    // Show user-friendly error
+    const errorMessage = rpcError.message || rpcError.details || 'Failed to mark as picked up';
+    alert(`Error marking as picked up:\n${errorMessage}\n\nCheck browser console for details.`);
+
+    throw new Error(errorMessage);
+  } else {
+    console.log('✅ RPC Success! Data:', rpcData);
+    // RPC function returns an array (RETURNS TABLE), get first element
+    updateResult = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : rpcData;
+    console.log('✅ Update result:', updateResult);
+  }
+
+  // Send pickup notification to partner (don't block on this)
+  // Note: notification_preferences uses user_id, not partner_id
+  // Notification safety: nested joins may come back as arrays; normalize defensively
+  const partnerRecord: any = Array.isArray(reservation.partner) ? reservation.partner[0] : reservation.partner;
+  const customerRecord: any = (reservation as any).customer ? (Array.isArray((reservation as any).customer) ? (reservation as any).customer[0] : (reservation as any).customer) : null;
+  const offerRecord: any = reservation.offer ? (Array.isArray(reservation.offer) ? reservation.offer[0] : reservation.offer) : null;
+
+  const partnerUserId = partnerRecord?.user_id;
+  if (partnerUserId && customerRecord && offerRecord) {
+    const customerName = customerRecord.name || 'Customer';
+    const offerTitle = offerRecord.title || 'Offer';
+    notifyPartnerPickupComplete(partnerUserId, customerName, offerTitle, reservation.quantity)
+      .catch(err => console.error('Failed to send pickup notification:', err));
+  }
+
+  return updateResult as Reservation;
+};
+
+
+export const cancelReservation = async (reservationId: string): Promise<void> => {
+  if (isDemoMode) {
+    throw new Error('Demo mode: Please configure Supabase');
+  }
+
+  // Get reservation details including user ID
+  const { data: reservation } = await supabase
+    .from('reservations')
+    .select('offer_id, quantity, customer_id, status')
+    .eq('id', reservationId)
+    .single();
+
+  if (!reservation) {
+    throw new Error('Reservation not found');
+  }
+
+  // For history items (PICKED_UP, EXPIRED, CANCELLED), DELETE them completely
+  const isHistoryItem = ['PICKED_UP', 'EXPIRED', 'CANCELLED'].includes(reservation.status);
+
+  if (isHistoryItem) {
+    logger.log(`Deleting ${reservation.status} reservation from history`);
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', reservationId);
+
+    if (error) throw error;
+    return;
+  }
+
+  // For ACTIVE reservations - refund points and restore quantity before cancelling
+  logger.log('Cancelling active reservation with refund');
+
+  // Restore offer quantity
+  const { data: offer } = await supabase
+    .from('offers')
+    .select('quantity_available')
+    .eq('id', reservation.offer_id)
+    .single();
+
+  if (offer) {
+    await supabase
+      .from('offers')
+      .update({ quantity_available: offer.quantity_available + reservation.quantity })
+      .eq('id', reservation.offer_id);
+  }
+
+  // REFUND POINTS - Give back points based on quantity (5 points per unit)
+  const POINTS_PER_RESERVATION = 5;
+  const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;

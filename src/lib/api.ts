@@ -675,6 +675,31 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
     return { valid: false, error: 'QR code too short' };
   }
 
+  // One-shot server RPC path for validation + pickup
+  if (autoMarkAsPickedUp) {
+    try {
+      const { data: rpc, error: rpcErr } = await supabase.rpc('validate_and_pickup', { p_qr_code: qrCode });
+      if (rpcErr) {
+        logger.error('validate_and_pickup RPC error', { error: rpcErr, qrCode });
+        return { valid: false, error: rpcErr.message || rpcErr.details || 'Failed to validate/pickup' };
+      }
+      if (rpc && (rpc as any).valid) {
+        const resId = (rpc as any).reservation_id;
+        const { data: fetched } = await supabase
+          .from('reservations')
+          .select('*, offer:offers(*), customer:users(name, email), partner:partners(*)')
+          .eq('id', resId)
+          .single();
+        return { valid: true, reservation: fetched as Reservation };
+      }
+      return { valid: false, error: (rpc as any)?.error || 'Invalid or expired QR code' };
+    } catch (e: any) {
+      logger.error('validate_and_pickup exception', { error: e, qrCode });
+      return { valid: false, error: e.message || 'Failed to validate/pickup' };
+    }
+  }
+
+  // Legacy read-only validation path (no pickup)
   const { data, error } = await supabase
     .from('reservations')
     .select(`
@@ -688,29 +713,13 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
     .gt('expires_at', new Date().toISOString())
     .single();
 
-  logger.log('Supabase query result:', { data, error });
-
   if (error) {
     console.error('Supabase error:', error);
     return { valid: false, error: `Database error: ${error.message}` };
   }
 
   if (!data) {
-    console.error('No reservation found for QR code:', qrCode);
     return { valid: false, error: 'Invalid or expired QR code' };
-  }
-
-  logger.log('Valid reservation found:', data.id);
-
-  // If autoMarkAsPickedUp is true, automatically mark the reservation as picked up
-  if (autoMarkAsPickedUp) {
-    try {
-      const updatedReservation = await markAsPickedUp(data.id);
-      return { valid: true, reservation: updatedReservation };
-    } catch (markError: any) {
-      console.error('Error marking as picked up:', markError);
-      return { valid: false, error: `Failed to mark as picked up: ${markError.message}` };
-    }
   }
 
   return { valid: true, reservation: data as Reservation };
@@ -1594,4 +1603,3 @@ export const userCancelReservationWithSplit = async (reservationId: string): Pro
     throw error;
   }
 };
-
