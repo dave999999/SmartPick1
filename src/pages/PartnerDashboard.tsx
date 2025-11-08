@@ -55,7 +55,6 @@ import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedOffersTable from '@/components/partner/EnhancedOffersTable';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
-import PartnerPayoutInfo from '@/components/partner/PartnerPayoutInfo';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import { applyNoShowPenalty } from '@/lib/penalty-system';
 import { useI18n } from '@/lib/i18n';
@@ -1664,11 +1663,7 @@ const generate24HourOptions = (): string[] => {
           </CardContent>
         </Card>
 
-        {!isPending && partner && (
-          <div className="grid grid-cols-1 gap-4 md:gap-6 mb-6 md:mb-8">
-            <PartnerPayoutInfo partnerId={partner.id} />
-          </div>
-        )}
+        {/* Payout information removed per business model (no partner payouts) */}
 
         {/* Trends / analytics summary removed as requested */}
 
