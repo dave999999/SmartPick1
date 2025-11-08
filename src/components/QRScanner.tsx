@@ -14,6 +14,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameras, setCameras] = useState<any[]>([]);
+  const hasScannedRef = useRef(false); // Prevent multiple scans
 
   useEffect(() => {
     // Get available cameras on mount
@@ -52,7 +53,13 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           qrbox: { width: 250, height: 250 }, // Scanning box size
         },
         (decodedText) => {
-          // Success callback
+          // Success callback - only process first scan
+          if (hasScannedRef.current) {
+            console.log('Already processed a scan, ignoring duplicate');
+            return;
+          }
+          
+          hasScannedRef.current = true;
           console.log('QR Code scanned:', decodedText);
           onScan(decodedText);
           stopScanning(); // Stop after successful scan
@@ -82,6 +89,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         console.error('Error stopping scanner:', err);
       }
       setIsScanning(false);
+      hasScannedRef.current = false; // Reset for next scan session
     }
   };
 
