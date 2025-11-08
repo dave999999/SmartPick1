@@ -456,7 +456,7 @@ export const createReservation = async (
     .from('reservations')
     .select('id')
     .eq('customer_id', customerId)
-    .eq('status', 'PENDING')
+    .eq('status', 'ACTIVE')
     .limit(MAX_ACTIVE_RESERVATIONS + 1);
 
   if (activeError) {
