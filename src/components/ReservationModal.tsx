@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, User, PenaltyInfo } from '@/lib/types';
 import { createReservation, checkUserPenalty } from '@/lib/api';
+import { checkRateLimit } from '@/lib/rateLimiter';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,7 @@ import { resolveOfferImageUrl } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, Minus, Plus, Share2, Coins } from 'lucide-react';
+import { Clock, MapPin, AlertCircle, Minus, Plus, Share2, Coins, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
@@ -159,6 +160,16 @@ export default function ReservationModal({
         return;
       }
       lastClickTimeRef.current = now;
+
+      // Rate limiting: 10 reservations per hour per user
+      const rateLimit = await checkRateLimit('reservation', user.id);
+      if (!rateLimit.allowed) {
+        toast.error(rateLimit.message || 'Too many reservations. Please try again later.', {
+          icon: <Shield className="w-4 h-4" />,
+        });
+        isProcessingRef.current = false;
+        return;
+      }
 
       if (penaltyInfo?.isUnderPenalty) {
         toast.error(`You are under penalty. Time remaining: ${countdown}`);

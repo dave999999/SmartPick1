@@ -643,13 +643,13 @@ export const getPartnerReservations = async (partnerId: string): Promise<Reserva
   if (isDemoMode) {
     return [];
   }
-  
+
   const { data, error } = await supabase
     .from('reservations')
     .select(`
       *,
       offer:offers(*),
-      customer:users(name, email, phone)
+      customer:users(name, email)
     `)
     .eq('partner_id', partnerId)
     .order('created_at', { ascending: false });
@@ -678,7 +678,7 @@ export const validateQRCode = async (qrCode: string): Promise<QRValidationResult
     .select(`
       *,
       offer:offers(*),
-      customer:users(name, email, phone),
+      customer:users(name, email),
       partner:partners(*)
     `)
     .eq('qr_code', qrCode)

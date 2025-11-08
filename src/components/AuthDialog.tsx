@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getPartnerByUserId } from '@/lib/api';
 import { applyReferralCode } from '@/lib/gamification-api';
+import { checkRateLimit } from '@/lib/rateLimiter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Mail, Clock, XCircle, Gift } from 'lucide-react';
+import { AlertCircle, Mail, Clock, XCircle, Gift, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthDialogProps {
@@ -56,6 +57,17 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     e.preventDefault();
     setError(null);
     setPartnerStatus(null);
+
+    // Rate limiting: 5 attempts per 15 minutes
+    const rateLimit = await checkRateLimit('login', signInEmail);
+    if (!rateLimit.allowed) {
+      setError(rateLimit.message || 'Too many login attempts. Please try again later.');
+      toast.error(rateLimit.message, {
+        icon: <Shield className="w-4 h-4" />,
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -123,8 +135,25 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       return;
     }
 
-    if (signUpPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (signUpPassword.length < 12) {
+      setError('Password must be at least 12 characters with uppercase, lowercase, number, and symbol');
+      return;
+    }
+
+    // Stronger password validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
+    if (!passwordRegex.test(signUpPassword)) {
+      setError('Password must contain uppercase, lowercase, number, and special character');
+      return;
+    }
+
+    // Rate limiting: 3 attempts per hour
+    const rateLimit = await checkRateLimit('signup', signUpEmail);
+    if (!rateLimit.allowed) {
+      setError(rateLimit.message || 'Too many signup attempts. Please try again later.');
+      toast.error(rateLimit.message, {
+        icon: <Shield className="w-4 h-4" />,
+      });
       return;
     }
 

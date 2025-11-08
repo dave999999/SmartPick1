@@ -76,6 +76,15 @@ export default defineConfig({
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`
       }
+    },
+    // Remove console.log from production builds
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,  // Remove all console.* calls
+        drop_debugger: true,  // Remove debugger statements
+        pure_funcs: ['console.log', 'console.debug', 'console.info']  // Specific removal
+      }
     }
   }
 })
