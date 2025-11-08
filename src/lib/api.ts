@@ -42,9 +42,10 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
       .maybeSingle();
 
     if (!userData) {
-      // Newly signed-up user race: wait briefly for trigger to create profile
-      for (let attempt = 0; attempt < 3; attempt++) {
-        await new Promise(r => setTimeout(r, 250));
+      // Retry with exponential backoff waiting for trigger (total ~4.5s)
+      const delays = [200, 400, 800, 1200, 1900];
+      for (const d of delays) {
+        await new Promise(r => setTimeout(r, d));
         const { data: retry } = await supabase
           .from('users')
           .select('*')
@@ -55,10 +56,13 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
         }
       }
 
-      // Profile still doesn't exist after retries; trigger may have failed
-      // Return null instead of attempting manual insert (which causes 409)
-      console.warn('Profile row missing for auth user', user.id);
-      return { user: null, error: new Error('Profile not found after signup') };
+      // Fallback: call RPC to ensure profile exists (handles late trigger failure)
+      const { data: ensured, error: ensureError } = await supabase.rpc('ensure_user_profile');
+      if (ensured) {
+        return { user: ensured as User };
+      }
+      console.warn('Profile row missing for auth user after ensure_user_profile()', user.id, ensureError);
+      return { user: null, error: ensureError || new Error('Profile not found after signup') };
     }
 
     if (userError) return { user: null, error: userError };
