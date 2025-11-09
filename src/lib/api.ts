@@ -747,43 +747,27 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   if (reservationError) throw reservationError;
 
-  console.log('🔍 Calling partner_mark_as_picked_up with reservation ID:', reservationId);
+  console.log('🔍 Marking reservation as picked up (direct update):', reservationId);
 
-  // Try using database function first (bypasses RLS)
-  const { data: rpcData, error: rpcError } = await supabase
-    .rpc('partner_mark_as_picked_up', {
-      p_reservation_id: reservationId
-    });
+  // Direct table update (RPC function doesn't exist anymore)
+  const { data: updateResult, error: updateError } = await supabase
+    .from('reservations')
+    .update({
+      status: 'PICKED_UP',
+      picked_up_at: new Date().toISOString()
+    })
+    .eq('id', reservationId)
+    .select()
+    .single();
 
-  console.log('📡 RPC Response:', { data: rpcData, error: rpcError });
-
-  let updateResult;
-
-  // If RPC errors for any reason, throw (no silent table update)
-  if (rpcError) {
-    console.error('❌ partner_mark_as_picked_up RPC ERROR:', {
-      message: rpcError.message,
-      details: rpcError.details,
-      hint: rpcError.hint,
-      code: rpcError.code,
-      fullError: JSON.stringify(rpcError)
-    });
-
-    // Show user-friendly error
-    const errorMessage = rpcError.message || rpcError.details || 'Failed to mark as picked up';
-    alert(`Error marking as picked up:\n${errorMessage}\n\nCheck browser console for details.`);
-
-    throw new Error(errorMessage);
-  } else {
-    console.log('✅ RPC Success! Data:', rpcData);
-    // RPC function returns an array (RETURNS TABLE), get first element
-    updateResult = Array.isArray(rpcData) && rpcData.length > 0 ? rpcData[0] : rpcData;
-    console.log('✅ Update result:', updateResult);
+  if (updateError) {
+    console.error('❌ Update ERROR:', updateError);
+    throw new Error(updateError.message || 'Failed to mark as picked up');
   }
 
+  console.log('✅ Successfully marked as picked up:', updateResult);
+
   // Send pickup notification to partner (don't block on this)
-  // Note: notification_preferences uses user_id, not partner_id
-  // Notification safety: nested joins may come back as arrays; normalize defensively
   const partnerRecord: any = Array.isArray(reservation.partner) ? reservation.partner[0] : reservation.partner;
   const customerRecord: any = (reservation as any).customer ? (Array.isArray((reservation as any).customer) ? (reservation as any).customer[0] : (reservation as any).customer) : null;
   const offerRecord: any = reservation.offer ? (Array.isArray(reservation.offer) ? reservation.offer[0] : reservation.offer) : null;
