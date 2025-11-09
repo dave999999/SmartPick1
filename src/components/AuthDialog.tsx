@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { getPartnerByUserId } from '@/lib/api';
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Mail, Clock, XCircle, Gift, Shield } from 'lucide-react';
 import { toast } from 'sonner';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface AuthDialogProps {
   open: boolean;
@@ -43,6 +44,11 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   const [signUpPassword, setSignUpPassword] = useState('');
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
+  
+  // CAPTCHA state
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
 
   // Check for referral code in URL on mount
   useEffect(() => {
@@ -57,6 +63,13 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     e.preventDefault();
     setError(null);
     setPartnerStatus(null);
+
+    // Show CAPTCHA after 2 failed attempts
+    if (failedAttempts >= 2 && !captchaToken) {
+      setShowCaptcha(true);
+      setError('Please complete the CAPTCHA verification');
+      return;
+    }
 
     // Rate limiting: 5 attempts per 15 minutes
     const rateLimit = await checkRateLimit('login', signInEmail);
@@ -74,11 +87,19 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       const { data, error } = await supabase.auth.signInWithPassword({
         email: signInEmail,
         password: signInPassword,
+        options: {
+          captchaToken: captchaToken || undefined,
+        },
       });
 
       if (error) throw error;
 
       if (data.user) {
+        // Success - reset failed attempts and captcha
+        setFailedAttempts(0);
+        setCaptchaToken(null);
+        setShowCaptcha(false);
+        
         // Check if user is a partner
         const partner = await getPartnerByUserId(data.user.id);
         
@@ -115,6 +136,15 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       console.error('Sign in error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
       setError(errorMessage);
+      
+      // Increment failed attempts and show CAPTCHA after 2 failures
+      setFailedAttempts(prev => prev + 1);
+      if (failedAttempts + 1 >= 2) {
+        setShowCaptcha(true);
+      }
+      
+      // Reset CAPTCHA token for retry
+      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +153,13 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Require CAPTCHA for signup
+    if (!captchaToken) {
+      setError('Please complete the CAPTCHA verification');
+      setShowCaptcha(true);
+      return;
+    }
 
     // Validation
     if (!signUpName.trim()) {
@@ -168,6 +205,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             name: signUpName,
             role: 'CUSTOMER',
           },
+          captchaToken: captchaToken,
         },
       });
 
@@ -283,10 +321,27 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 />
               </div>
 
+              {/* Show CAPTCHA after 2 failed login attempts */}
+              {showCaptcha && (
+                <div className="flex justify-center">
+                  <Turnstile
+                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                    onSuccess={(token) => {
+                      setCaptchaToken(token);
+                      setError(null);
+                    }}
+                    onExpire={() => setCaptchaToken(null)}
+                    onError={() => {
+                      setError('CAPTCHA verification failed. Please try again.');
+                    }}
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full bg-mint-600 hover:bg-mint-700"
-                disabled={isLoading}
+                disabled={isLoading || (showCaptcha && !captchaToken)}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
@@ -396,10 +451,28 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 )}
               </div>
 
+              {/* CAPTCHA required for signup */}
+              <div className="flex justify-center">
+                <Turnstile
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  onSuccess={(token) => {
+                    setCaptchaToken(token);
+                    setError(null);
+                  }}
+                  onExpire={() => {
+                    setCaptchaToken(null);
+                    setError('CAPTCHA expired. Please verify again.');
+                  }}
+                  onError={() => {
+                    setError('CAPTCHA verification failed. Please try again.');
+                  }}
+                />
+              </div>
+
               <Button
                 type="submit"
                 className="w-full bg-mint-600 hover:bg-mint-700"
-                disabled={isLoading}
+                disabled={isLoading || !captchaToken}
               >
                 {isLoading ? 'Creating account...' : 'Create Account'}
               </Button>
