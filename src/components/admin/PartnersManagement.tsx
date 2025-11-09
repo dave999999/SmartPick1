@@ -13,7 +13,7 @@ import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Uplo
 import { supabase, isDemoMode } from '@/lib/supabase';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getAllPartners, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
+import { getPartnersPaged, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -58,19 +58,33 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [open24h, setOpen24h] = useState<boolean>(false);
   const [gettingLocation, setGettingLocation] = useState(false);
 
-  useEffect(() => {
-    loadPartners();
-  }, []);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [debounceToken, setDebounceToken] = useState(0);
 
   useEffect(() => {
-    filterPartners();
-  }, [partners, searchTerm, statusFilter]);
+    loadPartners();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debounceToken, statusFilter]);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounceToken(x => x + 1), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const loadPartners = async () => {
     try {
       setLoading(true);
-      const data = await getAllPartners();
-      setPartners(data);
+      const { items, count } = await getPartnersPaged({
+        page,
+        pageSize,
+        search: searchTerm,
+        status: statusFilter,
+      });
+      setPartners(items);
+      setFilteredPartners(items);
+      setTotal(count);
     } catch (error) {
       console.error('Error loading partners:', error);
       toast.error('Failed to load partners');
@@ -78,23 +92,9 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setLoading(false);
     }
   };
-
-  const filterPartners = () => {
-    let filtered = partners;
-
-    if (searchTerm) {
-      filtered = filtered.filter(partner =>
-        partner.business_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        partner.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(partner => (partner.status || '').toLowerCase() === statusFilter.toLowerCase());
-    }
-
-    setFilteredPartners(filtered);
-  };
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const goPrev = () => setPage(p => Math.max(1, p - 1));
+  const goNext = () => setPage(p => Math.min(totalPages, p + 1));
 
   const handleAddPartner = async () => {
     try {
@@ -713,6 +713,17 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             </Table>
           </div>
 
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Page {page} of {totalPages} · {total} partners
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={goPrev} disabled={page <= 1}>Prev</Button>
+              <Button variant="outline" size="sm" onClick={goNext} disabled={page >= totalPages}>Next</Button>
+            </div>
+          </div>
+
           {filteredPartners.length === 0 && (
             <div className="text-center py-12">
               <p className="text-gray-500">No partners found</p>
@@ -1165,4 +1176,3 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     </div>
   );
 }
-

@@ -16,6 +16,7 @@ import { NewUsers } from '@/components/admin/NewUsers';
 import { BannedUsers } from '@/components/admin/BannedUsers';
 import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
+import AuditLogs from '@/components/admin/AuditLogs';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -306,9 +307,9 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="audit">
-            <SectionCard title="Audit Logs" description="Security and administrative action tracking" accent="purple">
-              <p className="text-gray-600">Feature coming soon: Audit logs will track all administrative actions, user activity, and security events for compliance and debugging.</p>
-            </SectionCard>
+            <div className="max-w-7xl mx-auto">
+              <AuditLogs />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
