@@ -730,57 +730,52 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Demo mode: Please configure Supabase');
   }
 
-  // Get reservation details first with customer and offer info
-  const { data: reservation, error: reservationError } = await supabase
+  console.log('🔍 Marking reservation as picked up (using Edge Function):', reservationId);
+
+  // Get auth session
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session) {
+    throw new Error('Not authenticated');
+  }
+
+  // Call Edge Function (has service_role permissions to award points)
+  const { data: functionResult, error: functionError } = await supabase.functions.invoke('mark-pickup', {
+    body: { reservation_id: reservationId },
+    headers: {
+      Authorization: `Bearer ${session.access_token}`
+    }
+  });
+
+  if (functionError) {
+    console.error('❌ Edge Function ERROR:', functionError);
+    throw new Error(functionError.message || 'Failed to mark as picked up');
+  }
+
+  if (!functionResult?.success) {
+    console.error('❌ Edge Function returned error:', functionResult);
+    throw new Error(functionResult?.error || 'Failed to mark as picked up');
+  }
+
+  console.log('✅ Successfully marked as picked up:', functionResult);
+
+  // Fetch updated reservation with full details
+  const { data: updatedReservation, error: fetchError } = await supabase
     .from('reservations')
     .select(`
-      offer_id,
-      quantity,
-      customer_id,
-      partner_id,
-      customer:users(name),
-      offer:offers(title),
-      partner:partners(user_id)
+      *,
+      offer:offers(*),
+      customer:users(name, email),
+      partner:partners(*)
     `)
     .eq('id', reservationId)
     .single();
 
-  if (reservationError) throw reservationError;
-
-  console.log('🔍 Marking reservation as picked up (direct update):', reservationId);
-
-  // Direct table update (RPC function doesn't exist anymore)
-  const { data: updateResult, error: updateError } = await supabase
-    .from('reservations')
-    .update({
-      status: 'PICKED_UP',
-      picked_up_at: new Date().toISOString()
-    })
-    .eq('id', reservationId)
-    .select()
-    .single();
-
-  if (updateError) {
-    console.error('❌ Update ERROR:', updateError);
-    throw new Error(updateError.message || 'Failed to mark as picked up');
+  if (fetchError) {
+    console.error('Failed to fetch updated reservation:', fetchError);
+    throw fetchError;
   }
 
-  console.log('✅ Successfully marked as picked up:', updateResult);
-
-  // Send pickup notification to partner (don't block on this)
-  const partnerRecord: any = Array.isArray(reservation.partner) ? reservation.partner[0] : reservation.partner;
-  const customerRecord: any = (reservation as any).customer ? (Array.isArray((reservation as any).customer) ? (reservation as any).customer[0] : (reservation as any).customer) : null;
-  const offerRecord: any = reservation.offer ? (Array.isArray(reservation.offer) ? reservation.offer[0] : reservation.offer) : null;
-
-  const partnerUserId = partnerRecord?.user_id;
-  if (partnerUserId && customerRecord && offerRecord) {
-    const customerName = customerRecord.name || 'Customer';
-    const offerTitle = offerRecord.title || 'Offer';
-    notifyPartnerPickupComplete(partnerUserId, customerName, offerTitle, reservation.quantity)
-      .catch(err => console.error('Failed to send pickup notification:', err));
-  }
-
-  return updateResult as Reservation;
+  return updatedReservation as Reservation;
 };
 
 
@@ -1453,10 +1448,23 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
   try {
     console.log('🔍 getPartnerPoints called with userId:', userId);
 
+    // First get partner_id from user_id
+    const { data: partner, error: partnerError } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (partnerError || !partner) {
+      console.warn('⚠️ Partner not found for userId:', userId);
+      return null;
+    }
+
+    // Then get partner points using partner_id
     const { data, error } = await supabase
       .from('partner_points')
       .select('*')
-      .eq('user_id', userId)
+      .eq('partner_id', partner.id)
       .maybeSingle();
 
     if (error) {
