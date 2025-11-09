@@ -187,6 +187,22 @@ export const unfeatureOffer = async (offerId: string): Promise<void> => {
 // FINANCIAL DASHBOARD
 // =====================================================
 
+// Unified Stats RPC (non-breaking addition). Falls back to existing counts if needed in consumers.
+export const getAdminDashboardStatsRpc = async () => {
+  await checkAdminAccess();
+  const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
+  if (error) throw error;
+  // rpc returns a single row (array with one item in some clients)
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    total_users: row?.total_users ?? 0,
+    total_partners: row?.total_partners ?? 0,
+    active_offers: row?.active_offers ?? 0,
+    reservations_today: row?.reservations_today ?? 0,
+    revenue_today: row?.revenue_today ?? 0,
+  };
+};
+
 export const getPlatformRevenueStats = async (
   startDate: string,
   endDate: string

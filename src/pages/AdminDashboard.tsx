@@ -16,6 +16,7 @@ import { NewUsers } from '@/components/admin/NewUsers';
 import { BannedUsers } from '@/components/admin/BannedUsers';
 import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
+import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
 import AuditLogs from '@/components/admin/AuditLogs';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -99,20 +100,38 @@ export default function AdminDashboard() {
     try {
       console.log('AdminDashboard: Loading dashboard stats...');
       
-      // Load stats and test data access
+      // Prefer unified RPC for stats; gracefully fallback to legacy counts
+      let rpcStats: any = null;
+      try {
+        rpcStats = await getAdminDashboardStatsRpc();
+      } catch (e) {
+        console.warn('AdminDashboard: RPC stats unavailable, falling back:', e);
+      }
+
+      // Load legacy datasets in parallel (used for fallback and toasts)
       const [dashboardStats, partnersData, usersData] = await Promise.all([
-        getDashboardStats(),
-        getAllPartners(),
-        getAllUsers()
+        getDashboardStats().catch(() => ({ totalPartners: 0, totalUsers: 0, totalOffers: 0, pendingPartners: 0 })),
+        getAllPartners().catch(() => []),
+        getAllUsers().catch(() => [])
       ]);
       
       console.log('AdminDashboard: Data loaded:', {
-        stats: dashboardStats,
+        stats: rpcStats || dashboardStats,
         partnersCount: partnersData.length,
         usersCount: usersData.length
       });
       
-      setStats(dashboardStats);
+      // Map to local type
+      if (rpcStats) {
+        setStats({
+          totalPartners: rpcStats.total_users ? rpcStats.total_partners : dashboardStats.totalPartners,
+          totalUsers: rpcStats.total_users ?? dashboardStats.totalUsers,
+          totalOffers: rpcStats.active_offers ?? dashboardStats.totalOffers,
+          pendingPartners: dashboardStats.pendingPartners,
+        });
+      } else {
+        setStats(dashboardStats);
+      }
       
       // Show detailed success message
       toast.success(`Dashboard loaded successfully! Found ${partnersData.length} partners and ${usersData.length} users`);
