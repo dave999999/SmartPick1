@@ -64,8 +64,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     setError(null);
     setPartnerStatus(null);
 
-    // Show CAPTCHA after 2 failed attempts
-    if (failedAttempts >= 2 && !captchaToken) {
+    // CAPTCHA is required for all sign-in attempts (Supabase requires it)
+    if (!captchaToken) {
       setShowCaptcha(true);
       setError('Please complete the CAPTCHA verification');
       return;
@@ -321,22 +321,20 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 />
               </div>
 
-              {/* Show CAPTCHA after 2 failed login attempts */}
-              {showCaptcha && (
-                <div className="flex justify-center">
-                  <Turnstile
-                    siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
-                    onSuccess={(token) => {
-                      setCaptchaToken(token);
-                      setError(null);
-                    }}
-                    onExpire={() => setCaptchaToken(null)}
-                    onError={() => {
-                      setError('CAPTCHA verification failed. Please try again.');
-                    }}
-                  />
-                </div>
-              )}
+              {/* CAPTCHA required for all sign-in attempts */}
+              <div className="flex justify-center">
+                <Turnstile
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  onSuccess={(token) => {
+                    setCaptchaToken(token);
+                    setError(null);
+                  }}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => {
+                    setError('CAPTCHA verification failed. Please try again.');
+                  }}
+                />
+              </div>
 
               <Button
                 type="submit"
