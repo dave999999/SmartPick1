@@ -738,6 +738,24 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Not authenticated');
   }
 
+  // Try DB RPC first (preferred)
+  let __rpcSucceeded = false;
+  try {
+    const { error: rpcError } = await supabase.rpc('partner_mark_as_picked_up', {
+      p_reservation_id: reservationId,
+    });
+    if (!rpcError) {
+      // RPC succeeded; skip Edge Function and fetch updated reservation below
+      console.log('Marked as picked up via RPC');
+      __rpcSucceeded = true;
+    } else {
+      console.warn('partner_mark_as_picked_up RPC error:', rpcError);
+      throw rpcError;
+    }
+  } catch (rpcErr) {
+    console.warn('RPC failed, will attempt Edge Function fallback:', rpcErr);
+  }
+
   // Call Edge Function (has service_role permissions to award points)
   const { data: functionResult, error: functionError } = await supabase.functions.invoke('mark-pickup', {
     body: { reservation_id: reservationId },
