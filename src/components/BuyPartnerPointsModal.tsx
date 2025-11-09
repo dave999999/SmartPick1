@@ -33,9 +33,9 @@ export function BuyPartnerPointsModal({
   const [selectedPackage, setSelectedPackage] = useState<number>(100);
 
   const PACKAGES = [
-    { points: 100, price: 10, popular: false },
-    { points: 500, price: 45, popular: true, savings: '10% off' },
-    { points: 1000, price: 80, popular: false, savings: '20% off' },
+    { points: 100, price: 1, popular: false },
+    { points: 500, price: 5, popular: true },
+    { points: 1000, price: 10, popular: false },
   ];
 
   const handlePurchase = async () => {
@@ -151,9 +151,7 @@ export function BuyPartnerPointsModal({
                         </div>
                         <div>
                           <p className="font-bold text-lg text-gray-900">{pkg.points} Points</p>
-                          {pkg.savings && (
-                            <p className="text-xs text-green-600 font-semibold">{pkg.savings}</p>
-                          )}
+                          <p className="text-xs text-gray-600">Best value!</p>
                         </div>
                       </div>
                       <div className="text-right">
