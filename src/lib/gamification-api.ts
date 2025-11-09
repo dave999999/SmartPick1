@@ -185,6 +185,7 @@ export async function claimAchievement(achievementId: string): Promise<{ success
  */
 export async function getAllAchievements(): Promise<AchievementDefinition[]> {
   try {
+    console.log('Fetching all achievements from database...');
     const { data, error } = await supabase
       .from('achievement_definitions')
       .select('*')
@@ -196,6 +197,7 @@ export async function getAllAchievements(): Promise<AchievementDefinition[]> {
       return [];
     }
 
+    console.log('Fetched achievements:', data?.length || 0);
     return data || [];
   } catch (error) {
     console.error('Error in getAllAchievements:', error);

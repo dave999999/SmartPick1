@@ -396,11 +396,16 @@ export default function PartnerDashboard() {
           .single();
 
         if (error) {
-          console.error('Offer creation error:', error);
+          console.error('Offer creation error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           throw new Error(`Failed to create offer: ${error.message}`);
         }
 
-        if (error) throw error;
+        console.log('Offer created successfully:', data);
   toast.success(isScheduled ? t('partner.dashboard.toast.offerScheduled') : t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
         setImageFiles([]);
