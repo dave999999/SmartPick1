@@ -140,6 +140,58 @@ serve(async (req) => {
             offer_id: reservation.offer_id
           }
         })
+
+      // Update user_stats for gamification tracking
+      const savings = reservation.original_price - reservation.total_price
+      const { data: currentStats } = await supabaseAdmin
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', reservation.customer_id)
+        .single()
+
+      if (currentStats) {
+        // Calculate streak
+        const today = new Date().toISOString().split('T')[0]
+        const lastPickup = currentStats.last_reservation_date
+        let newStreak = currentStats.current_streak_days || 0
+        let newLongestStreak = currentStats.longest_streak_days || 0
+
+        if (lastPickup) {
+          const lastDate = new Date(lastPickup)
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+          if (lastPickup === yesterdayStr) {
+            // Consecutive day - increment streak
+            newStreak += 1
+          } else if (lastPickup !== today) {
+            // Streak broken - reset to 1
+            newStreak = 1
+          }
+          // If lastPickup === today, don't change streak (same day)
+        } else {
+          // First pickup ever
+          newStreak = 1
+        }
+
+        if (newStreak > newLongestStreak) {
+          newLongestStreak = newStreak
+        }
+
+        await supabaseAdmin
+          .from('user_stats')
+          .update({
+            total_reservations: (currentStats.total_reservations || 0) + 1,
+            total_money_saved: (currentStats.total_money_saved || 0) + savings,
+            points_earned: (currentStats.points_earned || 0) + pointsToAward,
+            current_streak_days: newStreak,
+            longest_streak_days: newLongestStreak,
+            last_reservation_date: today,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', reservation.customer_id)
+      }
     } catch (err) {
       console.error('Failed to award customer points:', err)
     }

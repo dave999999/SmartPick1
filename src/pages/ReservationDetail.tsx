@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Reservation } from '@/lib/types';
-import { getCustomerReservations, cancelReservation, generateQRCodeDataURL, getCurrentUser } from '@/lib/api';
+import { getCustomerReservations, userCancelReservationWithSplit, generateQRCodeDataURL, getCurrentUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -79,14 +79,19 @@ export default function ReservationDetail() {
   };
 
   const handleCancel = async () => {
-  if (!reservation) return;
-  if (!confirm(t('confirm.cancelReservation'))) return;
+    if (!reservation) return;
+    if (!confirm(t('confirm.cancelReservationSplit'))) return;
 
     try {
-      await cancelReservation(reservation.id);
-      toast.success(t('toast.reservationCancelled'));
-      navigate('/my-picks');
+      const result = await userCancelReservationWithSplit(reservation.id);
+      if (result.success) {
+        toast.success(result.message || t('toast.reservationCancelled'));
+        navigate('/my-picks');
+      } else {
+        toast.error(t('toast.failedCancelReservation'));
+      }
     } catch (error) {
+      console.error('Error cancelling reservation:', error);
       toast.error(t('toast.failedCancelReservation'));
     }
   };
