@@ -11,12 +11,13 @@ import { SectionCard } from '@/components/layout/SectionCard';
 import { PartnersManagement } from '@/components/admin/PartnersManagement';
 import { UsersManagement } from '@/components/admin/UsersManagement';
 import { OffersManagement } from '@/components/admin/OffersManagement';
-import { PendingPartners } from '@/components/admin/PendingPartners';
+import PartnersVerification from '@/components/admin/PartnersVerification';
 import { NewUsers } from '@/components/admin/NewUsers';
 import { BannedUsers } from '@/components/admin/BannedUsers';
 import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
 import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
+import AdminHealthPanel from '@/components/admin/AdminHealthPanel';
 import AuditLogs from '@/components/admin/AuditLogs';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +28,8 @@ interface DashboardStats {
   totalUsers: number;
   totalOffers: number;
   pendingPartners: number;
+  reservationsToday?: number;
+  revenueToday?: number;
 }
 
 export default function AdminDashboard() {
@@ -124,10 +127,12 @@ export default function AdminDashboard() {
       // Map to local type
       if (rpcStats) {
         setStats({
-          totalPartners: rpcStats.total_users ? rpcStats.total_partners : dashboardStats.totalPartners,
+          totalPartners: rpcStats.total_partners ?? dashboardStats.totalPartners,
           totalUsers: rpcStats.total_users ?? dashboardStats.totalUsers,
           totalOffers: rpcStats.active_offers ?? dashboardStats.totalOffers,
           pendingPartners: dashboardStats.pendingPartners,
+          reservationsToday: rpcStats.reservations_today ?? 0,
+          revenueToday: rpcStats.revenue_today ?? 0,
         });
       } else {
         setStats(dashboardStats);
@@ -248,6 +253,17 @@ export default function AdminDashboard() {
               </SectionCard>
             </div>
 
+            {typeof stats?.reservationsToday === 'number' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <SectionCard accent="blue" title="Reservations Today" description="New reservations">
+                  <div className="text-3xl font-black">{stats?.reservationsToday ?? 0}</div>
+                </SectionCard>
+                <SectionCard accent="purple" title="Revenue Today" description="Picked up">
+                  <div className="text-3xl font-black">{(stats?.revenueToday ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</div>
+                </SectionCard>
+              </div>
+            )}
+
             <SectionCard title="Quick Actions" description="Common administrative tasks" accent="none">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button
@@ -286,7 +302,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="pending">
-            <PendingPartners onStatsUpdate={loadStats} />
+            <PartnersVerification onStatsUpdate={loadStats} />
           </TabsContent>
 
           <TabsContent value="users">
@@ -320,9 +336,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="health">
-            <SectionCard title="System Health" description="Monitor system performance and errors" accent="red">
-              <p className="text-gray-600">Feature coming soon: System health monitoring will track errors, performance metrics, suspicious activity, and database health.</p>
-            </SectionCard>
+            <AdminHealthPanel />
           </TabsContent>
 
           <TabsContent value="audit">
