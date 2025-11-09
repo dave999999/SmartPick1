@@ -25,6 +25,10 @@ FROM public.partners;
 -- PART 2: DELETE OLD ACHIEVEMENTS (if any exist with wrong schema)
 -- ==============================================
 
+-- First delete user achievements that reference old definitions
+DELETE FROM public.user_achievements;
+
+-- Then delete old achievement definitions
 DELETE FROM public.achievement_definitions;
 
 -- ==============================================

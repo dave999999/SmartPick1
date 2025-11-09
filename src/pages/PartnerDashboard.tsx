@@ -19,6 +19,7 @@ import {
   getPartnerPoints,
   purchaseOfferSlot,
   partnerMarkNoShow,
+  duplicateOffer,
   type PartnerPoints,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
@@ -66,6 +67,7 @@ import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
+  console.log('🚨🚨🚨 PARTNER DASHBOARD LOADED - Debug Build 20251109204500 🚨🚨🚨');
   const { t } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -253,6 +255,7 @@ export default function PartnerDashboard() {
 
   const handleCreateOffer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log('🔥🔥🔥 CREATE OFFER BUTTON CLICKED 🔥🔥🔥');
     
     const formData = new FormData(e.currentTarget);
 
@@ -348,7 +351,14 @@ export default function PartnerDashboard() {
       }
 
       // Process images (both library URLs and custom uploads)
-      const processedImages = await processOfferImages(imageFiles, partner?.id || '');
+      let processedImages: string[] = [];
+      try {
+        processedImages = await processOfferImages(imageFiles, partner?.id || '');
+      } catch (imgErr) {
+        console.error('Image processing/upload failed, proceeding without images:', imgErr);
+        toast.error(t('partner.dashboard.toast.imageUploadFailed'));
+        processedImages = [];
+      }
 
       const offerData = {
         title,
@@ -574,10 +584,15 @@ export default function PartnerDashboard() {
   };
 
   const handleCreateNewFromOld = async (oldOffer: Offer) => {
-    if (processingIds.has(oldOffer.id)) return;
+      if (processingIds.has(oldOffer.id)) return;
 
-    try {
-      setProcessingIds(prev => new Set(prev).add(oldOffer.id));
+      try {
+        setProcessingIds(prev => new Set(prev).add(oldOffer.id));
+
+        if (!partner || partner.status !== 'APPROVED') {
+          toast.error(t('partner.dashboard.pending.afterApproval'));
+          return;
+        }
 
       // Set new pickup window using same logic as create offer
       const now = new Date();
@@ -597,47 +612,21 @@ export default function PartnerDashboard() {
         }
       }
 
-      // Create new offer with old parameters but new times
-      if (partner) {
-        // First create the offer without images
-        const createData: CreateOfferDTO = {
-          title: oldOffer.title,
-          description: oldOffer.description,
-          category: oldOffer.category,
-          original_price: oldOffer.original_price,
-          smart_price: oldOffer.smart_price,
-          quantity_total: oldOffer.quantity_total,
-          images: [], // Start with empty images array
-          pickup_window: {
-            start: now,
-            end: pickupEnd,
-          }
-        };
-
-        // Create the initial offer
-        const newOffer = await createOffer(createData, partner.id);
-        
-        // If we have images from the old offer, update the new offer with them
-        if (newOffer && oldOffer.images && oldOffer.images.length > 0) {
-          await updateOffer(newOffer.id, {
-            images: oldOffer.images
-          });
-        }
-
-    toast.success(t('partner.dashboard.toast.offerCreated'));
+        // Prefer server-side duplicate to keep logic simple and consistent
+        await duplicateOffer(oldOffer.id, partner.id);
+        toast.success(t('partner.dashboard.toast.offerCreated'));
         await loadPartnerData();
+      } catch (error) {
+        console.error('Error creating new offer:', error);
+    toast.error(t('partner.dashboard.toast.offerCreateFailed'));
+      } finally {
+        setProcessingIds(prev => {
+          const next = new Set(prev);
+          next.delete(oldOffer.id);
+          return next;
+        });
       }
-    } catch (error) {
-      console.error('Error creating new offer:', error);
-  toast.error(t('partner.dashboard.toast.offerCreateFailed'));
-    } finally {
-      setProcessingIds(prev => {
-        const next = new Set(prev);
-        next.delete(oldOffer.id);
-        return next;
-      });
-    }
-  };
+    };
 
   const handleToggleOffer = async (offerId: string, currentStatus: string) => {
     if (processingIds.has(offerId)) return;
@@ -1740,7 +1729,7 @@ const generate24HourOptions = (): string[] => {
                               size="sm"
                               className="rounded-full bg-green-500 hover:bg-green-600 text-white"
                               onClick={() => handleCreateNewFromOld(offer)}
-                              disabled={processingIds.has(offer.id)}
+                              disabled={processingIds.has(offer.id) || isPending}
                               title={t('partner.dashboard.action.clone')}
                             >
                               <Plus className="w-4 h-4" />
