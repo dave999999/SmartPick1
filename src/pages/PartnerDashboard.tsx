@@ -62,6 +62,7 @@ import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReser
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import { applyNoShowPenalty } from '@/lib/penalty-system';
 import { useI18n } from '@/lib/i18n';
+import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -73,6 +74,7 @@ export default function PartnerDashboard() {
   const [analytics, setAnalytics] = useState({ totalOffers: 0, totalReservations: 0, itemsSold: 0, revenue: 0 });
   const [partnerPoints, setPartnerPoints] = useState<PartnerPoints | null>(null);
   const [isPurchaseSlotDialogOpen, setIsPurchaseSlotDialogOpen] = useState(false);
+  const [isBuyPointsModalOpen, setIsBuyPointsModalOpen] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -2100,7 +2102,20 @@ const generate24HourOptions = (): string[] => {
               <div className="bg-gradient-to-r from-[#E8F9F4] to-[#C9F9E9] p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-medium">{t('partner.points.currentBalance')}</span>
-                  <span className="text-lg font-bold text-[#00C896]">{partnerPoints.balance}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-[#00C896]">{partnerPoints.balance}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsPurchaseSlotDialogOpen(false);
+                        setIsBuyPointsModalOpen(true);
+                      }}
+                      className="text-xs bg-[#4CC9A8] text-white hover:bg-[#3db891] border-none"
+                    >
+                      + Buy Points
+                    </Button>
+                  </div>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">{t('partner.points.currentSlots')}</span>
@@ -2115,9 +2130,19 @@ const generate24HourOptions = (): string[] => {
                 <p className="text-xs text-blue-700 mt-2">{t('partner.points.costIncreases')}</p>
               </div>
               {partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50 && (
-                <Alert className="bg-red-50 border-red-200">
-                  <AlertDescription className="text-red-800">
+                <Alert className="bg-orange-50 border-orange-200">
+                  <AlertDescription className="text-orange-800">
                     {t('partner.points.insufficientBalance')}
+                    <Button
+                      variant="link"
+                      onClick={() => {
+                        setIsPurchaseSlotDialogOpen(false);
+                        setIsBuyPointsModalOpen(true);
+                      }}
+                      className="text-[#00C896] font-semibold underline ml-2"
+                    >
+                      Buy Points
+                    </Button>
                   </AlertDescription>
                 </Alert>
               )}
@@ -2137,6 +2162,21 @@ const generate24HourOptions = (): string[] => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Buy Partner Points Modal */}
+      {partner && partnerPoints && (
+        <BuyPartnerPointsModal
+          open={isBuyPointsModalOpen}
+          onClose={() => setIsBuyPointsModalOpen(false)}
+          partnerId={partner.id}
+          currentBalance={partnerPoints.balance}
+          onSuccess={(newBalance) => {
+            setPartnerPoints({ ...partnerPoints, balance: newBalance });
+            setIsBuyPointsModalOpen(false);
+            toast.success(`✅ Successfully purchased points! New balance: ${newBalance}`);
+          }}
+        />
+      )}
     </div>
   );
 }

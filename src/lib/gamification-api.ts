@@ -406,15 +406,13 @@ export function getAchievementCategoryColor(category: string): string {
  * Format money saved display
  */
 export function formatMoneySaved(amount: number): string {
-  return `₾${amount.toFixed(2)}`;
+  const n = typeof amount === 'number' && isFinite(amount) ? amount : 0;
+  return `₾${n.toFixed(2)}`;
 }
-
-/**
- * Get streak emoji based on days
- */
 export function getStreakEmoji(days: number): string {
   if (days >= 30) return '🏆';
   if (days >= 7) return '⚡';
   if (days >= 3) return '🔥';
   return '✨';
 }
+
