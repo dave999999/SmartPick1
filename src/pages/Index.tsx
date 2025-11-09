@@ -14,7 +14,7 @@ import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, MousePointerClick, MapPin } from 'lucide-react';
+import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, MousePointerClick, MapPin, Clock } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -519,34 +519,167 @@ export default function Index() {
 
       {/* Map-First Section: Offers Map/List */}
       <section id="map-view" className="w-full">
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#00C896] mx-auto mb-4"></div>
-            <p className="text-sm md:text-base text-gray-300">{t('browse.loading')}</p>
-          </div>
-        ) : offers.length === 0 ? (
-          <div className="text-center py-12 bg-gray-900/50 rounded-2xl">
-            <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-base md:text-lg text-gray-300">{t('browse.noOffers')}</p>
-            <p className="text-xs md:text-sm text-gray-500 mt-2">{t('browse.checkBack')}</p>
-          </div>
-        ) : (
-          <>
-            <OfferMap
-              offers={filteredOffers}
-              onOfferClick={handleOfferClick}
-              selectedCategory={selectedCategory}
-              onCategorySelect={setSelectedCategory}
-              onLocationChange={setUserLocation}
-            />
-            {/* Recently Added Offers Slider - Below Map */}
-            <RecentOffersSlider
-              offers={filteredOffers}
-              onOfferClick={handleOfferClick}
-              title="🔥 Hot Deals Right Now"
-            />
-          </>
-        )}
+        <div className="max-w-7xl mx-auto px-4">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#00C896] mx-auto mb-4"></div>
+              <p className="text-sm md:text-base text-gray-300">{t('browse.loading')}</p>
+            </div>
+          ) : offers.length === 0 ? (
+            <div className="text-center py-12 bg-gray-900/50 rounded-2xl">
+              <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-base md:text-lg text-gray-300">{t('browse.noOffers')}</p>
+              <p className="text-xs md:text-sm text-gray-500 mt-2">{t('browse.checkBack')}</p>
+            </div>
+          ) : (
+            <>
+              <OfferMap
+                offers={filteredOffers}
+                onOfferClick={handleOfferClick}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+                onLocationChange={setUserLocation}
+              />
+              {/* Recently Added Offers Slider - Below Map */}
+              <div className="mt-6">
+                <RecentOffersSlider
+                  offers={filteredOffers}
+                  onOfferClick={handleOfferClick}
+                  title="🔥 Hot Deals Right Now"
+                />
+              </div>
+
+              {/* All Offers Grid - Below Recent Offers */}
+              <div className="mt-10 mb-8">
+                <div className="mb-6">
+                  <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] via-[#00e6a8] to-[#00ffbb] text-transparent bg-clip-text">
+                    All Available Offers
+                  </h2>
+                  <p className="text-sm md:text-base text-gray-400 mt-1.5 font-medium">
+                    {filteredOffers.length} offer{filteredOffers.length !== 1 ? 's' : ''} available near you
+                  </p>
+                </div>
+
+                {/* Offers Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredOffers.map((offer) => {
+                    const pickupTimes = offer.pickup_window?.start && offer.pickup_window?.end
+                      ? { start: offer.pickup_window.start, end: offer.pickup_window.end }
+                      : { start: offer.pickup_start || '', end: offer.pickup_end || '' };
+                    
+                    const expiry = (offer as any)?.expires_at || (offer as any)?.auto_expire_in || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS*60*60*1000).toISOString();
+                    const getTimeRemaining = (expiresAt: string) => {
+                      const now = new Date();
+                      const expires = new Date(expiresAt);
+                      const diff = expires.getTime() - now.getTime();
+                      const hours = Math.floor(diff / (1000 * 60 * 60));
+                      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                      if (diff <= 0) return 'Expired';
+                      if (hours > 0) return `${hours}h ${minutes}m left`;
+                      return `${minutes}m left`;
+                    };
+                    const isExpiringSoon = (expiresAt: string) => {
+                      const diff = new Date(expiresAt).getTime() - new Date().getTime();
+                      return diff > 0 && diff < 60 * 60 * 1000;
+                    };
+                    const expiringSoon = isExpiringSoon(expiry);
+                    const formatTime = (dateString: string) => {
+                      return new Date(dateString).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      });
+                    };
+
+                    return (
+                      <div
+                        key={offer.id}
+                        className="bg-white rounded-2xl border border-[#E8F9F4] cursor-pointer hover:shadow-xl transition-all duration-300 hover:scale-[1.02] overflow-hidden"
+                        onClick={() => handleOfferClick(offer)}
+                      >
+                        {/* Image */}
+                        {offer.images && offer.images.length > 0 ? (
+                          <div className="relative h-40 w-full overflow-hidden">
+                            <img
+                              src={`/images/${offer.images[0]}`}
+                              alt={offer.title}
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
+                              className="w-full h-full object-cover"
+                            />
+                            {expiringSoon && (
+                              <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded-full animate-pulse shadow-lg">
+                                ⏰ Ending Soon!
+                              </div>
+                            )}
+                            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#00C896] to-[#009B77] text-white text-xs font-semibold px-2 py-1 rounded-full shadow-lg">
+                              {offer.category}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="relative h-40 w-full bg-gradient-to-br from-[#F9FFFB] to-[#EFFFF8] flex items-center justify-center">
+                            <span className="text-6xl opacity-30">📦</span>
+                            {expiringSoon && (
+                              <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded-full animate-pulse shadow-lg">
+                                ⏰ Ending Soon!
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Content */}
+                        <div className="p-4">
+                          <div className="space-y-2">
+                            {/* Title */}
+                            <h3 className="font-bold text-base text-gray-900 line-clamp-1">
+                              {offer.title}
+                            </h3>
+
+                            {/* Partner Name */}
+                            <div className="flex items-center gap-1 text-sm text-gray-600">
+                              <MapPin className="w-3 h-3 text-[#00C896]" />
+                              <span className="line-clamp-1">{offer.partner?.business_name}</span>
+                            </div>
+
+                            {/* Price */}
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                                {offer.smart_price} ₾
+                              </span>
+                              <span className="text-sm text-gray-400 line-through">
+                                {offer.original_price} ₾
+                              </span>
+                            </div>
+
+                            {/* Pickup Time */}
+                            {pickupTimes.start && pickupTimes.end && (
+                              <div className="flex items-center gap-1 text-xs text-gray-600">
+                                <Clock className="w-3 h-3 text-[#00C896]" />
+                                <span>
+                                  {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Time Remaining & Quantity */}
+                            <div className="flex items-center justify-between pt-1">
+                              <span className={`text-xs font-medium ${
+                                expiringSoon ? 'text-orange-600' : 'text-[#00C896]'
+                              }`}>
+                                {getTimeRemaining(expiry)}
+                              </span>
+                              <div className="text-xs font-medium border border-[#E8F9F4] px-2 py-1 rounded-full">
+                                {offer.quantity_available} left
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </section>
 
       
