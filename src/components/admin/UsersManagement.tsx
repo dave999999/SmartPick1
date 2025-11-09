@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
-import { getAllUsers, updateUser, deleteUser, enableUser, disableUser } from '@/lib/admin-api';
+import { getUsersPaged, updateUser, deleteUser, enableUser, disableUser } from '@/lib/admin-api';
 import type { User } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -27,20 +27,35 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [debounceToken, setDebounceToken] = useState(0);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debounceToken, statusFilter, roleFilter]);
 
+  // Debounce search input
   useEffect(() => {
-    filterUsers();
-  }, [users, searchTerm, statusFilter, roleFilter]);
+    const t = setTimeout(() => setDebounceToken(x => x + 1), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const data = await getAllUsers();
-      setUsers(data);
+      const { items, count } = await getUsersPaged({
+        page,
+        pageSize,
+        search: searchTerm,
+        status: statusFilter,
+        role: roleFilter,
+      });
+      setUsers(items);
+      setFilteredUsers(items);
+      setTotal(count);
     } catch (error) {
       console.error('Error loading users:', error);
       toast.error('Failed to load users');
@@ -49,30 +64,9 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
     }
   };
 
-  const filterUsers = () => {
-    let filtered = users;
-
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(
-        (user) => (user.status || '').toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-
-    if (roleFilter !== 'all') {
-      filtered = filtered.filter(
-        (user) => (user.role || '').toLowerCase() === roleFilter.toLowerCase()
-      );
-    }
-
-    setFilteredUsers(filtered);
-  };
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const goPrev = () => setPage(p => Math.max(1, p - 1));
+  const goNext = () => setPage(p => Math.min(totalPages, p + 1));
 
   const handleEdit = (user: User) => {
     setEditingUser({ ...user });
@@ -290,6 +284,17 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Page {page} of {totalPages} · {total} users
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={goPrev} disabled={page <= 1}>Prev</Button>
+              <Button variant="outline" size="sm" onClick={goNext} disabled={page >= totalPages}>Next</Button>
+            </div>
           </div>
 
           {filteredUsers.length === 0 && (

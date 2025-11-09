@@ -192,8 +192,8 @@ export default function Index() {
 
     // Price filter
     filtered = filtered.filter(offer =>
-      parseFloat(offer.smart_price) >= filters.minPrice &&
-      parseFloat(offer.smart_price) <= filters.maxPrice
+      Number(offer.smart_price) >= filters.minPrice &&
+      Number(offer.smart_price) <= filters.maxPrice
     );
 
     // Distance filter (only if user location is set)
@@ -224,7 +224,7 @@ export default function Index() {
           return distA - distB;
 
         case 'cheapest':
-          return parseFloat(a.smart_price) - parseFloat(b.smart_price);
+          return Number(a.smart_price) - Number(b.smart_price);
 
         case 'expiring':
           const expiryA = (a as any)?.expires_at || (a as any)?.auto_expire_in || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
