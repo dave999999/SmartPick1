@@ -360,7 +360,7 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
     .from('partner_points')
     .select('offer_slots')
     .eq('partner_id', partnerId)
-    .single();
+    .maybeSingle();
 
   const maxSlots = partnerPoints?.offer_slots || 4;
   const activeCount = activeOffers?.length || 0;
