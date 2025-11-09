@@ -25,11 +25,17 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
   const loadAchievements = async () => {
     setLoading(true);
     try {
+      console.log('Loading achievements for user:', userId);
       const [userAch, allAch, stats] = await Promise.all([
         getUserAchievements(userId),
         getAllAchievements(),
         getUserStats(userId)
       ]);
+      console.log('Achievements loaded:', {
+        userAchievements: userAch.length,
+        allAchievements: allAch.length,
+        hasStats: !!stats
+      });
       setUserAchievements(userAch);
       setAllAchievements(allAch);
       setUserStats(stats);
