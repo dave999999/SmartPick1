@@ -349,6 +349,26 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
   if (offerData.smart_price >= offerData.original_price) throw new Error('Smart price must be less than original price');
   if (offerData.quantity_total <= 0) throw new Error('Quantity must be > 0');
 
+  // Check if partner has available slots
+  const { data: activeOffers } = await supabase
+    .from('offers')
+    .select('id')
+    .eq('partner_id', partnerId)
+    .eq('status', 'ACTIVE');
+
+  const { data: partnerPoints } = await supabase
+    .from('partner_points')
+    .select('offer_slots')
+    .eq('partner_id', partnerId)
+    .single();
+
+  const maxSlots = partnerPoints?.offer_slots || 4;
+  const activeCount = activeOffers?.length || 0;
+
+  if (activeCount >= maxSlots) {
+    throw new Error(`You've reached your maximum of ${maxSlots} active offers. Purchase more slots or deactivate an existing offer.`);
+  }
+
   // Defensive: ensure pickup window makes sense
   const start = offerData.pickup_window.start;
   const end = offerData.pickup_window.end;
