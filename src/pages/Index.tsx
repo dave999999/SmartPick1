@@ -26,14 +26,22 @@ function LanguageButtons() {
       <button
         aria-label="English"
         onClick={() => setLanguage('en')}
-        className={`px-2 py-1 rounded text-sm font-medium ${language === 'en' ? 'bg-[#00C896] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+        className={`px-3 py-1 rounded-xl text-sm font-semibold border transition-colors ${
+          language === 'en'
+            ? 'bg-white text-gray-900 border-gray-200 shadow-sm'
+            : 'bg-transparent text-gray-200 border-white/20 hover:bg-white/10'
+        }`}
       >
         EN
       </button>
       <button
         aria-label="Georgian"
         onClick={() => setLanguage('ka')}
-        className={`px-2 py-1 rounded text-sm font-medium ${language === 'ka' ? 'bg-[#00C896] text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+        className={`px-3 py-1 rounded-xl text-sm font-semibold border transition-colors ${
+          language === 'ka'
+            ? 'bg-white text-gray-900 border-gray-200 shadow-sm'
+            : 'bg-transparent text-gray-200 border-white/20 hover:bg-white/10'
+        }`}
       >
         KA
       </button>
@@ -274,34 +282,54 @@ export default function Index() {
             <LanguageButtons />
             {user ? (
               <>
-                <span className="text-sm text-gray-300 hidden lg:inline">Hello, {user.name}</span>
+                <span className="text-sm text-gray-200 hidden lg:inline">Hello, {user.name}</span>
                 {user.role === 'ADMIN' && (
                   <Button
                     variant="outline"
-                    className="h-11"
+                    className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
                     onClick={() => navigate('/admin-dashboard')}
                   >
                     <Shield className="w-4 h-4 mr-2" />
                     {t('header.admin')}
                   </Button>
                 )}
-                <Button variant="outline" className="h-11" onClick={() => navigate('/profile')}>
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                  onClick={() => navigate('/profile')}
+                >
                   <UserIcon className="w-4 h-4 mr-2" />
                   {t('header.profile')}
                 </Button>
-                <Button variant="outline" className="h-11" onClick={() => navigate('/my-picks')}>
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                  onClick={() => navigate('/my-picks')}
+                >
                   {t('header.myPicks')}
                 </Button>
-                <Button variant="outline" className="h-11" onClick={() => navigate('/partner')}>
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                  onClick={() => navigate('/partner')}
+                >
                   {t('header.partner')}
                 </Button>
-                <Button variant="outline" className="h-11" onClick={handleSignOut}>
+                <Button
+                  variant="outline"
+                  className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                  onClick={handleSignOut}
+                >
                   <LogOut className="w-4 h-4 mr-2" />
                   {t('header.signOut')}
                 </Button>
               </>
             ) : (
-              <Button variant="outline" className="h-11" onClick={() => setShowAuthDialog(true)}>
+              <Button
+                variant="outline"
+                className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                onClick={() => setShowAuthDialog(true)}
+              >
                 <LogIn className="w-4 h-4 mr-2" />
                 {t('header.signIn')}
               </Button>
@@ -312,7 +340,7 @@ export default function Index() {
           <div className="flex md:hidden items-center gap-2">
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="h-11 w-11">
+                <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-white/20 text-white">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
