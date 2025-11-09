@@ -324,7 +324,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               {/* CAPTCHA required for all sign-in attempts */}
               <div className="flex justify-center">
                 <Turnstile
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKIwWhPNRi7fs'}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
                     setError(null);
@@ -452,7 +452,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               {/* CAPTCHA required for signup */}
               <div className="flex justify-center">
                 <Turnstile
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKIwWhPNRi7fs'}
                   onSuccess={(token) => {
                     setCaptchaToken(token);
                     setError(null);
