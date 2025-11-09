@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
-import { getActiveOffers, getCurrentUser, signOut } from '@/lib/api';
+import { getActiveOffers, getCurrentUser, signOut, resolveOfferImageUrl } from '@/lib/api';
 import { isDemoMode } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -600,7 +600,7 @@ export default function Index() {
                         {offer.images && offer.images.length > 0 ? (
                           <div className="relative h-40 w-full overflow-hidden">
                             <img
-                              src={`/images/${offer.images[0]}`}
+                              src={resolveOfferImageUrl(offer.images[0], offer.category)}
                               alt={offer.title}
                               onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                               className="w-full h-full object-cover"
