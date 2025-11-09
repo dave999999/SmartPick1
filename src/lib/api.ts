@@ -387,27 +387,34 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
     ? await uploadImages(offerData.images, 'offer-images')
     : [];
 
+  const insertData = {
+    partner_id: partnerId,
+    title: offerData.title.trim(),
+    description: offerData.description.trim(),
+    category: offerData.category,
+    images: imageUrls,
+    original_price: Number(offerData.original_price),
+    smart_price: Number(offerData.smart_price),
+    quantity_available: Number(offerData.quantity_total),
+    quantity_total: Number(offerData.quantity_total),
+    pickup_start: offerData.pickup_window.start.toISOString(),
+    pickup_end: offerData.pickup_window.end.toISOString(),
+    status: 'ACTIVE' as const,
+    expires_at: offerData.pickup_window.end.toISOString(),
+  };
+
+  console.log('Creating offer with data:', insertData);
+
   const { data, error } = await supabase
     .from('offers')
-    .insert({
-      partner_id: partnerId,
-      title: offerData.title,
-      description: offerData.description,
-      category: offerData.category,
-      images: imageUrls,
-      original_price: offerData.original_price,
-      smart_price: offerData.smart_price,
-      quantity_available: offerData.quantity_total,
-      quantity_total: offerData.quantity_total,
-      pickup_start: offerData.pickup_window.start.toISOString(),
-      pickup_end: offerData.pickup_window.end.toISOString(),
-      status: 'ACTIVE',
-      expires_at: offerData.pickup_window.end.toISOString(),
-    })
+    .insert(insertData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Offer creation error:', error);
+    throw new Error(`Failed to create offer: ${error.message}`);
+  }
   return data as Offer;
 };
 
