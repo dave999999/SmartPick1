@@ -1,4 +1,5 @@
 import { supabase, isDemoMode } from './supabase';
+import { logAdminAction } from './api/admin-advanced';
 import type { User, Partner, Offer } from './types';
 import { logger } from './logger';
 
@@ -139,6 +140,9 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
       .single();
       
     if (error) throw error;
+    try {
+      await logAdminAction('PARTNER_UPDATED', 'PARTNER', partnerId, { updates });
+    } catch {}
     return data;
   } catch (error) {
     console.error('Admin API: Error updating partner:', error);
@@ -158,26 +162,37 @@ export const deletePartner = async (partnerId: string) => {
     .eq('id', partnerId);
     
   if (error) throw error;
+  try {
+    await logAdminAction('PARTNER_DELETED', 'PARTNER', partnerId);
+  } catch {}
 };
 
 export const approvePartner = async (partnerId: string) => {
   await checkAdminAccess();
-  return updatePartner(partnerId, { status: 'APPROVED' });
+  const res = await updatePartner(partnerId, { status: 'APPROVED' });
+  try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', partnerId); } catch {}
+  return res;
 };
 
 export const pausePartner = async (partnerId: string) => {
   await checkAdminAccess();
-  return updatePartner(partnerId, { status: 'PAUSED' });
+  const res = await updatePartner(partnerId, { status: 'PAUSED' });
+  try { await logAdminAction('PARTNER_PAUSED', 'PARTNER', partnerId); } catch {}
+  return res;
 };
 
 export const unpausePartner = async (partnerId: string) => {
   await checkAdminAccess();
-  return updatePartner(partnerId, { status: 'APPROVED' });
+  const res = await updatePartner(partnerId, { status: 'APPROVED' });
+  try { await logAdminAction('PARTNER_UNPAUSED', 'PARTNER', partnerId); } catch {}
+  return res;
 };
 
 export const disablePartner = async (partnerId: string) => {
   await checkAdminAccess();
-  return updatePartner(partnerId, { status: 'BLOCKED' });
+  const res = await updatePartner(partnerId, { status: 'BLOCKED' });
+  try { await logAdminAction('PARTNER_DISABLED', 'PARTNER', partnerId); } catch {}
+  return res;
 };
 
 // Users Management
@@ -244,6 +259,9 @@ export const updateUser = async (userId: string, updates: Partial<User>) => {
     .single();
     
   if (error) throw error;
+  try {
+    await logAdminAction('USER_UPDATED', 'USER', userId, { updates });
+  } catch {}
   return data;
 };
 
@@ -259,16 +277,21 @@ export const deleteUser = async (userId: string) => {
     .eq('id', userId);
     
   if (error) throw error;
+  try { await logAdminAction('USER_DELETED', 'USER', userId); } catch {}
 };
 
 export const disableUser = async (userId: string) => {
   await checkAdminAccess();
-  return updateUser(userId, { status: 'DISABLED' });
+  const res = await updateUser(userId, { status: 'DISABLED' });
+  try { await logAdminAction('USER_DISABLED', 'USER', userId); } catch {}
+  return res;
 };
 
 export const enableUser = async (userId: string) => {
   await checkAdminAccess();
-  return updateUser(userId, { status: 'ACTIVE' });
+  const res = await updateUser(userId, { status: 'ACTIVE' });
+  try { await logAdminAction('USER_ENABLED', 'USER', userId); } catch {}
+  return res;
 };
 
 // Banned Users Management
@@ -311,6 +334,7 @@ export const unbanUser = async (userId: string) => {
       .eq('id', userId);
 
     if (error) throw error;
+    try { await logAdminAction('USER_UNBANNED', 'USER', userId); } catch {}
   } catch (error) {
     console.error('Admin API: Error unbanning user:', error);
     throw error;
@@ -371,6 +395,7 @@ export const updateOffer = async (offerId: string, updates: Partial<Offer>) => {
     .single();
     
   if (error) throw error;
+  try { await logAdminAction('OFFER_UPDATED', 'OFFER', offerId, { updates }); } catch {}
   return data;
 };
 
@@ -386,26 +411,121 @@ export const deleteOffer = async (offerId: string) => {
     .eq('id', offerId);
     
   if (error) throw error;
+  try { await logAdminAction('OFFER_DELETED', 'OFFER', offerId); } catch {}
 };
 
 export const pauseOffer = async (offerId: string) => {
   await checkAdminAccess();
-  return updateOffer(offerId, { status: 'PAUSED' });
+  const res = await updateOffer(offerId, { status: 'PAUSED' });
+  try { await logAdminAction('OFFER_PAUSED', 'OFFER', offerId); } catch {}
+  return res;
 };
 
 export const resumeOffer = async (offerId: string) => {
   await checkAdminAccess();
-  return updateOffer(offerId, { status: 'ACTIVE' });
+  const res = await updateOffer(offerId, { status: 'ACTIVE' });
+  try { await logAdminAction('OFFER_RESUMED', 'OFFER', offerId); } catch {}
+  return res;
 };
 
 export const disableOffer = async (offerId: string) => {
   await checkAdminAccess();
-  return updateOffer(offerId, { status: 'EXPIRED' });
+  const res = await updateOffer(offerId, { status: 'EXPIRED' });
+  try { await logAdminAction('OFFER_DISABLED', 'OFFER', offerId); } catch {}
+  return res;
 };
 
 export const enableOffer = async (offerId: string) => {
   await checkAdminAccess();
-  return updateOffer(offerId, { status: 'ACTIVE' });
+  const res = await updateOffer(offerId, { status: 'ACTIVE' });
+  try { await logAdminAction('OFFER_ENABLED', 'OFFER', offerId); } catch {}
+  return res;
+};
+
+// New paged helpers: users, partners, offers
+export const getUsersPaged = async (options?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  role?: string;
+}) => {
+  if (isDemoMode) return { items: [], count: 0 };
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? 25));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  await checkAdminAccess();
+  let q = supabase
+    .from('users')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  if (options?.search && options.search.trim()) {
+    const s = options.search.trim();
+    q = q.or(`name.ilike.%${s}%,email.ilike.%${s}%`);
+  }
+  if (options?.status && options.status.toLowerCase() !== 'all') q = q.eq('status', options.status);
+  if (options?.role && options.role.toLowerCase() !== 'all') q = q.eq('role', options.role);
+  const { data, error, count } = await q;
+  if (error) throw error;
+  return { items: data || [], count: count || 0 };
+};
+
+export const getPartnersPaged = async (options?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+}) => {
+  if (isDemoMode) return { items: [], count: 0 };
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? 25));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  await checkAdminAccess();
+  let q = supabase
+    .from('partners')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  if (options?.search && options.search.trim()) {
+    const s = options.search.trim();
+    q = q.ilike('business_name', `%${s}%`);
+  }
+  if (options?.status && options.status.toLowerCase() !== 'all') q = q.eq('status', options.status);
+  const { data, error, count } = await q;
+  if (error) throw error;
+  return { items: data || [], count: count || 0 };
+};
+
+export const getOffersPaged = async (options?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  category?: string;
+}) => {
+  if (isDemoMode) return { items: [], count: 0 };
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? 25));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  await checkAdminAccess();
+  let q = supabase
+    .from('offers')
+    .select('*, partner:partners(business_name, business_type)', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
+  if (options?.search && options.search.trim()) {
+    const s = options.search.trim();
+    q = q.or(`title.ilike.%${s}%,description.ilike.%${s}%,category.ilike.%${s}%,partner.business_name.ilike.%${s}%`);
+  }
+  if (options?.status && options.status.toLowerCase() !== 'all') q = q.eq('status', options.status);
+  if (options?.category && options.category.toLowerCase() !== 'all') q = q.ilike('category', `%${options.category}%`);
+  const { data, error, count } = await q;
+  if (error) throw error;
+  return { items: data || [], count: count || 0 };
 };
 
 // Dashboard Stats

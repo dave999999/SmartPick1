@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Edit, Trash2, CheckCircle, XCircle, Package } from 'lucide-react';
-import { getAllOffers, updateOffer, deleteOffer, enableOffer, disableOffer } from '@/lib/admin-api';
+import { getOffersPaged, updateOffer, deleteOffer, enableOffer, disableOffer } from '@/lib/admin-api';
 import type { Offer } from '@/lib/types';
 import { toast } from 'sonner';
 
@@ -28,20 +28,37 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<any | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(25);
+  const [total, setTotal] = useState(0);
+  const [debounceToken, setDebounceToken] = useState(0);
 
   useEffect(() => {
     loadOffers();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, debounceToken, categoryFilter]);
 
   useEffect(() => {
-    filterOffers();
-  }, [offers, searchTerm, statusFilter, categoryFilter]);
+    const t = setTimeout(() => setDebounceToken(x => x + 1), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
   const loadOffers = async () => {
     try {
       setLoading(true);
-      const data = await getAllOffers();
-      setOffers(data);
+      const { items, count } = await getOffersPaged({
+        page,
+        pageSize,
+        search: searchTerm,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      });
+      setOffers(items);
+      // Apply client-side status filter to preserve derived statuses
+      const filtered = (statusFilter === 'all')
+        ? items
+        : items.filter((offer) => (getDerivedStatus(offer) || '').toLowerCase() === statusFilter.toLowerCase());
+      setFilteredOffers(filtered);
+      setTotal(count);
     } catch (error) {
       console.error('Error loading offers:', error);
       toast.error('Failed to load offers');
@@ -62,31 +79,9 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     return offer.status;
   };
 
-  const filterOffers = () => {
-    let filtered = offers;
-
-    if (searchTerm) {
-      filtered = filtered.filter(offer =>
-        offer.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        offer.partner?.business_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(
-        (offer) => getDerivedStatus(offer)?.toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-
-    if (categoryFilter !== 'all') {
-      filtered = filtered.filter(
-        (offer) => (offer.category || '').toLowerCase() === categoryFilter.toLowerCase()
-      );
-    }
-
-    setFilteredOffers(filtered);
-  };
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const goPrev = () => setPage(p => Math.max(1, p - 1));
+  const goNext = () => setPage(p => Math.min(totalPages, p + 1));
 
   const handleEdit = (offer: any) => {
     setEditingOffer({ ...offer });
@@ -325,6 +320,17 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                 ))}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600">
+              Page {page} of {totalPages} · {total} offers
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={goPrev} disabled={page <= 1}>Prev</Button>
+              <Button variant="outline" size="sm" onClick={goNext} disabled={page >= totalPages}>Next</Button>
+            </div>
           </div>
 
           {filteredOffers.length === 0 && (
