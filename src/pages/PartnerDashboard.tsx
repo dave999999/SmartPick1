@@ -365,6 +365,28 @@ export default function PartnerDashboard() {
       };
 
       if (partner) {
+        // Log partner info for debugging
+        console.log('Partner info:', {
+          id: partner.id,
+          user_id: partner.user_id,
+          status: partner.status,
+          business_name: partner.business_name
+        });
+
+        // Check current auth user
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        console.log('Current auth user:', {
+          id: currentUser?.id,
+          email: currentUser?.email
+        });
+
+        // Verify partner_id matches user_id
+        if (partner.user_id !== currentUser?.id) {
+          console.error('MISMATCH: Partner user_id does not match current user!');
+          toast.error('Authentication error: Please log out and log back in');
+          return;
+        }
+
         // Determine status and scheduled_publish_at
         const offerStatus = isScheduled ? 'SCHEDULED' : 'ACTIVE';
         const scheduledDate = isScheduled && scheduledPublishAt ? new Date(scheduledPublishAt).toISOString() : null;
