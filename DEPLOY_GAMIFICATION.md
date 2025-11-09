@@ -24,6 +24,8 @@ Before deploying, make sure you have:
 
 ### **STEP 1: Create Database Tables and Functions** (5 minutes)
 
+**Part A: Core Gamification Tables**
+
 1. Open **Supabase Dashboard** in browser:
    ```
    https://supabase.com/dashboard/project/***REMOVED_PROJECT_ID***
@@ -51,6 +53,23 @@ Before deploying, make sure you have:
    
    Partner Records:
      Partners with points: 2 (or more)
+   ```
+
+**Part B: Purchase Functions**
+
+1. Click **"New Query"** again in SQL Editor
+
+2. Copy **ALL contents** from `ADD_PURCHASE_FUNCTIONS.sql` and paste
+
+3. Click **"Run"** (or press F5)
+
+4. ✅ **Verify success**: You should see:
+   ```
+   ✅ PURCHASE FUNCTIONS ADDED!
+   
+   Functions:
+     purchase_user_points: ✅ EXISTS
+     purchase_partner_offer_slot: ✅ EXISTS
    ```
 
 ---
@@ -203,12 +222,21 @@ SELECT * FROM partners WHERE user_id = auth.uid();
 
 After deployment:
 
+**For All Users:**
+✅ Profile page shows "Wallet" tab  
+✅ SmartPoints balance displayed  
+✅ "Buy Points" button works  
+✅ Recent transactions showing  
+✅ No "Gamification Coming Soon" message  
+
+**For Partners:**
+✅ Partner dashboard shows partner points balance  
+✅ Can purchase offer slots with points (100 points = 1 slot)  
 ✅ Partner marks reservation as "Picked Up"  
 ✅ Customer receives 5 points  
 ✅ Partner receives 5 points  
 ✅ Both transactions logged in database  
 ✅ No security errors in console  
-✅ Dashboard shows updated point balance  
 
 ---
 
