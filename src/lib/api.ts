@@ -1476,17 +1476,19 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
       .maybeSingle();
 
     if (error) {
-      console.error('❌ getPartnerPoints error:', error);
-      logger.error('Failed to fetch partner points', { error, userId });
-      throw error;
+      // Table might not exist - return null instead of throwing
+      console.warn('⚠️ getPartnerPoints error (table might not exist):', error);
+      logger.warn('Partner points table not available', { error, userId });
+      return null;
     }
 
     console.log('✅ getPartnerPoints result:', data);
     return data;
   } catch (error) {
-    console.error('❌ getPartnerPoints exception:', error);
-    logger.error('Error in getPartnerPoints', { error, userId });
-    throw error;
+    // Don't throw - return null to allow dashboard to load
+    console.warn('⚠️ getPartnerPoints exception:', error);
+    logger.warn('Error in getPartnerPoints', { error, userId });
+    return null;
   }
 };
 
@@ -1503,14 +1505,16 @@ export const getPartnerPointTransactions = async (
       .limit(limit);
 
     if (error) {
-      logger.error('Failed to fetch partner point transactions', { error, partnerId });
-      throw error;
+      // Table might not exist - return empty array
+      logger.warn('Partner point transactions table not available', { error, partnerId });
+      return [];
     }
 
     return data || [];
   } catch (error) {
-    logger.error('Error in getPartnerPointTransactions', { error, partnerId });
-    throw error;
+    // Don't throw - return empty array
+    logger.warn('Error in getPartnerPointTransactions', { error, partnerId });
+    return [];
   }
 };
 
