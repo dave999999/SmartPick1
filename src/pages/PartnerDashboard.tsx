@@ -369,53 +369,35 @@ export default function PartnerDashboard() {
         const offerStatus = isScheduled ? 'SCHEDULED' : 'ACTIVE';
         const scheduledDate = isScheduled && scheduledPublishAt ? new Date(scheduledPublishAt).toISOString() : null;
 
-        // Create offer with already-processed image URLs
-        let { data, error } = await supabase
+        // Create offer with only columns that exist in the table
+        // Note: scheduled_publish_at and auto_expire_in don't exist in offers table
+        const insertData = {
+          partner_id: partner.id,
+          title: offerData.title,
+          description: offerData.description,
+          category: offerData.category,
+          images: processedImages,
+          original_price: offerData.original_price,
+          smart_price: offerData.smart_price,
+          quantity_available: offerData.quantity_total,
+          quantity_total: offerData.quantity_total,
+          pickup_start: offerData.pickup_window.start.toISOString(),
+          pickup_end: offerData.pickup_window.end.toISOString(),
+          status: offerStatus,
+          expires_at: offerData.pickup_window.end.toISOString(),
+        };
+
+        console.log('Creating offer with data:', insertData);
+
+        const { data, error } = await supabase
           .from('offers')
-          .insert({
-            partner_id: partner.id,
-            title: offerData.title,
-            description: offerData.description,
-            category: offerData.category,
-            images: processedImages,
-            original_price: offerData.original_price,
-            smart_price: offerData.smart_price,
-            quantity_available: offerData.quantity_total,
-            quantity_total: offerData.quantity_total,
-            pickup_start: offerData.pickup_window.start.toISOString(),
-            pickup_end: offerData.pickup_window.end.toISOString(),
-            status: offerStatus,
-            expires_at: offerData.pickup_window.end.toISOString(),
-            auto_expire_in: offerData.pickup_window.end.toISOString(),
-            ...(scheduledDate && { scheduled_publish_at: scheduledDate }),
-          })
+          .insert(insertData)
           .select()
           .single();
 
-        if (error && (String(error?.message || '').includes('auto_expire_in') || String(error?.code) === 'PGRST204')) {
-          console.warn('API schema missing auto_expire_in; retrying insert without the column');
-          const retry = await supabase
-            .from('offers')
-            .insert({
-              partner_id: partner.id,
-              title: offerData.title,
-              description: offerData.description,
-              category: offerData.category,
-              images: processedImages,
-              original_price: offerData.original_price,
-              smart_price: offerData.smart_price,
-              quantity_available: offerData.quantity_total,
-              quantity_total: offerData.quantity_total,
-              pickup_start: offerData.pickup_window.start.toISOString(),
-              pickup_end: offerData.pickup_window.end.toISOString(),
-              status: offerStatus,
-              expires_at: offerData.pickup_window.end.toISOString(),
-              ...(scheduledDate && { scheduled_publish_at: scheduledDate }),
-            })
-            .select()
-            .single();
-          data = retry.data as any;
-          error = retry.error as any;
+        if (error) {
+          console.error('Offer creation error:', error);
+          throw new Error(`Failed to create offer: ${error.message}`);
         }
 
         if (error) throw error;
