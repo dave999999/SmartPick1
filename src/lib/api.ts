@@ -1381,15 +1381,54 @@ export const duplicateOffer = async (offerId: string, partnerId: string): Promis
 
   if (fetchError) throw fetchError;
 
-  // Set pickup time to next day
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // Get partner's business hours to determine pickup window duration
+  const { data: partner, error: partnerError } = await supabase
+    .from('partners')
+    .select('business_hours')
+    .eq('id', partnerId)
+    .single();
+
+  if (partnerError) throw partnerError;
+
+  // Set pickup to start NOW
+  const now = new Date();
+  const pickupStart = new Date(now);
   
-  const pickupStart = new Date(originalOffer.pickup_start);
-  const pickupEnd = new Date(originalOffer.pickup_end);
+  // Calculate pickup end time based on partner's business hours
+  // Default to 12 hours if 24h operation, or use actual business hours
+  const businessHours = partner?.business_hours;
+  let durationHours = 12; // Default for 24h businesses
   
-  pickupStart.setDate(tomorrow.getDate());
-  pickupEnd.setDate(tomorrow.getDate());
+  // If partner has business hours set, calculate duration
+  if (businessHours && typeof businessHours === 'object') {
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const today = dayNames[now.getDay()];
+    const todayHours = businessHours[today];
+    
+    if (todayHours && todayHours.open && todayHours.close) {
+      // Parse business hours (format: "HH:MM")
+      const [openHour, openMin] = todayHours.open.split(':').map(Number);
+      const [closeHour, closeMin] = todayHours.close.split(':').map(Number);
+      
+      // Create date objects for today's open/close times
+      const openTime = new Date(now);
+      openTime.setHours(openHour, openMin, 0, 0);
+      
+      const closeTime = new Date(now);
+      closeTime.setHours(closeHour, closeMin, 0, 0);
+      
+      // If close time is before open time, it's next day closing
+      if (closeTime < openTime) {
+        closeTime.setDate(closeTime.getDate() + 1);
+      }
+      
+      // Calculate hours until closing
+      durationHours = Math.max(1, Math.floor((closeTime.getTime() - now.getTime()) / (1000 * 60 * 60)));
+    }
+  }
+  
+  const pickupEnd = new Date(pickupStart);
+  pickupEnd.setHours(pickupEnd.getHours() + durationHours);
 
   // Create new offer with updated dates
   const { data, error } = await supabase
