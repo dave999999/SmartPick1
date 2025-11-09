@@ -115,37 +115,76 @@ serve(async (req) => {
     // Award points to customer (5 points for completing pickup)
     const pointsToAward = reservation.points_spent || 5
     
-    const { error: customerPointsError } = await supabaseAdmin.rpc('add_user_points', {
-      p_user_id: reservation.customer_id,
-      p_amount: pointsToAward,
-      p_reason: 'PICKUP_COMPLETE',
-      p_metadata: {
-        reservation_id: reservation_id,
-        partner_id: partner.id,
-        offer_id: reservation.offer_id
-      }
-    })
+    // Award customer points - update user_points table directly
+    try {
+      const { data: currentPoints } = await supabaseAdmin
+        .from('user_points')
+        .select('balance')
+        .eq('user_id', reservation.customer_id)
+        .single()
+      
+      const oldBalance = currentPoints?.balance || 0
+      const newBalance = oldBalance + pointsToAward
 
-    if (customerPointsError) {
-      console.error('Failed to award customer points:', customerPointsError)
-      // Don't throw - pickup succeeded even if points failed
+      await supabaseAdmin
+        .from('user_points')
+        .upsert({
+          user_id: reservation.customer_id,
+          balance: newBalance
+        })
+
+      await supabaseAdmin
+        .from('point_transactions')
+        .insert({
+          user_id: reservation.customer_id,
+          change: pointsToAward,
+          reason: 'PICKUP_COMPLETE',
+          balance_before: oldBalance,
+          balance_after: newBalance,
+          metadata: {
+            reservation_id: reservation_id,
+            partner_id: partner.id,
+            offer_id: reservation.offer_id
+          }
+        })
+    } catch (err) {
+      console.error('Failed to award customer points:', err)
     }
 
     // Award points to partner (5 points for successful pickup)
-    const { error: partnerPointsError } = await supabaseAdmin.rpc('add_partner_points', {
-      p_partner_user_id: user.id,
-      p_amount: pointsToAward,
-      p_reason: 'PICKUP_REWARD',
-      p_metadata: {
-        reservation_id: reservation_id,
-        customer_id: reservation.customer_id,
-        offer_id: reservation.offer_id
-      }
-    })
+    try {
+      const { data: currentPartnerPoints } = await supabaseAdmin
+        .from('partner_points')
+        .select('balance')
+        .eq('partner_id', partner.id)
+        .single()
+      
+      const oldBalance = currentPartnerPoints?.balance || 0
+      const newBalance = oldBalance + pointsToAward
 
-    if (partnerPointsError) {
-      console.error('Failed to award partner points:', partnerPointsError)
-      // Don't throw - pickup succeeded even if points failed
+      await supabaseAdmin
+        .from('partner_points')
+        .upsert({
+          partner_id: partner.id,
+          balance: newBalance
+        })
+
+      await supabaseAdmin
+        .from('partner_point_transactions')
+        .insert({
+          partner_id: partner.id,
+          change: pointsToAward,
+          reason: 'PICKUP_REWARD',
+          balance_before: oldBalance,
+          balance_after: newBalance,
+          metadata: {
+            reservation_id: reservation_id,
+            customer_id: reservation.customer_id,
+            offer_id: reservation.offer_id
+          }
+        })
+    } catch (err) {
+      console.error('Failed to award partner points:', err)
     }
 
     // Return success
