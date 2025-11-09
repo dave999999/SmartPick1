@@ -16,6 +16,7 @@ import { NewUsers } from '@/components/admin/NewUsers';
 import { BannedUsers } from '@/components/admin/BannedUsers';
 import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
+import AdminAnalyticsPanel from '@/components/admin/AdminAnalyticsPanel';
 import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
 import AdminHealthPanel from '@/components/admin/AdminHealthPanel';
 import AuditLogs from '@/components/admin/AuditLogs';
@@ -330,9 +331,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <SectionCard title="Analytics & Insights" description="Platform-wide analytics and trends" accent="blue">
-              <p className="text-gray-600">Feature coming soon: Analytics dashboard will show user growth charts, category performance, completion rates, and geographic distribution.</p>
-            </SectionCard>
+            <AdminAnalyticsPanel />
           </TabsContent>
 
           <TabsContent value="health">
