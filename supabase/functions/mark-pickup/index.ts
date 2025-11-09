@@ -22,6 +22,9 @@ serve(async (req) => {
       throw new Error('No authorization header')
     }
 
+    // Extract JWT token
+    const token = authHeader.replace('Bearer ', '')
+
     // Create Supabase client with service_role (full permissions)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,20 +37,10 @@ serve(async (req) => {
       }
     )
 
-    // Also create client with user's token to verify permissions
-    const supabaseUser = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
-      }
-    )
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    // Get current user using admin client with the JWT token
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
     if (userError || !user) {
+      console.error('Auth error:', userError)
       throw new Error('Unauthorized')
     }
 
@@ -208,10 +201,13 @@ serve(async (req) => {
       },
     )
   } catch (error) {
+    console.error('Edge Function Error:', error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
