@@ -702,26 +702,68 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
     return { valid: false, error: 'QR code too short' };
   }
 
-  // One-shot server RPC path for validation + pickup
+  // Validate and pickup using Edge Function (has service_role to handle points)
   if (autoMarkAsPickedUp) {
     try {
-      const { data: rpc, error: rpcErr } = await supabase.rpc('validate_and_pickup', { p_qr_code: qrCode });
-      if (rpcErr) {
-        logger.error('validate_and_pickup RPC error', { error: rpcErr, qrCode });
-        return { valid: false, error: rpcErr.message || rpcErr.details || 'Failed to validate/pickup' };
+      console.log('🔍 QR Scanner: Validating and marking as picked up:', qrCode);
+      
+      // First, find the reservation by QR code
+      const { data: reservation, error: findError } = await supabase
+        .from('reservations')
+        .select('id, status, expires_at, partner_id')
+        .eq('qr_code', qrCode)
+        .eq('status', 'ACTIVE')
+        .single();
+
+      if (findError || !reservation) {
+        logger.error('QR validation: reservation not found', { error: findError, qrCode });
+        return { valid: false, error: 'Invalid or expired QR code' };
       }
-      if (rpc && (rpc as any).valid) {
-        const resId = (rpc as any).reservation_id;
-        const { data: fetched } = await supabase
-          .from('reservations')
-          .select('*, offer:offers(*), customer:users(name, email), partner:partners(*)')
-          .eq('id', resId)
-          .single();
-        return { valid: true, reservation: fetched as Reservation };
+
+      console.log('✅ Found reservation:', reservation.id);
+
+      // Get auth session for Edge Function
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        logger.error('QR validation: not authenticated', { error: sessionError });
+        return { valid: false, error: 'Not authenticated' };
       }
-      return { valid: false, error: (rpc as any)?.error || 'Invalid or expired QR code' };
+
+      // Call Edge Function to mark as picked up (handles points transfer)
+      const { data: functionResult, error: functionError } = await supabase.functions.invoke('mark-pickup', {
+        body: { reservation_id: reservation.id },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
+
+      if (functionError) {
+        logger.error('QR validation: Edge Function error', { error: functionError });
+        return { valid: false, error: functionError.message || 'Failed to mark as picked up' };
+      }
+
+      if (!functionResult?.success) {
+        logger.error('QR validation: Edge Function returned error', { result: functionResult });
+        return { valid: false, error: functionResult?.error || 'Failed to mark as picked up' };
+      }
+
+      console.log('✅ Successfully marked as picked up via QR scan');
+
+      // Fetch updated reservation with full details
+      const { data: fetched, error: fetchError } = await supabase
+        .from('reservations')
+        .select('*, offer:offers(*), customer:users(name, email), partner:partners(*)')
+        .eq('id', reservation.id)
+        .single();
+
+      if (fetchError) {
+        logger.error('QR validation: failed to fetch updated reservation', { error: fetchError });
+        return { valid: false, error: 'Pickup successful but failed to fetch details' };
+      }
+
+      return { valid: true, reservation: fetched as Reservation };
     } catch (e: any) {
-      logger.error('validate_and_pickup exception', { error: e, qrCode });
+      logger.error('QR validation exception', { error: e, qrCode });
       return { valid: false, error: e.message || 'Failed to validate/pickup' };
     }
   }
