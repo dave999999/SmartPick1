@@ -179,8 +179,12 @@ export default function MyPicks() {
         console.log('✅ Reservation status changed to:', reservation.status, '- closing QR dialog');
         setShowQRCode(null);
         toast.success(t('toast.pickupConfirmed'));
-        // Force immediate reload
+        // Force immediate reload and refresh page
         loadReservations();
+        // Force full page refresh to clear cache and update URL
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       }
     }
   }, [reservations, showQRCode, t]);
