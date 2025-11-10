@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Edit, Trash2, UserCheck, UserX } from 'lucide-react';
 import { getUsersPaged, updateUser, deleteUser, enableUser, disableUser } from '@/lib/admin-api';
+import { getCurrentUser } from '@/lib/api';
 import type { User } from '@/lib/types';
 import { toast } from 'sonner';
+import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 
 interface UsersManagementProps {
   onStatsUpdate: () => void;
@@ -98,6 +100,16 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
     if (!userToDelete) return;
 
     try {
+      // Rate limit check
+      const { user } = await getCurrentUser();
+      if (user?.id) {
+        const rateLimitCheck = await checkServerRateLimit('admin_action', user.id);
+        if (!rateLimitCheck.allowed) {
+          toast.error('Too many admin actions. Please try again later.');
+          return;
+        }
+      }
+
       await deleteUser(userToDelete.id);
       toast.success('User deleted successfully');
       setShowDeleteDialog(false);
@@ -112,6 +124,16 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
 
   const handleEnable = async (user: User) => {
     try {
+      // Rate limit check
+      const { user: adminUser } = await getCurrentUser();
+      if (adminUser?.id) {
+        const rateLimitCheck = await checkServerRateLimit('admin_action', adminUser.id);
+        if (!rateLimitCheck.allowed) {
+          toast.error('Too many admin actions. Please try again later.');
+          return;
+        }
+      }
+
       await enableUser(user.id);
       toast.success('User enabled successfully');
       loadUsers();
@@ -214,7 +236,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
           </div>
 
           {/* Users Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
