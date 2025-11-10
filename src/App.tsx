@@ -40,7 +40,7 @@ const AppContent = () => {
 
       try {
         const user = await getCurrentUser();
-        setIsAdmin(user?.role === 'admin');
+        setIsAdmin(user?.role === 'ADMIN');
       } catch (error) {
         // If there's an error fetching user, assume not admin
         setIsAdmin(false);
