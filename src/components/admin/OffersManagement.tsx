@@ -60,7 +60,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
       setFilteredOffers(filtered);
       setTotal(count);
     } catch (error) {
-      console.error('Error loading offers:', error);
+      logger.error('Error loading offers:', error);
       toast.error('Failed to load offers');
     } finally {
       setLoading(false);
@@ -100,7 +100,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error updating offer:', error);
+      logger.error('Error updating offer:', error);
       toast.error('Failed to update offer');
     }
   };
@@ -121,7 +121,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error deleting offer:', error);
+      logger.error('Error deleting offer:', error);
       toast.error('Failed to delete offer');
     }
   };
@@ -133,7 +133,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error enabling offer:', error);
+      logger.error('Error enabling offer:', error);
       toast.error('Failed to enable offer');
     }
   };
@@ -145,7 +145,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error disabling offer:', error);
+      logger.error('Error disabling offer:', error);
       toast.error('Failed to disable offer');
     }
   };
@@ -515,3 +515,4 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     </div>
   );
 }
+

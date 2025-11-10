@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
 import { getActiveOffers, getCurrentUser, signOut, resolveOfferImageUrl } from '@/lib/api';
@@ -14,10 +14,21 @@ import ReservationModal from '@/components/ReservationModal';
 import RecentOffersSlider from '@/components/RecentOffersSlider';
 import SearchAndFilters, { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { ShoppingBag, LogIn, LogOut, AlertCircle, Shield, Globe, Menu, User as UserIcon, MousePointerClick, MapPin, Clock } from 'lucide-react';
+import ShoppingBag from 'lucide-react/dist/esm/icons/shopping-bag';
+import LogIn from 'lucide-react/dist/esm/icons/log-in';
+import LogOut from 'lucide-react/dist/esm/icons/log-out';
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle';
+import Shield from 'lucide-react/dist/esm/icons/shield';
+import Globe from 'lucide-react/dist/esm/icons/globe';
+import Menu from 'lucide-react/dist/esm/icons/menu';
+import UserIcon from 'lucide-react/dist/esm/icons/user';
+import MousePointerClick from 'lucide-react/dist/esm/icons/mouse-pointer-click';
+import MapPin from 'lucide-react/dist/esm/icons/map-pin';
+import Clock from 'lucide-react/dist/esm/icons/clock';
 import { useI18n } from '@/lib/i18n';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 function LanguageButtons() {
   const { language, setLanguage } = useI18n();
@@ -102,7 +113,7 @@ export default function Index() {
       const data = await getActiveOffers();
       setOffers(data);
     } catch (error) {
-      console.error('Error loading offers:', error);
+      logger.error('Error loading offers:', error);
       if (!isDemoMode) {
         toast.error('Failed to load offers');
       }
@@ -117,28 +128,12 @@ export default function Index() {
       setUser(null);
       toast.success('Signed out successfully');
     } catch (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error:', error);
       toast.error('Failed to sign out');
     }
   };
 
-  const handleOfferClick = (offer: Offer) => {
-    setSelectedOffer(offer);
-    // Track recently viewed
-    addRecentlyViewed(offer.id, 'offer');
 
-    if (!user) {
-      setShowAuthDialog(true);
-    } else {
-      setShowReservationModal(true);
-    }
-  };
-
-  const handleReservationSuccess = () => {
-    loadOffers(); // Reload offers to update quantities
-    setShowReservationModal(false);
-    setSelectedOffer(null);
-  };
 
   // Calculate distance between two points using Haversine formula
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -240,7 +235,36 @@ export default function Index() {
     return filtered;
   };
 
-  const filteredOffers = getFilteredAndSortedOffers();
+  // Memoize filtered offers to avoid recalculating on every render
+  const filteredOffers = useMemo(() => getFilteredAndSortedOffers(), [
+    offers,
+    selectedCategory,
+    searchQuery,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.maxDistance,
+    userLocation,
+    sortBy
+  ]);
+
+  // Memoize handleOfferClick to prevent recreation on every render
+  const handleOfferClick = useCallback((offer: Offer) => {
+    setSelectedOffer(offer);
+    addRecentlyViewed(offer.id, 'offer');
+
+    if (!user) {
+      setShowAuthDialog(true);
+    } else {
+      setShowReservationModal(true);
+    }
+  }, [user, addRecentlyViewed]);
+
+  // Memoize handleReservationSuccess
+  const handleReservationSuccess = useCallback(() => {
+    loadOffers(); // Reload offers to update quantities
+    setShowReservationModal(false);
+    setSelectedOffer(null);
+  }, []);
 
   return (
     <>
@@ -741,3 +765,4 @@ export default function Index() {
     </>
   );
 }
+

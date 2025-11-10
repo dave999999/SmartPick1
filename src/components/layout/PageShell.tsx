@@ -14,3 +14,4 @@ export function PageShell({ children, padded = true, maxWidth = 'max-w-7xl' }: P
     </div>
   );
 }
+

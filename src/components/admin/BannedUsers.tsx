@@ -27,7 +27,7 @@ export function BannedUsers() {
       const data = await getBannedUsers();
       setBannedUsers(data);
     } catch (error) {
-      console.error('Error loading banned users:', error);
+      logger.error('Error loading banned users:', error);
       toast.error('Failed to load banned users');
     } finally {
       setLoading(false);
@@ -45,7 +45,7 @@ export function BannedUsers() {
       setSelectedUser(null);
       loadBannedUsers(); // Reload list
     } catch (error) {
-      console.error('Error unbanning user:', error);
+      logger.error('Error unbanning user:', error);
       toast.error('Failed to unban user');
     } finally {
       setUnbanning(false);
@@ -224,3 +224,4 @@ export function BannedUsers() {
     </>
   );
 }
+

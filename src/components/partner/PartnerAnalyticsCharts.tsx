@@ -62,3 +62,4 @@ export default function PartnerAnalyticsCharts({ partnerId }: { partnerId: strin
     </Card>
   );
 }
+

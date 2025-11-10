@@ -187,3 +187,4 @@ export function AchievementBadge({
     </motion.div>
   );
 }
+

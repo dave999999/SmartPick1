@@ -75,7 +75,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
       const s = await checkUserPenaltyStatus(userId);
       setStatus(s);
     } catch (err) {
-      console.warn('Failed to load penalty status', err);
+      logger.warn('Failed to load penalty status', err);
     }
   }, [userId]);
 
@@ -103,7 +103,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
         }
       }
     } catch (error) {
-  console.error('Error lifting penalty:', error);
+  logger.error('Error lifting penalty:', error);
   toast.error(t('penalty.liftFailed'));
     } finally {
       setIsLifting(false);
@@ -203,11 +203,11 @@ export default function UserProfile() {
         const stats = await getUserStats(currentUser.id);
         setUserStats(stats);
       } catch (statsError) {
-        console.warn('Gamification stats not available (tables may not exist yet):', statsError);
+        logger.warn('Gamification stats not available (tables may not exist yet):', statsError);
         // Don't show error to user - profile will work without gamification
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      logger.error('Error loading user:', error);
   toast.error(t('generic.failedLoadProfile'));
       navigate('/');
     } finally {
@@ -227,10 +227,10 @@ export default function UserProfile() {
     const unsubscribe = onPointsChange((newBalance, changedUserId) => {
       // Only reload stats if it's the current user
       if (changedUserId === user.id && userStats) {
-        console.log('Points changed: Reloading user stats');
+        logger.log('Points changed: Reloading user stats');
         getUserStats(user.id)
           .then(setUserStats)
-          .catch(err => console.warn('Failed to reload stats:', err));
+          .catch(err => logger.warn('Failed to reload stats:', err));
       }
     });
 
@@ -241,7 +241,7 @@ export default function UserProfile() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
-        console.log('Tab visible: Refreshing profile data');
+        logger.log('Tab visible: Refreshing profile data');
         loadUser();
       }
     };
@@ -266,7 +266,7 @@ export default function UserProfile() {
         toast.success(t('profile.updateSuccess'));
       }
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       toast.error(t('profile.updateError'));
     } finally {
       setIsSaving(false);
@@ -635,3 +635,4 @@ export default function UserProfile() {
     </div>
   );
 }
+

@@ -147,7 +147,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         if (onSuccess) onSuccess();
       }
     } catch (err) {
-      console.error('Sign in error:', err);
+      logger.error('Sign in error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in';
       setError(errorMessage);
       
@@ -249,7 +249,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             toast.success(`🎉 Account created! Welcome bonus: 100 points. Your friend received ${result.pointsAwarded} points!`);
           } else {
             // Still show success even if referral failed
-            console.warn('Referral code application failed:', result.error);
+            logger.warn('Referral code application failed:', result.error);
             toast.success('Account created successfully! Welcome bonus: 100 points');
           }
         } else {
@@ -260,7 +260,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         if (onSuccess) onSuccess();
       }
     } catch (err) {
-      console.error('Sign up error:', err);
+      logger.error('Sign up error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
     } finally {
@@ -282,7 +282,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
       if (error) throw error;
     } catch (err) {
-      console.error('Google sign in error:', err);
+      logger.error('Google sign in error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
       setIsLoading(false);

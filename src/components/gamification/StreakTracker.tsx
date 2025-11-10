@@ -157,3 +157,4 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
     </Card>
   );
 }
+

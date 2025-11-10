@@ -25,13 +25,13 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
   const loadAchievements = async () => {
     setLoading(true);
     try {
-      console.log('Loading achievements for user:', userId);
+      logger.log('Loading achievements for user:', userId);
       const [userAch, allAch, stats] = await Promise.all([
         getUserAchievements(userId),
         getAllAchievements(),
         getUserStats(userId)
       ]);
-      console.log('Achievements loaded:', {
+      logger.log('Achievements loaded:', {
         userAchievements: userAch.length,
         allAchievements: allAch.length,
         hasStats: !!stats
@@ -40,7 +40,7 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
       setAllAchievements(allAch);
       setUserStats(stats);
     } catch (error) {
-      console.error('Error loading achievements:', error);
+      logger.error('Error loading achievements:', error);
       toast.error('Failed to load achievements');
     } finally {
       setLoading(false);
@@ -105,7 +105,7 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
       try {
         await markAchievementViewed(ua.achievement_id, userId);
       } catch (e) {
-        console.warn('Failed to mark achievement viewed', ua.achievement_id, e);
+        logger.warn('Failed to mark achievement viewed', ua.achievement_id, e);
       }
     });
   }, [userAchievements, userId]);
@@ -308,3 +308,4 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
     </Card>
   );
 }
+

@@ -165,3 +165,4 @@ export default function PendingPartnerStatus({ businessName, applicationDate }: 
     </div>
   );
 }
+
