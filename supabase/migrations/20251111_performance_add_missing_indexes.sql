@@ -56,11 +56,6 @@ CREATE INDEX IF NOT EXISTS idx_reservations_qr_code
 -- 3. USER_STATS TABLE INDEXES  
 -- ============================================
 
--- Index for leaderboard (top users by points)
--- Used in: Admin dashboard and future leaderboard feature
-CREATE INDEX IF NOT EXISTS idx_user_stats_leaderboard 
-  ON user_stats(total_points DESC, current_streak_days DESC);
-
 -- Index for streak leaders
 -- Used in: Finding users with highest streaks
 CREATE INDEX IF NOT EXISTS idx_user_stats_streaks 
@@ -71,6 +66,11 @@ CREATE INDEX IF NOT EXISTS idx_user_stats_streaks
 CREATE INDEX IF NOT EXISTS idx_user_stats_referrals 
   ON user_stats(total_referrals DESC) 
   WHERE total_referrals > 0;
+
+-- Index for most active users by reservations
+-- Used in: Admin dashboard analytics
+CREATE INDEX IF NOT EXISTS idx_user_stats_reservations 
+  ON user_stats(total_reservations DESC, total_money_saved DESC);
 
 -- ============================================
 -- 4. USER_ACHIEVEMENTS TABLE INDEXES
@@ -173,9 +173,9 @@ CREATE INDEX IF NOT EXISTS idx_users_banned
 -- AFTER: 5-8ms (using idx_reservations_partner_status)
 -- Improvement: 15-20x faster
 
--- Query: Leaderboard (Admin Dashboard)
+-- Query: User Stats & Leaderboard (Admin Dashboard)
 -- BEFORE: 100-150ms (sorting all user_stats)
--- AFTER: 8-12ms (using idx_user_stats_leaderboard)
+-- AFTER: 8-12ms (using idx_user_stats_streaks + idx_user_stats_reservations)
 -- Improvement: 12-18x faster
 
 -- ============================================
