@@ -13,6 +13,8 @@ lerna-debug.log*
 .env.development
 .env.production
 .env*.local
+# DO commit this example file (it has no real secrets)
+!.env.example
 
 # SECURITY: Files with hardcoded credentials (NEVER commit!)
 create-admin.js
@@ -20,6 +22,8 @@ create-admin-simple.js
 create-dummy-data.js
 *.service.js
 *-credentials.js
+*-secret.js
+*.key
 
 # Build output
 node_modules
