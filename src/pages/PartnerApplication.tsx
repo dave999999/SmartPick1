@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Clock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useI18n } from '@/lib/i18n';
+import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 
 const BUSINESS_TYPES = [
   { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
@@ -593,6 +594,14 @@ export default function PartnerApplication() {
 
     try {
       setIsSubmitting(true);
+
+      // Rate limit check for partner applications (3 per day)
+      const rateLimitCheck = await checkServerRateLimit('partner_application', formData.email);
+      if (!rateLimitCheck.allowed) {
+        toast.error(t('errors.rateLimitExceeded') || 'Too many applications submitted. Please try again tomorrow.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,

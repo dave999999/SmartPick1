@@ -7,8 +7,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { getPartnersPaged, approvePartner, updatePartner } from '@/lib/admin-api';
 import { logAdminAction } from '@/lib/api/admin-advanced';
+import { getCurrentUser } from '@/lib/api';
 import type { Partner } from '@/lib/types';
 import { toast } from 'sonner';
+import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 
 interface Props {
   onStatsUpdate: () => void;
@@ -52,6 +54,16 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
   const confirm = async () => {
     if (!selected || !action) return;
     try {
+      // Rate limit check for admin actions (100 per hour)
+      const { user } = await getCurrentUser();
+      if (user?.id) {
+        const rateLimitCheck = await checkServerRateLimit('admin_action', user.id);
+        if (!rateLimitCheck.allowed) {
+          toast.error('Too many admin actions. Please try again later.');
+          return;
+        }
+      }
+
       if (action === 'approve') {
         await approvePartner(selected.id);
         try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', selected.id, { note }); } catch {}
@@ -84,7 +96,7 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
             <Badge className="bg-green-100 text-green-800">No pending applications</Badge>
           </div>
         ) : (
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>

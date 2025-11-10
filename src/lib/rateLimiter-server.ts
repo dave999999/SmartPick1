@@ -16,12 +16,12 @@ interface RateLimitResult {
 
 /**
  * Check rate limit via server-side Edge Function
- * @param action - Type of action (login, signup, reservation, offer_create)
+ * @param action - Type of action (login, signup, reservation, offer_create, offer_delete, partner_application, admin_action)
  * @param identifier - User identifier (email, userId, etc.)
  * @returns Rate limit result
  */
 export async function checkServerRateLimit(
-  action: 'login' | 'signup' | 'reservation' | 'offer_create',
+  action: 'login' | 'signup' | 'reservation' | 'offer_create' | 'offer_delete' | 'partner_application' | 'admin_action',
   identifier: string
 ): Promise<RateLimitResult> {
   try {

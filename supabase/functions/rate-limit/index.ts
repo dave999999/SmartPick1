@@ -20,7 +20,10 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   'login': { maxAttempts: 5, windowSeconds: 900 },        // 5 per 15 min
   'signup': { maxAttempts: 3, windowSeconds: 3600 },      // 3 per hour
   'reservation': { maxAttempts: 10, windowSeconds: 3600 }, // 10 per hour
-  'offer_create': { maxAttempts: 20, windowSeconds: 3600 } // 20 per hour
+  'offer_create': { maxAttempts: 20, windowSeconds: 3600 }, // 20 per hour
+  'offer_delete': { maxAttempts: 30, windowSeconds: 3600 }, // 30 per hour
+  'partner_application': { maxAttempts: 3, windowSeconds: 86400 }, // 3 per day
+  'admin_action': { maxAttempts: 100, windowSeconds: 3600 } // 100 per hour
 }
 
 serve(async (req) => {

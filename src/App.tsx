@@ -18,6 +18,7 @@ import MaintenanceMode from './pages/MaintenanceMode';
 import UserProfile from './pages/UserProfile';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
+import { OfflineBanner } from './components/OfflineBanner';
 import { getCurrentUser } from './lib/api';
 import 'leaflet/dist/leaflet.css';
 
@@ -94,6 +95,8 @@ const AppContent = () => {
       {/* PWA Install Prompts */}
       <InstallPWA />
       <IOSInstallPrompt />
+      {/* Offline Banner */}
+      <OfflineBanner />
     </BrowserRouter>
   );
 };

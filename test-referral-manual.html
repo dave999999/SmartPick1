@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referral System Test - SmartPick</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 1.1rem;
+    }
+    .test-section {
+      background: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+    }
+    .test-section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+    }
+    .test-step {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #e0e0e0;
+    }
+    .step-number {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 30px;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    .expected {
+      background: #d4edda;
+      border-left: 3px solid #28a745;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .expected::before {
+      content: "✅ Expected: ";
+      font-weight: bold;
+      color: #28a745;
+    }
+    .warning {
+      background: #fff3cd;
+      border-left: 3px solid #ffc107;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+    .warning::before {
+      content: "⚠️ Note: ";
+      font-weight: bold;
+      color: #ff9800;
+    }
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 30px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      margin: 10px 10px 10px 0;
+      transition: transform 0.2s;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    .checklist {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .checklist-item {
+      padding: 10px;
+      margin: 5px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .checklist-item:last-child {
+      border-bottom: none;
+    }
+    .code-block {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    .success {
+      color: #28a745;
+      font-weight: bold;
+    }
+    .fail {
+      color: #dc3545;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎁 Referral System Test</h1>
+    <p class="subtitle">Follow these steps to verify your referral system is working correctly</p>
+
+    <!-- Test 1: Profile Page -->
+    <div class="test-section">
+      <h2>Test 1: Check Your Referral Code in Profile</h2>
+      
+      <div class="test-step">
+        <span class="step-number">1</span>
+        <strong>Go to your website and login</strong>
+        <div class="code-block">https://smartpick.ge</div>
+        <a href="https://smartpick.ge" target="_blank" class="button">Open SmartPick</a>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">2</span>
+        <strong>Navigate to your Profile page</strong>
+        <p style="margin: 10px 0;">Click on your profile icon/menu → Profile</p>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">3</span>
+        <strong>Go to "Referral" tab</strong>
+        <div class="expected">You should see:
+          <ul style="margin: 10px 0 0 20px;">
+            <li>Your 6-character referral code (e.g., "ABC123")</li>
+            <li>Referral link with your code</li>
+            <li>"Share Referral Link" button</li>
+            <li>Rewards info: "+50 points for you, +50 for friend"</li>
+            <li>Total "Friends Referred" count</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">4</span>
+        <strong>Copy your referral link</strong>
+        <p style="margin: 10px 0;">Click the share button or copy icon. Link format:</p>
+        <div class="code-block">https://smartpick.ge?ref=YOUR_CODE</div>
+        <div class="warning">Save this link for the next test!</div>
+      </div>
+    </div>
+
+    <!-- Test 2: Referral Link -->
+    <div class="test-section">
+      <h2>Test 2: Test Referral Link Functionality</h2>
+
+      <div class="test-step">
+        <span class="step-number">1</span>
+        <strong>Open referral link in incognito/private window</strong>
+        <p style="margin: 10px 0;">Press Ctrl+Shift+N (Chrome) or Ctrl+Shift+P (Firefox)</p>
+        <p style="margin: 5px 0;">Paste your referral link from Test 1</p>
+        <div class="expected">
+          Homepage should load with your referral code in URL<br>
+          Toast message: "🎁 Referral code ABC123 applied!"
+        </div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">2</span>
+        <strong>Click "Sign In" button</strong>
+        <div class="expected">Auth dialog should open</div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">3</span>
+        <strong>Switch to "Sign Up" tab</strong>
+        <div class="expected">
+          Referral code field should be <span class="success">pre-filled</span> with your code<br>
+          Message below field: "🎁 You and your friend will both get bonus points!"
+        </div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">4</span>
+        <strong>Complete signup with test account</strong>
+        <p style="margin: 10px 0;">Use a different email (e.g., test.referral@example.com)</p>
+        <div class="expected">
+          Success toast: "🎉 Account created! Welcome bonus: 100 points. Your friend received 50 points!"
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 3: Verify Points -->
+    <div class="test-section">
+      <h2>Test 3: Verify Points Were Awarded</h2>
+
+      <div class="test-step">
+        <span class="step-number">1</span>
+        <strong>Logout and login with your original account</strong>
+        <p style="margin: 10px 0;">Use the account that shared the referral code</p>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">2</span>
+        <strong>Go to Profile → Wallet tab</strong>
+        <div class="expected">
+          Your points balance should have <span class="success">+50 points</span><br>
+          Check transaction history for "Referral reward" entry
+        </div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">3</span>
+        <strong>Go to Profile → Referral tab</strong>
+        <div class="expected">
+          "Friends Referred" count should be <span class="success">+1</span>
+        </div>
+      </div>
+
+      <div class="test-step">
+        <span class="step-number">4</span>
+        <strong>Login with the new test account</strong>
+        <p style="margin: 10px 0;">Check their points balance</p>
+        <div class="expected">
+          Should have <span class="success">100 welcome points</span> (not +50, the new user gets welcome bonus only)
+        </div>
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="test-section">
+      <h2>✅ Success Checklist</h2>
+      <div class="checklist">
+        <div class="checklist-item">
+          <input type="checkbox" id="check1"> 
+          <label for="check1">Referral code displays in Profile → Referral tab</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check2"> 
+          <label for="check2">Referral link can be copied/shared</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check3"> 
+          <label for="check3">Opening referral link shows toast with code</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check4"> 
+          <label for="check4">Referral code pre-fills in signup form</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check5"> 
+          <label for="check5">Signup completes successfully with referral code</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check6"> 
+          <label for="check6">Referrer receives +50 points</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check7"> 
+          <label for="check7">New user receives 100 welcome points</label>
+        </div>
+        <div class="checklist-item">
+          <input type="checkbox" id="check8"> 
+          <label for="check8">"Friends Referred" count increases</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database Verification -->
+    <div class="test-section">
+      <h2>🔧 Database Verification (Optional)</h2>
+      
+      <div class="test-step">
+        <p><strong>If frontend tests fail, run this SQL in Supabase:</strong></p>
+        <div class="code-block">-- Check if referral codes exist
+SELECT email, referral_code, referred_by
+FROM users
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- Check referral transactions
+SELECT * FROM point_transactions
+WHERE reason = 'referral'
+ORDER BY created_at DESC
+LIMIT 5;
+
+-- Check user stats
+SELECT user_id, total_referrals
+FROM user_stats
+WHERE total_referrals > 0;</div>
+        <a href="https://supabase.com/dashboard/project/***REMOVED_PROJECT_ID***/editor" target="_blank" class="button">Open SQL Editor</a>
+      </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="test-section" style="background: #fff3cd; border-left-color: #ffc107;">
+      <h2>⚠️ Troubleshooting</h2>
+      
+      <div class="test-step">
+        <strong>If referral code doesn't show in profile:</strong>
+        <ul style="margin: 10px 0 0 20px;">
+          <li>Run VERIFY_REFERRAL_SYSTEM.sql in Supabase SQL Editor</li>
+          <li>Execute the backfill section (step 6) to generate codes</li>
+          <li>Refresh the profile page</li>
+        </ul>
+      </div>
+
+      <div class="test-step">
+        <strong>If points aren't awarded:</strong>
+        <ul style="margin: 10px 0 0 20px;">
+          <li>Check that apply_referral_code_with_rewards function exists</li>
+          <li>Verify migration 20251106_fix_referral_points.sql was applied</li>
+          <li>Check Supabase logs for errors</li>
+        </ul>
+      </div>
+
+      <div class="test-step">
+        <strong>If signup fails:</strong>
+        <ul style="margin: 10px 0 0 20px;">
+          <li>Check browser console for errors (F12)</li>
+          <li>Verify CAPTCHA is working</li>
+          <li>Check rate limiting hasn't blocked you</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #eee;">
+      <p style="color: #666; font-size: 0.9rem;">
+        Generated: November 10, 2025<br>
+        SmartPick Referral System Test Suite
+      </p>
+    </div>
+  </div>
+</body>
+</html>

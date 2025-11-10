@@ -200,11 +200,21 @@ export default function MyPicks() {
         toast.success(`${t('toast.pickupConfirmed')} ${result.points_transferred} ${t('toast.pointsTransferred')}`);
         loadReservations(); // Refresh the list
       } else {
-        toast.error(t('toast.failedConfirmPickup'));
+        toast.error(t('toast.failedConfirmPickup'), {
+          description: 'Unable to confirm pickup. Please contact the partner.',
+          duration: 4000,
+        });
       }
     } catch (error) {
       console.error('Error confirming pickup:', error);
-      toast.error(t('toast.failedConfirmPickup'));
+      toast.error(t('toast.failedConfirmPickup'), {
+        description: 'Network error. Please check your connection and try again.',
+        action: {
+          label: 'Retry',
+          onClick: () => handleConfirmPickup(reservationId),
+        },
+        duration: 5000,
+      });
     } finally {
       setConfirmingPickup(null);
     }
@@ -224,11 +234,21 @@ export default function MyPicks() {
         toast.success(`${t('toast.reservationCancelledSplit')} ${result.partner_received} ${t('toast.toPartner')}, ${result.user_refunded} ${t('toast.refunded')}`);
         loadReservations(); // Refresh the list
       } else {
-        toast.error(t('toast.failedCancelReservation'));
+        toast.error(t('toast.failedCancelReservation'), {
+          description: 'Unable to process cancellation. Please try again.',
+          duration: 4000,
+        });
       }
     } catch (error) {
       console.error('Error canceling reservation:', error);
-      toast.error(t('toast.failedCancelReservation'));
+      toast.error(t('toast.failedCancelReservation'), {
+        description: 'Network error occurred. Please check your connection.',
+        action: {
+          label: 'Retry',
+          onClick: () => handleCancel(reservationId),
+        },
+        duration: 5000,
+      });
     }
   };
 
