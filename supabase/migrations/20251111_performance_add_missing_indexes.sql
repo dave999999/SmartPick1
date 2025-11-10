@@ -21,12 +21,6 @@ CREATE INDEX IF NOT EXISTS idx_offers_category_active
   ON offers(category, status, expires_at DESC) 
   WHERE status = 'ACTIVE';
 
--- Index for scheduled offers (auto-publishing feature)
--- Used in: Background job that publishes scheduled offers
-CREATE INDEX IF NOT EXISTS idx_offers_scheduled 
-  ON offers(scheduled_publish_at) 
-  WHERE scheduled_publish_at IS NOT NULL AND status = 'SCHEDULED';
-
 -- Index for partner's offers dashboard
 -- Used in: getPartnerOffers() - filters by partner_id and sorts by created_at
 CREATE INDEX IF NOT EXISTS idx_offers_partner_created 
@@ -171,7 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_users_banned
 
 -- Query: getActiveOffers() (Homepage)
 -- BEFORE: 150-200ms (full table scan on 10K+ offers)
--- AFTER: 5-10ms (using idx_offers_active_expires)
+-- AFTER: 5-10ms (using idx_offers_active_expires + idx_offers_category_active)
 -- Improvement: 15-30x faster
 
 -- Query: getPartnerReservations() (Partner Dashboard)
