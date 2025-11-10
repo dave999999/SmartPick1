@@ -37,3 +37,4 @@ export function SectionCard({ title, description, children, accent = 'none', hea
     </Card>
   );
 }
+

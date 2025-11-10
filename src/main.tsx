@@ -39,11 +39,11 @@ if ('serviceWorker' in navigator) {
 		navigator.serviceWorker
 			.register('/service-worker.js')
 			.then((registration) => {
-				console.log('[PWA] Service Worker registered successfully:', registration.scope);
+				logger.log('[PWA] Service Worker registered successfully:', registration.scope);
 
 				// Check for updates every 5 minutes (more aggressive)
 				setInterval(() => {
-					console.log('[PWA] Checking for updates...');
+					logger.log('[PWA] Checking for updates...');
 					registration.update();
 				}, 5 * 60 * 1000);
 
@@ -51,16 +51,16 @@ if ('serviceWorker' in navigator) {
 				registration.addEventListener('updatefound', () => {
 					const newWorker = registration.installing;
 					if (newWorker) {
-						console.log('[PWA] New service worker installing...');
+						logger.log('[PWA] New service worker installing...');
 						newWorker.addEventListener('statechange', () => {
 							if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
 								// New version available - force immediate update
-								console.log('[PWA] New version available! Auto-updating...');
+								logger.log('[PWA] New version available! Auto-updating...');
 								newWorker.postMessage({ type: 'SKIP_WAITING' });
 
 								// Auto-reload after 2 seconds (give user time to save work)
 								setTimeout(() => {
-									console.log('[PWA] Reloading to activate new version...');
+									logger.log('[PWA] Reloading to activate new version...');
 									window.location.reload();
 								}, 2000);
 							}
@@ -71,23 +71,24 @@ if ('serviceWorker' in navigator) {
 				// Also check for updates on page visibility change
 				document.addEventListener('visibilitychange', () => {
 					if (!document.hidden) {
-						console.log('[PWA] Page visible, checking for updates...');
+						logger.log('[PWA] Page visible, checking for updates...');
 						registration.update();
 					}
 				});
 			})
 			.catch((error) => {
-				console.error('[PWA] Service Worker registration failed:', error);
+				logger.error('[PWA] Service Worker registration failed:', error);
 			});
 
 		// Listen for controller change (new service worker activated)
 		let refreshing = false;
 		navigator.serviceWorker.addEventListener('controllerchange', () => {
 			if (!refreshing) {
-				console.log('[PWA] New Service Worker activated, reloading...');
+				logger.log('[PWA] New Service Worker activated, reloading...');
 				refreshing = true;
 				window.location.reload();
 			}
 		});
 	});
 }
+

@@ -87,3 +87,4 @@ export function UserStatsCard({ stats }: UserStatsCardProps) {
     </Card>
   );
 }
+

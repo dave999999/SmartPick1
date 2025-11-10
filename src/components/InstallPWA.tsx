@@ -67,9 +67,9 @@ export function InstallPWA() {
     const { outcome } = await deferredPrompt.userChoice;
 
     if (outcome === 'accepted') {
-      console.log('[PWA] User accepted the install prompt');
+      logger.log('[PWA] User accepted the install prompt');
     } else {
-      console.log('[PWA] User dismissed the install prompt');
+      logger.log('[PWA] User dismissed the install prompt');
     }
 
     // Clear the prompt
@@ -170,7 +170,7 @@ export function InstallPWAButton() {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    console.log('[PWA] Install outcome:', outcome);
+    logger.log('[PWA] Install outcome:', outcome);
     setDeferredPrompt(null);
   };
 
@@ -196,3 +196,4 @@ export function InstallPWAButton() {
     </Button>
   );
 }
+

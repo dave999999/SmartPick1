@@ -145,3 +145,4 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
     </Card>
   );
 }
+

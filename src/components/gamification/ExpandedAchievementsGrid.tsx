@@ -17,3 +17,4 @@ export default function ExpandedAchievementsGrid({ userId, stats }: { userId: st
     </Card>
   );
 }
+

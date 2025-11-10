@@ -56,7 +56,7 @@ export default function ReservationDetail() {
       const qrUrl = await generateQRCodeDataURL(found.qr_code);
       setQrCodeUrl(qrUrl);
     } catch (error) {
-      console.error('Error loading reservation:', error);
+      logger.error('Error loading reservation:', error);
       toast.error(t('toast.failedLoadReservation'));
     }
   };
@@ -91,7 +91,7 @@ export default function ReservationDetail() {
         toast.error(t('toast.failedCancelReservation'));
       }
     } catch (error) {
-      console.error('Error cancelling reservation:', error);
+      logger.error('Error cancelling reservation:', error);
       toast.error(t('toast.failedCancelReservation'));
     }
   };

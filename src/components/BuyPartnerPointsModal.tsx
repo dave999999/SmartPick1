@@ -52,7 +52,7 @@ export function BuyPartnerPointsModal({
       });
 
       if (error) {
-        console.error('Error purchasing partner points:', error);
+        logger.error('Error purchasing partner points:', error);
         toast.error('Purchase failed. Please try again.');
         return;
       }
@@ -70,7 +70,7 @@ export function BuyPartnerPointsModal({
         toast.error(data?.message || 'Purchase failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error purchasing partner points:', error);
+      logger.error('Error purchasing partner points:', error);
       toast.error('An error occurred. Please try again.');
     } finally {
       setIsPurchasing(false);
@@ -228,3 +228,4 @@ export function BuyPartnerPointsModal({
     </Dialog>
   );
 }
+

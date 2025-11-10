@@ -56,7 +56,7 @@ export function BuyPointsModal({
         toast.error(result.error || 'Purchase failed. Please try again.');
       }
     } catch (error) {
-      console.error('Error purchasing points:', error);
+      logger.error('Error purchasing points:', error);
       toast.error('An error occurred. Please try again.');
     } finally {
       setIsPurchasing(false);
@@ -203,3 +203,4 @@ export function BuyPointsModal({
     </Dialog>
   );
 }
+

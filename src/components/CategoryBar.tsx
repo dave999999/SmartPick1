@@ -70,3 +70,4 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
     </div>
   );
 }
+

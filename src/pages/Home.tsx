@@ -1,4 +1,4 @@
-﻿import { useI18n } from '@/lib/i18n';
+import { useI18n } from '@/lib/i18n';
 import { Sparkles, Navigation, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/layout/PageShell';
@@ -75,3 +75,4 @@ export default function Home() {
     </PageShell>
   );
 }
+

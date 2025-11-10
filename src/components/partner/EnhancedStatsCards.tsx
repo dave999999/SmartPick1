@@ -97,3 +97,4 @@ export default function EnhancedStatsCards({ stats, className = '' }: EnhancedSt
     </div>
   );
 }
+

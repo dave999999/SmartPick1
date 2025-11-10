@@ -50,7 +50,7 @@ export default function OfferModerationPanel() {
       setFlaggedOffers(flags);
       setAllOffers(offers);
     } catch (error) {
-      console.error('Error loading moderation data:', error);
+      logger.error('Error loading moderation data:', error);
       toast.error('Failed to load moderation data');
     } finally {
       setLoading(false);
@@ -69,7 +69,7 @@ export default function OfferModerationPanel() {
       setAdminNotes('');
       await loadData();
     } catch (error) {
-      console.error('Error reviewing flag:', error);
+      logger.error('Error reviewing flag:', error);
       toast.error('Failed to review flag');
     } finally {
       setProcessing(false);
@@ -87,7 +87,7 @@ export default function OfferModerationPanel() {
       }
       await loadData();
     } catch (error) {
-      console.error('Error toggling flag:', error);
+      logger.error('Error toggling flag:', error);
       toast.error('Failed to update flag');
     }
   };
@@ -106,7 +106,7 @@ export default function OfferModerationPanel() {
       }
       await loadData();
     } catch (error) {
-      console.error('Error toggling feature:', error);
+      logger.error('Error toggling feature:', error);
       toast.error('Failed to update featured status');
     }
   };
@@ -305,3 +305,4 @@ export default function OfferModerationPanel() {
     </div>
   );
 }
+

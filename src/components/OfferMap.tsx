@@ -232,7 +232,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   // Set up realtime subscription
   useEffect(() => {
     const subscription = subscribeToOffers((payload) => {
-      console.log('Realtime offer update:', payload);
+      logger.log('Realtime offer update:', payload);
       // Trigger a refresh by updating the offers state in parent
       toast.info('Offers updated in real-time');
     });
@@ -256,12 +256,12 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
   // Update filtered offers when offers or selectedCategory changes
   useEffect(() => {
-    console.log('Offers received:', offers.length);
-    console.log('Selected category:', selectedCategory);
+    logger.log('Offers received:', offers.length);
+    logger.log('Selected category:', selectedCategory);
     
     if (selectedCategory && selectedCategory !== '') {
       const filtered = offers.filter(o => o.category === selectedCategory);
-      console.log('Filtered offers:', filtered.length);
+      logger.log('Filtered offers:', filtered.length);
       setFilteredOffers(filtered);
     } else {
       setFilteredOffers(offers);
@@ -386,7 +386,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
           toast.success('Showing offers near you');
         },
         (error) => {
-          console.error('Error getting location:', error);
+          logger.error('Error getting location:', error);
           toast.error('Could not get your location');
         }
       );
@@ -509,7 +509,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                 setListReady(true);
                 setTimeout(() => setMapLoaded(true), 200);
               } catch (err) {
-                console.error('Map whenReady handler failed:', err);
+                logger.error('Map whenReady handler failed:', err);
               }
             }}
             ref={mapRef}
@@ -738,3 +738,4 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
     </div>
   );
 }
+

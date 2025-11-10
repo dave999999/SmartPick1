@@ -178,3 +178,4 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
     </Card>
   );
 }
+

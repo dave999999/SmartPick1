@@ -36,7 +36,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
           filter: 'status=in.(pending,PENDING)'
         },
         (payload) => {
-          console.log('Realtime update received:', payload);
+          logger.log('Realtime update received:', payload);
           // Reload pending partners when any change occurs
           loadPendingPartners();
         }
@@ -60,14 +60,14 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error loading pending partners:', error);
+        logger.error('Error loading pending partners:', error);
         toast.error('Failed to load pending partners');
         return;
       }
 
       setPendingPartners(data || []);
     } catch (error) {
-      console.error('Error loading pending partners:', error);
+      logger.error('Error loading pending partners:', error);
       toast.error('Failed to load pending partners');
     } finally {
       setLoading(false);
@@ -88,7 +88,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
         .eq('id', partner.id);
 
       if (error) {
-        console.error('Error approving partner:', error);
+        logger.error('Error approving partner:', error);
         toast.error('Failed to approve partner');
         return;
       }
@@ -97,7 +97,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
       loadPendingPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error approving partner:', error);
+      logger.error('Error approving partner:', error);
       toast.error('Failed to approve partner');
     }
   };
@@ -118,7 +118,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
         .eq('id', partnerToReject.id);
 
       if (error) {
-        console.error('Error rejecting partner:', error);
+        logger.error('Error rejecting partner:', error);
         toast.error('Failed to reject partner');
         return;
       }
@@ -129,7 +129,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
       loadPendingPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error rejecting partner:', error);
+      logger.error('Error rejecting partner:', error);
       toast.error('Failed to reject partner');
     }
   };

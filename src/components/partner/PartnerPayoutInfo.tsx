@@ -21,3 +21,4 @@ export default function PartnerPayoutInfo({ partnerId }: { partnerId: string }) 
     </Card>
   );
 }
+

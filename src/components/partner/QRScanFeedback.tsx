@@ -12,3 +12,4 @@ export default function QRScanFeedback({ result }: { result: string }) {
     </Card>
   );
 }
+

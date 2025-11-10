@@ -59,7 +59,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
       setFilteredUsers(items);
       setTotal(count);
     } catch (error) {
-      console.error('Error loading users:', error);
+      logger.error('Error loading users:', error);
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
@@ -86,7 +86,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
       loadUsers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error updating user:', error);
+      logger.error('Error updating user:', error);
       toast.error('Failed to update user');
     }
   };
@@ -117,7 +117,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
       loadUsers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error deleting user:', error);
+      logger.error('Error deleting user:', error);
       toast.error('Failed to delete user');
     }
   };
@@ -139,7 +139,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
       loadUsers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error enabling user:', error);
+      logger.error('Error enabling user:', error);
       toast.error('Failed to enable user');
     }
   };
@@ -151,7 +151,7 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
       loadUsers();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error disabling user:', error);
+      logger.error('Error disabling user:', error);
       toast.error('Failed to disable user');
     }
   };
@@ -431,3 +431,4 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
     </div>
   );
 }
+

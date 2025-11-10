@@ -29,7 +29,7 @@ export function NewUsers({ onStatsUpdate }: NewUsersProps) {
       const data = await getNewUsers();
       setNewUsers(data);
     } catch (error) {
-      console.error('Error loading new users:', error);
+      logger.error('Error loading new users:', error);
       toast.error('Failed to load new users');
     } finally {
       setLoading(false);
@@ -289,3 +289,4 @@ export function NewUsers({ onStatsUpdate }: NewUsersProps) {
     </div>
   );
 }
+

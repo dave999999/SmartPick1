@@ -65,7 +65,7 @@ export default function FinancialDashboardPanel() {
       setPayouts(payoutsData);
       setPartners(partnersData);
     } catch (error) {
-      console.error('Error loading financial data:', error);
+      logger.error('Error loading financial data:', error);
       toast.error('Failed to load financial data');
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ export default function FinancialDashboardPanel() {
       setSelectedPartner('');
       await loadData();
     } catch (error) {
-      console.error('Error creating payout:', error);
+      logger.error('Error creating payout:', error);
       toast.error('Failed to create payout');
     }
   };
@@ -106,7 +106,7 @@ export default function FinancialDashboardPanel() {
       toast.success(`Payout marked as ${status.toLowerCase()}`);
       await loadData();
     } catch (error) {
-      console.error('Error updating payout:', error);
+      logger.error('Error updating payout:', error);
       toast.error('Failed to update payout');
     }
   };
@@ -130,7 +130,7 @@ export default function FinancialDashboardPanel() {
 
       toast.success('Report exported successfully');
     } catch (error) {
-      console.error('Error exporting report:', error);
+      logger.error('Error exporting report:', error);
       toast.error('Failed to export report');
     }
   };
@@ -365,3 +365,4 @@ export default function FinancialDashboardPanel() {
     </div>
   );
 }
+

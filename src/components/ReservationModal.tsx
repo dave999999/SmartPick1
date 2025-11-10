@@ -84,7 +84,7 @@ export default function ReservationModal({
       const totalNeeded = POINTS_PER_UNIT * quantity;
       setInsufficientPoints(balance < totalNeeded);
     } catch (error) {
-      console.error('Error loading points balance:', error);
+      logger.error('Error loading points balance:', error);
     }
   };
 
@@ -115,7 +115,7 @@ export default function ReservationModal({
       const info = await checkUserPenalty(user.id);
       setPenaltyInfo(info);
     } catch (error) {
-      console.error('Error loading penalty info:', error);
+      logger.error('Error loading penalty info:', error);
     }
   };
 
@@ -123,7 +123,7 @@ export default function ReservationModal({
     const now = Date.now();
     const callId = Math.random().toString(36).substring(7);
 
-    console.log('🔵🔵🔵 FUNCTION ENTRY', callId, {
+    logger.log('🔵🔵🔵 FUNCTION ENTRY', callId, {
       timestamp: new Date().toISOString(),
       isProcessing: isProcessingRef.current,
       stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n')
@@ -132,15 +132,15 @@ export default function ReservationModal({
     // 🔒 CRITICAL: Set protection flag IMMEDIATELY before ANY checks
     // This prevents race condition where both clicks pass checks before flag is set
     if (isProcessingRef.current) {
-      console.warn('⚠️⚠️⚠️ BLOCKED:', callId, 'Already processing');
+      logger.warn('⚠️⚠️⚠️ BLOCKED:', callId, 'Already processing');
       toast.error('⏳ Please wait, already processing...');
       return;
     }
     isProcessingRef.current = true; // Lock IMMEDIATELY
 
-    console.log('✅ LOCK ACQUIRED', callId, 'at', new Date().toISOString());
+    logger.log('✅ LOCK ACQUIRED', callId, 'at', new Date().toISOString());
 
-    console.log('🔵 Reserve button clicked', callId, {
+    logger.log('🔵 Reserve button clicked', callId, {
       timeSinceLastClick: now - lastClickTimeRef.current,
       quantity,
       pointsNeeded: POINTS_PER_UNIT * quantity
@@ -148,7 +148,7 @@ export default function ReservationModal({
 
     try {
       if (!offer || !user) {
-        console.log('❌ No offer or user');
+        logger.log('❌ No offer or user');
         isProcessingRef.current = false;
         return;
       }
@@ -156,7 +156,7 @@ export default function ReservationModal({
       // LAYER 2: Time-based debounce protection
       const timeSinceLastClick = now - lastClickTimeRef.current;
       if (timeSinceLastClick < DEBOUNCE_MS && lastClickTimeRef.current > 0) {
-        console.warn(`⚠️ BLOCKED: Too fast! ${timeSinceLastClick}ms since last click (minimum: ${DEBOUNCE_MS}ms)`);
+        logger.warn(`⚠️ BLOCKED: Too fast! ${timeSinceLastClick}ms since last click (minimum: ${DEBOUNCE_MS}ms)`);
         toast.error(`⏳ Please wait ${Math.ceil((DEBOUNCE_MS - timeSinceLastClick) / 1000)} more seconds...`);
         isProcessingRef.current = false;
         return;
@@ -210,13 +210,13 @@ export default function ReservationModal({
       }
 
       setIsReserving(true);
-      console.log('✅ Starting reservation process...');
+      logger.log('✅ Starting reservation process...');
 
       // NOTE: Points deduction is now handled internally by create_reservation_atomic
       // The database function deducts points based on quantity (5 points per unit)
-      console.log('📝 Creating reservation (points will be deducted automatically)...');
+      logger.log('📝 Creating reservation (points will be deducted automatically)...');
       const reservation = await createReservation(offer.id, user.id, quantity);
-      console.log('✅ Reservation created:', reservation.id);
+      logger.log('✅ Reservation created:', reservation.id);
 
       // Update local balance (deduct the points locally for immediate UI feedback)
       const pointsDeducted = POINTS_PER_UNIT * quantity;
@@ -228,7 +228,7 @@ export default function ReservationModal({
       );
 
       // Reset locks before navigation (success path)
-      console.log('🔄🔄🔄 SUCCESS - Resetting locks', callId);
+      logger.log('🔄🔄🔄 SUCCESS - Resetting locks', callId);
       setIsReserving(false);
       isProcessingRef.current = false;
 
@@ -236,7 +236,7 @@ export default function ReservationModal({
       if (onSuccess) onSuccess();
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
-      console.error('❌❌❌ ERROR - Resetting locks', callId, error);
+      logger.error('❌❌❌ ERROR - Resetting locks', callId, error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       
       // Enhanced error message with retry button
@@ -623,4 +623,5 @@ export default function ReservationModal({
     </Dialog>
   );
 }
+
 

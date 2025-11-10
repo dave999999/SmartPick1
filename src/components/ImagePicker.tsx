@@ -59,7 +59,7 @@ export default function ImagePicker({
           setLibraryImages([]);
         }
       } catch (err) {
-        console.error('Error fetching library images:', err);
+        logger.error('Error fetching library images:', err);
         setError('Failed to load image library. Please try again.');
         setLibraryImages([]);
       } finally {
@@ -270,3 +270,4 @@ export default function ImagePicker({
     </div>
   );
 }
+

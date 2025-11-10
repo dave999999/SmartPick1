@@ -31,7 +31,7 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
       setPoints(pointsData);
       setTransactions(transactionsData);
     } catch (error) {
-      console.error('Error loading wallet data:', error);
+      logger.error('Error loading wallet data:', error);
       toast.error('Failed to load SmartPoints data');
     } finally {
       setLoading(false);
@@ -46,7 +46,7 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
   // Real-time subscription to database changes
   useEffect(() => {
     const channel = subscribeToUserPoints(userId, (newBalance) => {
-      console.log('Real-time update: New balance from Supabase:', newBalance);
+      logger.log('Real-time update: New balance from Supabase:', newBalance);
       setPoints(prev => prev ? { ...prev, balance: newBalance } : null);
       // Reload transactions to show latest activity
       getPointTransactions(userId, 5).then(setTransactions);
@@ -62,7 +62,7 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
     const unsubscribe = onPointsChange((newBalance, changedUserId) => {
       // Only update if this is the current user
       if (changedUserId === userId) {
-        console.log('Event bus update: New balance:', newBalance);
+        logger.log('Event bus update: New balance:', newBalance);
         setPoints(prev => prev ? { ...prev, balance: newBalance } : null);
         // Reload transactions to show latest activity
         getPointTransactions(userId, 5).then(setTransactions);
@@ -76,7 +76,7 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('Tab visible: Refreshing SmartPoints data');
+        logger.log('Tab visible: Refreshing SmartPoints data');
         loadData();
       }
     };
@@ -260,3 +260,4 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
     </>
   );
 }
+

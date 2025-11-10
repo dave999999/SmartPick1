@@ -48,16 +48,16 @@ export default function MyPicks() {
 
   useEffect(() => {
     if (user) {
-      console.log('🔔 Setting up real-time subscription for user:', user.id);
+      logger.log('🔔 Setting up real-time subscription for user:', user.id);
       // Set up real-time subscription for reservations
       const subscription = subscribeToReservations(user.id, (payload) => {
-        console.log('🔄 Real-time reservation update received:', payload);
+        logger.log('🔄 Real-time reservation update received:', payload);
         // Reload reservations immediately when change is detected
         loadReservations();
       });
 
       return () => {
-        console.log('🔕 Unsubscribing from real-time updates');
+        logger.log('🔕 Unsubscribing from real-time updates');
         if (subscription && typeof subscription.unsubscribe === 'function') {
           subscription.unsubscribe();
         }
@@ -72,7 +72,7 @@ export default function MyPicks() {
     const pollingInterval = setInterval(() => {
       const hasActiveReservations = reservations.some(r => r.status === 'ACTIVE');
       if (hasActiveReservations) {
-        console.log('🔄 Polling: Checking for reservation updates...');
+        logger.log('🔄 Polling: Checking for reservation updates...');
         loadReservations();
       }
     }, 3000); // Poll every 3 seconds for faster updates
@@ -96,7 +96,7 @@ export default function MyPicks() {
       setUser(currentUser);
       await loadReservations(currentUser.id);
     } catch (error) {
-      console.error('Error loading user and reservations:', error);
+      logger.error('Error loading user and reservations:', error);
   toast.error(t('toast.failedLoadPicks'));
     } finally {
       setLoading(false);
@@ -119,7 +119,7 @@ export default function MyPicks() {
         scheduleMultipleReminders(reservationsData);
       }
     } catch (error) {
-      console.error('Error loading reservations:', error);
+      logger.error('Error loading reservations:', error);
   toast.error(t('toast.failedLoadReservations'));
     }
   };
@@ -165,7 +165,7 @@ export default function MyPicks() {
       setQRCodeData(qrUrl);
       setShowQRCode(reservation.id);
     } catch (error) {
-      console.error('Error generating QR code:', error);
+      logger.error('Error generating QR code:', error);
       toast.error(t('toast.failedGenerateQr'));
     }
   };
@@ -174,9 +174,9 @@ export default function MyPicks() {
   useEffect(() => {
     if (showQRCode) {
       const reservation = reservations.find(r => r.id === showQRCode);
-      console.log('🔍 Checking QR dialog reservation:', reservation?.status);
+      logger.log('🔍 Checking QR dialog reservation:', reservation?.status);
       if (reservation && reservation.status !== 'ACTIVE') {
-        console.log('✅ Reservation status changed to:', reservation.status, '- closing QR dialog');
+        logger.log('✅ Reservation status changed to:', reservation.status, '- closing QR dialog');
         setShowQRCode(null);
         toast.success(t('toast.pickupConfirmed'));
         // Force immediate reload and refresh page
@@ -206,7 +206,7 @@ export default function MyPicks() {
         });
       }
     } catch (error) {
-      console.error('Error confirming pickup:', error);
+      logger.error('Error confirming pickup:', error);
       toast.error(t('toast.failedConfirmPickup'), {
         description: 'Network error. Please check your connection and try again.',
         action: {
@@ -240,7 +240,7 @@ export default function MyPicks() {
         });
       }
     } catch (error) {
-      console.error('Error canceling reservation:', error);
+      logger.error('Error canceling reservation:', error);
       toast.error(t('toast.failedCancelReservation'), {
         description: 'Network error occurred. Please check your connection.',
         action: {
@@ -273,7 +273,7 @@ export default function MyPicks() {
   toast.success(t('toast.reservationRemoved'));
       loadReservations(); // Refresh the list
     } catch (error) {
-      console.error('Error removing reservation:', error);
+      logger.error('Error removing reservation:', error);
   toast.error(t('toast.failedRemoveReservation'));
     }
   };
@@ -288,7 +288,7 @@ export default function MyPicks() {
       setShowClearHistoryDialog(false);
       loadReservations(); // Refresh the list
     } catch (error) {
-      console.error('Error clearing history:', error);
+      logger.error('Error clearing history:', error);
       toast.error('Failed to clear history');
     } finally {
       setClearingHistory(false);
@@ -316,7 +316,7 @@ export default function MyPicks() {
       setRating(5);
       setComment('');
     } catch (error) {
-      console.error('Error submitting rating:', error);
+      logger.error('Error submitting rating:', error);
   toast.error(t('toast.failedSubmitRating'));
     } finally {
       setSubmittingRating(false);
@@ -359,7 +359,7 @@ export default function MyPicks() {
   doc.save(`smartpick-receipt-${reservation.id}.pdf`);
   toast.success(t('toast.receiptDownloaded'));
     } catch (error) {
-      console.error('Error generating receipt:', error);
+      logger.error('Error generating receipt:', error);
       toast.error('Failed to generate receipt');
     }
   };
@@ -875,3 +875,4 @@ export default function MyPicks() {
     </div>
   );
 }
+
