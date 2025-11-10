@@ -48,19 +48,32 @@ export default function MyPicks() {
 
   useEffect(() => {
     if (user) {
+      console.log('🔔 Setting up real-time subscription for user:', user.id);
       // Set up real-time subscription for reservations
       const subscription = subscribeToReservations(user.id, (payload) => {
-        console.log('Real-time reservation update:', payload);
+        console.log('🔄 Real-time reservation update received:', payload);
+        // Reload reservations immediately when change is detected
         loadReservations();
       });
 
+      // Also set up polling as backup (refresh every 10 seconds if there are active reservations)
+      const pollingInterval = setInterval(() => {
+        const hasActiveReservations = reservations.some(r => r.status === 'ACTIVE');
+        if (hasActiveReservations) {
+          console.log('🔄 Polling: Checking for reservation updates...');
+          loadReservations();
+        }
+      }, 10000); // Poll every 10 seconds
+
       return () => {
+        console.log('🔕 Unsubscribing from real-time updates and stopping polling');
         if (subscription && typeof subscription.unsubscribe === 'function') {
           subscription.unsubscribe();
         }
+        clearInterval(pollingInterval);
       };
     }
-  }, [user]);
+  }, [user, reservations]);
 
   const loadUserAndReservations = async () => {
     try {
