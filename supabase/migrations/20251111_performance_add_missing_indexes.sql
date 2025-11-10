@@ -96,11 +96,6 @@ CREATE INDEX IF NOT EXISTS idx_user_achievements_progress
 CREATE INDEX IF NOT EXISTS idx_partner_points_transactions_date 
   ON partner_point_transactions(partner_id, created_at DESC);
 
--- Index for transaction type filtering
--- Used in: Filtering transactions by type (earn, spend, refund)
-CREATE INDEX IF NOT EXISTS idx_partner_points_transactions_type 
-  ON partner_point_transactions(partner_id, transaction_type, created_at DESC);
-
 -- ============================================
 -- 6. PARTNERS TABLE INDEXES
 -- ============================================
