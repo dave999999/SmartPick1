@@ -1505,7 +1505,7 @@ const generate24HourOptions = (): string[] => {
                           isProcessingQRRef.current = false;
                           setIsProcessingQR(false);
                           console.log('🏁 QR processing complete, ready for next scan');
-                        }, 1000); // 1 second delay
+                        }, 500); // 0.5 second delay (scanner stops immediately anyway)
                       }
                     }}
                     onError={(error) => {
