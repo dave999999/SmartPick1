@@ -56,23 +56,30 @@ export default function MyPicks() {
         loadReservations();
       });
 
-      // Also set up polling as backup (refresh every 10 seconds if there are active reservations)
-      const pollingInterval = setInterval(() => {
-        const hasActiveReservations = reservations.some(r => r.status === 'ACTIVE');
-        if (hasActiveReservations) {
-          console.log('🔄 Polling: Checking for reservation updates...');
-          loadReservations();
-        }
-      }, 10000); // Poll every 10 seconds
-
       return () => {
-        console.log('🔕 Unsubscribing from real-time updates and stopping polling');
+        console.log('🔕 Unsubscribing from real-time updates');
         if (subscription && typeof subscription.unsubscribe === 'function') {
           subscription.unsubscribe();
         }
-        clearInterval(pollingInterval);
       };
     }
+  }, [user]);
+
+  // Separate polling effect that checks for active reservations
+  useEffect(() => {
+    if (!user) return;
+
+    const pollingInterval = setInterval(() => {
+      const hasActiveReservations = reservations.some(r => r.status === 'ACTIVE');
+      if (hasActiveReservations) {
+        console.log('🔄 Polling: Checking for reservation updates...');
+        loadReservations();
+      }
+    }, 3000); // Poll every 3 seconds for faster updates
+
+    return () => {
+      clearInterval(pollingInterval);
+    };
   }, [user, reservations]);
 
   const loadUserAndReservations = async () => {
@@ -162,6 +169,18 @@ export default function MyPicks() {
       toast.error(t('toast.failedGenerateQr'));
     }
   };
+
+  // Auto-close QR dialog when reservation status changes
+  useEffect(() => {
+    if (showQRCode) {
+      const reservation = reservations.find(r => r.id === showQRCode);
+      if (reservation && reservation.status !== 'ACTIVE') {
+        console.log('🔄 Reservation status changed, closing QR dialog');
+        setShowQRCode(null);
+        toast.success(t('toast.pickupConfirmed'));
+      }
+    }
+  }, [reservations, showQRCode]);
 
   const handleConfirmPickup = async (reservationId: string) => {
     if (!confirm(t('confirm.confirmPickup'))) return;
