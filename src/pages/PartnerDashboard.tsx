@@ -53,7 +53,31 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, ShoppingBag, Package, CheckCircle, QrCode, Trash2, Pause, Play, LogOut, Edit, TrendingUp, Clock, Lock, Utensils, MessageSquare, Calendar, DollarSign, Hash, Upload, X, Eye, RefreshCw, Filter, ChevronDown, Camera } from 'lucide-react';
+import Plus from 'lucide-react/dist/esm/icons/plus';
+import ShoppingBag from 'lucide-react/dist/esm/icons/shopping-bag';
+import Package from 'lucide-react/dist/esm/icons/package';
+import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
+import QrCode from 'lucide-react/dist/esm/icons/qr-code';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import Pause from 'lucide-react/dist/esm/icons/pause';
+import Play from 'lucide-react/dist/esm/icons/play';
+import LogOut from 'lucide-react/dist/esm/icons/log-out';
+import Edit from 'lucide-react/dist/esm/icons/edit';
+import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
+import Clock from 'lucide-react/dist/esm/icons/clock';
+import Lock from 'lucide-react/dist/esm/icons/lock';
+import Utensils from 'lucide-react/dist/esm/icons/utensils';
+import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import DollarSign from 'lucide-react/dist/esm/icons/dollar-sign';
+import Hash from 'lucide-react/dist/esm/icons/hash';
+import Upload from 'lucide-react/dist/esm/icons/upload';
+import X from 'lucide-react/dist/esm/icons/x';
+import Eye from 'lucide-react/dist/esm/icons/eye';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
+import Filter from 'lucide-react/dist/esm/icons/filter';
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
+import Camera from 'lucide-react/dist/esm/icons/camera';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import QRScanner from '@/components/QRScanner';
 import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
@@ -68,10 +92,11 @@ import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
 import PendingPartnerStatus from '@/components/partner/PendingPartnerStatus';
 import PartnerAnalytics from '@/components/partner/PartnerAnalytics';
 import { Skeleton } from '@/components/ui/skeleton';
+import { logger } from '@/lib/logger';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
-  console.log('🚨🚨🚨 PARTNER DASHBOARD LOADED - Debug Build 20251109204500 🚨🚨🚨');
+  logger.log('🚨🚨🚨 PARTNER DASHBOARD LOADED - Debug Build 20251109204500 🚨🚨🚨');
   const { t } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -254,7 +279,7 @@ export default function PartnerDashboard() {
         return;
       }
     } catch (error) {
-      console.error('Error loading partner data:', error);
+      logger.error('Error loading partner data:', error);
   toast.error(t('partner.dashboard.toast.loadFail'));
     } finally {
       setIsLoading(false);
@@ -263,7 +288,7 @@ export default function PartnerDashboard() {
 
   const handleCreateOffer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('🔥🔥🔥 CREATE OFFER BUTTON CLICKED 🔥🔥🔥');
+    logger.log('🔥🔥🔥 CREATE OFFER BUTTON CLICKED 🔥🔥🔥');
     
     const formData = new FormData(e.currentTarget);
 
@@ -342,7 +367,7 @@ export default function PartnerDashboard() {
       let pickupStart: Date = now;
       let pickupEnd: Date = now;
 
-      console.log('Creating offer with business settings:', {
+      logger.log('Creating offer with business settings:', {
         is24HourBusiness,
         autoExpire6h,
         opening_time: partner?.opening_time,
@@ -353,18 +378,18 @@ export default function PartnerDashboard() {
       if (is24HourBusiness && autoExpire6h) {
         // 24-hour business: live next 12 hours
         pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
-        console.log('24/7 business: Offer will be live for 12 hours until', pickupEnd);
+        logger.log('24/7 business: Offer will be live for 12 hours until', pickupEnd);
       } else {
         const closing = getClosingTime();
-        console.log('Regular business closing time:', closing);
+        logger.log('Regular business closing time:', closing);
         if (closing && closing > now) {
           // Live until closing time today
           pickupEnd = closing;
-          console.log('Offer will be live until closing time:', pickupEnd);
+          logger.log('Offer will be live until closing time:', pickupEnd);
         } else {
           // Fallback if closing unknown/past: default to +2 hours
           pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-          console.log('Using fallback: Offer will be live for 2 hours until', pickupEnd);
+          logger.log('Using fallback: Offer will be live for 2 hours until', pickupEnd);
         }
       }
 
@@ -373,7 +398,7 @@ export default function PartnerDashboard() {
       try {
         processedImages = await processOfferImages(imageFiles, partner?.id || '');
       } catch (imgErr) {
-        console.error('Image processing/upload failed, proceeding without images:', imgErr);
+        logger.error('Image processing/upload failed, proceeding without images:', imgErr);
         toast.error(t('partner.dashboard.toast.imageUploadFailed'));
         processedImages = [];
       }
@@ -394,7 +419,7 @@ export default function PartnerDashboard() {
 
       if (partner) {
         // Log partner info for debugging
-        console.log('Partner info:', {
+        logger.log('Partner info:', {
           id: partner.id,
           user_id: partner.user_id,
           status: partner.status,
@@ -403,14 +428,14 @@ export default function PartnerDashboard() {
 
         // Check current auth user
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        console.log('Current auth user:', {
+        logger.log('Current auth user:', {
           id: currentUser?.id,
           email: currentUser?.email
         });
 
         // Verify partner_id matches user_id
         if (partner.user_id !== currentUser?.id) {
-          console.error('MISMATCH: Partner user_id does not match current user!');
+          logger.error('MISMATCH: Partner user_id does not match current user!');
           toast.error('Authentication error: Please log out and log back in');
           return;
         }
@@ -437,7 +462,7 @@ export default function PartnerDashboard() {
           expires_at: offerData.pickup_window.end.toISOString(),
         };
 
-        console.log('Creating offer with data:', insertData);
+        logger.log('Creating offer with data:', insertData);
 
         const { data, error } = await supabase
           .from('offers')
@@ -446,7 +471,7 @@ export default function PartnerDashboard() {
           .single();
 
         if (error) {
-          console.error('Offer creation error details:', {
+          logger.error('Offer creation error details:', {
             message: error.message,
             details: error.details,
             hint: error.hint,
@@ -455,7 +480,7 @@ export default function PartnerDashboard() {
           throw new Error(`Failed to create offer: ${error.message}`);
         }
 
-        console.log('Offer created successfully:', data);
+        logger.log('Offer created successfully:', data);
   toast.success(isScheduled ? t('partner.dashboard.toast.offerScheduled') : t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
         setImageFiles([]);
@@ -470,7 +495,7 @@ export default function PartnerDashboard() {
         loadPartnerData();
       }
     } catch (error) {
-      console.error('Error creating offer:', error);
+      logger.error('Error creating offer:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
   toast.error(`${t('partner.dashboard.toast.offerCreateFailed')}: ${errorMessage}`);
     } finally {
@@ -572,7 +597,7 @@ export default function PartnerDashboard() {
       setSelectedLibraryImage(null);
       loadPartnerData();
     } catch (error) {
-      console.error('Error updating offer:', error);
+      logger.error('Error updating offer:', error);
   toast.error(t('partner.dashboard.toast.offerUpdateFailed'));
     }
   };
@@ -590,7 +615,7 @@ export default function PartnerDashboard() {
       await loadPartnerData();
   toast.success(t('partner.dashboard.toast.quantityRefreshed'));
     } catch (error) {
-      console.error('Error refreshing quantity:', error);
+      logger.error('Error refreshing quantity:', error);
   toast.error(t('partner.dashboard.toast.quantityRefreshFailed'));
     } finally {
       setProcessingIds(prev => {
@@ -635,7 +660,7 @@ export default function PartnerDashboard() {
         toast.success(t('partner.dashboard.toast.offerCreated'));
         await loadPartnerData();
       } catch (error) {
-        console.error('Error creating new offer:', error);
+        logger.error('Error creating new offer:', error);
     toast.error(t('partner.dashboard.toast.offerCreateFailed'));
       } finally {
         setProcessingIds(prev => {
@@ -705,7 +730,7 @@ export default function PartnerDashboard() {
   toast.success(t('partner.dashboard.toast.pickupConfirmed'));
     loadPartnerData();
   } catch (error: any) {
-    console.error('Error marking as picked up:', error);
+    logger.error('Error marking as picked up:', error);
     // Show detailed error message
     const errorMsg = error?.message || error?.error?.message || 'Unknown error';
     toast.error(`Failed to mark as picked up: ${errorMsg}`);
@@ -739,7 +764,7 @@ export default function PartnerDashboard() {
         toast.error(t('toast.failedMarkNoShow'));
       }
     } catch (error) {
-      console.error('Error marking no-show:', error);
+      logger.error('Error marking no-show:', error);
       toast.error(t('toast.failedMarkNoShow'));
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
@@ -1019,7 +1044,7 @@ const generate24HourOptions = (): string[] => {
         toast.error(result.message || t('partner.points.purchaseFailed'));
       }
     } catch (error) {
-      console.error('Error purchasing slot:', error);
+      logger.error('Error purchasing slot:', error);
       toast.error(t('partner.points.purchaseFailed'));
     } finally {
       setIsPurchasing(false);
@@ -1498,7 +1523,7 @@ const generate24HourOptions = (): string[] => {
                     onScan={async (code) => {
                       // Use ref for immediate synchronous check to prevent race conditions
                       if (isProcessingQRRef.current) {
-                        console.log('⏸️ Already processing a QR code, ignoring...');
+                        logger.log('⏸️ Already processing a QR code, ignoring...');
                         toast.info('Please wait, processing previous scan...');
                         return;
                       }
@@ -1506,33 +1531,33 @@ const generate24HourOptions = (): string[] => {
                       // Set ref immediately (synchronous) to block other scans
                       isProcessingQRRef.current = true;
                       setIsProcessingQR(true);
-                      console.log('🔄 Starting QR validation process...');
+                      logger.log('🔄 Starting QR validation process...');
                       
                       try {
                         // Clean and normalize the scanned code
                         const cleanCode = code.trim();
-                        console.log('📋 QR Code received:', cleanCode);
+                        logger.log('📋 QR Code received:', cleanCode);
                         setQrInput(cleanCode);
 
                         // Automatically validate and mark as picked up
-                        console.log('🔍 Validating QR code:', cleanCode);
+                        logger.log('🔍 Validating QR code:', cleanCode);
                         const result = await validateQRCode(cleanCode, true);
-                        console.log('📊 Validation result:', result);
+                        logger.log('📊 Validation result:', result);
 
                         if (result.valid && result.reservation) {
-                          console.log('✅ QR validation successful!');
+                          logger.log('✅ QR validation successful!');
                           setQrInput('');
                           setQrScannerOpen(false);
                           toast.success(t('partner.dashboard.toast.pickupConfirmed'));
                           setLastQrResult('success');
                           await loadPartnerData(); // Refresh dashboard
                         } else {
-                          console.error('❌ QR validation failed:', result.error);
+                          logger.error('❌ QR validation failed:', result.error);
                           toast.error(result.error || 'Invalid QR code');
                           setLastQrResult('error');
                         }
                       } catch (error) {
-                        console.error('💥 Error validating QR code:', error);
+                        logger.error('💥 Error validating QR code:', error);
                         toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         setLastQrResult('error');
                       } finally {
@@ -1540,12 +1565,12 @@ const generate24HourOptions = (): string[] => {
                         setTimeout(() => {
                           isProcessingQRRef.current = false;
                           setIsProcessingQR(false);
-                          console.log('🏁 QR processing complete, ready for next scan');
+                          logger.log('🏁 QR processing complete, ready for next scan');
                         }, 500); // 0.5 second delay (scanner stops immediately anyway)
                       }
                     }}
                     onError={(error) => {
-                      console.error('📷 QR Scanner error:', error);
+                      logger.error('📷 QR Scanner error:', error);
                       toast.error(error);
                     }}
                   />
@@ -2321,3 +2346,6 @@ const generate24HourOptions = (): string[] => {
     </div>
   );
 }
+
+
+

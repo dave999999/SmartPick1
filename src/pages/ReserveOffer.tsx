@@ -62,7 +62,7 @@ export default function ReserveOffer() {
         updateMetaTags(data);
       }
     } catch (error) {
-      console.error('Error loading offer:', error);
+      logger.error('Error loading offer:', error);
   toast.error(t('toast.failedLoadOffer'));
       navigate('/');
     } finally {
@@ -82,7 +82,7 @@ export default function ReserveOffer() {
       const info = await checkUserPenalty(user.id);
       setPenaltyInfo(info);
     } catch (error) {
-      console.error('Error loading penalty info:', error);
+      logger.error('Error loading penalty info:', error);
     }
   };
 
@@ -117,7 +117,7 @@ export default function ReserveOffer() {
   toast.success(t('toast.reservationCreated'));
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
-      console.error('Error creating reservation:', error);
+      logger.error('Error creating reservation:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
     } finally {
@@ -351,4 +351,5 @@ export default function ReserveOffer() {
     </div>
   );
 }
+
 

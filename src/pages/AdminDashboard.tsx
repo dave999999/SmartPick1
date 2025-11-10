@@ -47,15 +47,15 @@ export default function AdminDashboard() {
 
   const checkAdminAccess = async () => {
     try {
-      console.log('AdminDashboard: Starting admin access check...');
+      logger.log('AdminDashboard: Starting admin access check...');
       
       // Test connection first
       const connectionTest = await testAdminConnection();
-      console.log('AdminDashboard: Connection test result:', connectionTest);
+      logger.log('AdminDashboard: Connection test result:', connectionTest);
       setConnectionStatus(connectionTest.connected ? 'Connected' : 'Failed');
       
       if (!connectionTest.connected) {
-        console.error('AdminDashboard: Connection failed:', connectionTest.error);
+        logger.error('AdminDashboard: Connection failed:', connectionTest.error);
         toast.error(`Database connection failed: ${connectionTest.error}`);
       }
 
@@ -66,7 +66,7 @@ export default function AdminDashboard() {
         return;
       }
       
-      console.log('AdminDashboard: User authenticated:', user.email);
+      logger.log('AdminDashboard: User authenticated:', user.email);
       
       // Check if user is admin - check for both uppercase and lowercase
       const { data: profile, error } = await supabase
@@ -75,10 +75,10 @@ export default function AdminDashboard() {
         .eq('id', user.id)
         .single();
 
-      console.log('AdminDashboard: User profile check:', { profile, error });
+      logger.log('AdminDashboard: User profile check:', { profile, error });
 
       if (error) {
-        console.error('Error fetching user profile:', error);
+        logger.error('Error fetching user profile:', error);
         toast.error('Unable to verify admin privileges');
         navigate('/');
         return;
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
 
       // Verify admin role (case-insensitive)
       if (!profile || profile.role?.toUpperCase() !== 'ADMIN') {
-        console.error('AdminDashboard: Unauthorized access attempt by user:', user.email);
+        logger.error('AdminDashboard: Unauthorized access attempt by user:', user.email);
         toast.error('Unauthorized: Admin access required');
         navigate('/');
         return;
@@ -95,7 +95,7 @@ export default function AdminDashboard() {
       // User is authenticated and authorized, load stats
       await loadStats();
     } catch (error) {
-      console.error('Error checking admin access:', error);
+      logger.error('Error checking admin access:', error);
       toast.error('Failed to verify admin access');
       navigate('/');
     }
@@ -103,14 +103,14 @@ export default function AdminDashboard() {
 
   const loadStats = async () => {
     try {
-      console.log('AdminDashboard: Loading dashboard stats...');
+      logger.log('AdminDashboard: Loading dashboard stats...');
       
       // Prefer unified RPC for stats; gracefully fallback to legacy counts
       let rpcStats: any = null;
       try {
         rpcStats = await getAdminDashboardStatsRpc();
       } catch (e) {
-        console.warn('AdminDashboard: RPC stats unavailable, falling back:', e);
+        logger.warn('AdminDashboard: RPC stats unavailable, falling back:', e);
       }
 
       // Load legacy datasets in parallel (used for fallback and toasts)
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
         getAllUsers().catch(() => [])
       ]);
       
-      console.log('AdminDashboard: Data loaded:', {
+      logger.log('AdminDashboard: Data loaded:', {
         stats: rpcStats || dashboardStats,
         partnersCount: partnersData.length,
         usersCount: usersData.length
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       toast.success(`Dashboard loaded successfully! Found ${partnersData.length} partners and ${usersData.length} users`);
       
     } catch (error) {
-      console.error('Error loading dashboard stats:', error);
+      logger.error('Error loading dashboard stats:', error);
       toast.error(`Failed to load dashboard statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       // Set default stats to prevent UI errors
@@ -357,3 +357,4 @@ export default function AdminDashboard() {
     </PageShell>
   );
 }
+

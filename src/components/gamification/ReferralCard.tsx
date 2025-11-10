@@ -54,7 +54,7 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
         toast.success('Shared successfully!');
       } catch (error) {
         // User cancelled share
-        console.log('Share cancelled');
+        logger.log('Share cancelled');
       }
     } else {
       // Fallback to copy
@@ -182,3 +182,4 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
     </Card>
   );
 }
+

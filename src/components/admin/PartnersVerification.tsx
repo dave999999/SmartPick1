@@ -29,7 +29,7 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
       const { items } = await getPartnersPaged({ page: 1, pageSize: 50, status: 'PENDING' });
       setPending(items);
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Failed to load pending partners');
     } finally {
       setLoading(false);
@@ -77,7 +77,7 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
       await load();
       onStatsUpdate();
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       toast.error('Action failed');
     }
   };
@@ -153,4 +153,5 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
     </Card>
   );
 }
+
 

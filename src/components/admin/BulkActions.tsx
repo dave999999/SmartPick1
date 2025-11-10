@@ -72,7 +72,7 @@ export function BulkActions({
               .eq('id', id);
             
             if (error) {
-              console.error(`Failed to delete ${id}:`, error);
+              logger.error(`Failed to delete ${id}:`, error);
               failCount++;
             } else {
               successCount++;
@@ -89,7 +89,7 @@ export function BulkActions({
                 .eq('id', id);
               
               if (error) {
-                console.error(`Failed to approve ${id}:`, error);
+                logger.error(`Failed to approve ${id}:`, error);
                 failCount++;
               } else {
                 successCount++;
@@ -107,7 +107,7 @@ export function BulkActions({
                 .eq('id', id);
               
               if (error) {
-                console.error(`Failed to reject ${id}:`, error);
+                logger.error(`Failed to reject ${id}:`, error);
                 failCount++;
               } else {
                 successCount++;
@@ -127,7 +127,7 @@ export function BulkActions({
               .eq('id', id);
             
             if (error) {
-              console.error(`Failed to disable ${id}:`, error);
+              logger.error(`Failed to disable ${id}:`, error);
               failCount++;
             } else {
               successCount++;
@@ -146,7 +146,7 @@ export function BulkActions({
               .eq('id', id);
             
             if (error) {
-              console.error(`Failed to enable ${id}:`, error);
+              logger.error(`Failed to enable ${id}:`, error);
               failCount++;
             } else {
               successCount++;
@@ -163,7 +163,7 @@ export function BulkActions({
                 .eq('id', id);
               
               if (error) {
-                console.error(`Failed to pause ${id}:`, error);
+                logger.error(`Failed to pause ${id}:`, error);
                 failCount++;
               } else {
                 successCount++;
@@ -181,7 +181,7 @@ export function BulkActions({
                 .eq('id', id);
               
               if (error) {
-                console.error(`Failed to resume ${id}:`, error);
+                logger.error(`Failed to resume ${id}:`, error);
                 failCount++;
               } else {
                 successCount++;
@@ -215,7 +215,7 @@ export function BulkActions({
       onClearSelection();
       setAction('');
     } catch (error) {
-      console.error('Bulk action error:', error);
+      logger.error('Bulk action error:', error);
       toast.error(`Failed to ${action} ${entityType}`);
     } finally {
       setProcessing(false);
@@ -256,7 +256,7 @@ export function BulkActions({
         toast.success(`Exported ${data.length} ${entityType} to CSV`);
       }
     } catch (error) {
-      console.error('Export error:', error);
+      logger.error('Export error:', error);
       toast.error('Failed to export data');
     }
   };
@@ -367,3 +367,4 @@ export function BulkActions({
     </Card>
   );
 }
+

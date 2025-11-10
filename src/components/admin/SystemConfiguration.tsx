@@ -116,7 +116,7 @@ export default function SystemConfiguration() {
         toast.info('Using default configuration');
       }
     } catch (error) {
-      console.error('Error loading config:', error);
+      logger.error('Error loading config:', error);
       toast.error('Failed to load configuration');
       setConfig(defaultConfig);
     } finally {
@@ -142,7 +142,7 @@ export default function SystemConfiguration() {
       toast.success('Configuration saved successfully!');
       setHasChanges(false);
     } catch (error) {
-      console.error('Error saving config:', error);
+      logger.error('Error saving config:', error);
       toast.error('Failed to save configuration. You may need to create the system_config table.');
     } finally {
       setSaving(false);
@@ -577,3 +577,4 @@ export default function SystemConfiguration() {
     </div>
   );
 }
+

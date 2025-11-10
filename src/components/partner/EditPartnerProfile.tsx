@@ -199,7 +199,7 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
       onUpdate();
       onOpenChange(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      logger.error('Error updating profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setIsSubmitting(false);
@@ -466,3 +466,4 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
     </Dialog>
   );
 }
+

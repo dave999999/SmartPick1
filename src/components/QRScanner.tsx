@@ -27,7 +27,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         }
       })
       .catch((err) => {
-        console.error('Error getting cameras:', err);
+        logger.error('Error getting cameras:', err);
         setError('Unable to access camera');
       });
 
@@ -45,13 +45,13 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     try {
       // Stop any existing scanner first
       if (scannerRef.current) {
-        console.log('⚠️ Stopping existing scanner before starting new one');
+        logger.log('⚠️ Stopping existing scanner before starting new one');
         await stopScanning();
       }
 
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
-      console.log('📷 Initializing scanner...');
+      logger.log('📷 Initializing scanner...');
 
       await scanner.start(
         { facingMode: 'environment' }, // Use back camera if available
@@ -73,13 +73,13 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         (decodedText) => {
           // Success callback - only process first scan
           if (hasScannedRef.current) {
-            console.log('✋ Already processed a scan, ignoring duplicate');
+            logger.log('✋ Already processed a scan, ignoring duplicate');
             return;
           }
           
           // Set flag IMMEDIATELY to block any further scans
           hasScannedRef.current = true;
-          console.log('✅ QR Code detected and scanned:', decodedText);
+          logger.log('✅ QR Code detected and scanned:', decodedText);
           
           // Stop scanner IMMEDIATELY to prevent duplicate scans
           stopScanning();
@@ -102,9 +102,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           setTimeout(() => {
             try {
               onScan(decodedText);
-              console.log('📤 Sent QR code to onScan callback');
+              logger.log('📤 Sent QR code to onScan callback');
             } catch (e) {
-              console.error('❌ Error in onScan callback:', e);
+              logger.error('❌ Error in onScan callback:', e);
             }
           }, 100);
         },
@@ -116,9 +116,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
 
       setIsScanning(true);
       setError(null);
-      console.log('📷 Camera started successfully');
+      logger.log('📷 Camera started successfully');
     } catch (err: any) {
-      console.error('❌ Error starting scanner:', err);
+      logger.error('❌ Error starting scanner:', err);
       setError(err.message || 'Failed to start camera');
       onError?.(err.message || 'Failed to start camera');
     }
@@ -129,12 +129,12 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       try {
         if (isScanning) {
           await scannerRef.current.stop();
-          console.log('🛑 Scanner stopped');
+          logger.log('🛑 Scanner stopped');
         }
         scannerRef.current.clear();
         scannerRef.current = null;
       } catch (err) {
-        console.error('❌ Error stopping scanner:', err);
+        logger.error('❌ Error stopping scanner:', err);
       }
       setIsScanning(false);
       // DON'T reset hasScannedRef here - keep it true to prevent rescans
@@ -145,7 +145,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   // Reset scan flag when scanner is mounted (dialog opens)
   useEffect(() => {
     hasScannedRef.current = false;
-    console.log('🔄 QR Scanner mounted, reset scan flag');
+    logger.log('🔄 QR Scanner mounted, reset scan flag');
   }, []);
 
   return (
@@ -219,3 +219,4 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     </div>
   );
 }
+

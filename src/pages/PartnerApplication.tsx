@@ -171,7 +171,7 @@ export default function PartnerApplication() {
       );
 
       if (!response.ok) {
-        console.error('Reverse geocoding failed:', response.statusText);
+        logger.error('Reverse geocoding failed:', response.statusText);
         return;
       }
 
@@ -194,7 +194,7 @@ export default function PartnerApplication() {
         }, 3000);
       }
     } catch (error) {
-      console.error('Error reverse geocoding:', error);
+      logger.error('Error reverse geocoding:', error);
     }
   }, [formData.city]);
 
@@ -230,7 +230,7 @@ export default function PartnerApplication() {
         (error) => {
           toast.dismiss();
           toast.error(t('partner.toast.locationFailed'));
-          console.error('Geolocation error:', error);
+          logger.error('Geolocation error:', error);
         }
       );
     } else {
@@ -259,7 +259,7 @@ export default function PartnerApplication() {
       );
 
       if (!response.ok) {
-        console.error('Address search failed:', response.statusText);
+        logger.error('Address search failed:', response.statusText);
         setIsLoadingAddress(false);
         return;
       }
@@ -275,7 +275,7 @@ export default function PartnerApplication() {
   toast.error(t('partner.toast.noAddresses'));
       }
     } catch (error) {
-      console.error('Error searching address:', error);
+      logger.error('Error searching address:', error);
       setAddressSuggestions([]);
       setShowAddressSuggestions(false);
     } finally {
@@ -373,7 +373,7 @@ export default function PartnerApplication() {
   setEmailError(t('partner.error.emailExists'));
       }
     } catch (error) {
-      console.error('Error checking email:', error);
+      logger.error('Error checking email:', error);
     } finally {
       setIsCheckingEmail(false);
     }
@@ -615,7 +615,7 @@ export default function PartnerApplication() {
       });
 
       if (authError) {
-        console.error('Auth error:', authError);
+        logger.error('Auth error:', authError);
         if (authError.message.includes('already registered') ||
             authError.message.includes('duplicate') ||
             authError.message.includes('already exists')) {
@@ -628,28 +628,28 @@ export default function PartnerApplication() {
       }
 
       if (!authData.user) {
-        console.error('No user data returned from auth.signUp');
+        logger.error('No user data returned from auth.signUp');
         toast.error('Failed to create account. Please try again.');
         return;
       }
 
-      console.log('User account created successfully:', authData.user.id);
+      logger.log('User account created successfully:', authData.user.id);
 
       // Verify session is established after signup
       if (!authData.session) {
-        console.error('No session after signup - signing in manually');
+        logger.error('No session after signup - signing in manually');
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
 
         if (signInError || !signInData.session) {
-          console.error('Failed to sign in after signup:', signInError);
+          logger.error('Failed to sign in after signup:', signInError);
           toast.error('Account created but failed to sign in. Please sign in manually.');
           return;
         }
 
-        console.log('Successfully signed in after signup');
+        logger.log('Successfully signed in after signup');
       }
 
       // Small delay to ensure session is fully propagated
@@ -676,16 +676,16 @@ export default function PartnerApplication() {
         status: 'PENDING',
       };
 
-      console.log('Creating partner application with data:', partnerData);
+      logger.log('Creating partner application with data:', partnerData);
 
       // Verify we have an active session before inserting
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.error('No active session found before partner insert');
+        logger.error('No active session found before partner insert');
         toast.error('Authentication error. Please try signing in and applying again.');
         return;
       }
-      console.log('Active session confirmed, user ID:', session.user.id);
+      logger.log('Active session confirmed, user ID:', session.user.id);
 
       try {
         const { data: partnerResult, error: partnerError } = await supabase
@@ -695,7 +695,7 @@ export default function PartnerApplication() {
           .single();
 
         if (partnerError) {
-          console.error('Supabase partner insert error:', partnerError);
+          logger.error('Supabase partner insert error:', partnerError);
 
           if (partnerError.message?.includes('duplicate') ||
               partnerError.message?.includes('already exists') ||
@@ -708,7 +708,7 @@ export default function PartnerApplication() {
         }
 
         if (partnerResult && partnerResult.id) {
-          console.log('Partner application created successfully:', partnerResult);
+          logger.log('Partner application created successfully:', partnerResult);
           toast.success('✅ Your partner application has been submitted!');
 
           setShowSuccessModal(true);
@@ -717,15 +717,15 @@ export default function PartnerApplication() {
             navigate('/');
           }, 4000);
         } else {
-          console.error('Partner application returned no data:', partnerResult);
+          logger.error('Partner application returned no data:', partnerResult);
           toast.error('Failed to submit partner application. Please contact support.');
         }
       } catch (insertError: unknown) {
-        console.error('Exception during partner insert:', insertError);
+        logger.error('Exception during partner insert:', insertError);
         toast.error(`Failed to submit application: ${insertError instanceof Error ? insertError.message : 'Unknown error'}`);
       }
     } catch (error: unknown) {
-      console.error('Error submitting application:', error);
+      logger.error('Error submitting application:', error);
       toast.error(`Failed to submit application: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setIsSubmitting(false);
@@ -1451,3 +1451,4 @@ export default function PartnerApplication() {
     </div>
   );
 }
+

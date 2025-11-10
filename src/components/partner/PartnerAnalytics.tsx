@@ -244,3 +244,4 @@ export default function PartnerAnalytics({ offers, allReservations, revenue }: P
     </div>
   );
 }
+

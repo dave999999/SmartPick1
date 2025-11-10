@@ -92,7 +92,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       setFilteredPartners(items);
       setTotal(count);
     } catch (error) {
-      console.error('Error loading partners:', error);
+      logger.error('Error loading partners:', error);
       toast.error('Failed to load partners');
     } finally {
       setLoading(false);
@@ -181,7 +181,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         .maybeSingle();
 
       if (emailCheckErr) {
-        console.error('Email check error:', emailCheckErr);
+        logger.error('Email check error:', emailCheckErr);
       }
 
       if (existingEmail) {
@@ -227,7 +227,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         });
         const resp = await res.json();
         if (!res.ok) {
-          console.error('API error:', resp);
+          logger.error('API error:', resp);
           throw new Error(resp?.error || 'Server error creating partner');
         }
         toast.success(`Partner "${businessName}" added successfully with password!`);
@@ -304,7 +304,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       // Optional invite (requires service role on server; skip in browser)
       // Future: Send partner invitation email
     } catch (error) {
-      console.error('Failed to add partner:', error);
+      logger.error('Failed to add partner:', error);
       toast.error('Failed to add partner');
     } finally {
       setSubmitting(false);
@@ -335,7 +335,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.success('Address auto-filled from location');
       }
     } catch (error) {
-      console.error('Reverse geocoding error:', error);
+      logger.error('Reverse geocoding error:', error);
       // Don't show error - address can be entered manually
     }
   };
@@ -362,7 +362,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         toast.success('Map updated to address location');
       }
     } catch (error) {
-      console.error('Forward geocoding error:', error);
+      logger.error('Forward geocoding error:', error);
       toast.error('Failed to locate address. Please use the map.');
     }
   };
@@ -398,7 +398,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         await reverseGeocode(lat, lng);
       },
       (error) => {
-        console.error('Error getting location:', error);
+        logger.error('Error getting location:', error);
         setGettingLocation(false);
 
         let errorMessage = 'Unable to get your location';
@@ -435,7 +435,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       loadPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error updating partner:', error);
+      logger.error('Error updating partner:', error);
       toast.error('Failed to update partner');
     }
   };
@@ -456,7 +456,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       loadPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error deleting partner:', error);
+      logger.error('Error deleting partner:', error);
       toast.error('Failed to delete partner');
     }
   };
@@ -468,7 +468,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       loadPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error approving partner:', error);
+      logger.error('Error approving partner:', error);
       toast.error('Failed to approve partner');
     }
   };
@@ -485,7 +485,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       loadPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error toggling partner pause:', error);
+      logger.error('Error toggling partner pause:', error);
       toast.error('Failed to update partner status');
     }
   };
@@ -497,7 +497,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       loadPartners();
       onStatsUpdate();
     } catch (error) {
-      console.error('Error banning partner:', error);
+      logger.error('Error banning partner:', error);
       toast.error('Failed to ban partner');
     }
   };
@@ -511,7 +511,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       const offers = await getPartnerOffers(partner.id);
       setPartnerOffers(offers);
     } catch (error) {
-      console.error('Error loading partner offers:', error);
+      logger.error('Error loading partner offers:', error);
       toast.error('Failed to load partner offers');
     } finally {
       setLoadingOffers(false);
@@ -534,7 +534,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         setPartnerOffers(offers);
       }
     } catch (error) {
-      console.error('Error toggling offer pause:', error);
+      logger.error('Error toggling offer pause:', error);
       toast.error('Failed to update offer status');
     }
   };
@@ -560,7 +560,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       }
       onStatsUpdate();
     } catch (error) {
-      console.error('Error deleting offer:', error);
+      logger.error('Error deleting offer:', error);
       toast.error('Failed to delete offer');
     }
   };
@@ -1237,3 +1237,4 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
     </div>
   );
 }
+
