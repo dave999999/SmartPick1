@@ -174,13 +174,16 @@ export default function MyPicks() {
   useEffect(() => {
     if (showQRCode) {
       const reservation = reservations.find(r => r.id === showQRCode);
+      console.log('🔍 Checking QR dialog reservation:', reservation?.status);
       if (reservation && reservation.status !== 'ACTIVE') {
-        console.log('🔄 Reservation status changed, closing QR dialog');
+        console.log('✅ Reservation status changed to:', reservation.status, '- closing QR dialog');
         setShowQRCode(null);
         toast.success(t('toast.pickupConfirmed'));
+        // Force immediate reload
+        loadReservations();
       }
     }
-  }, [reservations, showQRCode]);
+  }, [reservations, showQRCode, t]);
 
   const handleConfirmPickup = async (reservationId: string) => {
     if (!confirm(t('confirm.confirmPickup'))) return;
