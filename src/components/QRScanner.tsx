@@ -43,8 +43,15 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     }
 
     try {
+      // Stop any existing scanner first
+      if (scannerRef.current) {
+        console.log('⚠️ Stopping existing scanner before starting new one');
+        await stopScanning();
+      }
+
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
+      console.log('📷 Initializing scanner...');
 
       await scanner.start(
         { facingMode: 'environment' }, // Use back camera if available
@@ -117,13 +124,16 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   };
 
   const stopScanning = async () => {
-    if (scannerRef.current && isScanning) {
+    if (scannerRef.current) {
       try {
-        await scannerRef.current.stop();
+        if (isScanning) {
+          await scannerRef.current.stop();
+          console.log('🛑 Scanner stopped');
+        }
         scannerRef.current.clear();
         scannerRef.current = null;
       } catch (err) {
-        console.error('Error stopping scanner:', err);
+        console.error('❌ Error stopping scanner:', err);
       }
       setIsScanning(false);
       hasScannedRef.current = false; // Reset for next scan session
