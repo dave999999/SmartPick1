@@ -168,14 +168,17 @@ export async function getUserAchievements(userId: string): Promise<UserAchieveme
  */
 export async function claimAchievement(achievementId: string): Promise<{ success: boolean; awarded_now?: boolean; reward_points?: number; balance?: number } | null> {
   try {
+    console.log('🎯 Claiming achievement:', achievementId);
     const { data, error } = await supabase.rpc('claim_achievement', { p_achievement_id: achievementId });
     if (error) {
-      console.error('Error claiming achievement:', error);
+      console.error('❌ RPC error claiming achievement:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return null;
     }
+    console.log('✅ Claim successful:', data);
     return data as any;
   } catch (error) {
-    console.error('Error in claimAchievement:', error);
+    console.error('💥 Exception in claimAchievement:', error);
     return null;
   }
 }
