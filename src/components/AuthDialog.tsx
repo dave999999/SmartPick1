@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { getPartnerByUserId } from '@/lib/api';
 import { applyReferralCode } from '@/lib/gamification-api';
 import { checkRateLimit } from '@/lib/rateLimiter';
+import { checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -71,17 +72,30 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       return;
     }
 
-    // Rate limiting: 5 attempts per 15 minutes
-    const rateLimit = await checkRateLimit('login', signInEmail);
-    if (!rateLimit.allowed) {
-      setError(rateLimit.message || 'Too many login attempts. Please try again later.');
-      toast.error(rateLimit.message, {
+    // SERVER-SIDE Rate limiting: 5 attempts per 15 minutes
+    // First check client-side for fast feedback
+    const clientRateLimit = await checkRateLimit('login', signInEmail);
+    if (!clientRateLimit.allowed) {
+      setError(clientRateLimit.message || 'Too many login attempts. Please try again later.');
+      toast.error(clientRateLimit.message, {
         icon: <Shield className="w-4 h-4" />,
       });
       return;
     }
 
     setIsLoading(true);
+
+    // Then check server-side (authoritative)
+    const serverRateLimit = await checkServerRateLimit('login', signInEmail);
+    if (!serverRateLimit.allowed) {
+      setIsLoading(false);
+      setError(serverRateLimit.message || 'Too many login attempts. Please try again later.');
+      toast.error(serverRateLimit.message, {
+        icon: <Shield className="w-4 h-4" />,
+      });
+      recordClientAttempt('login', signInEmail); // Sync client cache
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -184,17 +198,30 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       return;
     }
 
-    // Rate limiting: 3 attempts per hour
-    const rateLimit = await checkRateLimit('signup', signUpEmail);
-    if (!rateLimit.allowed) {
-      setError(rateLimit.message || 'Too many signup attempts. Please try again later.');
-      toast.error(rateLimit.message, {
+    // SERVER-SIDE Rate limiting: 3 attempts per hour
+    // First check client-side for fast feedback
+    const clientRateLimit = await checkRateLimit('signup', signUpEmail);
+    if (!clientRateLimit.allowed) {
+      setError(clientRateLimit.message || 'Too many signup attempts. Please try again later.');
+      toast.error(clientRateLimit.message, {
         icon: <Shield className="w-4 h-4" />,
       });
       return;
     }
 
     setIsLoading(true);
+
+    // Then check server-side (authoritative)
+    const serverRateLimit = await checkServerRateLimit('signup', signUpEmail);
+    if (!serverRateLimit.allowed) {
+      setIsLoading(false);
+      setError(serverRateLimit.message || 'Too many signup attempts. Please try again later.');
+      toast.error(serverRateLimit.message, {
+        icon: <Shield className="w-4 h-4" />,
+      });
+      recordClientAttempt('signup', signUpEmail); // Sync client cache
+      return;
+    }
 
     try {
       const { data, error } = await supabase.auth.signUp({

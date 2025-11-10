@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Offer, User, PenaltyInfo } from '@/lib/types';
 import { createReservation, checkUserPenalty } from '@/lib/api';
 import { checkRateLimit } from '@/lib/rateLimiter';
+import { checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
+import { getCSRFToken } from '@/lib/csrf';
 import {
   Dialog,
   DialogContent,
@@ -161,12 +163,32 @@ export default function ReservationModal({
       }
       lastClickTimeRef.current = now;
 
-      // Rate limiting: 10 reservations per hour per user
-      const rateLimit = await checkRateLimit('reservation', user.id);
-      if (!rateLimit.allowed) {
-        toast.error(rateLimit.message || 'Too many reservations. Please try again later.', {
+      // SERVER-SIDE Rate limiting: 10 reservations per hour per user
+      // First check client-side for fast feedback
+      const clientRateLimit = await checkRateLimit('reservation', user.id);
+      if (!clientRateLimit.allowed) {
+        toast.error(clientRateLimit.message || 'Too many reservations. Please try again later.', {
           icon: <Shield className="w-4 h-4" />,
         });
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // Then check server-side (authoritative)
+      const serverRateLimit = await checkServerRateLimit('reservation', user.id);
+      if (!serverRateLimit.allowed) {
+        toast.error(serverRateLimit.message || 'Too many reservations. Please try again later.', {
+          icon: <Shield className="w-4 h-4" />,
+        });
+        recordClientAttempt('reservation', user.id); // Sync client cache
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // CSRF Protection: Get token for sensitive operation
+      const csrfToken = await getCSRFToken();
+      if (!csrfToken) {
+        toast.error('Security verification failed. Please try again.');
         isProcessingRef.current = false;
         return;
       }
