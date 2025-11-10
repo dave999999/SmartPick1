@@ -1500,12 +1500,12 @@ const generate24HourOptions = (): string[] => {
                         toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         setLastQrResult('error');
                       } finally {
-                        // Reset processing flag after a delay to allow scanner to stop
+                        // Reset processing flag - scanner is already stopped
                         setTimeout(() => {
                           isProcessingQRRef.current = false;
                           setIsProcessingQR(false);
                           console.log('🏁 QR processing complete, ready for next scan');
-                        }, 2000); // Longer delay to ensure scanner stops
+                        }, 1000); // 1 second delay
                       }
                     }}
                     onError={(error) => {

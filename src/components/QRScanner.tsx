@@ -77,8 +77,12 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
             return;
           }
           
+          // Set flag IMMEDIATELY to block any further scans
           hasScannedRef.current = true;
           console.log('✅ QR Code detected and scanned:', decodedText);
+          
+          // Stop scanner IMMEDIATELY to prevent duplicate scans
+          stopScanning();
           
           // Haptic feedback on mobile
           if ('vibrate' in navigator) {
@@ -94,18 +98,15 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
             }, 1000);
           }
           
-          // Call the onScan callback immediately
-          try {
-            onScan(decodedText);
-            console.log('📤 Sent QR code to onScan callback');
-          } catch (e) {
-            console.error('❌ Error in onScan callback:', e);
-          }
-          
-          // Stop scanner after brief delay to ensure callback completes
+          // Call the onScan callback after a brief delay to ensure scanner has stopped
           setTimeout(() => {
-            stopScanning();
-          }, 500);
+            try {
+              onScan(decodedText);
+              console.log('📤 Sent QR code to onScan callback');
+            } catch (e) {
+              console.error('❌ Error in onScan callback:', e);
+            }
+          }, 100);
         },
         (errorMessage) => {
           // Error callback (called continuously while scanning)
