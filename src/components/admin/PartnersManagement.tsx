@@ -625,7 +625,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           </div>
 
           {/* Partners Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1088,7 +1088,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <p className="text-gray-500">No offers found for this partner</p>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

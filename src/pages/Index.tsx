@@ -521,9 +521,18 @@ export default function Index() {
       <section id="map-view" className="w-full">
         <div className="max-w-7xl mx-auto px-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-10 w-10 md:h-12 md:w-12 border-b-2 border-[#00C896] mx-auto mb-4"></div>
-              <p className="text-sm md:text-base text-gray-300">{t('browse.loading')}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-white rounded-2xl p-4 shadow-lg space-y-3">
+                  <div className="h-48 bg-gray-200 rounded-xl animate-pulse" />
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
+                  <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2" />
+                  <div className="flex justify-between">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-20" />
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-24" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : offers.length === 0 ? (
             <div className="text-center py-12 bg-gray-900/50 rounded-2xl">

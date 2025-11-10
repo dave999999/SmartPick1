@@ -23,6 +23,7 @@ import {
   type PartnerPoints,
 } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
+import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import ImageLibraryModal from '@/components/ImageLibraryModal';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,9 @@ import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import { applyNoShowPenalty } from '@/lib/penalty-system';
 import { useI18n } from '@/lib/i18n';
 import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
+import PendingPartnerStatus from '@/components/partner/PendingPartnerStatus';
+import PartnerAnalytics from '@/components/partner/PartnerAnalytics';
+import { Skeleton } from '@/components/ui/skeleton';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
@@ -71,7 +75,8 @@ export default function PartnerDashboard() {
   const { t } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]); // Active reservations only
+  const [allReservations, setAllReservations] = useState<Reservation[]>([]); // All reservations for analytics
   const [stats, setStats] = useState({ activeOffers: 0, reservationsToday: 0, itemsPickedUp: 0 });
   const [analytics, setAnalytics] = useState({ totalOffers: 0, totalReservations: 0, itemsSold: 0, revenue: 0 });
   const [partnerPoints, setPartnerPoints] = useState<PartnerPoints | null>(null);
@@ -105,6 +110,8 @@ export default function PartnerDashboard() {
   // Offer scheduling
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledPublishAt, setScheduledPublishAt] = useState('');
+  const [selectedOffers, setSelectedOffers] = useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const navigate = useNavigate();
 
   const CATEGORIES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
@@ -224,7 +231,8 @@ export default function PartnerDashboard() {
         ]);
 
         setOffers(offersData);
-        setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
+        setReservations(reservationsData.filter(r => r.status === 'ACTIVE')); // Active only for quick actions
+        setAllReservations(reservationsData); // All for analytics
         setStats(statsData);
         setPartnerPoints(pointsData);
 
@@ -261,6 +269,16 @@ export default function PartnerDashboard() {
 
     try {
       setIsSubmitting(true);
+
+      // Rate limit check for offer creation (20 per hour)
+      if (partner?.user_id) {
+        const rateLimitCheck = await checkServerRateLimit('offer_create', partner.user_id);
+        if (!rateLimitCheck.allowed) {
+          toast.error(t('errors.rateLimitExceeded') || 'Too many offers created. Please try again later.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       // Check offer slot limit
       if (partnerPoints) {
@@ -652,6 +670,15 @@ export default function PartnerDashboard() {
   if (!confirm(t('partner.dashboard.confirm.deleteOffer'))) return;
     
     try {
+      // Rate limit check for offer deletion (30 per hour)
+      if (partner?.user_id) {
+        const rateLimitCheck = await checkServerRateLimit('offer_delete', partner.user_id);
+        if (!rateLimitCheck.allowed) {
+          toast.error(t('errors.rateLimitExceeded') || 'Too many deletions. Please try again later.');
+          return;
+        }
+      }
+
       await deleteOffer(offerId);
   toast.success(t('partner.dashboard.toast.offerDeleted'));
       loadPartnerData();
@@ -1013,8 +1040,51 @@ const generate24HourOptions = (): string[] => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-  <p className="text-gray-500">{t('partner.dashboard.load')}</p>
+      <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]">
+        <header className="bg-white border-b border-[#E8F9F4] sticky top-0 z-50 shadow-sm">
+          <div className="container mx-auto px-4 py-4">
+            <Skeleton className="h-10 w-48" />
+          </div>
+        </header>
+        <div className="container mx-auto px-4 py-8">
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map(i => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-8 w-16" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Active Reservations Skeleton */}
+          <Card className="mb-8">
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <Skeleton key={i} className="h-24 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          {/* Offers Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[1, 2, 3, 4].map(i => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -1077,64 +1147,30 @@ const generate24HourOptions = (): string[] => {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Pending Status Banner */}
-        {isPending && (
-          <div className="mb-8">
-            <Alert className="bg-yellow-50 border-yellow-200">
-              <Clock className="h-5 w-5 text-yellow-600" />
-              <AlertDescription className="text-yellow-900">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <strong className="text-lg">{t('partner.dashboard.pending.title')}</strong>
-                    <p className="mt-1">{t('partner.dashboard.pending.text')}</p>
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-
-        {/* Enhanced Stats Cards */}
-        {!isPending && (
-          <EnhancedStatsCards
-            stats={{
-              activeOffers: stats.activeOffers,
-              reservationsToday: stats.reservationsToday,
-              itemsPickedUp: stats.itemsPickedUp,
-              revenue: analytics.revenue,
-            }}
-            className="mb-6 md:mb-8"
+        {/* Pending Status - Full Component */}
+        {isPending && partner && (
+          <PendingPartnerStatus
+            businessName={partner.business_name}
+            applicationDate={partner.created_at}
           />
         )}
 
-        {isPending && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-            {[
-              { icon: Package, label: t('partner.dashboard.cards.offersLive'), color: 'text-blue-600' },
-              { icon: ShoppingBag, label: t('partner.dashboard.cards.pickedUp'), color: 'text-green-600' },
-              { icon: TrendingUp, label: t('partner.dashboard.cards.itemsSold'), color: 'text-purple-600' },
-              { icon: DollarSign, label: t('partner.dashboard.cards.revenue'), color: 'text-coral-600' },
-            ].map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <Card key={index} className="opacity-60">
-                  <CardContent className="p-4 text-center">
-                    <Icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
-                    <p className="text-xs text-gray-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold text-gray-400">—</p>
-                    <div className="flex items-center justify-center gap-1 mt-2 text-xs text-gray-500">
-                      <Lock className="w-3 h-3" />
-                      <span>{t('partner.dashboard.pending.afterApproval')}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        {/* Main Dashboard - Only show when approved */}
+        {!isPending && (
+          <>
+            {/* Enhanced Stats Cards */}
+            <EnhancedStatsCards
+              stats={{
+                activeOffers: stats.activeOffers,
+                reservationsToday: stats.reservationsToday,
+                itemsPickedUp: stats.itemsPickedUp,
+                revenue: analytics.revenue,
+              }}
+              className="mb-6 md:mb-8"
+            />
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
           <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
             setIsCreateDialogOpen(open);
             if (!open) {
@@ -1660,11 +1696,74 @@ const generate24HourOptions = (): string[] => {
                 <p className="text-gray-500 text-sm md:text-base">{t('partner.dashboard.filter.none')}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-[#E8F9F4]">
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.title')}</TableHead>
+              <>
+                {/* Bulk Actions Toolbar */}
+                {selectedOffers.size > 0 && (
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                    <span className="text-sm font-medium text-blue-900">
+                      {selectedOffers.size} offer(s) selected
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          setIsBulkProcessing(true);
+                          for (const offerId of selectedOffers) {
+                            await handleToggleOffer(offerId, 'ACTIVE');
+                          }
+                          setSelectedOffers(new Set());
+                          setIsBulkProcessing(false);
+                        }}
+                        disabled={isBulkProcessing}
+                        className="bg-yellow-500 text-white hover:bg-yellow-600 border-none"
+                      >
+                        <Pause className="w-4 h-4 mr-1" /> Pause All
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          setIsBulkProcessing(true);
+                          for (const offerId of selectedOffers) {
+                            await handleToggleOffer(offerId, 'PAUSED');
+                          }
+                          setSelectedOffers(new Set());
+                          setIsBulkProcessing(false);
+                        }}
+                        disabled={isBulkProcessing}
+                        className="bg-green-500 text-white hover:bg-green-600 border-none"
+                      >
+                        <Play className="w-4 h-4 mr-1" /> Resume All
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedOffers(new Set())}
+                        disabled={isBulkProcessing}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#E8F9F4]">
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedOffers.size === filteredOffers.length && filteredOffers.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedOffers(new Set(filteredOffers.map(o => o.id)));
+                              } else {
+                                setSelectedOffers(new Set());
+                              }
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.title')}</TableHead>
                       <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.category')}</TableHead>
                       <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.price')}</TableHead>
                       <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.available')}</TableHead>
@@ -1675,6 +1774,20 @@ const generate24HourOptions = (): string[] => {
                   <TableBody>
                       {filteredOffers.map((offer) => (
                       <TableRow key={offer.id} className="border-[#E8F9F4] hover:bg-[#F9FFFB] transition-colors">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOffers.has(offer.id)}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedOffers);
+                              if (checked) {
+                                newSelected.add(offer.id);
+                              } else {
+                                newSelected.delete(offer.id);
+                              }
+                              setSelectedOffers(newSelected);
+                            }}
+                          />
+                        </TableCell>
                         <TableCell className="font-semibold text-gray-900">{offer.title}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
@@ -1769,41 +1882,61 @@ const generate24HourOptions = (): string[] => {
                   </TableBody>
                 </Table>
               </div>
+              </>
             )}
           </CardContent>
         </Card>
 
-        {/* Payout information removed per business model (no partner payouts) */}
+        {/* Partner Analytics */}
+            <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                  📊 {t('Business Analytics')}
+                </CardTitle>
+                <CardDescription className="text-sm md:text-base">
+                  {t('Insights into your performance, top items, and peak hours')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PartnerAnalytics
+                  offers={offers}
+                  allReservations={allReservations}
+                  revenue={analytics.revenue}
+                />
+              </CardContent>
+            </Card>
 
-        {/* Trends / analytics summary removed as requested */}
-
-        {/* Notification Settings - Telegram */}
-        {partner && (
-          <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-                📲 {t('partner.dashboard.notifications.title')}
-              </CardTitle>
-              <CardDescription className="text-sm md:text-base">
-                {t('partner.dashboard.notifications.subtitle')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TelegramConnect userId={partner.user_id} userType="partner" />
-            </CardContent>
-          </Card>
+            {/* Notification Settings - Telegram */}
+            {partner && (
+              <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                    📲 {t('partner.dashboard.notifications.title')}
+                  </CardTitle>
+                  <CardDescription className="text-sm md:text-base">
+                    {t('partner.dashboard.notifications.subtitle')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TelegramConnect userId={partner.user_id} userType="partner" />
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
       </div>
 
       {/* Floating Action Button (Mobile) */}
-      <button
-        onClick={() => setIsCreateDialogOpen(true)}
-        disabled={isPending}
-        className="md:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label="Create new offer"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {!isPending && (
+        <button
+          onClick={() => setIsCreateDialogOpen(true)}
+          disabled={isPending}
+          className="md:hidden fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-110 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Create new offer"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Edit Offer Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -2086,7 +2219,7 @@ const generate24HourOptions = (): string[] => {
         />
       )}
 
-      {/* Edit Partner Profile Dialog */}
+      {/* Dialogs - Always available */}
       {partner && (
         <EditPartnerProfile
           partner={partner}

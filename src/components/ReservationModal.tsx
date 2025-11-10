@@ -238,7 +238,16 @@ export default function ReservationModal({
     } catch (error) {
       console.error('❌❌❌ ERROR - Resetting locks', callId, error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
-      toast.error(errorMessage);
+      
+      // Enhanced error message with retry button
+      toast.error(errorMessage, {
+        description: 'Something went wrong. Please try again.',
+        action: {
+          label: 'Retry',
+          onClick: () => handleReserve(),
+        },
+        duration: 5000,
+      });
 
       // Reset locks on error
       setIsReserving(false);
