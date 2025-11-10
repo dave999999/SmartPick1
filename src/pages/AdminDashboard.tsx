@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Store, Package, Clock, UserCheck, AlertTriangle, Shield } from 'lucide-react';
+import { Users, Store, Package, Clock, UserCheck, AlertTriangle, Shield, Settings } from 'lucide-react';
 import { getDashboardStats, testAdminConnection, getAllPartners, getAllUsers } from '@/lib/admin-api';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -20,6 +20,7 @@ import AdminAnalyticsPanel from '@/components/admin/AdminAnalyticsPanel';
 import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
 import AdminHealthPanel from '@/components/admin/AdminHealthPanel';
 import AuditLogs from '@/components/admin/AuditLogs';
+import SystemConfiguration from '@/components/admin/SystemConfiguration';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -221,6 +222,10 @@ export default function AdminDashboard() {
               <TabsTrigger value="analytics" className="whitespace-nowrap">Analytics</TabsTrigger>
               <TabsTrigger value="health" className="whitespace-nowrap">Health</TabsTrigger>
               <TabsTrigger value="audit" className="whitespace-nowrap">Audit</TabsTrigger>
+              <TabsTrigger value="config" className="whitespace-nowrap">
+                <Settings className="h-4 w-4 mr-1" />
+                Config
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -259,7 +264,7 @@ export default function AdminDashboard() {
                 <SectionCard accent="blue" title="Reservations Today" description="New reservations">
                   <div className="text-3xl font-black">{stats?.reservationsToday ?? 0}</div>
                 </SectionCard>
-                <SectionCard accent="purple" title="Revenue Today" description="Picked up">
+                <SectionCard accent="blue" title="Revenue Today" description="Picked up">
                   <div className="text-3xl font-black">{(stats?.revenueToday ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</div>
                 </SectionCard>
               </div>
@@ -342,6 +347,10 @@ export default function AdminDashboard() {
             <div className="max-w-7xl mx-auto">
               <AuditLogs />
             </div>
+          </TabsContent>
+
+          <TabsContent value="config">
+            <SystemConfiguration />
           </TabsContent>
         </Tabs>
       </div>
