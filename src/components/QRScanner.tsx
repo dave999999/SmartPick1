@@ -73,6 +73,20 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           hasScannedRef.current = true;
           console.log('✅ QR Code detected and scanned:', decodedText);
           
+          // Haptic feedback on mobile
+          if ('vibrate' in navigator) {
+            navigator.vibrate(200); // Vibrate for 200ms
+          }
+          
+          // Visual feedback
+          const readerElement = document.getElementById('qr-reader');
+          if (readerElement) {
+            readerElement.style.border = '4px solid #00ff00';
+            setTimeout(() => {
+              readerElement.style.border = '';
+            }, 1000);
+          }
+          
           // Call the onScan callback immediately
           try {
             onScan(decodedText);
