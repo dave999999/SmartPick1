@@ -1452,42 +1452,51 @@ const generate24HourOptions = (): string[] => {
                 </TabsList>
 
                 <TabsContent value="camera" className="space-y-4 mt-4">
+                  {isProcessingQR && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <span className="text-blue-700 font-medium">Processing QR code...</span>
+                    </div>
+                  )}
                   <QRScanner
                     onScan={async (code) => {
                       // Use ref for immediate synchronous check to prevent race conditions
                       if (isProcessingQRRef.current) {
-                        console.log('Already processing a QR code, ignoring...');
+                        console.log('⏸️ Already processing a QR code, ignoring...');
+                        toast.info('Please wait, processing previous scan...');
                         return;
                       }
 
                       // Set ref immediately (synchronous) to block other scans
                       isProcessingQRRef.current = true;
                       setIsProcessingQR(true);
+                      console.log('🔄 Starting QR validation process...');
                       
                       try {
                         // Clean and normalize the scanned code
                         const cleanCode = code.trim();
-                        console.log('QR Code scanned:', cleanCode);
+                        console.log('📋 QR Code received:', cleanCode);
                         setQrInput(cleanCode);
 
                         // Automatically validate and mark as picked up
-                        console.log('Validating QR code:', cleanCode);
+                        console.log('🔍 Validating QR code:', cleanCode);
                         const result = await validateQRCode(cleanCode, true);
-                        console.log('Validation result:', result);
+                        console.log('📊 Validation result:', result);
 
                         if (result.valid && result.reservation) {
+                          console.log('✅ QR validation successful!');
                           setQrInput('');
                           setQrScannerOpen(false);
                           toast.success(t('partner.dashboard.toast.pickupConfirmed'));
                           setLastQrResult('success');
-                          loadPartnerData(); // Refresh dashboard
+                          await loadPartnerData(); // Refresh dashboard
                         } else {
-                          console.error('QR validation failed:', result.error);
+                          console.error('❌ QR validation failed:', result.error);
                           toast.error(result.error || 'Invalid QR code');
                           setLastQrResult('error');
                         }
                       } catch (error) {
-                        console.error('Error validating QR code:', error);
+                        console.error('💥 Error validating QR code:', error);
                         toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         setLastQrResult('error');
                       } finally {
@@ -1495,11 +1504,12 @@ const generate24HourOptions = (): string[] => {
                         setTimeout(() => {
                           isProcessingQRRef.current = false;
                           setIsProcessingQR(false);
+                          console.log('🏁 QR processing complete, ready for next scan');
                         }, 2000); // Longer delay to ensure scanner stops
                       }
                     }}
                     onError={(error) => {
-                      console.error('QR Scanner error:', error);
+                      console.error('📷 QR Scanner error:', error);
                       toast.error(error);
                     }}
                   />

@@ -51,18 +51,30 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         {
           fps: 10, // Frames per second
           qrbox: { width: 250, height: 250 }, // Scanning box size
+          aspectRatio: 1.0, // Square scanning box
         },
         (decodedText) => {
           // Success callback - only process first scan
           if (hasScannedRef.current) {
-            console.log('Already processed a scan, ignoring duplicate');
+            console.log('✋ Already processed a scan, ignoring duplicate');
             return;
           }
           
           hasScannedRef.current = true;
-          console.log('QR Code scanned:', decodedText);
-          onScan(decodedText);
-          stopScanning(); // Stop after successful scan
+          console.log('✅ QR Code detected and scanned:', decodedText);
+          
+          // Call the onScan callback immediately
+          try {
+            onScan(decodedText);
+            console.log('📤 Sent QR code to onScan callback');
+          } catch (e) {
+            console.error('❌ Error in onScan callback:', e);
+          }
+          
+          // Stop scanner after brief delay to ensure callback completes
+          setTimeout(() => {
+            stopScanning();
+          }, 500);
         },
         (errorMessage) => {
           // Error callback (called continuously while scanning)
@@ -72,8 +84,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
 
       setIsScanning(true);
       setError(null);
+      console.log('📷 Camera started successfully');
     } catch (err: any) {
-      console.error('Error starting scanner:', err);
+      console.error('❌ Error starting scanner:', err);
       setError(err.message || 'Failed to start camera');
       onError?.(err.message || 'Failed to start camera');
     }
