@@ -137,9 +137,16 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         console.error('❌ Error stopping scanner:', err);
       }
       setIsScanning(false);
-      hasScannedRef.current = false; // Reset for next scan session
+      // DON'T reset hasScannedRef here - keep it true to prevent rescans
+      // It will be reset when dialog is closed and reopened
     }
   };
+  
+  // Reset scan flag when scanner is mounted (dialog opens)
+  useEffect(() => {
+    hasScannedRef.current = false;
+    console.log('🔄 QR Scanner mounted, reset scan flag');
+  }, []);
 
   return (
     <div className="space-y-4">
