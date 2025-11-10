@@ -10,12 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Search, Edit, Trash2, CheckCircle, XCircle, Eye, Pause, Play, Ban, Upload, Plus, Loader2, Navigation } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase, isDemoMode } from '@/lib/supabase';
 import { MapContainer, TileLayer, Marker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getPartnersPaged, updatePartner, deletePartner, approvePartner, pausePartner, unpausePartner, disablePartner, getPartnerOffers, pauseOffer, resumeOffer, deleteOffer } from '@/lib/admin-api';
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
+import { BulkActions } from './BulkActions';
 
 interface PartnersManagementProps {
   onStatsUpdate: () => void;
@@ -63,6 +65,10 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const [total, setTotal] = useState(0);
   const [debounceToken, setDebounceToken] = useState(0);
 
+  // Bulk selection
+  const [selectedPartners, setSelectedPartners] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+
   useEffect(() => {
     loadPartners();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,6 +101,33 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const goPrev = () => setPage(p => Math.max(1, p - 1));
   const goNext = () => setPage(p => Math.min(totalPages, p + 1));
+
+  const handleSelectAll = (checked: boolean) => {
+    setSelectAll(checked);
+    if (checked) {
+      setSelectedPartners(new Set(filteredPartners.map(p => p.id)));
+    } else {
+      setSelectedPartners(new Set());
+    }
+  };
+
+  const handleSelectPartner = (partnerId: string, checked: boolean) => {
+    const newSelected = new Set(selectedPartners);
+    if (checked) {
+      newSelected.add(partnerId);
+    } else {
+      newSelected.delete(partnerId);
+    }
+    setSelectedPartners(newSelected);
+    setSelectAll(newSelected.size === filteredPartners.length);
+  };
+
+  const handleBulkActionComplete = () => {
+    setSelectedPartners(new Set());
+    setSelectAll(false);
+    loadPartners();
+    onStatsUpdate();
+  };
 
   const handleAddPartner = async () => {
     try {
@@ -624,11 +657,33 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
             </Button>
           </div>
 
+          {/* Bulk Actions */}
+          {selectedPartners.size > 0 && (
+            <div className="mb-4">
+              <BulkActions
+                selectedIds={selectedPartners}
+                onClearSelection={() => {
+                  setSelectedPartners(new Set());
+                  setSelectAll(false);
+                }}
+                onActionComplete={handleBulkActionComplete}
+                entityType="partners"
+                totalCount={total}
+              />
+            </div>
+          )}
+
           {/* Partners Table */}
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectAll}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Business Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
@@ -640,6 +695,12 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
               <TableBody>
                 {filteredPartners.map((partner) => (
                   <TableRow key={partner.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedPartners.has(partner.id)}
+                        onCheckedChange={(checked) => handleSelectPartner(partner.id, checked as boolean)}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       <button
                         onClick={() => handleViewPartner(partner)}

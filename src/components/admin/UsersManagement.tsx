@@ -367,16 +367,16 @@ export function UsersManagement({ onStatsUpdate }: UsersManagementProps) {
                   value={editingUser.role}
                   onValueChange={(value) => setEditingUser({
                     ...editingUser,
-                    role: value as 'admin' | 'customer' | 'partner'
+                    role: value as 'ADMIN' | 'CUSTOMER' | 'PARTNER'
                   })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="CUSTOMER">Customer</SelectItem>
+                    <SelectItem value="PARTNER">Partner</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
