@@ -49,9 +49,19 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       await scanner.start(
         { facingMode: 'environment' }, // Use back camera if available
         {
-          fps: 10, // Frames per second
-          qrbox: { width: 250, height: 250 }, // Scanning box size
+          fps: 30, // Increased FPS for better detection on mobile
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Responsive qrbox size - 70% of the smaller dimension
+            const minEdgePercentage = 0.7;
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
           aspectRatio: 1.0, // Square scanning box
+          disableFlip: false, // Allow flipped QR codes
         },
         (decodedText) => {
           // Success callback - only process first scan
@@ -161,10 +171,18 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         <p className="font-semibold">Instructions:</p>
         <ol className="list-decimal list-inside space-y-1 text-xs">
           <li>Click "Start Camera" to activate your device camera</li>
-          <li>Point the camera at the customer's QR code</li>
-          <li>Hold steady until the code is recognized</li>
+          <li>Point the camera at the customer's QR code (starts with "SP-")</li>
+          <li>Hold steady and ensure good lighting</li>
+          <li>Keep the QR code within the scanning square</li>
           <li>The camera will stop automatically after scanning</li>
         </ol>
+        
+        {isScanning && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs font-semibold text-blue-900">📷 Scanner Active</p>
+            <p className="text-xs text-blue-700 mt-1">Looking for QR codes (format: SP-XXXX-XXXXX)</p>
+          </div>
+        )}
       </div>
     </div>
   );
