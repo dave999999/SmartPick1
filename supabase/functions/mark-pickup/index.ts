@@ -178,11 +178,12 @@ serve(async (req) => {
     }
 
     // Award points to partner (5 points for successful pickup)
+    // IMPORTANT: partner_points table uses 'user_id' column, not 'partner_id'!
     try {
       const { data: currentPartnerPoints } = await supabaseAdmin
         .from('partner_points')
         .select('balance')
-        .eq('partner_id', partner.id)
+        .eq('user_id', partner.id)  // Fixed: use user_id, not partner_id
         .single()
       
       const oldBalance = currentPartnerPoints?.balance || 0
@@ -191,14 +192,14 @@ serve(async (req) => {
       await supabaseAdmin
         .from('partner_points')
         .upsert({
-          partner_id: partner.id,
+          user_id: partner.id,  // Fixed: use user_id, not partner_id
           balance: newBalance
         })
 
       await supabaseAdmin
         .from('partner_point_transactions')
         .insert({
-          partner_id: partner.id,
+          partner_id: partner.id,  // Correct: partner_point_transactions uses partner_id column
           change: pointsToAward,
           reason: 'PICKUP_REWARD',
           balance_before: oldBalance,
@@ -209,8 +210,19 @@ serve(async (req) => {
             offer_id: reservation.offer_id
           }
         })
+
+      console.log('✅ Partner points awarded successfully:', {
+        partner_id: partner.id,
+        points_awarded: pointsToAward,
+        new_balance: newBalance
+      })
     } catch (err) {
-      console.error('Failed to award partner points:', err)
+      console.error('❌ Failed to award partner points:', err)
+      console.error('Error details:', {
+        message: err instanceof Error ? err.message : String(err),
+        partner_id: partner.id,
+        points: pointsToAward
+      })
     }
 
     // Return success
