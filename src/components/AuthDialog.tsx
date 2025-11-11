@@ -5,6 +5,7 @@ import { getPartnerByUserId } from '@/lib/api';
 import { applyReferralCode } from '@/lib/gamification-api';
 import { checkRateLimit } from '@/lib/rateLimiter';
 import { checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -109,6 +110,25 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       if (error) throw error;
 
       if (data.user) {
+        // CHECK IF USER IS BANNED FIRST
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('is_banned, role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (userError) {
+          logger.error('Error checking ban status:', userError);
+        }
+
+        if (userData?.is_banned) {
+          setError('Your account has been banned. Please contact support for more information.');
+          await supabase.auth.signOut();
+          setSignInEmail('');
+          setSignInPassword('');
+          return;
+        }
+
         // Success - reset failed attempts and captcha
         setFailedAttempts(0);
         setCaptchaToken(null);
