@@ -909,15 +909,22 @@ export const getUsersWithPointsSummary = async (
 
 export const getDailyRevenueSummary = async (
   days: number = 30
-): Promise<any[]> => {
+): Promise<DailyRevenueSummary[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase
-    .from('daily_revenue_summary')
-    .select('*')
-    .order('revenue_date', { ascending: false })
-    .limit(days);
+    .rpc('get_daily_revenue_summary', { p_days: days });
 
   if (error) throw error;
-  return data || [];
+  
+  // Map database response to frontend type
+  return (data || []).map((row: any) => ({
+    revenue_date: row.date,
+    purchase_count: row.total_purchases,
+    total_points_sold: row.points_sold,
+    total_revenue_gel: parseFloat(row.revenue_gel),
+    avg_purchase_gel: row.total_purchases > 0 ? parseFloat(row.revenue_gel) / row.total_purchases : 0,
+    unique_buyers: row.unique_buyers,
+    buyer_names: row.buyer_names
+  }));
 };

@@ -138,20 +138,22 @@ export default function FinancialDashboardPanel() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              <div className="grid grid-cols-5 gap-4 py-2 text-xs font-semibold text-gray-600 border-b">
+              <div className="grid grid-cols-6 gap-4 py-2 text-xs font-semibold text-gray-600 border-b">
                 <div>Date</div>
                 <div className="text-right">Purchases</div>
                 <div className="text-right">Points Sold</div>
                 <div className="text-right">Revenue (GEL)</div>
                 <div className="text-right">Unique Buyers</div>
+                <div>Buyer Names</div>
               </div>
               {dailyRevenue.map((day: DailyRevenueSummary) => (
-                <div key={day.revenue_date} className="grid grid-cols-5 gap-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                <div key={day.revenue_date} className="grid grid-cols-6 gap-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
                   <div>{new Date(day.revenue_date).toLocaleDateString('ka-GE')}</div>
                   <div className="text-right font-medium">{day.purchase_count}</div>
                   <div className="text-right">{day.total_points_sold.toLocaleString()}</div>
                   <div className="text-right font-bold text-green-600">₾{day.total_revenue_gel.toFixed(2)}</div>
                   <div className="text-right">{day.unique_buyers}</div>
+                  <div className="text-xs text-gray-600 truncate" title={day.buyer_names}>{day.buyer_names || '-'}</div>
                 </div>
               ))}
             </div>
