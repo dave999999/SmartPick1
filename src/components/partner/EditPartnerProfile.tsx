@@ -142,6 +142,8 @@ export default function EditPartnerProfile({ partner, open, onOpenChange, onUpda
         opening_time: partner.opening_time || '',
         closing_time: partner.closing_time || '',
         open_24h: partner.open_24h || false,
+        latitude: partner.latitude || 41.7151,
+        longitude: partner.longitude || 44.8271,
       });
     }
   }, [partner]);

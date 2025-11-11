@@ -4,6 +4,7 @@ import './index.css';
 import { I18nProvider } from './lib/i18n';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SpeedInsights } from '@vercel/speed-insights/react'; // ✅ Vercel Speed Insights for Core Web Vitals monitoring
+import { logger } from './lib/logger';
 
 /**
  * 📊 Vercel Speed Insights

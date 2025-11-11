@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { ArrowLeft, MapPin, Clock, Phone, Mail } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import { logger } from '@/lib/logger';
 
 export default function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
