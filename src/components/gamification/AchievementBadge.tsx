@@ -29,6 +29,14 @@ export function AchievementBadge({
   const rewardClaimed = userAchievement?.reward_claimed === true;
   const tierColor = getAchievementTierColor(definition.tier);
   
+  // Debug logging
+  console.log(`Achievement ${definition.name}:`, {
+    isUnlocked,
+    hasUserAchievement: !!userAchievement,
+    userAchievement,
+    rewardClaimed
+  });
+  
   // Calculate progress percentage
   const progressPercentage = targetProgress > 0 
     ? Math.min(100, Math.round((currentProgress / targetProgress) * 100))
