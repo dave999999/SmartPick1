@@ -87,6 +87,16 @@ serve(async (req) => {
       throw new Error('This reservation belongs to another partner')
     }
 
+    // Check if partner is trying to mark their own reservation
+    const isPartnerOwnReservation = reservation.customer_id === user.id
+    if (isPartnerOwnReservation) {
+      console.warn('⚠️ Partner is marking their own reservation as picked up:', {
+        partner_id: partner.id,
+        customer_id: reservation.customer_id,
+        user_id: user.id
+      })
+    }
+
     // Verify status is ACTIVE
     if (reservation.status !== 'ACTIVE') {
       throw new Error(`Reservation status is ${reservation.status}, must be ACTIVE`)
