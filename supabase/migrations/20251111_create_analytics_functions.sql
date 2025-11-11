@@ -5,6 +5,15 @@
 -- Date: 2025-11-11
 
 -- =====================================================
+-- DROP EXISTING FUNCTIONS (if they exist with different signatures)
+-- =====================================================
+DROP FUNCTION IF EXISTS get_user_growth_stats() CASCADE;
+DROP FUNCTION IF EXISTS get_top_partners(INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS get_category_stats() CASCADE;
+DROP FUNCTION IF EXISTS get_user_retention_stats(INTEGER) CASCADE;
+DROP FUNCTION IF EXISTS get_peak_usage_times() CASCADE;
+
+-- =====================================================
 -- 1. USER GROWTH STATS (Last 30 days)
 -- =====================================================
 CREATE OR REPLACE FUNCTION get_user_growth_stats()
