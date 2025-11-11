@@ -689,6 +689,7 @@ ALTER TABLE public.user_bans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.flagged_content ENABLE ROW LEVEL SECURITY;
 
 -- user_bans policies (admin-only)
+DROP POLICY IF EXISTS "Admins can view all bans" ON public.user_bans;
 CREATE POLICY "Admins can view all bans"
   ON public.user_bans FOR SELECT
   TO authenticated
@@ -699,6 +700,7 @@ CREATE POLICY "Admins can view all bans"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can create bans" ON public.user_bans;
 CREATE POLICY "Admins can create bans"
   ON public.user_bans FOR INSERT
   TO authenticated
@@ -709,6 +711,7 @@ CREATE POLICY "Admins can create bans"
     )
   );
 
+DROP POLICY IF EXISTS "Admins can update bans" ON public.user_bans;
 CREATE POLICY "Admins can update bans"
   ON public.user_bans FOR UPDATE
   TO authenticated
@@ -720,6 +723,7 @@ CREATE POLICY "Admins can update bans"
   );
 
 -- flagged_content policies (admin can see all, users can see their own)
+DROP POLICY IF EXISTS "Admins can view all flags" ON public.flagged_content;
 CREATE POLICY "Admins can view all flags"
   ON public.flagged_content FOR SELECT
   TO authenticated
@@ -730,16 +734,19 @@ CREATE POLICY "Admins can view all flags"
     )
   );
 
+DROP POLICY IF EXISTS "Users can view their own flags" ON public.flagged_content;
 CREATE POLICY "Users can view their own flags"
   ON public.flagged_content FOR SELECT
   TO authenticated
   USING (flagged_by = auth.uid());
 
+DROP POLICY IF EXISTS "Users can create flags" ON public.flagged_content;
 CREATE POLICY "Users can create flags"
   ON public.flagged_content FOR INSERT
   TO authenticated
   WITH CHECK (flagged_by = auth.uid());
 
+DROP POLICY IF EXISTS "Admins can update flags" ON public.flagged_content;
 CREATE POLICY "Admins can update flags"
   ON public.flagged_content FOR UPDATE
   TO authenticated
@@ -751,6 +758,7 @@ CREATE POLICY "Admins can update flags"
   );
 
 -- Update users table RLS to block banned users
+DROP POLICY IF EXISTS "Banned users cannot access platform" ON public.users;
 CREATE POLICY "Banned users cannot access platform"
   ON public.users FOR SELECT
   TO authenticated
