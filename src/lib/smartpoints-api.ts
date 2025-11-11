@@ -53,7 +53,7 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       const { data, error } = await supabase
         .from('partner_points')
         .select('*')
-        .eq('partner_id', profile.id)
+        .eq('user_id', profile.id)  // Column is named user_id, not partner_id
         .single();
 
       if (error) {
