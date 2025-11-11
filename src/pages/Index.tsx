@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Offer, User } from '@/lib/types';
-import { getActiveOffers, getCurrentUser, signOut, resolveOfferImageUrl } from '@/lib/api';
+import { Offer, User, Partner } from '@/lib/types';
+import { getActiveOffers, getCurrentUser, signOut, resolveOfferImageUrl, getPartnerByUserId } from '@/lib/api';
 import { isDemoMode } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -66,6 +66,7 @@ export default function Index() {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+  const [isPartner, setIsPartner] = useState<boolean>(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -105,6 +106,14 @@ export default function Index() {
   const checkUser = async () => {
     const { user } = await getCurrentUser();
     setUser(user);
+    
+    // Check if user is a partner
+    if (user) {
+      const partner = await getPartnerByUserId(user.id);
+      setIsPartner(partner !== null && partner.status === 'APPROVED');
+    } else {
+      setIsPartner(false);
+    }
   };
 
   const loadOffers = async () => {
@@ -126,6 +135,7 @@ export default function Index() {
     try {
       await signOut();
       setUser(null);
+      setIsPartner(false);
       toast.success('Signed out successfully');
     } catch (error) {
       logger.error('Sign out error:', error);
@@ -332,13 +342,15 @@ export default function Index() {
                 >
                   {t('header.myPicks')}
                 </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
-                  onClick={() => navigate('/partner')}
-                >
-                  {t('header.partner')}
-                </Button>
+                {isPartner && (
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
+                    onClick={() => navigate('/partner')}
+                  >
+                    {t('header.partner')}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   className="h-11 rounded-xl bg-white/95 text-gray-900 border border-gray-200 hover:bg-white shadow-sm hover:shadow-md px-4"
@@ -434,17 +446,19 @@ export default function Index() {
                         {t('header.myPicks')}
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        className="h-11 w-full justify-start"
-                        onClick={() => {
-                          navigate('/partner');
-                          setMobileMenuOpen(false);
-                        }}
-                      >
-                        <Globe className="w-4 h-4 mr-2" />
-                        {t('header.partner')}
-                      </Button>
+                      {isPartner && (
+                        <Button
+                          variant="outline"
+                          className="h-11 w-full justify-start"
+                          onClick={() => {
+                            navigate('/partner');
+                            setMobileMenuOpen(false);
+                          }}
+                        >
+                          <Globe className="w-4 h-4 mr-2" />
+                          {t('header.partner')}
+                        </Button>
+                      )}
 
                       <Button
                         variant="outline"
