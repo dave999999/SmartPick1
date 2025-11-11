@@ -115,17 +115,13 @@ export default function AdminDashboard() {
         logger.warn('AdminDashboard: RPC stats unavailable, falling back:', e);
       }
 
-      // Load legacy datasets in parallel (used for fallback and toasts)
-      const [dashboardStats, partnersData, usersData] = await Promise.all([
-        getDashboardStats().catch(() => ({ totalPartners: 0, totalUsers: 0, totalOffers: 0, pendingPartners: 0 })),
-        getAllPartners().catch(() => []),
-        getAllUsers().catch(() => [])
+      // Load legacy datasets in parallel (used for fallback)
+      const [dashboardStats] = await Promise.all([
+        getDashboardStats().catch(() => ({ totalPartners: 0, totalUsers: 0, totalOffers: 0, pendingPartners: 0 }))
       ]);
       
       logger.log('AdminDashboard: Data loaded:', {
-        stats: rpcStats || dashboardStats,
-        partnersCount: partnersData.length,
-        usersCount: usersData.length
+        stats: rpcStats || dashboardStats
       });
       
       // Map to local type
@@ -142,8 +138,10 @@ export default function AdminDashboard() {
         setStats(dashboardStats);
       }
       
-      // Show detailed success message
-      toast.success(`Dashboard loaded successfully! Found ${partnersData.length} partners and ${usersData.length} users`);
+      // Show success message with accurate counts from RPC (excludes admins)
+      const partnersCount = rpcStats?.total_partners ?? dashboardStats.totalPartners;
+      const customersCount = rpcStats?.total_users ?? dashboardStats.totalUsers;
+      toast.success(`Dashboard loaded successfully! Found ${partnersCount} partners and ${customersCount} customers`);
       
     } catch (error) {
       logger.error('Error loading dashboard stats:', error);
