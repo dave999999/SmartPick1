@@ -695,15 +695,6 @@ export default function PartnerDashboard() {
   if (!confirm(t('partner.dashboard.confirm.deleteOffer'))) return;
     
     try {
-      // Rate limit check for offer deletion (30 per hour)
-      if (partner?.user_id) {
-        const rateLimitCheck = await checkServerRateLimit('offer_delete', partner.user_id);
-        if (!rateLimitCheck.allowed) {
-          toast.error(t('errors.rateLimitExceeded') || 'Too many deletions. Please try again later.');
-          return;
-        }
-      }
-
       await deleteOffer(offerId);
   toast.success(t('partner.dashboard.toast.offerDeleted'));
       loadPartnerData();
