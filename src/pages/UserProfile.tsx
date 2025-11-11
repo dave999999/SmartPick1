@@ -13,6 +13,7 @@ import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Sparkles, E
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { onPointsChange } from '@/lib/pointsEventBus';
+import { logger } from '@/lib/logger';
 
 // Gamification Components
 import { SmartPointsWallet } from '@/components/SmartPointsWallet';

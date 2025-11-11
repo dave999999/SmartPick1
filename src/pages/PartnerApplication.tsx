@@ -17,6 +17,7 @@ import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield,
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useI18n } from '@/lib/i18n';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
+import { logger } from '@/lib/logger';
 
 const BUSINESS_TYPES = [
   { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },

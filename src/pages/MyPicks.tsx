@@ -16,6 +16,7 @@ import jsPDF from 'jspdf';
 import { useI18n } from '@/lib/i18n';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import { usePickupReminders } from '@/hooks/usePickupReminders';
+import { logger } from '@/lib/logger';
 
 export default function MyPicks() {
   const [user, setUser] = useState<User | null>(null);
