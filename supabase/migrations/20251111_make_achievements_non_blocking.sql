@@ -30,6 +30,11 @@ BEGIN
   FROM offers o
   WHERE o.id = NEW.offer_id;
 
+  -- Ensure user_stats record exists (create if missing)
+  INSERT INTO user_stats (user_id, last_activity_date)
+  VALUES (NEW.customer_id, v_pickup_date)
+  ON CONFLICT (user_id) DO NOTHING;
+
   -- Update user stats (use customer_id)
   UPDATE user_stats
   SET
