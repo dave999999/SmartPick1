@@ -312,7 +312,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="users">
-            <UsersManagement onStatsUpdate={loadStats} />
+            <EnhancedUsersManagement onStatsUpdate={loadStats} />
           </TabsContent>
 
           <TabsContent value="new-users">
