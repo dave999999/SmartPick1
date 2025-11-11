@@ -103,13 +103,137 @@ export interface UserActivity {
   };
 }
 
+// =====================================================
+// NEW: BAN MANAGEMENT TYPES
+// =====================================================
+
+export interface UserBan {
+  id: string;
+  user_id: string;
+  banned_by: string;
+  reason: string;
+  ban_type: 'PERMANENT' | 'TEMPORARY';
+  expires_at?: string;
+  internal_notes?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    name: string;
+    email: string;
+  };
+  admin?: {
+    name: string;
+    email: string;
+  };
+}
+
+// =====================================================
+// NEW: FLAGGED CONTENT TYPES
+// =====================================================
+
+export interface FlaggedContent {
+  id: string;
+  content_type: 'OFFER' | 'PARTNER' | 'USER';
+  content_id: string;
+  flagged_by?: string;
+  flag_source: 'USER' | 'SYSTEM_AUTO';
+  flag_reason: string;
+  description?: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  status: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED';
+  reviewed_by?: string;
+  reviewed_at?: string;
+  admin_notes?: string;
+  resolution_action?: string;
+  metadata?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  reporter?: {
+    name: string;
+    email: string;
+  };
+}
+
+// =====================================================
+// ENHANCED: AUDIT LOG WITH ANOMALY DETECTION
+// =====================================================
+
+export interface EnhancedAuditLog extends AuditLog {
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  is_suspicious: boolean;
+  anomaly_score?: number; // 0.00 to 1.00
+}
+
+export interface AnomalyDetection {
+  anomaly_type: string;
+  user_id: string;
+  count: number;
+  description: string;
+}
+
+// =====================================================
+// NEW: POINT PURCHASE DETAILS (For clickable modal)
+// =====================================================
+
+export interface BuyerPurchaseDetail {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  purchase_date: string;
+  points_purchased: number;
+  amount_paid_gel: number;
+  transaction_id: string;
+}
+
+export interface BuyerSummary {
+  user_id: string;
+  user_name: string;
+  user_email: string;
+  total_points_purchased: number;
+  total_gel_spent: number;
+  total_purchases: number;
+  last_purchase_date: string;
+}
+
+// =====================================================
+// NEW: USER CLAIMED POINTS DETAILS
+// =====================================================
+
+export interface ClaimedPointsDetail {
+  claim_date: string;
+  points_claimed: number;
+  claim_source: 'ACHIEVEMENT' | 'REFERRAL' | 'BONUS' | 'REWARD' | 'OTHER';
+  source_description: string;
+  transaction_id: string;
+}
+
+// =====================================================
+// NEW: USER POINTS SUMMARY (For Users tab)
+// =====================================================
+
+export interface UserPointsSummary {
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_banned: boolean;
+  current_points: number;
+  total_purchased: number;
+  total_claimed: number;
+  total_gel_spent: number;
+  created_at: string;
+  last_login?: string;
+}
+
 // Analytics types
 // CORRECTED: Revenue = Point Purchases (not reservation prices)
+// UPDATED: Now uses GEL currency (100 points = 1 GEL)
 export interface RevenueStats {
-  total_revenue: number; // From point purchases only
+  total_revenue: number; // In GEL (Georgian Lari), not points
   total_point_purchases: number; // Number of purchase transactions
   total_points_sold: number; // Total points sold
-  average_purchase_value: number; // Average points per purchase
+  average_purchase_value: number; // Average GEL per purchase
   unique_buyers: number; // Unique customers who bought points
 }
 
@@ -118,9 +242,6 @@ export interface UserGrowthData {
   new_users: number;
   cumulative_users: number;
 }
-
-// CORRECTED: Partners don't generate platform revenue (users pay them directly)
-// Already fixed above - this duplicate removed
 
 // CORRECTED: Partners don't generate platform revenue (users pay them directly)
 export interface TopPartner {
@@ -153,4 +274,17 @@ export interface AdminDashboardStats {
   flaggedOffers: number;
   bannedUsers: number;
   systemErrors: number;
+}
+
+// =====================================================
+// NEW: DAILY REVENUE VIEW
+// =====================================================
+
+export interface DailyRevenueSummary {
+  revenue_date: string;
+  purchase_count: number;
+  total_points_sold: number;
+  total_revenue_gel: number;
+  avg_purchase_gel: number;
+  unique_buyers: number;
 }

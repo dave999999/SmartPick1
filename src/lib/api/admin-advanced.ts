@@ -623,3 +623,301 @@ export const deleteFAQ = async (id: string): Promise<void> => {
 
   await logAdminAction('FAQ_DELETED', 'FAQ', id);
 };
+
+// =====================================================
+// NEW: USER BAN MANAGEMENT
+// =====================================================
+
+export const banUser = async (
+  userId: string,
+  reason: string,
+  banType: 'PERMANENT' | 'TEMPORARY' = 'PERMANENT',
+  expiresAt?: string,
+  internalNotes?: string
+): Promise<string> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('ban_user', {
+    p_user_id: userId,
+    p_reason: reason,
+    p_ban_type: banType,
+    p_expires_at: expiresAt || null,
+    p_internal_notes: internalNotes || null,
+  });
+
+  if (error) throw error;
+
+  await logAdminAction('USER_BANNED', 'USER', userId, {
+    reason,
+    banType,
+    expiresAt,
+  });
+
+  return data as string;
+};
+
+export const unbanUser = async (userId: string): Promise<void> => {
+  await checkAdminAccess();
+
+  const { error } = await supabase.rpc('unban_user', {
+    p_user_id: userId,
+  });
+
+  if (error) throw error;
+
+  await logAdminAction('USER_UNBANNED', 'USER', userId);
+};
+
+export const getBannedUsers = async (): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase
+    .from('user_bans')
+    .select(`
+      *,
+      user:users!user_bans_user_id_fkey(name, email),
+      admin:users!user_bans_banned_by_fkey(name, email)
+    `)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const expireTemporaryBans = async (): Promise<number> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('expire_temporary_bans');
+
+  if (error) throw error;
+  return data as number;
+};
+
+// =====================================================
+// NEW: CONTENT FLAGGING
+// =====================================================
+
+export const flagContentReport = async (
+  contentType: 'OFFER' | 'PARTNER' | 'USER',
+  contentId: string,
+  flagReason: string,
+  description?: string,
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'MEDIUM'
+): Promise<string> => {
+  const { data, error } = await supabase.rpc('flag_content', {
+    p_content_type: contentType,
+    p_content_id: contentId,
+    p_flag_reason: flagReason,
+    p_description: description || null,
+    p_severity: severity,
+    p_flag_source: 'USER',
+  });
+
+  if (error) throw error;
+  return data as string;
+};
+
+export const getFlaggedContent = async (
+  statusFilter?: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED'
+): Promise<any[]> => {
+  await checkAdminAccess();
+
+  let query = supabase
+    .from('flagged_content')
+    .select(`
+      *,
+      reporter:users!flagged_content_flagged_by_fkey(name, email)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (statusFilter) {
+    query = query.eq('status', statusFilter);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const updateFlagStatus = async (
+  flagId: string,
+  status: 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED',
+  adminNotes?: string,
+  resolutionAction?: string
+): Promise<void> => {
+  await checkAdminAccess();
+
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+
+  const { error } = await supabase
+    .from('flagged_content')
+    .update({
+      status,
+      reviewed_by: userId,
+      reviewed_at: new Date().toISOString(),
+      admin_notes: adminNotes,
+      resolution_action: resolutionAction,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', flagId);
+
+  if (error) throw error;
+
+  await logAdminAction('FLAG_REVIEWED', 'FLAGGED_CONTENT', flagId, {
+    status,
+    resolutionAction,
+  });
+};
+
+export const autoFlagSuspiciousContent = async (): Promise<any> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('auto_flag_suspicious_content');
+
+  if (error) throw error;
+  return data;
+};
+
+// =====================================================
+// NEW: ANOMALY DETECTION
+// =====================================================
+
+export const detectAnomalousActivity = async (): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('detect_anomalous_activity');
+
+  if (error) throw error;
+  return data || [];
+};
+
+// =====================================================
+// NEW: POINT GRANT SYSTEM
+// =====================================================
+
+export const grantPointsToUser = async (
+  userId: string,
+  points: number,
+  reason: string,
+  adminNotes?: string
+): Promise<string> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('admin_grant_points', {
+    p_user_id: userId,
+    p_points: points,
+    p_reason: reason,
+    p_admin_notes: adminNotes || null,
+  });
+
+  if (error) throw error;
+
+  await logAdminAction('POINTS_GRANTED', 'USER', userId, {
+    points,
+    reason,
+  });
+
+  return data as string;
+};
+
+// =====================================================
+// NEW: BUYER PURCHASE DETAILS (For clickable modal)
+// =====================================================
+
+export const getBuyerPurchaseDetails = async (
+  userId?: string
+): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('get_buyer_purchase_details', {
+    p_user_id: userId || null,
+  });
+
+  if (error) throw error;
+  return data || [];
+};
+
+export const getTopPointBuyers = async (
+  limit: number = 10,
+  startDate?: string,
+  endDate?: string
+): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('get_top_point_buyers', {
+    p_limit: limit,
+    p_start_date: startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+    p_end_date: endDate || new Date().toISOString(),
+  });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// =====================================================
+// NEW: USER CLAIMED POINTS DETAILS
+// =====================================================
+
+export const getUserClaimedPointsDetails = async (
+  userId: string
+): Promise<any[]> => {
+  const { data, error } = await supabase.rpc('get_user_claimed_points_details', {
+    p_user_id: userId,
+  });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// =====================================================
+// NEW: USER POINTS SUMMARY
+// =====================================================
+
+export const getUserPointsSummary = async (
+  userId: string
+): Promise<any> => {
+  const { data, error } = await supabase.rpc('get_user_points_summary', {
+    p_user_id: userId,
+  });
+
+  if (error) throw error;
+  return (data && data[0]) || null;
+};
+
+export const getUsersWithPointsSummary = async (
+  role?: string,
+  limit: number = 100,
+  offset: number = 0
+): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase.rpc('get_users_with_points_summary', {
+    p_role: role || null,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) throw error;
+  return data || [];
+};
+
+// =====================================================
+// NEW: DAILY REVENUE VIEW
+// =====================================================
+
+export const getDailyRevenueSummary = async (
+  days: number = 30
+): Promise<any[]> => {
+  await checkAdminAccess();
+
+  const { data, error } = await supabase
+    .from('daily_revenue_summary')
+    .select('*')
+    .order('revenue_date', { ascending: false })
+    .limit(days);
+
+  if (error) throw error;
+  return data || [];
+};

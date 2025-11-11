@@ -1,15 +1,18 @@
 ﻿import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DollarSign, Download, TrendingUp, Users, ShoppingCart } from 'lucide-react';
-import { getPlatformRevenueStats, exportFinancialReport } from '@/lib/api/admin-advanced';
-import type { RevenueStats } from '@/lib/types/admin';
+import { DollarSign, Download, TrendingUp, Users, ShoppingCart, Eye } from 'lucide-react';
+import { getPlatformRevenueStats, exportFinancialReport, getDailyRevenueSummary } from '@/lib/api/admin-advanced';
+import type { RevenueStats, DailyRevenueSummary } from '@/lib/types/admin';
+import { BuyerPurchaseModal } from './BuyerPurchaseModal';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export default function FinancialDashboardPanel() {
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
+  const [dailyRevenue, setDailyRevenue] = useState<DailyRevenueSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showBuyerModal, setShowBuyerModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -21,8 +24,14 @@ export default function FinancialDashboardPanel() {
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
-      const stats = await getPlatformRevenueStats(startDate.toISOString(), endDate.toISOString());
+      
+      const [stats, daily] = await Promise.all([
+        getPlatformRevenueStats(startDate.toISOString(), endDate.toISOString()),
+        getDailyRevenueSummary(30),
+      ]);
+      
       setRevenueStats(stats);
+      setDailyRevenue(daily);
     } catch (error) {
       logger.error('Error loading financial data:', error);
       toast.error('Failed to load financial data');
@@ -63,16 +72,16 @@ export default function FinancialDashboardPanel() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Financial Dashboard</h2>
-        <p className="text-gray-600 mt-1">Platform revenue from point purchases (last 30 days)</p>
+        <p className="text-gray-600 mt-1">Platform revenue from point purchases (last 30 days) - Currency: GEL (Georgian Lari)</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue (GEL)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00C896]">{revenueStats?.total_revenue.toFixed(2) || '0.00'}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><TrendingUp className="w-3 h-3" />From point purchases</div>
+            <div className="text-2xl font-bold text-[#00C896]">₾{revenueStats?.total_revenue.toFixed(2) || '0.00'}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><TrendingUp className="w-3 h-3" />Georgian Lari</div>
           </CardContent>
         </Card>
         <Card>
@@ -81,7 +90,7 @@ export default function FinancialDashboardPanel() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{revenueStats?.total_point_purchases || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><ShoppingCart className="w-3 h-3" />Point purchase transactions</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><ShoppingCart className="w-3 h-3" />Transactions</div>
           </CardContent>
         </Card>
         <Card>
@@ -89,32 +98,70 @@ export default function FinancialDashboardPanel() {
             <CardTitle className="text-sm font-medium text-gray-600">Points Sold</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{revenueStats?.total_points_sold || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Total points purchased</div>
+            <div className="text-2xl font-bold text-blue-600">{revenueStats?.total_points_sold.toLocaleString() || 0}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />100 pts = ₾1</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Avg Purchase Size</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Avg Purchase (GEL)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{revenueStats?.average_purchase_value.toFixed(0) || '0'}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Points per purchase</div>
+            <div className="text-2xl font-bold">₾{revenueStats?.average_purchase_value.toFixed(2) || '0.00'}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Per transaction</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" onClick={() => setShowBuyerModal(true)}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Unique Buyers</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              Unique Buyers
+              <Eye className="w-4 h-4 text-primary" />
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">{revenueStats?.unique_buyers || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><Users className="w-3 h-3" />Customers who bought points</div>
+            <div className="flex items-center gap-1 text-xs text-primary mt-1 font-medium"><Users className="w-3 h-3" />Click to view details</div>
           </CardContent>
         </Card>
       </div>
       <div className="flex gap-3">
         <Button variant="outline" onClick={handleExportReport}><Download className="w-4 h-4 mr-2" />Export Report (CSV)</Button>
+        <Button onClick={() => setShowBuyerModal(true)}><Eye className="w-4 h-4 mr-2" />View All Buyers</Button>
       </div>
+
+      {/* Daily Revenue Chart */}
+      {dailyRevenue.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Daily Revenue Trend (Last 30 Days)</CardTitle>
+            <CardDescription>Revenue in GEL from point purchases</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              <div className="grid grid-cols-5 gap-4 py-2 text-xs font-semibold text-gray-600 border-b">
+                <div>Date</div>
+                <div className="text-right">Purchases</div>
+                <div className="text-right">Points Sold</div>
+                <div className="text-right">Revenue (GEL)</div>
+                <div className="text-right">Unique Buyers</div>
+              </div>
+              {dailyRevenue.map((day: DailyRevenueSummary) => (
+                <div key={day.revenue_date} className="grid grid-cols-5 gap-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 rounded">
+                  <div>{new Date(day.revenue_date).toLocaleDateString('ka-GE')}</div>
+                  <div className="text-right font-medium">{day.purchase_count}</div>
+                  <div className="text-right">{day.total_points_sold.toLocaleString()}</div>
+                  <div className="text-right font-bold text-green-600">₾{day.total_revenue_gel.toFixed(2)}</div>
+                  <div className="text-right">{day.unique_buyers}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Buyer Purchase Modal */}
+      <BuyerPurchaseModal isOpen={showBuyerModal} onClose={() => setShowBuyerModal(false)} />
+
       <Card>
         <CardHeader>
           <CardTitle>Platform Revenue Model</CardTitle>
