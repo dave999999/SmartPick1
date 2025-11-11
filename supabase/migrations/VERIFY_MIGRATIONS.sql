@@ -108,20 +108,20 @@ BEGIN
     u.last_login
   FROM public.users u
   LEFT JOIN (
-    SELECT user_id, SUM(change) as total, SUM(amount_paid_gel) as total_gel
-    FROM public.point_transactions
-    WHERE reason IN ('POINTS_PURCHASED', 'purchase', 'PURCHASE')
-      AND change > 0
-    GROUP BY user_id
-  ) purchases ON purchases.user_id = u.id
+    SELECT pt.user_id as purchase_user_id, SUM(pt.change) as total, SUM(pt.amount_paid_gel) as total_gel
+    FROM public.point_transactions pt
+    WHERE pt.reason IN ('POINTS_PURCHASED', 'purchase', 'PURCHASE')
+      AND pt.change > 0
+    GROUP BY pt.user_id
+  ) purchases ON purchases.purchase_user_id = u.id
   LEFT JOIN (
-    SELECT user_id, SUM(change) as total
-    FROM public.point_transactions
-    WHERE change > 0
-      AND amount_paid_gel IS NULL
-      AND reason NOT IN ('POINTS_PURCHASED', 'purchase', 'PURCHASE')
-    GROUP BY user_id
-  ) claims ON claims.user_id = u.id
+    SELECT pt2.user_id as claim_user_id, SUM(pt2.change) as total
+    FROM public.point_transactions pt2
+    WHERE pt2.change > 0
+      AND pt2.amount_paid_gel IS NULL
+      AND pt2.reason NOT IN ('POINTS_PURCHASED', 'purchase', 'PURCHASE')
+    GROUP BY pt2.user_id
+  ) claims ON claims.claim_user_id = u.id
   WHERE (p_role IS NULL OR u.role = p_role)
     AND u.role != 'ADMIN' -- CRITICAL: EXCLUDE ADMIN USERS
   ORDER BY u.created_at DESC
