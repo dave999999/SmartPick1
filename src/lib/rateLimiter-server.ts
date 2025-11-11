@@ -51,8 +51,9 @@ export async function checkServerRateLimit(
     }
 
     if (!response.ok) {
-      console.error('Rate limit check failed:', response.status);
+      console.error('Rate limit check failed:', response.status, response.statusText);
       // Fail open (allow) on errors to prevent service disruption
+      // This includes 400, 404, 500, etc.
       return { allowed: true, remaining: 99 };
     }
 
