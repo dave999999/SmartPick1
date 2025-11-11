@@ -5,6 +5,10 @@
 -- partner_point_transactions using partner_id column, but table uses user_id
 -- ============================================================================
 
+-- Drop the existing function first (required to change return type)
+DROP FUNCTION IF EXISTS public.purchase_partner_offer_slot();
+
+-- Recreate with correct column names
 CREATE OR REPLACE FUNCTION public.purchase_partner_offer_slot()
 RETURNS JSONB
 LANGUAGE plpgsql
