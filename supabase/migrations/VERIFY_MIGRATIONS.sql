@@ -96,17 +96,18 @@ BEGIN
   RETURN QUERY
   SELECT
     u.id as user_id,
-    u.name,
-    u.email,
-    u.role,
+    u.name::TEXT,
+    u.email::TEXT,
+    u.role::TEXT,
     u.is_banned,
-    u.points as current_points,
+    COALESCE(up.balance, 0)::INTEGER as current_points,
     COALESCE(purchases.total, 0)::INTEGER as total_purchased,
     COALESCE(claims.total, 0)::INTEGER as total_claimed,
     COALESCE(purchases.total_gel, 0)::DECIMAL as total_gel_spent,
     u.created_at,
     u.last_login
   FROM public.users u
+  LEFT JOIN public.user_points up ON up.user_id = u.id
   LEFT JOIN (
     SELECT pt.user_id as purchase_user_id, SUM(pt.change) as total, SUM(pt.amount_paid_gel) as total_gel
     FROM public.point_transactions pt
