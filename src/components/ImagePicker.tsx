@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Upload, Loader2, ImageIcon, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface ImagePickerProps {
   category: string;

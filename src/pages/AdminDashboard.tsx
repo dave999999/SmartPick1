@@ -13,6 +13,7 @@ import { UsersManagement } from '@/components/admin/UsersManagement';
 import { OffersManagement } from '@/components/admin/OffersManagement';
 import PartnersVerification from '@/components/admin/PartnersVerification';
 import { NewUsers } from '@/components/admin/NewUsers';
+import { logger } from '@/lib/logger';
 import { BannedUsers } from '@/components/admin/BannedUsers';
 import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';

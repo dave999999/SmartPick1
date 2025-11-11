@@ -3,6 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, CameraOff, AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 interface QRScannerProps {
   onScan: (decodedText: string) => void;
