@@ -32,8 +32,8 @@ AS $$
 BEGIN
   -- Admin check
   IF NOT EXISTS (
-    SELECT 1 FROM public.users
-    WHERE id = auth.uid() AND role = 'ADMIN'
+    SELECT 1 FROM public.users u
+    WHERE u.id = auth.uid() AND u.role = 'ADMIN'
   ) THEN
     RAISE EXCEPTION 'Access denied: Admin only';
   END IF;
