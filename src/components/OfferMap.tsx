@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Clock, Navigation, Maximize2, Minimize2 } from 'lucide-react';
 import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
+import { logger } from '@/lib/logger';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import FavoriteButton from '@/components/FavoriteButton';
 import { toast } from 'sonner';

@@ -8,6 +8,7 @@ import type { UserPoints, PointTransaction } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
 import { toast } from 'sonner';
 import { onPointsChange } from '@/lib/pointsEventBus';
+import { logger } from '@/lib/logger';
 
 interface SmartPointsWalletProps {
   userId: string;

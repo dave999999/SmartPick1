@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Coins, CreditCard, Check, AlertCircle } from 'lucide-react';
 import { purchasePoints } from '@/lib/smartpoints-api';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface BuyPointsModalProps {
   open: boolean;

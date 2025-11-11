@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 import { Badge } from '@/components/ui/badge';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { Input } from '@/components/ui/input';

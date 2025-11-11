@@ -6,6 +6,7 @@ import { Users, Copy, Check, Share2, Gift } from 'lucide-react';
 import { getUserReferralCode } from '@/lib/gamification-api';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { logger } from '@/lib/logger';
 
 interface ReferralCardProps {
   userId: string;
