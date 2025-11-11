@@ -1,47 +1,15 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { DollarSign, Download, TrendingUp, Users, Package, CheckCircle } from 'lucide-react';
-import {
-  getPlatformRevenueStats,
-  getPartnerPayouts,
-  createPartnerPayout,
-  updatePayoutStatus,
-  exportFinancialReport,
-} from '@/lib/api/admin-advanced';
-import { getAllPartners } from '@/lib/admin-api';
-import type { RevenueStats, PartnerPayout } from '@/lib/types/admin';
-import type { Partner } from '@/lib/types';
+import { DollarSign, Download, TrendingUp, Users, ShoppingCart } from 'lucide-react';
+import { getPlatformRevenueStats, exportFinancialReport } from '@/lib/api/admin-advanced';
+import type { RevenueStats } from '@/lib/types/admin';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export default function FinancialDashboardPanel() {
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);
-  const [payouts, setPayouts] = useState<PartnerPayout[]>([]);
-  const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
-  const [createPayoutDialogOpen, setCreatePayoutDialogOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState('');
-  const [commissionRate, setCommissionRate] = useState('15');
 
   useEffect(() => {
     loadData();
@@ -50,21 +18,11 @@ export default function FinancialDashboardPanel() {
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Get stats for last 30 days
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
-
-      const [stats, payoutsData, partnersData] = await Promise.all([
-        getPlatformRevenueStats(startDate.toISOString(), endDate.toISOString()),
-        getPartnerPayouts(),
-        getAllPartners()
-      ]);
-
+      const stats = await getPlatformRevenueStats(startDate.toISOString(), endDate.toISOString());
       setRevenueStats(stats);
-      setPayouts(payoutsData);
-      setPartners(partnersData);
     } catch (error) {
       logger.error('Error loading financial data:', error);
       toast.error('Failed to load financial data');
@@ -73,54 +31,12 @@ export default function FinancialDashboardPanel() {
     }
   };
 
-  const handleCreatePayout = async () => {
-    if (!selectedPartner) {
-      toast.error('Please select a partner');
-      return;
-    }
-
-    try {
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
-
-      await createPartnerPayout(
-        selectedPartner,
-        startDate.toISOString(),
-        endDate.toISOString(),
-        parseFloat(commissionRate)
-      );
-
-      toast.success('Payout created successfully');
-      setCreatePayoutDialogOpen(false);
-      setSelectedPartner('');
-      await loadData();
-    } catch (error) {
-      logger.error('Error creating payout:', error);
-      toast.error('Failed to create payout');
-    }
-  };
-
-  const handleUpdatePayoutStatus = async (payoutId: string, status: 'PAID' | 'CANCELLED') => {
-    try {
-      await updatePayoutStatus(payoutId, status);
-      toast.success(`Payout marked as ${status.toLowerCase()}`);
-      await loadData();
-    } catch (error) {
-      logger.error('Error updating payout:', error);
-      toast.error('Failed to update payout');
-    }
-  };
-
   const handleExportReport = async () => {
     try {
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - 30);
-
       const csv = await exportFinancialReport(startDate.toISOString(), endDate.toISOString());
-
-      // Download CSV
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -128,7 +44,6 @@ export default function FinancialDashboardPanel() {
       a.download = `financial-report-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
-
       toast.success('Report exported successfully');
     } catch (error) {
       logger.error('Error exporting report:', error);
@@ -146,224 +61,96 @@ export default function FinancialDashboardPanel() {
 
   return (
     <div className="space-y-6">
-      {/* Revenue Stats Cards */}
+      <div>
+        <h2 className="text-2xl font-bold">Financial Dashboard</h2>
+        <p className="text-gray-600 mt-1">Platform revenue from point purchases (last 30 days)</p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Total Revenue (30d)
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00C896]">
-              ₾{revenueStats?.total_revenue.toFixed(2) || '0.00'}
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-              <TrendingUp className="w-3 h-3" />
-              Platform-wide
-            </div>
+            <div className="text-2xl font-bold text-[#00C896]">{revenueStats?.total_revenue.toFixed(2) || '0.00'}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><TrendingUp className="w-3 h-3" />From point purchases</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Total Reservations
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Total Purchases</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {revenueStats?.total_reservations || 0}
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-              <Package className="w-3 h-3" />
-              Last 30 days
-            </div>
+            <div className="text-2xl font-bold">{revenueStats?.total_point_purchases || 0}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><ShoppingCart className="w-3 h-3" />Point purchase transactions</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Completion Rate
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Points Sold</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {revenueStats?.completion_rate.toFixed(1) || 0}%
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-              <CheckCircle className="w-3 h-3" />
-              Pickup success
-            </div>
+            <div className="text-2xl font-bold text-blue-600">{revenueStats?.total_points_sold || 0}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Total points purchased</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              Avg Order Value
-            </CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-600">Avg Purchase Size</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ₾{revenueStats?.average_order_value.toFixed(2) || '0.00'}
-            </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
-              <DollarSign className="w-3 h-3" />
-              Per reservation
-            </div>
+            <div className="text-2xl font-bold">{revenueStats?.average_purchase_value.toFixed(0) || '0'}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Points per purchase</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">Unique Buyers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{revenueStats?.unique_buyers || 0}</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><Users className="w-3 h-3" />Customers who bought points</div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Actions */}
       <div className="flex gap-3">
-        <Button onClick={() => setCreatePayoutDialogOpen(true)}>
-          <DollarSign className="w-4 h-4 mr-2" />
-          Create Payout
-        </Button>
-        <Button variant="outline" onClick={handleExportReport}>
-          <Download className="w-4 h-4 mr-2" />
-          Export Report (CSV)
-        </Button>
+        <Button variant="outline" onClick={handleExportReport}><Download className="w-4 h-4 mr-2" />Export Report (CSV)</Button>
       </div>
-
-      {/* Partner Payouts Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Partner Payouts</CardTitle>
-          <CardDescription>Manage partner commission payouts</CardDescription>
+          <CardTitle>Platform Revenue Model</CardTitle>
+          <CardDescription>How SmartPick.ge generates revenue</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Partner</TableHead>
-                <TableHead>Period</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead>Commission</TableHead>
-                <TableHead>Payout</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payouts.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-gray-500">
-                    No payouts created yet
-                  </TableCell>
-                </TableRow>
-              ) : (
-                payouts.map((payout) => (
-                  <TableRow key={payout.id}>
-                    <TableCell className="font-medium">
-                      {payout.partner?.business_name}
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {new Date(payout.period_start).toLocaleDateString()} -{' '}
-                      {new Date(payout.period_end).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>₾{payout.total_revenue.toFixed(2)}</TableCell>
-                    <TableCell>
-                      ₾{payout.commission_amount.toFixed(2)}
-                      <span className="text-xs text-gray-500 ml-1">
-                        ({payout.commission_rate}%)
-                      </span>
-                    </TableCell>
-                    <TableCell className="font-bold">
-                      ₾{payout.payout_amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          payout.status === 'PAID'
-                            ? 'default'
-                            : payout.status === 'PENDING'
-                            ? 'secondary'
-                            : 'destructive'
-                        }
-                      >
-                        {payout.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {payout.status === 'PENDING' && (
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdatePayoutStatus(payout.id, 'PAID')}
-                          >
-                            Mark Paid
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleUpdatePayoutStatus(payout.id, 'CANCELLED')}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* Create Payout Dialog */}
-      <Dialog open={createPayoutDialogOpen} onOpenChange={setCreatePayoutDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create Partner Payout</DialogTitle>
-            <DialogDescription>
-              Generate a payout for a partner based on last 30 days
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <Label>Partner</Label>
-              <select
-                className="w-full mt-1 px-3 py-2 border rounded-md"
-                value={selectedPartner}
-                onChange={(e) => setSelectedPartner(e.target.value)}
-              >
-                <option value="">Select a partner...</option>
-                {partners.map((partner) => (
-                  <option key={partner.id} value={partner.id}>
-                    {partner.business_name}
-                  </option>
-                ))}
-              </select>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+              <div>
+                <p className="font-semibold">Point Purchases (Platform Revenue)</p>
+                <p className="text-sm text-gray-600">Users buy points from the platform. This is YOUR revenue source.</p>
+              </div>
             </div>
-
-            <div>
-              <Label>Commission Rate (%)</Label>
-              <Input
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={commissionRate}
-                onChange={(e) => setCommissionRate(e.target.value)}
-              />
+            <div className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+              <div>
+                <p className="font-semibold">Reservations (Partner Revenue)</p>
+                <p className="text-sm text-gray-600">Users spend points at partners. Partners receive payment directly from customers. Platform does NOT take commission.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2"></div>
+              <div>
+                <p className="font-semibold">No Partner Payouts</p>
+                <p className="text-sm text-gray-600">Platform does not handle partner payouts. Users pay partners directly via reservations.</p>
+              </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCreatePayoutDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreatePayout}>Create Payout</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="pt-4 border-t">
+            <p className="text-sm font-medium text-gray-700">Revenue Calculation:</p>
+            <p className="text-sm text-gray-600 mt-1">Total Revenue = SUM(point_transactions WHERE reason = 'POINTS_PURCHASED')</p>
+            <p className="text-xs text-gray-500 mt-2">* Assumes 1 point = 1 GEL. If different, update migration to track actual money amounts.</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
-
