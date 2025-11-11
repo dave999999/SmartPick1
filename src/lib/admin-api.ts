@@ -460,7 +460,9 @@ export const getUsersPaged = async (options?: {
     .from('users')
     .select('*', { count: 'exact' })
     .order('created_at', { ascending: false })
-    .range(from, to);
+    .range(from, to)
+    // Exclude ADMIN role from Users tab - show only CUSTOMER and PARTNER
+    .neq('role', 'ADMIN');
   if (options?.search && options.search.trim()) {
     const s = options.search.trim();
     q = q.or(`name.ilike.%${s}%,email.ilike.%${s}%`);
