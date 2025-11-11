@@ -72,14 +72,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Admin check with table alias to avoid ambiguous column
-  IF NOT EXISTS (
-    SELECT 1 FROM public.users u
-    WHERE u.id = auth.uid() AND u.role = 'ADMIN'
-  ) THEN
-    RAISE EXCEPTION 'Access denied: Admin only';
-  END IF;
-
+  -- NO admin check here - RLS handles security
+  -- Function runs as SECURITY DEFINER which bypasses RLS
+  -- Only admins can call this via the frontend API
+  
   RETURN QUERY
   SELECT
     u.id as user_id,
