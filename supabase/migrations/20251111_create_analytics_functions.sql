@@ -26,11 +26,11 @@ BEGIN
   RETURN QUERY
   WITH RECURSIVE dates AS (
     -- Generate last 30 days
-    SELECT CURRENT_DATE - INTERVAL '29 days' AS date
+    SELECT CURRENT_DATE - INTERVAL '29 days' AS day_date
     UNION ALL
-    SELECT date + INTERVAL '1 day'
+    SELECT day_date + INTERVAL '1 day'
     FROM dates
-    WHERE date < CURRENT_DATE
+    WHERE day_date < CURRENT_DATE
   ),
   daily_signups AS (
     SELECT 
@@ -43,23 +43,23 @@ BEGIN
   ),
   cumulative AS (
     SELECT
-      d.date,
+      d.day_date,
       COALESCE(ds.new_users, 0) as new_users,
       (
         SELECT COUNT(*)::INTEGER
         FROM public.users u
-        WHERE DATE(u.created_at) <= d.date
+        WHERE DATE(u.created_at) <= d.day_date
           AND u.role != 'ADMIN'
       ) as cumulative_users
     FROM dates d
-    LEFT JOIN daily_signups ds ON DATE(d.date) = ds.signup_date
+    LEFT JOIN daily_signups ds ON DATE(d.day_date) = ds.signup_date
   )
   SELECT 
-    TO_CHAR(cumulative.date, 'Mon DD') as date,
+    TO_CHAR(cumulative.day_date, 'Mon DD') as date,
     cumulative.new_users,
     cumulative.cumulative_users
   FROM cumulative
-  ORDER BY cumulative.date ASC;
+  ORDER BY cumulative.day_date ASC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
