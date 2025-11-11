@@ -9,7 +9,7 @@ import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SectionCard } from '@/components/layout/SectionCard';
 import { PartnersManagement } from '@/components/admin/PartnersManagement';
-import { UsersManagement } from '@/components/admin/UsersManagement';
+import { EnhancedUsersManagement } from '@/components/admin/EnhancedUsersManagement';
 import { OffersManagement } from '@/components/admin/OffersManagement';
 import PartnersVerification from '@/components/admin/PartnersVerification';
 import { NewUsersPanel } from '@/components/admin/NewUsersPanel';
