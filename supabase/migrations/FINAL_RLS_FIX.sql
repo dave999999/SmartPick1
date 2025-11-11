@@ -16,9 +16,10 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3. Create policy that allows BOTH own data AND service role access
--- Service role has full access (bypasses RLS)
--- Regular users see only their own data
+-- 3. Create policy that allows:
+--    - Users see their own data
+--    - Service role sees all (for SECURITY DEFINER functions)
+--    - Admins can see all users (for admin dashboard)
 CREATE POLICY "users_select_policy"
   ON public.users FOR SELECT
   TO authenticated
@@ -26,6 +27,11 @@ CREATE POLICY "users_select_policy"
     id = auth.uid()  -- Users see their own row
     OR 
     auth.jwt()->>'role' = 'service_role'  -- Service role sees all
+    OR
+    EXISTS (
+      SELECT 1 FROM public.users u
+      WHERE u.id = auth.uid() AND u.role = 'ADMIN'
+    )  -- Admins see all users
   );
 
 -- 4. Grant SELECT to authenticated users
