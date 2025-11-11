@@ -25,7 +25,8 @@ export function AchievementBadge({
   const [claiming, setClaiming] = useState(false);
   const isUnlocked = !!userAchievement;
   const isNew = userAchievement?.is_new || false;
-  const rewardClaimed = userAchievement?.reward_claimed || false;
+  // Check if reward was claimed - default to false if property doesn't exist (old records)
+  const rewardClaimed = userAchievement?.reward_claimed === true;
   const tierColor = getAchievementTierColor(definition.tier);
   
   // Calculate progress percentage
