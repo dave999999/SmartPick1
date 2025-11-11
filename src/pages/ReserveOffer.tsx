@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { updateMetaTags } from '@/lib/social-share';
+import { logger } from '@/lib/logger';
 
 export default function ReserveOffer() {
   const { offerId } = useParams<{ offerId: string }>();
