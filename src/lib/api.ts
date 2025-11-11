@@ -359,7 +359,7 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
   const { data: partnerPoints } = await supabase
     .from('partner_points')
     .select('offer_slots')
-    .eq('partner_id', partnerId)
+    .eq('user_id', partnerId)  // Column is named user_id, not partner_id
     .maybeSingle();
 
   const maxSlots = partnerPoints?.offer_slots || 4;
@@ -1568,11 +1568,11 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
       return null;
     }
 
-    // Then get partner points using partner_id
+    // Then get partner points using user_id (column name is confusing but correct)
     const { data, error } = await supabase
       .from('partner_points')
       .select('*')
-      .eq('partner_id', partner.id)
+      .eq('user_id', partner.id)  // Column is named user_id, not partner_id
       .maybeSingle();
 
     if (error) {
