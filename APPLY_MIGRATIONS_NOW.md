@@ -5,14 +5,31 @@
 -- Run these in Supabase SQL Editor, one at a time, in this exact order:
 
 -- ============================================
--- STEP 1: Fix Achievement Tracking (if not already applied)
+-- STEP 1: Add Missing Columns to user_stats
+-- ============================================
+-- File: 20251111_add_user_stats_columns.sql
+-- This adds category_counts, partner_visit_counts, unique_partners_visited
+-- REQUIRED before other migrations!
+
+-- Copy and paste the ENTIRE content of:
+-- supabase/migrations/20251111_add_user_stats_columns.sql
+
+-- Expected output:
+-- ✅ user_stats columns added successfully!
+-- Columns now include:
+--   • category_counts (JSONB) - tracks breakfast/dinner/dessert orders
+--   • partner_visit_counts (JSONB) - tracks visits per partner
+--   • unique_partners_visited (INT) - count of unique partners
+
+-- ============================================
+-- STEP 2: Fix Achievement Tracking (if not already applied)
 -- ============================================
 -- File: 20251111_fix_achievement_tracking.sql
 -- This fixes the trigger to use customer_id instead of user_id
 -- (Already applied if pickups are working)
 
 -- ============================================
--- STEP 2: Create 48 Achievements
+-- STEP 3: Create 48 Achievements
 -- ============================================
 -- File: 20251111_cleanup_achievements.sql
 -- This creates all 48 achievements in the database
@@ -32,7 +49,7 @@
 --    • Total Points Available: 18785
 
 -- ============================================
--- STEP 3: Backfill Existing User Stats
+-- STEP 4: Backfill Existing User Stats
 -- ============================================
 -- File: 20251111_backfill_user_stats.sql
 -- This recalculates stats from existing picked-up reservations

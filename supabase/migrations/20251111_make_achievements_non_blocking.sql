@@ -40,8 +40,8 @@ BEGIN
 
   -- Ensure user_stats record exists (create if missing)
   BEGIN
-    INSERT INTO user_stats (user_id, last_activity_date)
-    VALUES (NEW.customer_id, v_pickup_date)
+    INSERT INTO user_stats (user_id)
+    VALUES (NEW.customer_id)
     ON CONFLICT (user_id) DO NOTHING;
     RAISE NOTICE '✅ user_stats record ensured for user: %', NEW.customer_id;
   EXCEPTION WHEN OTHERS THEN
