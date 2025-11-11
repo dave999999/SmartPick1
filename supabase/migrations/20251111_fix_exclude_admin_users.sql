@@ -10,7 +10,7 @@ RETURNS TABLE (
   user_id UUID,
   name TEXT,
   email TEXT,
-  role VARCHAR,
+  role TEXT,
   is_banned BOOLEAN,
   current_points INTEGER,
   total_purchased INTEGER,
