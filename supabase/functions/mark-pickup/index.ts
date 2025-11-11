@@ -102,8 +102,11 @@ serve(async (req) => {
       .eq('id', reservation_id)
 
     if (updateError) {
+      console.error('Update reservation error:', updateError)
       throw new Error(`Failed to update reservation: ${updateError.message}`)
     }
+
+    console.log('✅ Reservation updated to PICKED_UP successfully')
 
     // Award points to customer (5 points for completing pickup)
     const pointsToAward = reservation.points_spent || 5
@@ -208,13 +211,19 @@ serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('Edge Function Error:', error)
+    console.error('❌ Edge Function Error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined
+    })
     const errorMessage = error instanceof Error ? error.message : String(error)
     return new Response(
       JSON.stringify({
         success: false,
         error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined
+        details: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
