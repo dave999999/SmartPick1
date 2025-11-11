@@ -24,7 +24,7 @@ WHERE table_name = 'partner_points'
 ORDER BY ordinal_position;
 
 -- Expected columns:
--- - partner_id (UUID, NOT NULL) - references partners.id
+-- - user_id (UUID, NOT NULL) - references partners.id (confusing name, but that's how it is)
 -- - balance (INTEGER, default 0)
 -- - offer_slots (INTEGER, default 3)
 -- - created_at (TIMESTAMP)
@@ -49,15 +49,16 @@ BEGIN
   -- Only grant welcome points when partner is approved for the first time
   IF NEW.status = 'APPROVED' AND (OLD.status IS NULL OR OLD.status <> 'APPROVED') THEN
     
-    -- Insert into partner_points using partner ID (NOT user_id)
-    INSERT INTO public.partner_points (partner_id, balance, offer_slots)
-    VALUES (NEW.id, 1000, 4)  -- Changed from NEW.user_id to NEW.id
-    ON CONFLICT (partner_id) DO NOTHING;
+    -- Insert into partner_points using NEW.id (partner's primary key)
+    -- Note: The column is called "user_id" but it actually stores the partner.id
+    INSERT INTO public.partner_points (user_id, balance, offer_slots)
+    VALUES (NEW.id, 1000, 4)  -- NEW.id is the partner's primary key (partners.id)
+    ON CONFLICT (user_id) DO NOTHING;
     
     -- Insert transaction record using partner ID
     INSERT INTO public.partner_point_transactions (partner_id, change, reason, balance_before, balance_after, metadata)
     VALUES (
-      NEW.id,  -- Changed from NEW.user_id to NEW.id
+      NEW.id,  -- NEW.id is the partner's primary key
       1000, 
       'WELCOME', 
       0, 
@@ -106,7 +107,7 @@ BEGIN
     RAISE NOTICE 'Current status: %', v_old_status;
     
     -- Check if partner already has points
-    IF EXISTS (SELECT 1 FROM partner_points WHERE partner_id = v_partner_id) THEN
+    IF EXISTS (SELECT 1 FROM partner_points WHERE user_id = v_partner_id) THEN
       RAISE NOTICE 'Partner already has points record (trigger will skip)';
     ELSE
       RAISE NOTICE 'Partner has no points record yet (trigger will create one)';
@@ -128,7 +129,7 @@ BEGIN
       SELECT balance, offer_slots 
       INTO v_points_balance, v_offer_slots
       FROM partner_points 
-      WHERE partner_id = v_partner_id;
+      WHERE user_id = v_partner_id;
       
       IF FOUND THEN
         RAISE NOTICE '✅ SUCCESS: Partner points record exists';
@@ -216,17 +217,23 @@ WHERE schemaname = 'public'
 -- ============================================================================
 -- WHAT WAS FIXED
 -- ============================================================================
+-- THE ISSUE:
+--   The partner_points table has a confusing schema:
+--   - Column is named "user_id" 
+--   - But it references partners.id (NOT partners.user_id)
+--   - Foreign key: partner_points.user_id -> partners.id
+--
 -- BEFORE (BROKEN):
 --   INSERT INTO partner_points (user_id, balance, offer_slots)
 --   VALUES (NEW.user_id, 1000, 4)
 --   
---   Problem: partner_points.partner_id references partners.id (not user_id)
---   Error: Foreign key constraint violation
+--   Problem: NEW.user_id is the auth user ID, not the partner record ID
+--   Error: Foreign key constraint violation (user_id not found in partners table)
 --
 -- AFTER (FIXED):
---   INSERT INTO partner_points (partner_id, balance, offer_slots)
+--   INSERT INTO partner_points (user_id, balance, offer_slots)
 --   VALUES (NEW.id, 1000, 4)
 --   
 --   Correct: NEW.id is the partner's primary key (partners.id)
---   Works: Foreign key constraint satisfied
+--   Works: Foreign key constraint satisfied (even though column name is confusing)
 -- ============================================================================
