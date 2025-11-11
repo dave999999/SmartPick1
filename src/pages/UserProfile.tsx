@@ -177,6 +177,7 @@ export default function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [unclaimedCount, setUnclaimedCount] = useState<number>(0);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -203,6 +204,12 @@ export default function UserProfile() {
       try {
         const stats = await getUserStats(currentUser.id);
         setUserStats(stats);
+        
+        // Load unclaimed achievements count
+        const { getUserAchievements } = await import('@/lib/gamification-api');
+        const achievements = await getUserAchievements(currentUser.id);
+        const unclaimed = achievements.filter(a => !a.reward_claimed).length;
+        setUnclaimedCount(unclaimed);
       } catch (statsError) {
         logger.warn('Gamification stats not available (tables may not exist yet):', statsError);
         // Don't show error to user - profile will work without gamification
@@ -338,7 +345,16 @@ export default function UserProfile() {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
             <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
-            {userStats && <TabsTrigger value="achievements">{t('profile.tabs.achievements')}</TabsTrigger>}
+            {userStats && (
+              <TabsTrigger value="achievements" className="relative">
+                {t('profile.tabs.achievements')}
+                {unclaimedCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                    {unclaimedCount}
+                  </span>
+                )}
+              </TabsTrigger>
+            )}
             {userStats && <TabsTrigger value="wallet">{t('profile.tabs.wallet')}</TabsTrigger>}
             <TabsTrigger value="settings">{t('profile.tabs.settings')}</TabsTrigger>
           </TabsList>
@@ -489,13 +505,16 @@ export default function UserProfile() {
           </TabsContent>
 
           {/* ACHIEVEMENTS TAB */}
-          <TabsContent value="achievements">
+          <TabsContent value="achievements" className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <AchievementsGrid userId={user.id} />
+              <AchievementsGrid 
+                userId={user.id}
+                onUnclaimedCountChange={setUnclaimedCount}
+              />
             </motion.div>
           </TabsContent>
 
