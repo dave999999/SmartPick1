@@ -32,6 +32,7 @@ import { getAllPartners } from '@/lib/admin-api';
 import type { RevenueStats, PartnerPayout } from '@/lib/types/admin';
 import type { Partner } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export default function FinancialDashboardPanel() {
   const [revenueStats, setRevenueStats] = useState<RevenueStats | null>(null);

@@ -14,6 +14,7 @@ import { CheckSquare, Trash2, Ban, CheckCircle, XCircle, Download, Mail } from '
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
+import { logger } from '@/lib/logger';
 
 interface BulkActionsProps {
   selectedIds: Set<string>;
