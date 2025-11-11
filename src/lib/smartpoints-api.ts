@@ -36,9 +36,40 @@ export interface AddPointsResult {
 
 /**
  * Get current user's SmartPoints balance
+ * If user is a partner, returns partner_points instead
  */
 export async function getUserPoints(userId: string): Promise<UserPoints | null> {
   try {
+    // Check if user is a partner
+    const { data: profile } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'APPROVED')
+      .maybeSingle();
+
+    // If user is a partner, get partner points
+    if (profile?.id) {
+      const { data, error } = await supabase
+        .from('partner_points')
+        .select('*')
+        .eq('partner_id', profile.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching partner points:', error);
+        return null;
+      }
+
+      // Map partner_points to UserPoints interface for compatibility
+      return data ? {
+        ...data,
+        user_id: userId, // Add user_id for compatibility
+        partner_id: profile.id
+      } as UserPoints : null;
+    }
+
+    // Regular customer points
     const { data, error } = await supabase
       .from('user_points')
       .select('*')
@@ -65,6 +96,37 @@ export async function getPointTransactions(
   limit: number = 10
 ): Promise<PointTransaction[]> {
   try {
+    // Check if user is a partner
+    const { data: profile } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'APPROVED')
+      .maybeSingle();
+
+    // If user is a partner, get partner transactions instead
+    if (profile?.id) {
+      const { data, error } = await supabase
+        .from('partner_point_transactions')
+        .select('*')
+        .eq('partner_id', profile.id)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('Error fetching partner transactions:', error);
+        return [];
+      }
+
+      // Map partner transactions to match PointTransaction interface
+      return (data || []).map(tx => ({
+        ...tx,
+        user_id: userId, // Add user_id for compatibility
+        partner_id: profile.id
+      })) as PointTransaction[];
+    }
+
+    // Regular customer transactions
     const { data, error } = await supabase
       .from('point_transactions')
       .select('*')
