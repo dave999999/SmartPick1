@@ -6,7 +6,10 @@
 -- ============================================================================
 
 -- Drop the existing function first (required to change return type)
+-- Drop all possible signatures
 DROP FUNCTION IF EXISTS public.purchase_partner_offer_slot();
+DROP FUNCTION IF EXISTS public.purchase_partner_offer_slot(UUID);
+DROP FUNCTION IF EXISTS public.purchase_partner_offer_slot(TEXT);
 
 -- Recreate with correct column names
 CREATE OR REPLACE FUNCTION public.purchase_partner_offer_slot()
