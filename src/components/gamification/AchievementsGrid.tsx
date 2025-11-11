@@ -6,6 +6,7 @@ import { getUserAchievements, getAllAchievements, AchievementDefinition, UserAch
 import { Award, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
 
 interface AchievementsGridProps {
   userId: string;
