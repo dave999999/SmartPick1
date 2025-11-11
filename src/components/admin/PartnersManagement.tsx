@@ -476,6 +476,8 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
 
   const handleTogglePause = async (partner: Partner) => {
     try {
+      logger.log('PartnersManagement: Toggling pause for partner:', { partnerId: partner.id, currentStatus: partner.status });
+      
       if (partner.status === 'PAUSED') {
         await unpausePartner(partner.id);
         toast.success('Partner unpaused successfully');
@@ -483,11 +485,13 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
         await pausePartner(partner.id);
         toast.success('Partner paused successfully');
       }
-      loadPartners();
+      
+      await loadPartners();
       onStatsUpdate();
     } catch (error) {
       logger.error('Error toggling partner pause:', error);
-      toast.error('Failed to update partner status');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to update partner status: ${errorMessage}`);
     }
   };
 
