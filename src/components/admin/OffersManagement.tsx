@@ -12,6 +12,7 @@ import { Search, Edit, Trash2, CheckCircle, XCircle, Package } from 'lucide-reac
 import { getOffersPaged, updateOffer, deleteOffer, enableOffer, disableOffer } from '@/lib/admin-api';
 import type { Offer } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface OffersManagementProps {
   onStatsUpdate: () => void;

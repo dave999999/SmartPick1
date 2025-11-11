@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, Eye, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Partner } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface PendingPartnersProps {
   onStatsUpdate: () => void;
