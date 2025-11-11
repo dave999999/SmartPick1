@@ -98,12 +98,18 @@ END $$;
 -- - Inconsistent behavior with different queries
 -- ============================================================================
 
-RAISE NOTICE '
-✅ ALL DONE!
-
-Next steps:
-1. Deploy latest frontend code: pnpm build
-2. Hard refresh browser (Ctrl + Shift + R)
-3. Try creating offer as partner
-4. Should work now!
-';
+-- ============================================================================
+-- FINAL VERIFICATION
+-- ============================================================================
+DO $$
+BEGIN
+  RAISE NOTICE '';
+  RAISE NOTICE '✅ ALL DONE!';
+  RAISE NOTICE '';
+  RAISE NOTICE 'Next steps:';
+  RAISE NOTICE '1. Deploy latest frontend code: pnpm build';
+  RAISE NOTICE '2. Hard refresh browser (Ctrl + Shift + R)';
+  RAISE NOTICE '3. Try creating offer as partner';
+  RAISE NOTICE '4. Should work now!';
+  RAISE NOTICE '';
+END $$;
