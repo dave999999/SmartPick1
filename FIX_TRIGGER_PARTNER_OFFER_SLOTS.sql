@@ -148,6 +148,10 @@ FROM information_schema.triggers
 WHERE event_object_table = 'offers'
   AND trigger_name = 'trg_check_partner_offer_slots';
 
-RAISE NOTICE '==================================================';
-RAISE NOTICE 'Trigger function fixed! Now try creating an offer from the partner dashboard.';
-RAISE NOTICE '==================================================';
+-- Final success message
+DO $$
+BEGIN
+  RAISE NOTICE '==================================================';
+  RAISE NOTICE 'Trigger function fixed! Now try creating an offer from the partner dashboard.';
+  RAISE NOTICE '==================================================';
+END $$;
