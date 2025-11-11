@@ -146,9 +146,9 @@ ORDER BY tablename, policyname;
 
 -- Show SECURITY DEFINER views (these are OK)
 SELECT 
-  table_name as view_name,
-  security_type
-FROM information_schema.views
-WHERE table_schema = 'public'
-  AND security_type = 'DEFINER'
-ORDER BY table_name;
+  viewname as view_name,
+  definition
+FROM pg_views
+WHERE schemaname = 'public'
+  AND definition LIKE '%SECURITY DEFINER%'
+ORDER BY viewname;
