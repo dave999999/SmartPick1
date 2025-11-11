@@ -24,13 +24,14 @@ export function EnhancedUsersManagement({ onStatsUpdate }: EnhancedUsersManageme
   const [users, setUsers] = useState<UserPointsSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'PARTNER'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'PARTNER'>('CUSTOMER'); // Show customers by default
   
   // Modals
   const [showClaimedPointsModal, setShowClaimedPointsModal] = useState(false);
   const [showPurchaseHistoryModal, setShowPurchaseHistoryModal] = useState(false);
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [showGrantPointsDialog, setShowGrantPointsDialog] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   
   // Selected user for modals
   const [selectedUser, setSelectedUser] = useState<UserPointsSummary | null>(null);
@@ -96,6 +97,11 @@ export function EnhancedUsersManagement({ onStatsUpdate }: EnhancedUsersManageme
       internalNotes: '',
     });
     setShowBanDialog(true);
+  };
+
+  const handleViewDetails = (user: UserPointsSummary) => {
+    setSelectedUser(user);
+    setShowDetailsModal(true);
   };
 
   const confirmBan = async () => {
@@ -267,6 +273,14 @@ export function EnhancedUsersManagement({ onStatsUpdate }: EnhancedUsersManageme
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => handleViewDetails(user)}
+                          title="View Full Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleGrantPoints(user)}
                           title="Grant/Deduct Points"
                         >
@@ -427,6 +441,165 @@ export function EnhancedUsersManagement({ onStatsUpdate }: EnhancedUsersManageme
             <Button onClick={confirmGrantPoints}>
               {grantForm.points >= 0 ? 'Grant Points' : 'Deduct Points'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              User Details - {selectedUser?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Complete information about this user
+            </DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="grid gap-6 py-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-gray-600">Name</Label>
+                  <p className="font-medium">{selectedUser.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-600">Email</Label>
+                  <p className="font-medium">{selectedUser.email}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-600">Role</Label>
+                  <p>{getRoleBadge(selectedUser.role)}</p>
+                </div>
+                <div>
+                  <Label className="text-gray-600">Status</Label>
+                  <p>
+                    {selectedUser.is_banned ? (
+                      <Badge variant="destructive">BANNED</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-800">ACTIVE</Badge>
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-600">Joined Date</Label>
+                  <p className="font-medium">
+                    {new Date(selectedUser.created_at).toLocaleDateString('ka-GE', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-gray-600">Last Login</Label>
+                  <p className="font-medium">
+                    {selectedUser.last_login 
+                      ? new Date(selectedUser.last_login).toLocaleDateString('ka-GE', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      : 'Never'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Points Summary */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  💎 Points Summary
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                    <Label className="text-gray-600 text-sm">Current Balance</Label>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {selectedUser.current_points.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      ≈ ₾{(selectedUser.current_points / 100).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                    <Label className="text-gray-600 text-sm">Total Purchased</Label>
+                    <p className="text-2xl font-bold text-green-600">
+                      {selectedUser.total_purchased.toLocaleString()}
+                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 h-auto text-sm"
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleViewPurchaseHistory(selectedUser);
+                      }}
+                    >
+                      View Purchase History →
+                    </Button>
+                  </div>
+                  <div className="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                    <Label className="text-gray-600 text-sm">Total Claimed</Label>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {selectedUser.total_claimed.toLocaleString()}
+                    </p>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="p-0 h-auto text-sm"
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleViewClaimedPoints(selectedUser);
+                      }}
+                    >
+                      View Claim History →
+                    </Button>
+                  </div>
+                  <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+                    <Label className="text-gray-600 text-sm">Total Spent</Label>
+                    <p className="text-2xl font-bold text-orange-600">
+                      ₾{selectedUser.total_gel_spent.toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedUser.total_purchased.toLocaleString()} points purchased
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-3">Quick Actions</h4>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleGrantPoints(selectedUser);
+                    }}
+                  >
+                    <Gift className="h-4 w-4 mr-2" />
+                    Grant Points
+                  </Button>
+                  {!selectedUser.is_banned && (
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setShowDetailsModal(false);
+                        handleBanUser(selectedUser);
+                      }}
+                    >
+                      <Ban className="h-4 w-4 mr-2" />
+                      Ban User
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsModal(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
