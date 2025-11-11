@@ -625,6 +625,9 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Get users with points summary (for Users Management tab)
+-- Drop existing function first (return type change requires this)
+DROP FUNCTION IF EXISTS get_users_with_points_summary(VARCHAR, INTEGER, INTEGER) CASCADE;
+
 CREATE OR REPLACE FUNCTION get_users_with_points_summary(
   p_role VARCHAR DEFAULT NULL,
   p_limit INTEGER DEFAULT 100,
