@@ -10,9 +10,10 @@ import { logger } from '@/lib/logger';
 
 interface AchievementsGridProps {
   userId: string;
+  onUnclaimedCountChange?: (count: number) => void;
 }
 
-export function AchievementsGrid({ userId }: AchievementsGridProps) {
+export function AchievementsGrid({ userId, onUnclaimedCountChange }: AchievementsGridProps) {
   const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
   const [allAchievements, setAllAchievements] = useState<AchievementDefinition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +41,10 @@ export function AchievementsGrid({ userId }: AchievementsGridProps) {
       setUserAchievements(userAch);
       setAllAchievements(allAch);
       setUserStats(stats);
+      
+      // Update unclaimed count
+      const unclaimed = userAch.filter(a => !a.reward_claimed).length;
+      onUnclaimedCountChange?.(unclaimed);
     } catch (error) {
       logger.error('Error loading achievements:', error);
       toast.error('Failed to load achievements');
