@@ -59,10 +59,20 @@ export function EnhancedUsersManagement({ onStatsUpdate }: EnhancedUsersManageme
     try {
       setLoading(true);
       const role = roleFilter === 'ALL' ? null : roleFilter;
+      logger.log('EnhancedUsersManagement: Loading users with filter:', { roleFilter, role });
+      
       const data = await getUsersWithPointsSummary(role === null ? undefined : role, 1000, 0);
+      logger.log('EnhancedUsersManagement: Received data:', { count: data.length, data });
+      
       // Filter out admins
       const filtered = data.filter((u: any) => u.role !== 'ADMIN');
+      logger.log('EnhancedUsersManagement: After filtering admins:', { count: filtered.length, roles: filtered.map((u: any) => u.role) });
+      
       setUsers(filtered);
+      
+      if (filtered.length === 0 && roleFilter === 'CUSTOMER') {
+        toast.info('No customers found. You may only have partners. Try changing the filter to "Partners Only" or "All Roles".');
+      }
     } catch (error) {
       logger.error('Error loading users:', error);
       toast.error('Failed to load users');
