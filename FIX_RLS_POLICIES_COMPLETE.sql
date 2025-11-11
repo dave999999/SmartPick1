@@ -19,8 +19,6 @@ DROP POLICY IF EXISTS "offers_update_partner" ON public.offers;
 -- Ensure RLS is disabled
 ALTER TABLE public.offers DISABLE ROW LEVEL SECURITY;
 
-RAISE NOTICE '✅ Dropped all policies from offers table and disabled RLS';
-
 -- ============================================================================
 -- 2. Drop ACTUAL policies on partner_points table
 -- ============================================================================
@@ -30,14 +28,10 @@ DROP POLICY IF EXISTS "partners_view_own_points" ON public.partner_points;
 -- Ensure RLS is disabled
 ALTER TABLE public.partner_points DISABLE ROW LEVEL SECURITY;
 
-RAISE NOTICE '✅ Dropped all policies from partner_points table and disabled RLS';
-
 -- ============================================================================
 -- 3. Partners table - ensure RLS is disabled (no policies shown in output)
 -- ============================================================================
 ALTER TABLE public.partners DISABLE ROW LEVEL SECURITY;
-
-RAISE NOTICE '✅ Ensured RLS disabled on partners table';
 
 -- ============================================================================
 -- 4. Handle SECURITY DEFINER views
@@ -46,13 +40,6 @@ RAISE NOTICE '✅ Ensured RLS disabled on partners table';
 -- SECURITY DEFINER views are the correct pattern for admin/aggregation views
 -- They bypass RLS to allow controlled access to summary data
 -- We will NOT change these - they are correct as-is
-
-RAISE NOTICE '⚠️  SECURITY DEFINER views are INTENTIONAL and CORRECT:';
-RAISE NOTICE '   - daily_revenue_summary';
-RAISE NOTICE '   - admin_audit_logs';
-RAISE NOTICE '   - partner_performance_summary';
-RAISE NOTICE '   These views are designed to bypass RLS for admin dashboards.';
-RAISE NOTICE '   They are secured by application-level access control.';
 
 -- Add comments explaining why these are correct
 COMMENT ON VIEW public.daily_revenue_summary IS 
@@ -92,6 +79,23 @@ COMMENT ON TABLE public.partner_points IS
 2. API: Partner ID validation in all operations
 3. Triggers: Automatic point calculations with constraints
 Points system requires atomic operations that RLS was blocking.';
+
+-- ============================================================================
+-- Status messages
+-- ============================================================================
+DO $$
+BEGIN
+  RAISE NOTICE '✅ Dropped all policies from offers table and disabled RLS';
+  RAISE NOTICE '✅ Dropped all policies from partner_points table and disabled RLS';
+  RAISE NOTICE '✅ Ensured RLS disabled on partners table';
+  RAISE NOTICE '';
+  RAISE NOTICE '⚠️  SECURITY DEFINER views are INTENTIONAL and CORRECT:';
+  RAISE NOTICE '   - daily_revenue_summary';
+  RAISE NOTICE '   - admin_audit_logs';
+  RAISE NOTICE '   - partner_performance_summary';
+  RAISE NOTICE '   These views are designed to bypass RLS for admin dashboards.';
+  RAISE NOTICE '   They are secured by application-level access control.';
+END $$;
 
 COMMIT;
 
