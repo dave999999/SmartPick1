@@ -102,21 +102,34 @@ serve(async (req) => {
       throw new Error(`Reservation status is ${reservation.status}, must be ACTIVE`)
     }
 
+    console.log('📝 Attempting to update reservation to PICKED_UP...', {
+      reservation_id,
+      current_status: reservation.status,
+      customer_id: reservation.customer_id
+    })
+
     // Update reservation to PICKED_UP
-    const { error: updateError } = await supabaseAdmin
+    const { data: updateData, error: updateError } = await supabaseAdmin
       .from('reservations')
       .update({
         status: 'PICKED_UP',
         picked_up_at: new Date().toISOString()
       })
       .eq('id', reservation_id)
+      .select()
 
     if (updateError) {
-      console.error('Update reservation error:', updateError)
+      console.error('❌ Update reservation error:', {
+        error: updateError,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+        code: updateError.code
+      })
       throw new Error(`Failed to update reservation: ${updateError.message}`)
     }
 
-    console.log('✅ Reservation updated to PICKED_UP successfully')
+    console.log('✅ Reservation updated to PICKED_UP successfully:', updateData)
 
     // Award points to customer (5 points for completing pickup)
     const pointsToAward = reservation.points_spent || 5

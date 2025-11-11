@@ -5,6 +5,9 @@
 -- Issue: If check_user_achievements() fails, it kills the entire pickup transaction
 -- Fix: Wrap achievement checking in exception handler so pickup succeeds even if achievements fail
 
+-- Drop existing trigger first to avoid conflicts
+DROP TRIGGER IF EXISTS update_stats_on_pickup ON reservations;
+
 CREATE OR REPLACE FUNCTION update_user_stats_on_pickup()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -13,10 +16,15 @@ DECLARE
   v_partner_id UUID;
   v_pickup_date DATE;
 BEGIN
+  RAISE NOTICE '🔔 Trigger fired for reservation: %', NEW.id;
+  
   -- Only proceed if status changed to PICKED_UP
   IF NEW.status != 'PICKED_UP' OR OLD.status = 'PICKED_UP' THEN
+    RAISE NOTICE '⏭️ Skipping - status not changed to PICKED_UP';
     RETURN NEW;
   END IF;
+  
+  RAISE NOTICE '✅ Processing pickup for customer: %', NEW.customer_id;
 
   -- Use the actual pickup date
   v_pickup_date := COALESCE(NEW.picked_up_at::DATE, CURRENT_DATE);
@@ -31,57 +39,81 @@ BEGIN
   WHERE o.id = NEW.offer_id;
 
   -- Ensure user_stats record exists (create if missing)
-  INSERT INTO user_stats (user_id, last_activity_date)
-  VALUES (NEW.customer_id, v_pickup_date)
-  ON CONFLICT (user_id) DO NOTHING;
+  BEGIN
+    INSERT INTO user_stats (user_id, last_activity_date)
+    VALUES (NEW.customer_id, v_pickup_date)
+    ON CONFLICT (user_id) DO NOTHING;
+    RAISE NOTICE '✅ user_stats record ensured for user: %', NEW.customer_id;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING '⚠️ Failed to create user_stats: %', SQLERRM;
+    -- Continue anyway, UPDATE might work
+  END;
 
   -- Update user stats (use customer_id)
-  UPDATE user_stats
-  SET
-    total_reservations = total_reservations + 1,
-    total_money_saved = total_money_saved + COALESCE(v_money_saved, 0),
-    last_activity_date = v_pickup_date,
+  BEGIN
+    UPDATE user_stats
+    SET
+      total_reservations = total_reservations + 1,
+      total_money_saved = total_money_saved + COALESCE(v_money_saved, 0),
+      last_activity_date = v_pickup_date,
+      
+      -- Update category counts (for category-specific achievements)
+      category_counts = jsonb_set(
+        COALESCE(category_counts, '{}'::jsonb),
+        ARRAY[v_offer_category],
+        to_jsonb(COALESCE((category_counts->>v_offer_category)::INTEGER, 0) + 1)
+      ),
+      
+      -- Update partner visit counts (for partner loyalty achievements)
+      partner_visit_counts = jsonb_set(
+        COALESCE(partner_visit_counts, '{}'::jsonb),
+        ARRAY[v_partner_id::TEXT],
+        to_jsonb(COALESCE((partner_visit_counts->>v_partner_id::TEXT)::INTEGER, 0) + 1)
+      ),
+      
+      updated_at = now()
+    WHERE user_id = NEW.customer_id;
     
-    -- Update category counts (for category-specific achievements)
-    category_counts = jsonb_set(
-      COALESCE(category_counts, '{}'::jsonb),
-      ARRAY[v_offer_category],
-      to_jsonb(COALESCE((category_counts->>v_offer_category)::INTEGER, 0) + 1)
-    ),
-    
-    -- Update partner visit counts (for partner loyalty achievements)
-    partner_visit_counts = jsonb_set(
-      COALESCE(partner_visit_counts, '{}'::jsonb),
-      ARRAY[v_partner_id::TEXT],
-      to_jsonb(COALESCE((partner_visit_counts->>v_partner_id::TEXT)::INTEGER, 0) + 1)
-    ),
-    
-    updated_at = now()
-  WHERE user_id = NEW.customer_id;
+    IF FOUND THEN
+      RAISE NOTICE '✅ user_stats updated for user: %', NEW.customer_id;
+    ELSE
+      RAISE WARNING '⚠️ No user_stats record updated for user: %', NEW.customer_id;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING '⚠️ Failed to update user_stats: %', SQLERRM;
+  END;
 
   -- Recalculate unique partners count
-  UPDATE user_stats
-  SET unique_partners_visited = (
-    SELECT COUNT(DISTINCT key)
-    FROM jsonb_object_keys(partner_visit_counts)
-  )
-  WHERE user_id = NEW.customer_id;
+  BEGIN
+    UPDATE user_stats
+    SET unique_partners_visited = (
+      SELECT COUNT(DISTINCT key)
+      FROM jsonb_object_keys(partner_visit_counts)
+    )
+    WHERE user_id = NEW.customer_id;
+    RAISE NOTICE '✅ Unique partners count updated';
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING '⚠️ Failed to update unique partners: %', SQLERRM;
+  END;
 
   -- Update streak (wrapped in exception handler)
   BEGIN
     PERFORM update_user_streak_on_date(NEW.customer_id, v_pickup_date);
+    RAISE NOTICE '✅ Streak updated';
   EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING 'Failed to update streak for user %: %', NEW.customer_id, SQLERRM;
+    RAISE WARNING '⚠️ Failed to update streak for user %: %', NEW.customer_id, SQLERRM;
   END;
 
   -- Check for new achievements (wrapped in exception handler - NON-BLOCKING!)
   BEGIN
     PERFORM check_user_achievements(NEW.customer_id);
+    RAISE NOTICE '✅ Achievements checked';
   EXCEPTION WHEN OTHERS THEN
     -- Log error but don't fail the pickup transaction
-    RAISE WARNING 'Failed to check achievements for user %: %', NEW.customer_id, SQLERRM;
+    RAISE WARNING '⚠️ Failed to check achievements for user %: %', NEW.customer_id, SQLERRM;
   END;
 
+  RAISE NOTICE '🎉 Trigger completed successfully for reservation: %', NEW.id;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
@@ -89,3 +121,13 @@ SET search_path = public, pg_temp;
 
 COMMENT ON FUNCTION update_user_stats_on_pickup() IS 
   'Updates user gamification stats when reservation is picked up. Achievement checking is non-blocking to prevent pickup failures.';
+
+-- Recreate the trigger
+CREATE TRIGGER update_stats_on_pickup
+  AFTER UPDATE OF status ON reservations
+  FOR EACH ROW
+  WHEN (NEW.status = 'PICKED_UP' AND OLD.status != 'PICKED_UP')
+  EXECUTE FUNCTION update_user_stats_on_pickup();
+
+COMMENT ON TRIGGER update_stats_on_pickup ON reservations IS
+  'Triggers gamification updates when reservation status becomes PICKED_UP. Non-blocking achievement checks.';
