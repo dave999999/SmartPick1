@@ -287,4 +287,5 @@ export interface DailyRevenueSummary {
   total_revenue_gel: number;
   avg_purchase_gel: number;
   unique_buyers: number;
+  buyer_names?: string; // Comma-separated list of buyers
 }
