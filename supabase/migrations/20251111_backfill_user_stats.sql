@@ -48,7 +48,7 @@ BEGIN
         (v_processed::FLOAT / v_total_users * 100);
     END IF;
 
-    -- Ensure user_stats record exists
+    -- Ensure user_stats record exists (for both customers and partners who made reservations)
     INSERT INTO user_stats (user_id, last_activity_date)
     VALUES (v_user.user_id, CURRENT_DATE)
     ON CONFLICT (user_id) DO NOTHING;
