@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Edit, Trash2, CheckCircle, XCircle, Package } from 'lucide-react';
-import { getOffersPaged, updateOffer, deleteOffer, enableOffer, disableOffer } from '@/lib/admin-api';
+import { Search, Edit, Trash2, Play, Pause, Package } from 'lucide-react';
+import { getOffersPaged, updateOffer, deleteOffer, pauseOffer, resumeOffer } from '@/lib/admin-api';
 import type { Offer } from '@/lib/types';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
@@ -127,27 +127,27 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     }
   };
 
-  const handleEnable = async (offer: any) => {
+  const handleResume = async (offer: any) => {
     try {
-      await enableOffer(offer.id);
-      toast.success('Offer enabled successfully');
+      await resumeOffer(offer.id);
+      toast.success('Offer resumed successfully');
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      logger.error('Error enabling offer:', error);
-      toast.error('Failed to enable offer');
+      logger.error('Error resuming offer:', error);
+      toast.error('Failed to resume offer');
     }
   };
 
-  const handleDisable = async (offer: any) => {
+  const handlePause = async (offer: any) => {
     try {
-      await disableOffer(offer.id);
-      toast.success('Offer disabled successfully');
+      await pauseOffer(offer.id);
+      toast.success('Offer paused successfully');
       loadOffers();
       onStatsUpdate();
     } catch (error) {
-      logger.error('Error disabling offer:', error);
-      toast.error('Failed to disable offer');
+      logger.error('Error pausing offer:', error);
+      toast.error('Failed to pause offer');
     }
   };
 
@@ -155,6 +155,8 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
     switch (status) {
       case 'ACTIVE':
         return <Badge className="bg-green-100 text-green-800">Active</Badge>;
+      case 'PAUSED':
+        return <Badge className="bg-yellow-100 text-yellow-800">Paused</Badge>;
       case 'SOLD_OUT':
         return <Badge className="bg-red-100 text-red-800">Sold Out</Badge>;
       case 'DISABLED':
@@ -225,6 +227,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="PAUSED">Paused</SelectItem>
                 <SelectItem value="SOLD_OUT">Sold Out</SelectItem>
                 <SelectItem value="DISABLED">Disabled</SelectItem>
                 <SelectItem value="EXPIRED">Expired</SelectItem>
@@ -288,23 +291,25 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {offer.status === 'DISABLED' ? (
+                        {offer.status === 'PAUSED' ? (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEnable(offer)}
+                            onClick={() => handleResume(offer)}
                             className="text-green-600 hover:text-green-700"
+                            title="Resume offer"
                           >
-                            <CheckCircle className="h-4 w-4" />
+                            <Play className="h-4 w-4" />
                           </Button>
                         ) : (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDisable(offer)}
+                            onClick={() => handlePause(offer)}
                             className="text-orange-600 hover:text-orange-700"
+                            title="Pause offer"
                           >
-                            <XCircle className="h-4 w-4" />
+                            <Pause className="h-4 w-4" />
                           </Button>
                         )}
                         <Button
@@ -312,6 +317,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                           size="sm"
                           onClick={() => handleDelete(offer)}
                           className="text-red-600 hover:text-red-700"
+                          title="Delete offer"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -411,6 +417,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="PAUSED">Paused</SelectItem>
                       <SelectItem value="DISABLED">Disabled</SelectItem>
                       <SelectItem value="EXPIRED">Expired</SelectItem>
                     </SelectContent>
