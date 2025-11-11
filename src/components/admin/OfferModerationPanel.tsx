@@ -26,6 +26,7 @@ import { getAllOffers } from '@/lib/admin-api';
 import type { OfferFlag } from '@/lib/types/admin';
 import type { Offer } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export default function OfferModerationPanel() {
   const [flaggedOffers, setFlaggedOffers] = useState<OfferFlag[]>([]);

@@ -13,6 +13,7 @@ import { getCurrentUser } from '@/lib/api';
 import type { User } from '@/lib/types';
 import { toast } from 'sonner';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
+import { logger } from '@/lib/logger';
 
 interface UsersManagementProps {
   onStatsUpdate: () => void;

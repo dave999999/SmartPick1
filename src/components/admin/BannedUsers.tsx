@@ -9,6 +9,7 @@ import { UserX, Shield, AlertCircle, Clock } from 'lucide-react';
 import { getBannedUsers, unbanUser } from '@/lib/admin-api';
 import type { User } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export function BannedUsers() {
   const [bannedUsers, setBannedUsers] = useState<User[]>([]);

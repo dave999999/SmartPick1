@@ -18,6 +18,7 @@ import { getPartnersPaged, updatePartner, deletePartner, approvePartner, pausePa
 import type { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
 import { BulkActions } from './BulkActions';
+import { logger } from '@/lib/logger';
 
 interface PartnersManagementProps {
   onStatsUpdate: () => void;

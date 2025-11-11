@@ -8,6 +8,7 @@ import { UserPlus, Eye, Calendar, Users } from 'lucide-react';
 import { getNewUsers } from '@/lib/admin-api';
 import type { User } from '@/lib/types';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface NewUsersProps {
   onStatsUpdate: () => void;
