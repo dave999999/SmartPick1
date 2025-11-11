@@ -82,28 +82,9 @@ export interface SystemLog {
   created_at: string;
 }
 
-export interface PartnerPayout {
-  id: string;
-  partner_id: string;
-  period_start: string;
-  period_end: string;
-  total_revenue: number;
-  commission_rate: number;
-  commission_amount: number;
-  payout_amount: number;
-  status: 'PENDING' | 'PROCESSING' | 'PAID' | 'CANCELLED';
-  payment_method?: string;
-  payment_reference?: string;
-  processed_by?: string;
-  processed_at?: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  partner?: {
-    business_name: string;
-    business_type: string;
-  };
-}
+// REMOVED: PartnerPayout interface
+// Platform doesn't handle partner payouts - users pay partners directly via reservations
+// Platform revenue comes only from point purchases
 
 export interface UserActivity {
   id: string;
@@ -123,12 +104,13 @@ export interface UserActivity {
 }
 
 // Analytics types
+// CORRECTED: Revenue = Point Purchases (not reservation prices)
 export interface RevenueStats {
-  total_revenue: number;
-  total_reservations: number;
-  total_pickups: number;
-  average_order_value: number;
-  completion_rate: number;
+  total_revenue: number; // From point purchases only
+  total_point_purchases: number; // Number of purchase transactions
+  total_points_sold: number; // Total points sold
+  average_purchase_value: number; // Average points per purchase
+  unique_buyers: number; // Unique customers who bought points
 }
 
 export interface UserGrowthData {
@@ -137,12 +119,19 @@ export interface UserGrowthData {
   cumulative_users: number;
 }
 
+// CORRECTED: Partners don't generate platform revenue (users pay them directly)
+// Already fixed above - this duplicate removed
+
+// CORRECTED: Partners don't generate platform revenue (users pay them directly)
 export interface TopPartner {
   partner_id: string;
   business_name: string;
-  total_revenue: number;
-  total_items_sold: number;
+  business_type: string;
   total_reservations: number;
+  completed_reservations: number;
+  completion_rate: number;
+  total_offers: number;
+  average_rating: number;
 }
 
 export interface CategoryStats {

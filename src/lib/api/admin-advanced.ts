@@ -17,7 +17,6 @@ import type {
   Announcement,
   FAQ,
   SystemLog,
-  PartnerPayout,
   UserActivity,
   RevenueStats,
   UserGrowthData,
@@ -224,80 +223,9 @@ export const getPlatformRevenueStats = async (
   };
 };
 
-export const getPartnerPayouts = async (
-  status?: 'PENDING' | 'PROCESSING' | 'PAID' | 'CANCELLED'
-): Promise<PartnerPayout[]> => {
-  await checkAdminAccess();
-
-  let query = supabase
-    .from('partner_payouts')
-    .select(`
-      *,
-      partner:partners(business_name, business_type)
-    `)
-    .order('created_at', { ascending: false });
-
-  if (status) {
-    query = query.eq('status', status);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  return (data || []) as PartnerPayout[];
-};
-
-export const createPartnerPayout = async (
-  partnerId: string,
-  periodStart: string,
-  periodEnd: string,
-  commissionRate: number
-): Promise<PartnerPayout> => {
-  await checkAdminAccess();
-
-  // Calculate revenue for the period
-  const { data: reservations, error: revenueError } = await supabase
-    .from('reservations')
-    .select('total_price')
-    .eq('partner_id', partnerId)
-    .eq('status', 'PICKED_UP')
-    .gte('created_at', periodStart)
-    .lte('created_at', periodEnd);
-
-  if (revenueError) throw revenueError;
-
-  const totalRevenue = reservations?.reduce(
-    (sum, r) => sum + (r.total_price || 0),
-    0
-  ) || 0;
-
-  const commissionAmount = (totalRevenue * commissionRate) / 100;
-  const payoutAmount = totalRevenue - commissionAmount;
-
-  const { data, error } = await supabase
-    .from('partner_payouts')
-    .insert({
-      partner_id: partnerId,
-      period_start: periodStart,
-      period_end: periodEnd,
-      total_revenue: totalRevenue,
-      commission_rate: commissionRate,
-      commission_amount: commissionAmount,
-      payout_amount: payoutAmount,
-      status: 'PENDING',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  await logAdminAction('PAYOUT_CREATED', 'PAYOUT', data.id, {
-    partnerId,
-    amount: payoutAmount,
-  });
-
-  return data as PartnerPayout;
-};
+// REMOVED: Partner payout functions
+// Platform doesn't handle partner payouts - users pay partners directly
+// Platform revenue comes only from point purchases
 
 export const updatePayoutStatus = async (
   payoutId: string,
