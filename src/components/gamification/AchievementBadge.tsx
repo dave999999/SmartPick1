@@ -40,8 +40,8 @@ export function AchievementBadge({
       whileHover={{ scale: 1.05 }}
       className={`relative p-4 rounded-xl border-2 transition-all ${
         isUnlocked
-          ? 'bg-gradient-to-br from-white to-gray-50 border-[#4CC9A8] shadow-md'
-          : 'bg-gray-50 border-gray-300'
+          ? 'bg-gradient-to-br from-[#EFFFF8] via-white to-[#E8F9F3] border-[#4CC9A8] shadow-lg shadow-[#4CC9A8]/20'
+          : 'bg-gray-50 border-gray-300 opacity-75'
       }`}
     >
       {/* New Badge */}
@@ -63,14 +63,14 @@ export function AchievementBadge({
         <div
           className={`relative w-16 h-16 flex items-center justify-center rounded-full transition-all ${
             isUnlocked
-              ? 'bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9] shadow-lg'
+              ? 'bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9] shadow-lg ring-4 ring-[#4CC9A8]/30'
               : 'bg-gray-200'
           }`}
           style={isUnlocked ? { borderColor: tierColor, borderWidth: '3px', borderStyle: 'solid' } : {}}
         >
           {/* Always show the emoji */}
           <span 
-            className={`text-4xl ${!isUnlocked ? 'opacity-40 grayscale' : ''}`}
+            className={`text-4xl ${!isUnlocked ? 'opacity-40 grayscale' : 'drop-shadow-lg'}`}
             role="img" 
             aria-label={definition.name}
           >
@@ -88,6 +88,18 @@ export function AchievementBadge({
               <Sparkles className="w-4 h-4 text-yellow-400" fill="currentColor" />
             </motion.div>
           )}
+          
+          {/* Checkmark badge for achieved */}
+          {isUnlocked && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', delay: 0.1 }}
+              className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#4CC9A8] rounded-full flex items-center justify-center shadow-md"
+            >
+              <Trophy className="w-3.5 h-3.5 text-white" />
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -99,6 +111,15 @@ export function AchievementBadge({
       >
         {definition.name}
       </h4>
+
+      {/* Achieved Badge */}
+      {isUnlocked && (
+        <div className="flex justify-center mb-2">
+          <Badge className="bg-[#4CC9A8] text-white text-xs px-2 py-0.5 font-bold">
+            ✓ ACHIEVED
+          </Badge>
+        </div>
+      )}
 
       {/* Description */}
       {showDetails && (
