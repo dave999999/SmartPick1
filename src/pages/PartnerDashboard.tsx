@@ -19,6 +19,7 @@ import {
   getPartnerPoints,
   purchaseOfferSlot,
   partnerMarkNoShow,
+  partnerMarkNoShowNoPenalty,
   duplicateOffer,
   type PartnerPoints,
 } from '@/lib/api';
@@ -756,6 +757,32 @@ export default function PartnerDashboard() {
       }
     } catch (error) {
       logger.error('Error marking no-show:', error);
+      toast.error(t('toast.failedMarkNoShow'));
+    } finally {
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
+    }
+  };
+
+  const handleMarkAsNoShowNoPenalty = async (reservation: Reservation) => {
+    if (processingIds.has(reservation.id)) return;
+    
+    if (!confirm(t('confirm.markNoShowNoPenalty'))) return;
+    
+    try {
+      setProcessingIds(prev => new Set(prev).add(reservation.id));
+      // Optimistically remove
+      setReservations(prev => prev.filter(r => r.id !== reservation.id));
+      
+      const result = await partnerMarkNoShowNoPenalty(reservation.id);
+      
+      if (result.success) {
+        toast.success(`${t('toast.noShowMarkedNoPenalty')} ${result.points_refunded} ${t('toast.pointsRefunded')}`);
+        await loadPartnerData();
+      } else {
+        toast.error(t('toast.failedMarkNoShow'));
+      }
+    } catch (error) {
+      logger.error('Error marking no-show (no penalty):', error);
       toast.error(t('toast.failedMarkNoShow'));
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
@@ -1619,6 +1646,7 @@ const generate24HourOptions = (): string[] => {
               reservations={reservations}
               onMarkAsPickedUp={handleMarkAsPickedUp}
               onMarkAsNoShow={handleMarkAsNoShow}
+              onMarkAsNoShowNoPenalty={handleMarkAsNoShowNoPenalty}
               processingIds={processingIds}
             />
           </div>

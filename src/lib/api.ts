@@ -1685,6 +1685,28 @@ export const partnerMarkNoShow = async (reservationId: string): Promise<{
   }
 };
 
+export const partnerMarkNoShowNoPenalty = async (reservationId: string): Promise<{
+  success: boolean;
+  message?: string;
+  points_refunded?: number;
+}> => {
+  try {
+    const { data, error } = await supabase.rpc('partner_mark_no_show_no_penalty', {
+      p_reservation_id: reservationId
+    });
+
+    if (error) {
+      logger.error('Failed to mark no-show (no penalty)', { error, reservationId });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    logger.error('Error in partnerMarkNoShowNoPenalty', { error, reservationId });
+    throw error;
+  }
+};
+
 export const userCancelReservationWithSplit = async (reservationId: string): Promise<{
   success: boolean;
   message?: string;
