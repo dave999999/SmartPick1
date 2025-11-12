@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Reservation } from '@/lib/types';
 import { getCustomerReservations, userCancelReservationWithSplit, generateQRCodeDataURL, getCurrentUser } from '@/lib/api';
@@ -6,15 +6,47 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, MapPin, Clock, Phone, Mail } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Phone, Mail, X, Crosshair } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
+import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Fix Leaflet default icon paths (prevent broken markers)
+// Re-use pattern already present in other map components
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
+});
+
+// Helper component to imperatively recenter map
+function RecenterOnUser({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (position) {
+      map.setView(position);
+    }
+  }, [position, map]);
+  return null;
+}
 
 export default function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [timeRemaining, setTimeRemaining] = useState<string>('');
+  const [remainRatio, setRemainRatio] = useState<number>(1); // 1.0 at start → 0.0 at end
+  const [borderColor, setBorderColor] = useState<string>('#16a34a'); // default green
+  const [showQrSection, setShowQrSection] = useState<boolean>(false);
+  const [qrModalOpen, setQrModalOpen] = useState<boolean>(false);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
+  const [distanceKm, setDistanceKm] = useState<number | null>(null);
+  const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
+  const watchIdRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const { t } = useI18n();
 
@@ -62,21 +94,89 @@ export default function ReservationDetail() {
     }
   };
 
+  // Geolocation watch for live user tracking
+  useEffect(() => {
+    if (!reservation) return;
+    if (!('geolocation' in navigator)) {
+      logger.warn('Geolocation not supported');
+      return;
+    }
+    // Start watching user position
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      pos => {
+        const { latitude, longitude } = pos.coords;
+        const newLoc: [number, number] = [latitude, longitude];
+        setUserLocation(newLoc);
+      },
+      err => {
+        logger.error('Geolocation error', err);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000
+      }
+    );
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, [reservation]);
+
+  // Fetch route from OSRM when userLocation or partner changes
+  useEffect(() => {
+    const partnerLat = reservation?.partner?.latitude || reservation?.partner?.location?.latitude;
+    const partnerLng = reservation?.partner?.longitude || reservation?.partner?.location?.longitude;
+    if (!reservation || !userLocation || !partnerLat || !partnerLng) return;
+
+    const fetchRoute = async () => {
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${userLocation[1]},${userLocation[0]};${partnerLng},${partnerLat}?overview=full&geometries=geojson`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data?.routes?.[0]) {
+          const route = data.routes[0];
+          const coords: [number, number][] = route.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+          setRoutePoints(coords);
+          setDistanceKm(route.distance ? route.distance / 1000 : null);
+          setEtaMinutes(route.duration ? Math.round(route.duration / 60) : null);
+        }
+      } catch (e) {
+        logger.error('Failed to fetch route', e);
+      }
+    };
+    fetchRoute();
+  }, [userLocation, reservation]);
+
   const updateTimeRemaining = () => {
     if (!reservation) return;
 
     const now = new Date();
     const expires = new Date(reservation.expires_at);
+    const created = new Date(reservation.created_at);
     const diff = expires.getTime() - now.getTime();
 
     if (diff <= 0) {
       setTimeRemaining(t('timer.expired'));
+      setRemainRatio(0);
+      setBorderColor('#dc2626');
       return;
     }
 
     const minutes = Math.floor(diff / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
     setTimeRemaining(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+
+    // Compute remaining ratio between created_at and expires_at
+    const total = Math.max(1, expires.getTime() - created.getTime());
+    const remain = Math.max(0, diff);
+    const r = Math.min(1, Math.max(0, remain / total));
+    setRemainRatio(r);
+
+    // Map to color: green → yellow → orange → red
+    const color = r >= 0.6 ? '#16a34a' : r >= 0.35 ? '#eab308' : r >= 0.15 ? '#f97316' : '#dc2626';
+    setBorderColor(color);
   };
 
   const handleCancel = async () => {
@@ -119,6 +219,14 @@ export default function ReservationDetail() {
   const partnerLat = reservation.partner?.latitude || reservation.partner?.location?.latitude;
   const partnerLng = reservation.partner?.longitude || reservation.partner?.location?.longitude;
 
+  // Status color mapping
+  const statusColorMap: Record<string, string> = {
+    'ACTIVE': 'bg-green-600',
+    'PICKED_UP': 'bg-gray-600',
+    'EXPIRED': 'bg-red-600',
+    'CANCELLED': 'bg-orange-500'
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -138,32 +246,91 @@ export default function ReservationDetail() {
                 <CardTitle className="text-2xl">{reservation.offer?.title}</CardTitle>
                 <CardDescription>{reservation.partner?.business_name}</CardDescription>
               </div>
-              <Badge
-                variant={reservation.status === 'ACTIVE' ? 'default' : 'secondary'}
-                className={reservation.status === 'ACTIVE' ? 'bg-mint-600' : ''}
-              >
-                {reservation.status}
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge className={`${statusColorMap[reservation.status] || 'bg-gray-400'} text-white`}>{reservation.status}</Badge>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* QR Code */}
+            {/* Square Countdown Timer with Embedded QR */}
             {reservation.status === 'ACTIVE' && (
-              <div className="bg-white p-6 rounded-lg border-2 border-mint-200 text-center">
-                <p className="text-sm text-gray-600 mb-4">{t('qr.showAtPickup')}</p>
-                {qrCodeUrl && (
-                  <img src={qrCodeUrl} alt="QR Code" className="mx-auto w-64 h-64" />
-                )}
-                <p className="mt-4 text-lg font-mono font-bold text-gray-900">{reservation.qr_code}</p>
+              <div className="w-full max-w-sm mx-auto">
+                <div className="relative aspect-square rounded-xl shadow bg-white overflow-hidden">
+                  {/* Four-sided progress border */}
+                  {/* Top */}
+                  <div
+                    className="absolute top-0 left-0 h-1"
+                    style={{ width: `${Math.min(remainRatio <= 1 ? (1 - remainRatio) * 400 : 0, 100)}%`, backgroundColor: borderColor, transition: 'width 1s linear' }}
+                  />
+                  {/* Right */}
+                  {(() => {
+                    const fill = (1 - remainRatio) * 4; // 0..4
+                    const rightLen = Math.min(Math.max(fill - 1, 0), 1) * 100;
+                    const bottomLen = Math.min(Math.max(fill - 2, 0), 1) * 100;
+                    const leftLen = Math.min(Math.max(fill - 3, 0), 1) * 100;
+                    return (
+                      <>
+                        <div className="absolute top-0 right-0 w-1" style={{ height: `${rightLen}%`, backgroundColor: borderColor, transition: 'height 1s linear' }} />
+                        <div className="absolute bottom-0 left-0 h-1" style={{ width: `${bottomLen}%`, backgroundColor: borderColor, transition: 'width 1s linear' }} />
+                        <div className="absolute top-0 left-0 w-1" style={{ height: `${leftLen}%`, backgroundColor: borderColor, transition: 'height 1s linear' }} />
+                      </>
+                    );
+                  })()}
+
+                  {/* QR in center */}
+                  <button type="button" className="w-full h-full flex items-center justify-center" onClick={() => setQrModalOpen(true)}>
+                    {qrCodeUrl && (
+                      <img src={qrCodeUrl} alt="QR Code" className="w-3/5 h-3/5 object-contain" />
+                    )}
+                  </button>
+                </div>
+                {/* Time + Window */}
+                <div className="mt-3 text-center">
+                  <div className="text-lg font-bold text-gray-900">Time Left: {timeRemaining}</div>
+                  {reservation.offer && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Pickup Window: {pickupStart ? new Date(pickupStart).toLocaleTimeString() : '--'} – {pickupEnd ? new Date(pickupEnd).toLocaleTimeString() : '--'}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Countdown Timer */}
-            {reservation.status === 'ACTIVE' && (
-              <div className="bg-coral-50 p-4 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-1">{t('timer.timeRemaining')}</p>
-                <p className="text-4xl font-bold text-coral-600">{timeRemaining}</p>
-                <p className="text-xs text-gray-500 mt-1">{t('timer.waiting')}</p>
+            {/* Partner Info Card (modern) */}
+            {reservation.partner && (
+              <div className="rounded-xl border bg-white shadow-sm p-4">
+                <div className="flex items-center gap-3">
+                  {/* Avatar or initials */}
+                  <div className="w-10 h-10 rounded-full bg-mint-100 text-mint-800 flex items-center justify-center font-semibold">
+                    {(reservation.partner.business_name || 'P')
+                      .split(' ')
+                      .slice(0, 2)
+                      .map(w => w[0])
+                      .join('')}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{reservation.partner.business_name}</div>
+                    <div className="text-xs text-gray-500">
+                      {distanceKm !== null ? `${distanceKm.toFixed(2)} km` : '—'} • {etaMinutes !== null ? `${etaMinutes} min` : '—'}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {/* Keep phone/email visibility consistent with existing isAdmin gating */}
+                  <Button asChild variant="outline" className="h-9 text-xs">
+                    <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`}>Directions</a>
+                  </Button>
+                  {partnerPhone && (
+                    <Button asChild variant="outline" className="h-9 text-xs">
+                      <a href={`tel:${partnerPhone}`}>Call</a>
+                    </Button>
+                  )}
+                  {partnerEmail && (
+                    <Button asChild variant="outline" className="h-9 text-xs">
+                      <a href={`mailto:${partnerEmail}`}>Message</a>
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -198,7 +365,7 @@ export default function ReservationDetail() {
               </div>
             )}
 
-            {/* Location */}
+            {/* Location & Directions (kept) */}
             {reservation.partner && (
               <div className="border-t pt-4">
                 <div className="flex items-center gap-2 text-gray-700 mb-2">
@@ -219,22 +386,46 @@ export default function ReservationDetail() {
               </div>
             )}
 
-            {/* Contact */}
+            {/* Optional Mini Live Map Preview */}
+            {reservation.status === 'ACTIVE' && reservation.partner?.latitude && reservation.partner?.longitude && (
+              <div className="h-48 w-full overflow-hidden rounded-lg border">
+                <MapContainer
+                  center={[reservation.partner.latitude, reservation.partner.longitude]}
+                  zoom={15}
+                  scrollWheelZoom={false}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
+                  {userLocation && <Marker position={userLocation} />}
+                  {routePoints.length > 0 && (
+                    <Polyline positions={routePoints} pathOptions={{ color: '#2563eb', weight: 4 }} />
+                  )}
+                </MapContainer>
+              </div>
+            )}
+
+            {/* Contact (kept admin-only visibility) */}
             {isAdmin && (partnerPhone || partnerEmail) && (
               <div className="border-t pt-4">
                 <p className="font-medium text-gray-700 mb-2">{t('contact.partner')}</p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {partnerPhone && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span>{partnerPhone}</span>
-                    </div>
+                    <Button asChild className="w-full justify-center bg-mint-600 hover:bg-mint-700 text-white">
+                      <a href={`tel:${partnerPhone}`} className="flex items-center gap-2 text-sm">
+                        <Phone className="w-4 h-4" /> {partnerPhone}
+                      </a>
+                    </Button>
                   )}
                   {partnerEmail && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
-                      <span>{partnerEmail}</span>
-                    </div>
+                    <Button asChild variant="outline" className="w-full justify-center">
+                      <a href={`mailto:${partnerEmail}`} className="flex items-center gap-2 text-sm">
+                        <Mail className="w-4 h-4" /> {partnerEmail}
+                      </a>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -253,6 +444,28 @@ export default function ReservationDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Fullscreen Modal */}
+      {qrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="relative bg-white rounded-lg shadow-lg w-full max-w-sm p-6 flex flex-col items-center">
+            <button
+              onClick={() => setQrModalOpen(false)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {qrCodeUrl && (
+              <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64" />
+            )}
+            <div className="mt-4 text-center">
+              <p className="text-sm font-medium text-gray-700">{reservation.partner?.business_name}</p>
+              <p className="mt-1 font-mono text-xs tracking-wider text-gray-900">{reservation.qr_code}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
