@@ -66,6 +66,12 @@ BEGIN
     )
   );
 
+  -- Restore offer quantity (return items to available stock)
+  UPDATE public.offers
+  SET quantity_available = quantity_available + v_reservation.quantity,
+      updated_at = NOW()
+  WHERE id = v_reservation.offer_id;
+
   -- Mark reservation as cancelled (no-show without penalty)
   UPDATE public.reservations
   SET status = 'CANCELLED',
