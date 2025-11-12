@@ -753,11 +753,16 @@ export default function PartnerDashboard() {
         toast.success(`${t('toast.noShowMarked')} ${result.points_transferred} ${t('toast.pointsReceived')}`);
         await loadPartnerData();
       } else {
-        toast.error(t('toast.failedMarkNoShow'));
+        const errorMsg = result.message || 'Unknown error';
+        logger.error('No-show with penalty failed:', errorMsg);
+        toast.error(`Failed: ${errorMsg}`);
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
       logger.error('Error marking no-show:', error);
-      toast.error(t('toast.failedMarkNoShow'));
+      toast.error(`Error: ${errorMsg}`);
+      // Restore the reservation in UI since it failed
+      await loadPartnerData();
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
     }
@@ -779,11 +784,16 @@ export default function PartnerDashboard() {
         toast.success(`${t('toast.noShowMarkedNoPenalty')} ${result.points_refunded} ${t('toast.pointsRefunded')}`);
         await loadPartnerData();
       } else {
-        toast.error(t('toast.failedMarkNoShow'));
+        const errorMsg = result.message || 'Unknown error';
+        logger.error('No-show (no penalty) failed:', errorMsg);
+        toast.error(`Failed: ${errorMsg}`);
       }
-    } catch (error) {
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
       logger.error('Error marking no-show (no penalty):', error);
-      toast.error(t('toast.failedMarkNoShow'));
+      toast.error(`Error: ${errorMsg}`);
+      // Restore the reservation in UI since it failed
+      await loadPartnerData();
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
     }
