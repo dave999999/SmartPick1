@@ -24,7 +24,8 @@ L.Icon.Default.mergeOptions({
 });
 
 // New compact UI components
-import QRCodeCard from '@/components/reservations/QRCodeCard';
+import QRCodeModal from '@/components/reservations/QRCodeModal';
+import CountdownBar from '@/components/reservations/CountdownBar';
 import PartnerBlock from '@/components/reservations/PartnerBlock';
 
 export default function ReservationDetail() {
@@ -39,6 +40,7 @@ export default function ReservationDetail() {
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const [routeProfile, setRouteProfile] = useState<'driving' | 'walking' | 'cycling'>('driving');
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   const loadReservation = async () => {
     try {
@@ -201,20 +203,7 @@ export default function ReservationDetail() {
             </div>
           </CardHeader>
           <CardContent className="space-y-5 sm:space-y-6">
-            {/* Partner/Product block */}
-            <PartnerBlock
-              partnerName={reservation.partner?.business_name || ''}
-              productImage={(reservation.offer as any)?.image_url}
-              price={Number(reservation.total_price) || 0}
-              quantity={reservation.quantity}
-            />
-
-            {/* QR card with countdown inside the partner section area */}
-            <div>
-              <QRCodeCard qrCodeUrl={qrCodeUrl} code={reservation.qr_code} expiresAt={reservation.expires_at} />
-              <p className="mt-2 text-center text-sm sm:text-base text-gray-600">Show this QR code when you arrive at the location.</p>
-            </div>
-            {/* Map preview in rounded container */}
+            {/* Map preview in rounded container - FIRST */}
             {reservation.partner?.latitude && reservation.partner?.longitude && (
               <div className="rounded-xl overflow-hidden shadow border">
                 {/* Route profile toggle */}
@@ -268,6 +257,35 @@ export default function ReservationDetail() {
               </Button>
             )}
 
+            {/* Product details and QR code in one section */}
+            <div className="border rounded-xl p-4 sm:p-5 bg-white shadow-sm">
+              {/* Partner/Product block */}
+              <PartnerBlock
+                partnerName={reservation.partner?.business_name || ''}
+                productImage={(reservation.offer as any)?.image_url}
+                price={Number(reservation.total_price) || 0}
+                quantity={reservation.quantity}
+              />
+
+              {/* QR code - smaller, clickable */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-start gap-4">
+                  <div 
+                    onClick={() => setQrModalOpen(true)}
+                    className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 cursor-pointer hover:opacity-80 transition"
+                  >
+                    <img src={qrCodeUrl} className="w-full h-full object-contain border rounded" alt="QR Code" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-700 mb-1">Scan to pickup</div>
+                    <div className="text-xs text-gray-500 font-mono break-all mb-2">{reservation.qr_code}</div>
+                    <CountdownBar expiresAt={reservation.expires_at} />
+                  </div>
+                </div>
+                <p className="mt-3 text-center text-xs sm:text-sm text-gray-600">Show this QR code when you arrive at the location.</p>
+              </div>
+            </div>
+
             {/* Actions */}
             {reservation.status === 'ACTIVE' && (
               <Button
@@ -282,7 +300,8 @@ export default function ReservationDetail() {
         </Card>
       </div>
 
-      {/* QR modal handled inside QRCodeCard */}
+      {/* QR modal */}
+      <QRCodeModal open={qrModalOpen} onClose={() => setQrModalOpen(false)} qrCodeUrl={qrCodeUrl} />
     </div>
   );
 }
