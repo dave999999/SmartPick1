@@ -154,12 +154,18 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create a cron job to run this function every 5 minutes
--- (Requires pg_cron extension - enable in Supabase dashboard if not already)
-SELECT cron.schedule(
-  'auto-expire-failed-pickups',
-  '*/5 * * * *', -- Every 5 minutes
-  $$SELECT * FROM auto_expire_failed_pickups()$$
-);
+-- Note: To schedule automatic execution, enable pg_cron extension in Supabase:
+-- 1. Go to Database > Extensions in Supabase Dashboard
+-- 2. Enable "pg_cron" extension
+-- 3. Then run this SQL to create the cron job:
+--
+-- SELECT cron.schedule(
+--   'auto-expire-failed-pickups',
+--   '*/5 * * * *',
+--   $$SELECT * FROM auto_expire_failed_pickups()$$
+-- );
+--
+-- Alternative: Call this function from your application periodically,
+-- or set up a Supabase Edge Function with a cron trigger.
 
-COMMENT ON FUNCTION auto_expire_failed_pickups IS 'Automatically marks expired ACTIVE reservations as FAILED_PICKUP and applies penalty/ban system';
+COMMENT ON FUNCTION auto_expire_failed_pickups IS 'Automatically marks expired ACTIVE reservations as FAILED_PICKUP and applies penalty/ban system. Call this function every 5 minutes via cron or Edge Function.';
