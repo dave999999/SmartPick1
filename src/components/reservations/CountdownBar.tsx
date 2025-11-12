@@ -14,8 +14,8 @@ export default function CountdownBar({ expiresAt }: { expiresAt: string }) {
     return () => clearInterval(interval);
   }, [expiresAt]);
 
-  // Assume 30 minutes window by default unless backend provides total
-  const total = 30 * 60 * 1000;
+  // Assume 90 minutes window by default unless backend provides total
+  const total = 90 * 60 * 1000;
   const percent = Math.max(0, (timeLeft / total) * 100);
 
   const format = (ms: number) => {
