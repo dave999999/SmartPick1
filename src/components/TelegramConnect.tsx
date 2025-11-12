@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Send, Check, X, Bell, AlertCircle } from 'lucide-react';
+import { Send, Check, X, Info } from 'lucide-react';
 import { getTelegramBotLink } from '@/lib/telegram';
 import { useTelegramStatus } from '@/hooks/useTelegramStatus';
 import { toast } from 'sonner';
@@ -20,23 +19,21 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
   const handleConnect = () => {
     const botLink = getTelegramBotLink(userId);
     window.open(botLink, '_blank');
-
-    // Inform the user that status will update automatically
-    toast.info('After tapping START in Telegram, this status will update automatically.', { duration: 6000 });
+    toast.info('Tap START in Telegram, then return here', { duration: 4000 });
   };
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
     await disconnect();
-    toast.success('Telegram disconnected successfully');
+    toast.success('Telegram disconnected');
     setDisconnecting(false);
   };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-gray-500">Loading Telegram connection...</div>
+      <Card className="border-gray-200">
+        <CardContent className="py-3 px-4">
+          <div className="text-sm text-gray-500">Loading...</div>
         </CardContent>
       </Card>
     );
@@ -45,135 +42,83 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
   const isConnected = !!connected;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5 text-blue-500" />
-              Telegram Notifications
-            </CardTitle>
-            <CardDescription>
-              {userType === 'partner'
-                ? 'Get instant alerts when customers reserve your offers'
-                : 'Receive reminders and new offer alerts on Telegram'}
-            </CardDescription>
+    <Card className="border-gray-200">
+      <CardContent className="py-3 px-4">
+        <div className="space-y-3">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Send className="w-4 h-4 text-blue-500" />
+              <span className="font-medium text-sm">Telegram Notifications</span>
+            </div>
+            {isConnected && (
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                <Check className="w-3 h-3 mr-1" />
+                Connected
+              </Badge>
+            )}
           </div>
-          {isConnected && (
-            <Badge className="bg-green-100 text-green-800 border-green-300">
-              <Check className="w-3 h-3 mr-1" />
-              Connected
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
 
-      <CardContent className="space-y-4">
-        {isConnected ? (
-          <>
-            {/* Connected State */}
-            <Alert className="bg-green-50 border-green-200">
-              <Check className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-900">
-                <strong>Connected to Telegram!</strong>
-                <div className="mt-2 text-sm">
-                  {username && (
-                    <div>Username: @{username}</div>
-                  )}
-                  <div className="mt-1 text-green-700">
-                    You'll receive notifications via Telegram bot.
+          {isConnected ? (
+            <>
+              {/* Connected - Compact */}
+              <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-md p-2.5">
+                <Info className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-green-800 flex-1">
+                  {username && <div className="font-medium">@{username}</div>}
+                  <div className="text-green-700 mt-0.5">
+                    Receiving {userType === 'partner' ? 'reservation alerts' : 'pickup reminders'}
                   </div>
                 </div>
-              </AlertDescription>
-            </Alert>
+              </div>
 
-            {/* What notifications you'll receive */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                {userType === 'partner' ? "You'll receive:" : "You'll receive:"}
-              </h4>
-              <ul className="space-y-1 text-sm text-gray-700">
-                {userType === 'partner' ? (
-                  <>
-                    <li>🎉 New reservation alerts</li>
-                    <li>✅ Pickup completion confirmations</li>
-                    <li>❌ Customer no-show notifications</li>
-                    <li>⚠️ Low stock warnings</li>
-                  </>
-                ) : (
-                  <>
-                    <li>⏰ 15-minute pickup reminders</li>
-                    <li>✅ Reservation confirmations</li>
-                    <li>🎁 New offers nearby (opt-in)</li>
-                    <li>⚡ Special deals and promotions</li>
-                  </>
-                )}
-              </ul>
-            </div>
-
-            {/* Disconnect button */}
-            <div className="flex gap-2">
+              {/* Disconnect button - compact */}
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={handleDisconnect}
                 disabled={disconnecting}
-                className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                className="w-full h-8 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                <X className="w-4 h-4 mr-2" />
+                <X className="w-3 h-3 mr-1.5" />
                 {disconnecting ? 'Disconnecting...' : 'Disconnect'}
               </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Not Connected State */}
-            <Alert className="bg-blue-50 border-blue-200">
-              <AlertCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                <strong>Telegram notifications are not enabled.</strong>
-                <div className="mt-2 text-sm">
-                  Connect your Telegram to receive instant notifications about your {userType === 'partner' ? 'reservations' : 'orders'}.
-                </div>
-              </AlertDescription>
-            </Alert>
+            </>
+          ) : (
+            <>
+              {/* Not Connected - Compact */}
+              <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-md p-2.5">
+                <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-blue-800">
+                  Get instant notifications about your {userType === 'partner' ? 'reservations' : 'orders'}
+                </p>
+              </div>
 
-            {/* Benefits */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-semibold text-sm mb-2">Why connect Telegram?</h4>
-              <ul className="space-y-1 text-sm text-gray-700">
-                <li>✅ Instant notifications (faster than email)</li>
-                <li>✅ Works on all devices</li>
-                <li>✅ Free - no SMS charges</li>
-                <li>✅ Privacy-friendly</li>
-                {userType === 'partner' && (
-                  <li>✅ Never miss a reservation!</li>
-                )}
-              </ul>
-            </div>
+              {/* Connect button - compact */}
+              <Button
+                onClick={handleConnect}
+                size="sm"
+                className="w-full h-9 bg-blue-500 hover:bg-blue-600 text-white text-sm"
+              >
+                <Send className="w-3.5 h-3.5 mr-1.5" />
+                Connect Telegram
+              </Button>
 
-            {/* How to connect */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <h4 className="font-semibold text-sm mb-2 text-yellow-900">How to connect:</h4>
-              <ol className="space-y-1 text-sm text-yellow-800 list-decimal list-inside">
-                <li>Click "Connect Telegram" button below</li>
-                <li>You'll be redirected to Telegram</li>
-                <li>Click "START" in the bot chat</li>
-                <li>Come back here and refresh to confirm</li>
-              </ol>
-            </div>
-
-            {/* Connect button */}
-            <Button
-              onClick={handleConnect}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white"
-              size="lg"
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Connect Telegram
-            </Button>
-          </>
-        )}
+              {/* Instructions - collapsible on mobile */}
+              <details className="group">
+                <summary className="text-xs text-gray-600 cursor-pointer hover:text-gray-800 list-none flex items-center gap-1">
+                  <span className="group-open:rotate-90 transition-transform">▶</span>
+                  How to connect
+                </summary>
+                <ol className="mt-2 space-y-1 text-xs text-gray-600 list-decimal list-inside pl-2">
+                  <li>Click Connect Telegram</li>
+                  <li>Tap START in bot chat</li>
+                  <li>Return here to confirm</li>
+                </ol>
+              </details>
+            </>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

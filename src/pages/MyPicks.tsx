@@ -232,7 +232,10 @@ export default function MyPicks() {
       const result = await userCancelReservationWithSplit(reservationId);
       
       if (result.success) {
-        toast.success(`${t('toast.reservationCancelledSplit')} ${result.partner_received} ${t('toast.toPartner')}, ${result.user_refunded} ${t('toast.refunded')}`);
+        const pointsLost = result.points_lost || 0;
+        toast.warning(`Reservation cancelled. ${pointsLost} points lost as penalty.`, {
+          duration: 4000,
+        });
         loadReservations(); // Refresh the list
       } else {
         toast.error(t('toast.failedCancelReservation'), {

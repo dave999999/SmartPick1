@@ -73,19 +73,16 @@ RETURNS TABLE (
   total_purchases INTEGER,
   points_sold INTEGER,
   revenue_gel DECIMAL,
-  unique_buyers INTEGER,
-  buyer_names TEXT
+  unique_buyers INTEGER
 ) AS $$
 BEGIN
   RETURN QUERY
   WITH customer_purchases AS (
     SELECT
       pt.user_id,
-      u.name::TEXT as buyer_name,
       pt.change,
       DATE(pt.created_at) as purchase_date
     FROM public.point_transactions pt
-    JOIN public.users u ON u.id = pt.user_id
     WHERE pt.reason IN ('POINTS_PURCHASED', 'purchase', 'PURCHASE')
       AND pt.change > 0
       AND pt.created_at >= CURRENT_DATE - (p_days || ' days')::INTERVAL
@@ -93,11 +90,9 @@ BEGIN
   partner_purchases AS (
     SELECT
       ppt.partner_id as user_id,
-      p.business_name::TEXT as buyer_name,
       ppt.change,
       DATE(ppt.created_at) as purchase_date
     FROM public.partner_point_transactions ppt
-    JOIN public.partners p ON p.id = ppt.partner_id
     WHERE ppt.reason IN ('PURCHASE', 'purchase', 'POINTS_PURCHASED')
       AND ppt.change > 0
       AND ppt.created_at >= CURRENT_DATE - (p_days || ' days')::INTERVAL
@@ -112,8 +107,7 @@ BEGIN
     COUNT(*)::INTEGER as total_purchases,
     COALESCE(SUM(change), 0)::INTEGER as points_sold,
     (COALESCE(SUM(change), 0) / 100.0)::DECIMAL as revenue_gel,
-    COUNT(DISTINCT user_id)::INTEGER as unique_buyers,
-    STRING_AGG(DISTINCT buyer_name, ', ' ORDER BY buyer_name)::TEXT as buyer_names
+    COUNT(DISTINCT user_id)::INTEGER as unique_buyers
   FROM all_purchases
   GROUP BY purchase_date
   ORDER BY purchase_date DESC;
