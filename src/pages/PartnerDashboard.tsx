@@ -750,7 +750,7 @@ export default function PartnerDashboard() {
       const result = await partnerMarkNoShow(reservation.id);
       
       if (result.success) {
-        toast.success(`${t('toast.noShowMarked')} ${result.points_transferred} ${t('toast.pointsReceived')}`);
+        toast.success(`${t('toast.noShowMarked')} - ${result.points_lost} points lost, penalty applied`);
         await loadPartnerData();
       } else {
         const errorMsg = result.message || 'Unknown error';
@@ -781,7 +781,7 @@ export default function PartnerDashboard() {
       const result = await partnerMarkNoShowNoPenalty(reservation.id);
       
       if (result.success) {
-        toast.success(`${t('toast.noShowMarkedNoPenalty')} ${result.points_refunded} ${t('toast.pointsRefunded')}`);
+        toast.success(`No-show marked (no penalty) - ${result.points_lost} points lost`);
         await loadPartnerData();
       } else {
         const errorMsg = result.message || 'Unknown error';

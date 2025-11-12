@@ -37,15 +37,13 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'message', 'Reservation not active');
   END IF;
 
-  -- Get held points to refund
+  -- Get held points (they will be lost permanently, not refunded)
   v_points_to_refund := COALESCE(v_reservation.points_spent, 15);
 
-  -- Refund points to customer (no penalty)
-  UPDATE public.users
-  SET points_balance = points_balance + v_points_to_refund
-  WHERE id = v_reservation.customer_id;
+  -- Points are LOST permanently (no refund, no transfer to partner)
+  -- Customer loses points for not showing up, but no penalty applied
 
-  -- Log transaction
+  -- Log transaction showing points were lost
   INSERT INTO public.transactions (
     user_id,
     type,
@@ -54,15 +52,16 @@ BEGIN
     metadata
   ) VALUES (
     v_reservation.customer_id,
-    'NO_SHOW_REFUND',
-    v_points_to_refund,
-    'Points refunded - marked as no-show by partner without penalty',
+    'NO_SHOW_POINTS_LOST',
+    -v_points_to_refund,
+    'Points lost - marked as no-show by partner without additional penalty',
     jsonb_build_object(
       'reservation_id', p_reservation_id,
       'partner_id', v_reservation.partner_id,
       'offer_id', v_reservation.offer_id,
       'marked_by_partner', v_partner_user_id,
-      'no_penalty_applied', true
+      'no_penalty_applied', true,
+      'points_permanently_lost', true
     )
   );
 
@@ -80,8 +79,8 @@ BEGIN
 
   RETURN jsonb_build_object(
     'success', true, 
-    'points_refunded', v_points_to_refund,
-    'message', 'Reservation marked as no-show without penalty'
+    'points_lost', v_points_to_refund,
+    'message', 'Reservation marked as no-show without penalty - points lost permanently'
   );
 END;
 $$;

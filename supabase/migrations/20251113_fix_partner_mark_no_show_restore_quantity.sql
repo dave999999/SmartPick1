@@ -13,7 +13,9 @@ AS $$
 DECLARE
   v_partner_user_id UUID := auth.uid();
   v_reservation RECORD;
-  v_points_to_transfer INT;
+  v_points_lost INT;
+  v_penalty_count INT;
+  v_ban_duration INTERVAL;
 BEGIN
   IF v_partner_user_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
@@ -36,18 +38,69 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'message', 'Reservation not active');
   END IF;
 
-  -- Get held points
-  v_points_to_transfer := COALESCE(v_reservation.points_spent, 15);
+  -- Get held points (they will be LOST permanently, not transferred)
+  v_points_lost := COALESCE(v_reservation.points_spent, 15);
 
-  -- Transfer points to partner as penalty
-  PERFORM public.add_partner_points(
-    v_partner_user_id,
-    v_points_to_transfer,
+  -- Apply penalty: increment penalty count
+  UPDATE public.users
+  SET penalty_count = COALESCE(penalty_count, 0) + 1
+  WHERE id = v_reservation.customer_id
+  RETURNING penalty_count INTO v_penalty_count;
+
+  -- Calculate ban duration based on offense count
+  IF v_penalty_count = 1 THEN
+    v_ban_duration := INTERVAL '1 hour';
+  ELSIF v_penalty_count = 2 THEN
+    v_ban_duration := INTERVAL '24 hours';
+  ELSE
+    -- Permanent ban (100 years) for 3+ offenses
+    v_ban_duration := INTERVAL '100 years';
+    
+    -- Insert into user_bans table for permanent ban
+    INSERT INTO public.user_bans (
+      user_id,
+      reason,
+      banned_until,
+      metadata
+    ) VALUES (
+      v_reservation.customer_id,
+      'Third failed pickup - permanent ban',
+      NOW() + v_ban_duration,
+      jsonb_build_object(
+        'reservation_id', p_reservation_id,
+        'offer_id', v_reservation.offer_id,
+        'penalty_count', v_penalty_count
+      )
+    ) ON CONFLICT (user_id) DO UPDATE
+    SET banned_until = GREATEST(user_bans.banned_until, EXCLUDED.banned_until),
+        updated_at = NOW();
+  END IF;
+
+  -- Update user's banned_until timestamp
+  UPDATE public.users
+  SET banned_until = NOW() + v_ban_duration
+  WHERE id = v_reservation.customer_id;
+
+  -- Log transaction showing points were lost with penalty
+  INSERT INTO public.transactions (
+    user_id,
+    type,
+    amount,
+    description,
+    metadata
+  ) VALUES (
+    v_reservation.customer_id,
     'NO_SHOW_PENALTY',
+    -v_points_lost,
+    'Points lost - no-show penalty applied by partner',
     jsonb_build_object(
       'reservation_id', p_reservation_id,
-      'user_id', v_reservation.customer_id,
-      'offer_id', v_reservation.offer_id
+      'partner_id', v_reservation.partner_id,
+      'offer_id', v_reservation.offer_id,
+      'marked_by_partner', v_partner_user_id,
+      'penalty_applied', true,
+      'penalty_count', v_penalty_count,
+      'points_permanently_lost', true
     )
   );
 
@@ -57,13 +110,18 @@ BEGIN
       updated_at = NOW()
   WHERE id = v_reservation.offer_id;
 
-  -- Mark reservation as no-show (use CANCELLED status with metadata)
+  -- Mark reservation as FAILED_PICKUP
   UPDATE public.reservations
-  SET status = 'CANCELLED',
+  SET status = 'FAILED_PICKUP',
       user_confirmed_pickup = FALSE
   WHERE id = p_reservation_id;
 
-  RETURN jsonb_build_object('success', true, 'points_transferred', v_points_to_transfer);
+  RETURN jsonb_build_object(
+    'success', true, 
+    'points_lost', v_points_lost, 
+    'penalty_applied', true,
+    'penalty_count', v_penalty_count
+  );
 END;
 $$;
 
