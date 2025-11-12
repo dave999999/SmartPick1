@@ -252,46 +252,73 @@ export default function ReservationDetail() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Square Countdown Timer with Embedded QR */}
-            {reservation.status === 'ACTIVE' && (
-              <div className="w-full max-w-sm mx-auto">
-                <div className="relative aspect-square rounded-xl shadow bg-white overflow-hidden">
-                  {/* Four-sided progress border */}
-                  {/* Top */}
-                  <div
-                    className="absolute top-0 left-0 h-1"
-                    style={{ width: `${Math.min(remainRatio <= 1 ? (1 - remainRatio) * 400 : 0, 100)}%`, backgroundColor: borderColor, transition: 'width 1s linear' }}
-                  />
-                  {/* Right */}
-                  {(() => {
-                    const fill = (1 - remainRatio) * 4; // 0..4
-                    const rightLen = Math.min(Math.max(fill - 1, 0), 1) * 100;
-                    const bottomLen = Math.min(Math.max(fill - 2, 0), 1) * 100;
-                    const leftLen = Math.min(Math.max(fill - 3, 0), 1) * 100;
-                    return (
-                      <>
-                        <div className="absolute top-0 right-0 w-1" style={{ height: `${rightLen}%`, backgroundColor: borderColor, transition: 'height 1s linear' }} />
-                        <div className="absolute bottom-0 left-0 h-1" style={{ width: `${bottomLen}%`, backgroundColor: borderColor, transition: 'width 1s linear' }} />
-                        <div className="absolute top-0 left-0 w-1" style={{ height: `${leftLen}%`, backgroundColor: borderColor, transition: 'height 1s linear' }} />
-                      </>
-                    );
-                  })()}
-
-                  {/* QR in center */}
-                  <button type="button" className="w-full h-full flex items-center justify-center" onClick={() => setQrModalOpen(true)}>
-                    {qrCodeUrl && (
-                      <img src={qrCodeUrl} alt="QR Code" className="w-3/5 h-3/5 object-contain" />
+            {/* Top Map with circular progress overlay */}
+            {reservation.status === 'ACTIVE' && reservation.partner?.latitude && reservation.partner?.longitude && (
+              <div className="relative w-full overflow-hidden rounded-xl border">
+                <div className="h-72 w-full">
+                  <MapContainer
+                    center={[reservation.partner.latitude, reservation.partner.longitude]}
+                    zoom={15}
+                    scrollWheelZoom={false}
+                    className="h-full w-full"
+                  >
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
+                    {userLocation && <Marker position={userLocation} />}
+                    {routePoints.length > 0 && (
+                      <Polyline positions={routePoints} pathOptions={{ color: '#2563eb', weight: 5 }} />
                     )}
-                  </button>
+                  </MapContainer>
                 </div>
-                {/* Time + Window */}
-                <div className="mt-3 text-center">
-                  <div className="text-lg font-bold text-gray-900">Time Left: {timeRemaining}</div>
-                  {reservation.offer && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Pickup Window: {pickupStart ? new Date(pickupStart).toLocaleTimeString() : '--'} – {pickupEnd ? new Date(pickupEnd).toLocaleTimeString() : '--'}
+
+                {/* Circular progress ring overlay */}
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-[-56px] sm:bottom-[-64px]">
+                  <div className="relative bg-white shadow-lg rounded-full w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
+                    {/* Background ring */}
+                    {(() => {
+                      const radius = 80; // visual radius in px for SVG viewBox
+                      const circumference = 2 * Math.PI * radius;
+                      const offset = circumference * (1 - remainRatio);
+                      return (
+                        <svg width="180" height="180" viewBox="0 0 200 200" className="absolute">
+                          <circle cx="100" cy="100" r="80" stroke="#e5e7eb" strokeWidth="14" fill="none" />
+                          <circle
+                            cx="100"
+                            cy="100"
+                            r="80"
+                            stroke={borderColor}
+                            strokeWidth="14"
+                            strokeLinecap="round"
+                            fill="none"
+                            strokeDasharray={`${circumference}`}
+                            strokeDashoffset={`${offset}`}
+                            transform="rotate(-90 100 100)"
+                          />
+                        </svg>
+                      );
+                    })()}
+
+                    <div className="text-center px-4">
+                      <div className="text-3xl sm:text-4xl font-extrabold text-gray-900 tabular-nums">{timeRemaining}</div>
+                      <div className="text-[11px] text-gray-500 mt-1">{t('timer.waiting')}</div>
+                      <Button size="sm" variant="outline" className="mt-2 h-8 text-xs" onClick={() => setQrModalOpen(true)}>
+                        Show QR
+                      </Button>
                     </div>
-                  )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pickup window under overlay */}
+            {reservation.status === 'ACTIVE' && (
+              <div className="mt-16 text-center">
+                <div className="text-xs text-gray-600">Pickup Window</div>
+                <div className="text-sm text-gray-900 font-medium">
+                  {pickupStart ? new Date(pickupStart).toLocaleTimeString() : '--'} – {pickupEnd ? new Date(pickupEnd).toLocaleTimeString() : '--'}
                 </div>
               </div>
             )}
@@ -386,27 +413,6 @@ export default function ReservationDetail() {
               </div>
             )}
 
-            {/* Optional Mini Live Map Preview */}
-            {reservation.status === 'ACTIVE' && reservation.partner?.latitude && reservation.partner?.longitude && (
-              <div className="h-48 w-full overflow-hidden rounded-lg border">
-                <MapContainer
-                  center={[reservation.partner.latitude, reservation.partner.longitude]}
-                  zoom={15}
-                  scrollWheelZoom={false}
-                  className="h-full w-full"
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
-                  {userLocation && <Marker position={userLocation} />}
-                  {routePoints.length > 0 && (
-                    <Polyline positions={routePoints} pathOptions={{ color: '#2563eb', weight: 4 }} />
-                  )}
-                </MapContainer>
-              </div>
-            )}
 
             {/* Contact (kept admin-only visibility) */}
             {isAdmin && (partnerPhone || partnerEmail) && (
