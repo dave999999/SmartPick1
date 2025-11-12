@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
@@ -232,17 +232,40 @@ export default function ReservationDetail() {
                     <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
                     {userLocation && <Marker position={userLocation} />}
                     {routePoints.length > 1 ? (
-                      <Polyline positions={routePoints} pathOptions={{ color: '#2563eb', weight: 4 }} />
+                      <Polyline 
+                        positions={routePoints} 
+                        pathOptions={{ 
+                          color: '#2563eb', 
+                          weight: 4,
+                          opacity: 0.8,
+                          dashArray: '10, 5',
+                          className: 'animate-pulse'
+                        }} 
+                      />
                     ) : userLocation ? (
-                      <Polyline positions={[userLocation, [reservation.partner.latitude, reservation.partner.longitude]]} pathOptions={{ color: '#2563eb', weight: 4 }} />
+                      <Polyline 
+                        positions={[userLocation, [reservation.partner.latitude, reservation.partner.longitude]]} 
+                        pathOptions={{ 
+                          color: '#2563eb', 
+                          weight: 4,
+                          opacity: 0.7,
+                          dashArray: '10, 5'
+                        }} 
+                      />
                     ) : null}
                   </MapContainer>
                 </div>
                 {(distanceKm !== null || etaMinutes !== null) && (
-                  <div className="px-4 py-2 text-sm text-gray-700 border-t bg-white">
-                    {distanceKm !== null && <span>{distanceKm.toFixed(1)} km</span>}
-                    {distanceKm !== null && etaMinutes !== null && <span> • </span>}
-                    {etaMinutes !== null && <span>ETA {etaMinutes} min</span>}
+                  <div className="px-4 py-2 text-sm border-t bg-gradient-to-r from-blue-50 to-white flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                      <span className="text-gray-700 font-medium">Live tracking</span>
+                    </div>
+                    <div className="text-gray-700">
+                      {distanceKm !== null && <span className="font-semibold">{distanceKm.toFixed(1)} km</span>}
+                      {distanceKm !== null && etaMinutes !== null && <span className="mx-1">•</span>}
+                      {etaMinutes !== null && <span className="font-semibold">{etaMinutes} min</span>}
+                    </div>
                   </div>
                 )}
               </div>
@@ -300,8 +323,21 @@ export default function ReservationDetail() {
         </Card>
       </div>
 
-      {/* QR modal */}
-      <QRCodeModal open={qrModalOpen} onClose={() => setQrModalOpen(false)} qrCodeUrl={qrCodeUrl} />
+      {/* QR modal - outside main container for proper z-index */}
+      {qrModalOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setQrModalOpen(false)}>
+          <div className="relative bg-white rounded-xl p-3 sm:p-4 max-w-xs sm:max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setQrModalOpen(false)}
+              className="absolute top-2 right-2 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <img src={qrCodeUrl} className="w-full h-full object-contain rounded" alt="QR Code" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
