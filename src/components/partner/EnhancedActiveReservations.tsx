@@ -200,7 +200,7 @@ export default function EnhancedActiveReservations({
                           ) : (
                             <>
                               <XCircle className="w-4 h-4 mr-2" />
-                              No-Show (Penalty)
+                              Apply Penalty
                             </>
                           )}
                         </Button>
@@ -218,7 +218,7 @@ export default function EnhancedActiveReservations({
                           ) : (
                             <>
                               <XCircle className="w-4 h-4 mr-2" />
-                              No-Show (No Penalty)
+                              No Penalty
                             </>
                           )}
                         </Button>
