@@ -166,7 +166,10 @@ export default function PartnerDashboard() {
 
         {/* Stats Cards */}
         <EnhancedStatsCards
-          stats={stats}
+          stats={{
+            ...stats,
+            revenue: analytics.revenue
+          }}
           partnerPoints={partnerPoints}
           onBuyPoints={() => setIsBuyPointsModalOpen(true)}
         />
