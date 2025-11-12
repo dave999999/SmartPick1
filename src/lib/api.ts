@@ -1666,7 +1666,9 @@ export const userConfirmPickup = async (reservationId: string): Promise<{
 export const partnerMarkNoShow = async (reservationId: string): Promise<{
   success: boolean;
   message?: string;
-  points_transferred?: number;
+  points_lost?: number;
+  penalty_applied?: boolean;
+  penalty_count?: number;
 }> => {
   try {
     const { data, error } = await supabase.rpc('partner_mark_no_show', {
@@ -1688,7 +1690,7 @@ export const partnerMarkNoShow = async (reservationId: string): Promise<{
 export const partnerMarkNoShowNoPenalty = async (reservationId: string): Promise<{
   success: boolean;
   message?: string;
-  points_refunded?: number;
+  points_lost?: number;
 }> => {
   try {
     const { data, error } = await supabase.rpc('partner_mark_no_show_no_penalty', {
