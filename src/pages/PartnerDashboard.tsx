@@ -18,8 +18,8 @@ import {
   resolveOfferImageUrl,
   getPartnerPoints,
   purchaseOfferSlot,
-  partnerMarkNoShow,
-  partnerMarkNoShowNoPenalty,
+  partnerConfirmNoShow,
+  partnerForgiveCustomer,
   duplicateOffer,
   type PartnerPoints,
 } from '@/lib/api';
@@ -737,62 +737,62 @@ export default function PartnerDashboard() {
   }
 };
 
-  const handleMarkAsNoShow = async (reservation: Reservation) => {
+  const handleConfirmNoShow = async (reservation: Reservation) => {
     if (processingIds.has(reservation.id)) return;
     
-    if (!confirm(t('confirm.markNoShow'))) return;
-    
-    try {
-      setProcessingIds(prev => new Set(prev).add(reservation.id));
-      // Optimistically remove to prevent multiple penalty applications
-      setReservations(prev => prev.filter(r => r.id !== reservation.id));
-      
-      const result = await partnerMarkNoShow(reservation.id);
-      
-      if (result.success) {
-        toast.success(`${t('toast.noShowMarked')} - ${result.points_lost} points lost, penalty applied`);
-        await loadPartnerData();
-      } else {
-        const errorMsg = result.message || 'Unknown error';
-        logger.error('No-show with penalty failed:', errorMsg);
-        toast.error(`Failed: ${errorMsg}`);
-      }
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      logger.error('Error marking no-show:', error);
-      toast.error(`Error: ${errorMsg}`);
-      // Restore the reservation in UI since it failed
-      await loadPartnerData();
-    } finally {
-      setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
-    }
-  };
-
-  const handleMarkAsNoShowNoPenalty = async (reservation: Reservation) => {
-    if (processingIds.has(reservation.id)) return;
-    
-    if (!confirm(t('confirm.markNoShowNoPenalty'))) return;
+    if (!confirm('Confirm this customer did not show up? (Penalty will be kept)')) return;
     
     try {
       setProcessingIds(prev => new Set(prev).add(reservation.id));
       // Optimistically remove
       setReservations(prev => prev.filter(r => r.id !== reservation.id));
       
-      const result = await partnerMarkNoShowNoPenalty(reservation.id);
+      const result = await partnerConfirmNoShow(reservation.id);
       
       if (result.success) {
-        toast.success(`No-show marked (no penalty) - ${result.points_lost} points lost`);
+        toast.success('No-show confirmed');
         await loadPartnerData();
       } else {
         const errorMsg = result.message || 'Unknown error';
-        logger.error('No-show (no penalty) failed:', errorMsg);
+        logger.error('Confirm no-show failed:', errorMsg);
         toast.error(`Failed: ${errorMsg}`);
+        await loadPartnerData();
       }
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
-      logger.error('Error marking no-show (no penalty):', error);
+      logger.error('Error confirming no-show:', error);
       toast.error(`Error: ${errorMsg}`);
-      // Restore the reservation in UI since it failed
+      await loadPartnerData();
+    } finally {
+      setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
+    }
+  };
+
+  const handleForgiveCustomer = async (reservation: Reservation) => {
+    if (processingIds.has(reservation.id)) return;
+    
+    if (!confirm('Forgive this customer and remove their penalty?')) return;
+    
+    try {
+      setProcessingIds(prev => new Set(prev).add(reservation.id));
+      // Optimistically remove
+      setReservations(prev => prev.filter(r => r.id !== reservation.id));
+      
+      const result = await partnerForgiveCustomer(reservation.id);
+      
+      if (result.success) {
+        toast.success('Customer forgiven - penalty removed');
+        await loadPartnerData();
+      } else {
+        const errorMsg = result.message || 'Unknown error';
+        logger.error('Forgive customer failed:', errorMsg);
+        toast.error(`Failed: ${errorMsg}`);
+        await loadPartnerData();
+      }
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
+      logger.error('Error forgiving customer:', error);
+      toast.error(`Error: ${errorMsg}`);
       await loadPartnerData();
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
@@ -1655,8 +1655,8 @@ const generate24HourOptions = (): string[] => {
             <EnhancedActiveReservations
               reservations={reservations}
               onMarkAsPickedUp={handleMarkAsPickedUp}
-              onMarkAsNoShow={handleMarkAsNoShow}
-              onMarkAsNoShowNoPenalty={handleMarkAsNoShowNoPenalty}
+              onConfirmNoShow={handleConfirmNoShow}
+              onForgiveCustomer={handleForgiveCustomer}
               processingIds={processingIds}
             />
           </div>

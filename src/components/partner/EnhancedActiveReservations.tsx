@@ -11,16 +11,16 @@ type ExtendedReservation = Reservation & { customer?: { name?: string; phone?: s
 interface EnhancedActiveReservationsProps {
   reservations: ExtendedReservation[];
   onMarkAsPickedUp: (r: Reservation) => void;
-  onMarkAsNoShow: (r: Reservation) => void;
-  onMarkAsNoShowNoPenalty: (r: Reservation) => void;
+  onConfirmNoShow: (r: Reservation) => void;
+  onForgiveCustomer: (r: Reservation) => void;
   processingIds: Set<string>;
 }
 
 export default function EnhancedActiveReservations({
   reservations,
   onMarkAsPickedUp,
-  onMarkAsNoShow,
-  onMarkAsNoShowNoPenalty,
+  onConfirmNoShow,
+  onForgiveCustomer,
   processingIds,
 }: EnhancedActiveReservationsProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -187,7 +187,7 @@ export default function EnhancedActiveReservations({
                       {/* No-Show buttons */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Button
-                          onClick={() => onMarkAsNoShow(reservation)}
+                          onClick={() => onConfirmNoShow(reservation)}
                           disabled={isProcessing}
                           variant="destructive"
                           className="w-full h-11"
@@ -200,25 +200,25 @@ export default function EnhancedActiveReservations({
                           ) : (
                             <>
                               <XCircle className="w-4 h-4 mr-2" />
-                              Apply Penalty
+                              Confirm No-Show
                             </>
                           )}
                         </Button>
                         <Button
-                          onClick={() => onMarkAsNoShowNoPenalty(reservation)}
+                          onClick={() => onForgiveCustomer(reservation)}
                           disabled={isProcessing}
                           variant="outline"
-                          className="w-full h-11 border-orange-400 text-orange-700 hover:bg-orange-50"
+                          className="w-full h-11 border-green-400 text-green-700 hover:bg-green-50"
                         >
                           {isProcessing ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-700 mr-2"></div>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700 mr-2"></div>
                               Processing...
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-4 h-4 mr-2" />
-                              No Penalty
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Forgive Customer
                             </>
                           )}
                         </Button>

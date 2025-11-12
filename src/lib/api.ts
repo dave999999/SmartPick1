@@ -1663,48 +1663,45 @@ export const userConfirmPickup = async (reservationId: string): Promise<{
   }
 };
 
-export const partnerMarkNoShow = async (reservationId: string): Promise<{
+export const partnerConfirmNoShow = async (reservationId: string): Promise<{
   success: boolean;
   message?: string;
-  points_lost?: number;
-  penalty_applied?: boolean;
-  penalty_count?: number;
 }> => {
   try {
-    const { data, error } = await supabase.rpc('partner_mark_no_show', {
+    const { data, error } = await supabase.rpc('partner_confirm_no_show', {
       p_reservation_id: reservationId
     });
 
     if (error) {
-      logger.error('Failed to mark no-show', { error, reservationId });
+      logger.error('Failed to confirm no-show', { error, reservationId });
       throw error;
     }
 
     return data;
   } catch (error) {
-    logger.error('Error in partnerMarkNoShow', { error, reservationId });
+    logger.error('Error in partnerConfirmNoShow', { error, reservationId });
     throw error;
   }
 };
 
-export const partnerMarkNoShowNoPenalty = async (reservationId: string): Promise<{
+export const partnerForgiveCustomer = async (reservationId: string): Promise<{
   success: boolean;
   message?: string;
-  points_lost?: number;
+  penalty_removed?: boolean;
 }> => {
   try {
-    const { data, error } = await supabase.rpc('partner_mark_no_show_no_penalty', {
+    const { data, error } = await supabase.rpc('partner_forgive_customer', {
       p_reservation_id: reservationId
     });
 
     if (error) {
-      logger.error('Failed to mark no-show (no penalty)', { error, reservationId });
+      logger.error('Failed to forgive customer', { error, reservationId });
       throw error;
     }
 
     return data;
   } catch (error) {
-    logger.error('Error in partnerMarkNoShowNoPenalty', { error, reservationId });
+    logger.error('Error in partnerForgiveCustomer', { error, reservationId });
     throw error;
   }
 };
