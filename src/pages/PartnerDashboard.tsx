@@ -167,11 +167,11 @@ export default function PartnerDashboard() {
         {/* Stats Cards */}
         <EnhancedStatsCards
           stats={{
-            ...stats,
+            activeOffers: stats.activeOffers,
+            reservationsToday: stats.reservationsToday,
+            itemsPickedUp: stats.itemsPickedUp,
             revenue: analytics.revenue
           }}
-          partnerPoints={partnerPoints}
-          onBuyPoints={() => setIsBuyPointsModalOpen(true)}
         />
 
         {/* Quick Actions */}
