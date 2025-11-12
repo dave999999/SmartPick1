@@ -536,9 +536,9 @@ export const createReservation = async (
   const randomPart = crypto.randomUUID().substring(0, 8).toUpperCase();
   const qrCode = `SP-${timestamp.toString(36).toUpperCase()}-${randomPart}`;
 
-  // Set expiration to 30 minutes from now
+  // Set expiration to 90 minutes from now (1.5 hours)
   const expiresAt = new Date();
-  expiresAt.setMinutes(expiresAt.getMinutes() + 30);
+  expiresAt.setMinutes(expiresAt.getMinutes() + 90);
 
   // Get offer to calculate price
   const offer = await getOfferById(offerId);

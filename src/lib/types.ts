@@ -1,7 +1,7 @@
 export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN';
 export type BusinessType = 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL';
 export type OfferStatus = 'ACTIVE' | 'EXPIRED' | 'PAUSED' | 'SOLD_OUT' | 'SCHEDULED';
-export type ReservationStatus = 'ACTIVE' | 'PICKED_UP' | 'CANCELLED' | 'EXPIRED';
+export type ReservationStatus = 'ACTIVE' | 'PICKED_UP' | 'CANCELLED' | 'EXPIRED' | 'FAILED_PICKUP';
 export type PartnerStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'BLOCKED' | 'PAUSED';
 
 export interface User {
