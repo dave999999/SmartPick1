@@ -12,6 +12,7 @@ interface EnhancedActiveReservationsProps {
   reservations: ExtendedReservation[];
   onMarkAsPickedUp: (r: Reservation) => void;
   onMarkAsNoShow: (r: Reservation) => void;
+  onMarkAsNoShowNoPenalty: (r: Reservation) => void;
   processingIds: Set<string>;
 }
 
@@ -19,6 +20,7 @@ export default function EnhancedActiveReservations({
   reservations,
   onMarkAsPickedUp,
   onMarkAsNoShow,
+  onMarkAsNoShowNoPenalty,
   processingIds,
 }: EnhancedActiveReservationsProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -157,31 +159,33 @@ export default function EnhancedActiveReservations({
 
                   {/* Action Buttons */}
                   {isExpired(reservation.expires_at) ? (
-                    // Show both buttons for expired reservations
+                    // Show three buttons for expired reservations
                     <div className="space-y-2">
                       <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
                         <p className="text-xs text-red-700 font-medium text-center">
                           ⚠️ This reservation has expired
                         </p>
                       </div>
+                      {/* Picked Up button */}
+                      <Button
+                        onClick={() => onMarkAsPickedUp(reservation)}
+                        disabled={isProcessing}
+                        className="w-full bg-green-600 hover:bg-green-700 h-11"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Picked Up
+                          </>
+                        )}
+                      </Button>
+                      {/* No-Show buttons */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <Button
-                          onClick={() => onMarkAsPickedUp(reservation)}
-                          disabled={isProcessing}
-                          className="w-full bg-green-600 hover:bg-green-700 h-11"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Picked Up
-                            </>
-                          )}
-                        </Button>
                         <Button
                           onClick={() => onMarkAsNoShow(reservation)}
                           disabled={isProcessing}
@@ -196,7 +200,25 @@ export default function EnhancedActiveReservations({
                           ) : (
                             <>
                               <XCircle className="w-4 h-4 mr-2" />
-                              Didn't Show Up
+                              No-Show (Penalty)
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => onMarkAsNoShowNoPenalty(reservation)}
+                          disabled={isProcessing}
+                          variant="outline"
+                          className="w-full h-11 border-orange-400 text-orange-700 hover:bg-orange-50"
+                        >
+                          {isProcessing ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-700 mr-2"></div>
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 mr-2" />
+                              No-Show (No Penalty)
                             </>
                           )}
                         </Button>
