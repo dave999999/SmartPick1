@@ -296,7 +296,14 @@ export function formatTransactionReason(reason: string): string {
     'refund': '↩️ Refund',
     'admin_adjustment': '⚙️ Admin Adjustment',
     'referral': '👥 Referral Bonus',
-    'streak_bonus': '🔥 Streak Bonus'
+    'streak_bonus': '🔥 Streak Bonus',
+    // Escrow + partner-specific reasons
+    'RESERVATION_CREATED': '🛍️ Reservation Created',
+    'RESERVATION_HOLD': '🔒 Points Held for Reservation',
+    'RESERVATION_FAILED_REFUND': '↩️ Reservation Failed (Refunded)',
+    'PICKUP_REWARD': '✅ Partner Pickup Reward',
+    'CANCELLATION_REFUND': '↩️ Cancellation Refund',
+    'CANCELLATION_FEE': '⚠️ Cancellation Fee (Partner)'
   };
 
   return reasonMap[reason] || reason;

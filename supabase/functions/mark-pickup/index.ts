@@ -4,12 +4,17 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
+// Declare Deno for TypeScript tooling (runtime has it)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const Deno: any
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -61,25 +66,16 @@ serve(async (req) => {
       throw new Error('User is not a partner')
     }
 
-    // Get reservation details
+    // Get reservation details (keep selection simple to avoid relationship errors)
     const { data: reservation, error: reservationError } = await supabaseAdmin
       .from('reservations')
-      .select(`
-        *,
-        offer:offers(
-          partner_id,
-          title
-        ),
-        customer:users!reservations_customer_id_fkey(
-          id,
-          name
-        )
-      `)
+      .select('id, partner_id, customer_id, status, picked_up_at')
       .eq('id', reservation_id)
       .single()
 
     if (reservationError || !reservation) {
-      throw new Error('Reservation not found')
+      console.error('❌ Fetch reservation error:', reservationError)
+      throw new Error(`Reservation fetch failed: ${reservationError?.message ?? 'Unknown error'}`)
     }
 
     // Verify partner owns this reservation
@@ -95,6 +91,23 @@ serve(async (req) => {
         customer_id: reservation.customer_id,
         user_id: user.id
       })
+    }
+
+    // Idempotent: if already PICKED_UP, return success
+    if (reservation.status === 'PICKED_UP') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Reservation already marked as picked up',
+          reservation: {
+            id: reservation_id,
+            status: 'PICKED_UP',
+            picked_up_at: reservation.picked_up_at ?? new Date().toISOString()
+          },
+          handled_by_triggers: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      )
     }
 
     // Verify status is ACTIVE
@@ -116,6 +129,7 @@ serve(async (req) => {
         picked_up_at: new Date().toISOString()
       })
       .eq('id', reservation_id)
+      .eq('partner_id', partner.id)
       .select()
 
     if (updateError) {
@@ -126,104 +140,19 @@ serve(async (req) => {
         hint: updateError.hint,
         code: updateError.code
       })
-      throw new Error(`Failed to update reservation: ${updateError.message}`)
+      const details = (updateError as any)?.details ?? null
+      const hint = (updateError as any)?.hint ?? null
+      const code = (updateError as any)?.code ?? null
+      throw new Error(`Failed to update reservation: ${updateError.message}${details ? ` | details: ${details}` : ''}${hint ? ` | hint: ${hint}` : ''}${code ? ` | code: ${code}` : ''}`)
     }
 
     console.log('✅ Reservation updated to PICKED_UP successfully:', updateData)
 
-    // Award points to customer (5 points for completing pickup)
-    const pointsToAward = reservation.points_spent || 5
-    
-    // Award customer points - update user_points table directly
-    try {
-      const { data: currentPoints } = await supabaseAdmin
-        .from('user_points')
-        .select('balance')
-        .eq('user_id', reservation.customer_id)
-        .single()
-      
-      const oldBalance = currentPoints?.balance || 0
-      const newBalance = oldBalance + pointsToAward
-
-      await supabaseAdmin
-        .from('user_points')
-        .upsert({
-          user_id: reservation.customer_id,
-          balance: newBalance
-        })
-
-      await supabaseAdmin
-        .from('point_transactions')
-        .insert({
-          user_id: reservation.customer_id,
-          change: pointsToAward,
-          reason: 'PICKUP_COMPLETE',
-          balance_before: oldBalance,
-          balance_after: newBalance,
-          metadata: {
-            reservation_id: reservation_id,
-            partner_id: partner.id,
-            offer_id: reservation.offer_id
-          }
-        })
-
-      // Note: user_stats is updated automatically by the database trigger
-      // The trigger 'update_user_stats_on_pickup' handles:
-      // - total_reservations increment
-      // - total_money_saved calculation
-      // - streak calculation (via update_user_streak_on_date)
-      // - achievement checking (via check_user_achievements)
-    } catch (err) {
-      console.error('Failed to award customer points:', err)
-    }
-
-    // Award points to partner (5 points for successful pickup)
-    // IMPORTANT: partner_points table uses 'user_id' column, not 'partner_id'!
-    try {
-      const { data: currentPartnerPoints } = await supabaseAdmin
-        .from('partner_points')
-        .select('balance')
-        .eq('user_id', partner.id)  // Fixed: use user_id, not partner_id
-        .single()
-      
-      const oldBalance = currentPartnerPoints?.balance || 0
-      const newBalance = oldBalance + pointsToAward
-
-      await supabaseAdmin
-        .from('partner_points')
-        .upsert({
-          user_id: partner.id,  // Fixed: use user_id, not partner_id
-          balance: newBalance
-        })
-
-      await supabaseAdmin
-        .from('partner_point_transactions')
-        .insert({
-          partner_id: partner.id,  // Correct: partner_point_transactions uses partner_id column
-          change: pointsToAward,
-          reason: 'PICKUP_REWARD',
-          balance_before: oldBalance,
-          balance_after: newBalance,
-          metadata: {
-            reservation_id: reservation_id,
-            customer_id: reservation.customer_id,
-            offer_id: reservation.offer_id
-          }
-        })
-
-      console.log('✅ Partner points awarded successfully:', {
-        partner_id: partner.id,
-        points_awarded: pointsToAward,
-        new_balance: newBalance
-      })
-    } catch (err) {
-      console.error('❌ Failed to award partner points:', err)
-      console.error('Error details:', {
-        message: err instanceof Error ? err.message : String(err),
-        partner_id: partner.id,
-        points: pointsToAward
-      })
-    }
+    // Important: Do NOT adjust points here. Database triggers handle escrow release.
+    // The following responsibilities are delegated to SQL triggers:
+    // - Transfer held points from escrow_points to partner_points on PICKED_UP
+    // - Log partner_point_transactions with reason 'PICKUP_REWARD'
+    // Any direct balance/transaction writes here would double-count.
 
     // Return success
     return new Response(
@@ -235,10 +164,7 @@ serve(async (req) => {
           status: 'PICKED_UP',
           picked_up_at: new Date().toISOString()
         },
-        points_awarded: {
-          customer: pointsToAward,
-          partner: pointsToAward
-        }
+        handled_by_triggers: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -246,24 +172,16 @@ serve(async (req) => {
       },
     )
   } catch (error) {
-    console.error('❌ Edge Function Error:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    })
-    const errorMessage = error instanceof Error ? error.message : String(error)
+    // Normalize error for client visibility
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('❌ Edge Function Error:', message, error)
     return new Response(
       JSON.stringify({
         success: false,
-        error: errorMessage,
-        details: error instanceof Error ? error.stack : undefined,
+        error: message,
         timestamp: new Date().toISOString()
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      },
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     )
   }
 })

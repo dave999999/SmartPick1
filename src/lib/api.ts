@@ -1690,6 +1690,7 @@ export const userCancelReservationWithSplit = async (reservationId: string): Pro
   message?: string;
   partner_received?: number;
   user_refunded?: number;
+  points_lost?: number;
 }> => {
   try {
     const { data, error } = await supabase.rpc('user_cancel_reservation_split', {

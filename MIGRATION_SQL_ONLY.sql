@@ -1,5 +1,5 @@
--- SIMPLIFIED PICKUP TRIGGER: Skip escrow entirely, use only points_spent
--- This version is guaranteed to work with existing schema
+-- Fix pickup trigger: remove illegal FOR UPDATE on aggregate SUM and keep idempotency
+-- Also keep fixed search_path and escrow release logic
 
 BEGIN;
 
@@ -11,6 +11,8 @@ SET search_path = public
 AS $$
 DECLARE
   v_partner_user_id UUID;
+  v_points_spent INT;
+  v_points_held INT;
   v_points_to_transfer INT;
   v_tx_exists BOOLEAN := FALSE;
 BEGIN
@@ -30,8 +32,19 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- Get points from reservation.points_spent (no escrow queries)
-  v_points_to_transfer := COALESCE(NEW.points_spent, GREATEST(0, COALESCE(NEW.quantity, 0) * 5));
+  -- Get held points from escrow for this reservation (no FOR UPDATE on aggregate)
+  SELECT COALESCE(SUM(e.amount_held), 0) INTO v_points_held
+  FROM public.escrow_points e
+  WHERE e.reservation_id = NEW.id AND e.status = 'HELD';
+
+  -- Fallback to points_spent stored on the reservation if escrow row not found
+  v_points_spent := COALESCE(NEW.points_spent, 0);
+
+  v_points_to_transfer := CASE
+    WHEN v_points_held > 0 THEN v_points_held
+    WHEN v_points_spent > 0 THEN v_points_spent
+    ELSE GREATEST(0, COALESCE(NEW.quantity, 0) * 5)
+  END;
 
   IF v_points_to_transfer <= 0 THEN
     RAISE NOTICE 'transfer_points_to_partner_on_pickup: no points to transfer for reservation_id=%', NEW.id;
@@ -43,13 +56,32 @@ BEGIN
     SELECT 1
     FROM public.partner_point_transactions ppt
     WHERE ppt.partner_id = v_partner_user_id
-      AND ppt.metadata ->> 'reservation_id' = NEW.id::text
-      AND ppt.reason IN ('PICKUP_REWARD', 'reservation_pickup')
+      AND (
+        (ppt.reason = 'PICKUP_REWARD' AND ppt.metadata ->> 'reservation_id' = NEW.id::text) OR
+        (ppt.reason = 'reservation_pickup' AND ppt.metadata ->> 'reservation_id' = NEW.id::text)
+      )
   ) INTO v_tx_exists;
 
   IF v_tx_exists THEN
     RAISE NOTICE 'transfer_points_to_partner_on_pickup: points already transferred for reservation_id=%', NEW.id;
+    -- Still mark escrow as released if it's somehow left HELD
+    IF v_points_held > 0 THEN
+      UPDATE public.escrow_points
+      SET status = 'RELEASED',
+          released_at = NOW(),
+          released_reason = 'PICKED_UP'
+      WHERE reservation_id = NEW.id AND status = 'HELD';
+    END IF;
     RETURN NEW;
+  END IF;
+
+  -- Update escrow rows to RELEASED now that pickup occurred
+  IF v_points_held > 0 THEN
+    UPDATE public.escrow_points
+    SET status = 'RELEASED',
+        released_at = NOW(),
+        released_reason = 'PICKED_UP'
+    WHERE reservation_id = NEW.id AND status = 'HELD';
   END IF;
 
   -- Credit partner wallet and log a transaction
@@ -69,8 +101,6 @@ BEGIN
   RETURN NEW;
 END;
 $$;
-
-COMMENT ON FUNCTION public.transfer_points_to_partner_on_pickup IS 'On reservation PICKED_UP, credit partner wallet using points_spent (simplified, no escrow)';
 
 -- Ensure trigger is attached (re-create defensively)
 DROP TRIGGER IF EXISTS trg_transfer_points_to_partner ON public.reservations;
