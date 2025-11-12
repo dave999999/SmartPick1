@@ -1,10 +1,10 @@
 -- ============================================
--- Partner No-Show with No Penalty Option
+-- Partner Forgive Customer (Remove Penalty)
 -- ============================================
--- Allows partners to mark reservations as no-show
--- without penalizing the customer (refunds points)
+-- Partner decides to forgive the customer and remove the penalty
+-- that was automatically applied by the system
 
-CREATE OR REPLACE FUNCTION public.partner_mark_no_show_no_penalty(
+CREATE OR REPLACE FUNCTION public.partner_forgive_customer(
   p_reservation_id UUID
 )
 RETURNS JSONB
@@ -14,7 +14,8 @@ AS $$
 DECLARE
   v_partner_user_id UUID := auth.uid();
   v_reservation RECORD;
-  v_points_to_refund INT;
+  v_customer_record RECORD;
+  v_penalty_count INT;
 BEGIN
   IF v_partner_user_id IS NULL THEN
     RETURN jsonb_build_object('success', false, 'message', 'Not authenticated');
@@ -32,18 +33,35 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'message', 'Reservation not found');
   END IF;
 
-  -- Must be ACTIVE (user never showed up)
-  IF v_reservation.status != 'ACTIVE' THEN
-    RETURN jsonb_build_object('success', false, 'message', 'Reservation not active');
+  -- Must be ACTIVE or FAILED_PICKUP (expired/failed reservation)
+  IF v_reservation.status NOT IN ('ACTIVE', 'FAILED_PICKUP') THEN
+    RETURN jsonb_build_object('success', false, 'message', 'Reservation already processed');
   END IF;
 
-  -- Get held points (they will be lost permanently, not refunded)
-  v_points_to_refund := COALESCE(v_reservation.points_spent, 15);
+  -- Get customer's current penalty info
+  SELECT penalty_count, banned_until INTO v_customer_record
+  FROM public.users
+  WHERE id = v_reservation.customer_id;
 
-  -- Points are LOST permanently (no refund, no transfer to partner)
-  -- Customer loses points for not showing up, but no penalty applied
+  v_penalty_count := COALESCE(v_customer_record.penalty_count, 0);
 
-  -- Log transaction showing points were lost
+  -- REMOVE the penalty that was applied (forgive customer)
+  IF v_penalty_count > 0 THEN
+    UPDATE public.users
+    SET penalty_count = GREATEST(0, penalty_count - 1),
+        banned_until = CASE 
+          WHEN penalty_count - 1 = 0 THEN NULL  -- No more penalties, remove ban
+          WHEN penalty_count - 1 = 1 THEN NOW() + INTERVAL '1 hour'  -- Back to 1hr ban
+          ELSE banned_until  -- Keep current ban if still has multiple penalties
+        END
+    WHERE id = v_reservation.customer_id;
+    
+    -- Remove from user_bans table if exists
+    DELETE FROM public.user_bans
+    WHERE user_id = v_reservation.customer_id;
+  END IF;
+
+  -- Log that partner forgave the customer
   INSERT INTO public.transactions (
     user_id,
     type,
@@ -52,26 +70,26 @@ BEGIN
     metadata
   ) VALUES (
     v_reservation.customer_id,
-    'NO_SHOW_POINTS_LOST',
-    -v_points_to_refund,
-    'Points lost - marked as no-show by partner without additional penalty',
+    'PENALTY_FORGIVEN',
+    0,
+    'Partner decided not to penalize you for this no-show',
     jsonb_build_object(
       'reservation_id', p_reservation_id,
       'partner_id', v_reservation.partner_id,
       'offer_id', v_reservation.offer_id,
-      'marked_by_partner', v_partner_user_id,
-      'no_penalty_applied', true,
-      'points_permanently_lost', true
+      'forgiven_by_partner', v_partner_user_id,
+      'previous_penalty_count', v_penalty_count,
+      'new_penalty_count', GREATEST(0, v_penalty_count - 1)
     )
   );
 
-  -- Restore offer quantity (return items to available stock)
+  -- Restore offer quantity (if not already restored by auto-expiration)
   UPDATE public.offers
   SET quantity_available = quantity_available + v_reservation.quantity,
       updated_at = NOW()
   WHERE id = v_reservation.offer_id;
 
-  -- Mark reservation as cancelled (no-show without penalty)
+  -- Mark reservation as cancelled (forgiven)
   UPDATE public.reservations
   SET status = 'CANCELLED',
       user_confirmed_pickup = FALSE
@@ -79,13 +97,13 @@ BEGIN
 
   RETURN jsonb_build_object(
     'success', true, 
-    'points_lost', v_points_to_refund,
-    'message', 'Reservation marked as no-show without penalty - points lost permanently'
+    'message', 'Customer forgiven - penalty removed',
+    'penalty_removed', true
   );
 END;
 $$;
 
-COMMENT ON FUNCTION public.partner_mark_no_show_no_penalty IS 
-'Partner marks user as no-show without penalty - refunds points to customer';
+COMMENT ON FUNCTION public.partner_forgive_customer IS 
+'Partner forgives customer and removes penalty that was auto-applied by system';
 
-GRANT EXECUTE ON FUNCTION public.partner_mark_no_show_no_penalty(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.partner_forgive_customer(UUID) TO authenticated;
