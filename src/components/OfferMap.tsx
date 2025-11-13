@@ -476,6 +476,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                     click: (e) => {
                       e.target.openPopup();
                     },
+                    mouseover: (e) => {
+                      e.target.openPopup();
+                    },
                   }}
                 >
                   <Popup
@@ -483,6 +486,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                     minWidth={240}
                     closeButton={true}
                     className="compact-popup"
+                    autoPan={true}
                   >
                     <div className="w-full">
                       {/* Restaurant Header - Compact */}
@@ -643,6 +647,18 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
         .smartpick-marker:active .marker-circle {
           transform: scale(0.95);
+        }
+
+        /* Ensure map markers are clickable */
+        .leaflet-marker-icon,
+        .leaflet-marker-pane {
+          pointer-events: auto !important;
+          cursor: pointer !important;
+        }
+
+        .leaflet-popup-pane {
+          pointer-events: auto !important;
+          z-index: 700 !important;
         }
 
         /* Compact Mobile-Friendly Popup Styles */
