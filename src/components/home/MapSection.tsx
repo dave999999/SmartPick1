@@ -32,7 +32,7 @@ export function MapSection({
 
       {/* Center Location Button - positioned above bottom overlay */}
       <button
-        className="absolute bottom-[47%] right-4 bg-white rounded-full p-3 shadow-md hover:shadow-lg transition-shadow z-[50]"
+        className="absolute bottom-[47%] right-4 bg-white rounded-full p-3 shadow-md hover:shadow-lg transition-shadow z-30"
         onClick={() => {
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
