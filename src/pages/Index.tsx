@@ -242,8 +242,8 @@ export default function Index() {
             </div>
           ) : (
             <>
-              {/* Full Screen Borderless Map - Behind everything but clickable */}
-              <div className="absolute inset-0 w-full h-full z-0 pointer-events-auto">
+              {/* Full Screen Borderless Map - Base layer (z-10) */}
+              <div className="absolute inset-0 w-full h-full z-10">
                 <MapSection
                   offers={filteredOffers}
                   onOfferClick={handleOfferClick}
@@ -253,14 +253,9 @@ export default function Index() {
                 />
               </div>
 
-              {/* Search Bar Overlay - Top of screen */}
-              <div className="absolute top-3 left-4 right-4 z-50">
-                <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
-              </div>
-
-              {/* Restaurant Listings Card - Bottom Overlay on Map */}
+              {/* Restaurant Listings Card - Above map (z-20) but below markers */}
               {filteredOffers.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-40 pointer-events-auto">
+                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-20 pointer-events-auto">
                   <div className="h-full overflow-y-auto pb-20">
                     <RestaurantFoodSection
                       offers={filteredOffers}
@@ -272,10 +267,15 @@ export default function Index() {
 
               {/* Empty State */}
               {filteredOffers.length === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-40 flex items-center justify-center pointer-events-auto">
+                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-20 flex items-center justify-center pointer-events-auto">
                   <p className="text-gray-500">No offers available</p>
                 </div>
               )}
+
+              {/* Search Bar Overlay - Above everything except popups (z-50) */}
+              <div className="absolute top-3 left-4 right-4 z-50 pointer-events-auto">
+                <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
+              </div>
             </>
           )}
         </div>
