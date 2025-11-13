@@ -241,7 +241,7 @@ export default function Index() {
         />
 
         {/* Map Section - Full Width, No Gaps */}
-        <section className="w-full relative z-0 m-0 p-0 -mb-8">
+        <section className="w-full relative z-0">
           {isLoading ? (
             <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 animate-pulse flex items-center justify-center">
               <p className="text-orange-600 font-medium">Loading delicious offers...</p>
@@ -261,9 +261,9 @@ export default function Index() {
 
         {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 -mt-8 rounded-t-3xl shadow-2xl">
+          <section className="bg-white relative z-30 pb-24 -mt-16 rounded-t-3xl shadow-2xl">
             {/* Content with padding */}
-            <div className="px-4 pt-6">
+            <div className="px-4 pt-8">
             <div className="grid grid-cols-2 gap-4">
               {filteredOffers.map((offer) => {
                 const getDistanceText = () => {
