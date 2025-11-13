@@ -152,29 +152,15 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   // Use bright, modern CARTO Voyager style (like Glovo/Wolt)
   const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
-  // Create category icon using emojis (no legend required)
+  // Create orange marker icon (like in reference design)
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const emojis: Record<string, string> = {
-      BAKERY: '🥐',
-      CAFE: '☕',
-      RESTAURANT: '🍽️',
-      FAST_FOOD: '🍔',
-      ALCOHOL: '🍷',
-      GROCERY: '🛒',
-    };
-
-    const emoji = emojis[category] || '📍';
-    const size = isHighlighted ? 44 : 36;
-    const bgColor = isHighlighted ? '#00C896' : '#FFFFFF';
-    const textColor = isHighlighted ? '#FFFFFF' : '#00A37A';
-    const borderColor = isHighlighted ? '#FFFFFF' : '#DFF5ED';
-    const shadow = isHighlighted
-      ? '0 6px 16px rgba(0, 200, 150, 0.45)'
-      : '0 3px 8px rgba(0, 0, 0, 0.18)';
+    const size = isHighlighted ? 44 : 38;
+    const bgColor = '#FF6B35'; // Orange color from reference
+    const shadow = '0 4px 12px rgba(255, 107, 53, 0.4)';
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -182,51 +168,33 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
         <div class="marker-container" style="
           position: relative;
           width: ${size}px;
-          height: ${size}px;
+          height: ${size + 10}px;
           filter: drop-shadow(${shadow});
         ">
-          <div class="marker-circle" style="
+          <div class="marker-pin" style="
             width: ${size}px;
             height: ${size}px;
-            border-radius: 50%;
+            border-radius: 50% 50% 50% 0;
             background: ${bgColor};
-            border: 2px solid ${borderColor};
+            transform: rotate(-45deg);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.25s ease;
-            color: ${textColor};
-            font-size: ${size - 14}px;
-            line-height: 1;
           ">
-            <span>${emoji}</span>
+            <div style="
+              width: ${size - 8}px;
+              height: ${size - 8}px;
+              border-radius: 50%;
+              background: white;
+              transform: rotate(45deg);
+            "></div>
           </div>
-          ${count > 1 ? `
-            <div class="marker-badge" style="
-              position: absolute;
-              top: -6px;
-              right: -6px;
-              min-width: 20px;
-              height: 20px;
-              padding: 0 6px;
-              background: #ef4444;
-              color: white;
-              border-radius: 10px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 10px;
-              font-weight: 700;
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-              border: 2px solid white;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-            ">${count}</div>
-          ` : ''}
         </div>
       `,
-      iconSize: [size, size],
-      iconAnchor: [size / 2, size],
-      popupAnchor: [0, -size],
+      iconSize: [size, size + 10],
+      iconAnchor: [size / 2, size + 10],
+      popupAnchor: [0, -(size + 10)],
     });
   };
 
