@@ -487,6 +487,8 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                     closeButton={true}
                     className="compact-popup"
                     autoPan={true}
+                    autoClose={false}
+                    closeOnClick={false}
                   >
                     <div className="w-full">
                       {/* Restaurant Header - Compact */}
@@ -513,7 +515,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                               className={`bg-white border border-gray-200 rounded-xl p-2.5 hover:shadow-md cursor-pointer transition-all ${
                                 expired ? 'opacity-50' : ''
                               }`}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('Offer clicked in popup:', offer.id, offer.title);
                                 onOfferClick(offer);
                               }}
                             >
