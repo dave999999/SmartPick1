@@ -30,20 +30,40 @@ export function FilterDrawer({
   onSortChange,
   showDistanceFilter,
 }: FilterDrawerProps) {
+  const handleReset = () => {
+    onSearchChange('');
+    onFiltersChange({
+      maxDistance: 50,
+      minPrice: 0,
+      maxPrice: 500,
+    });
+    onSortChange('newest');
+  };
+
+  const handleApply = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[400px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
+      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
+        <SheetHeader className="pb-4 border-b">
+          <SheetTitle className="flex items-center gap-2 text-lg font-semibold">
             <SlidersHorizontal className="h-5 w-5" />
             Search & Filters
           </SheetTitle>
+          <button 
+            onClick={() => onOpenChange(false)}
+            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-6 overflow-y-auto pb-24" style={{ maxHeight: 'calc(85vh - 140px)' }}>
           {/* Search */}
-          <div className="space-y-2">
-            <Label htmlFor="search">Search</Label>
+          <div className="space-y-3">
+            <Label htmlFor="search" className="text-sm font-medium text-gray-700">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -51,16 +71,16 @@ export function FilterDrawer({
                 placeholder="Search offers..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10"
+                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]"
               />
             </div>
           </div>
 
           {/* Sort */}
-          <div className="space-y-2">
-            <Label htmlFor="sort">Sort by</Label>
+          <div className="space-y-3">
+            <Label htmlFor="sort" className="text-sm font-medium text-gray-700">Sort by</Label>
             <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
-              <SelectTrigger id="sort">
+              <SelectTrigger id="sort" className="h-12 rounded-xl border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -73,9 +93,9 @@ export function FilterDrawer({
           </div>
 
           {/* Price Range */}
-          <div className="space-y-3">
-            <Label>Price Range</Label>
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <Label className="text-sm font-medium text-gray-700">Price Range</Label>
+            <div className="space-y-4 px-1">
               <Slider
                 min={0}
                 max={500}
@@ -84,18 +104,18 @@ export function FilterDrawer({
                 onValueChange={([min, max]) => onFiltersChange({ ...filters, minPrice: min, maxPrice: max })}
                 className="w-full"
               />
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">{filters.minPrice} ₾</span>
-                <span className="text-gray-600">{filters.maxPrice} ₾</span>
+              <div className="flex items-center justify-between text-sm font-medium">
+                <span className="text-gray-700">{filters.minPrice} ₾</span>
+                <span className="text-gray-700">{filters.maxPrice} ₾</span>
               </div>
             </div>
           </div>
 
           {/* Distance Filter */}
           {showDistanceFilter && (
-            <div className="space-y-3">
-              <Label>Maximum Distance</Label>
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <Label className="text-sm font-medium text-gray-700">Maximum Distance</Label>
+              <div className="space-y-4 px-1">
                 <Slider
                   min={1}
                   max={50}
@@ -104,28 +124,28 @@ export function FilterDrawer({
                   onValueChange={([value]) => onFiltersChange({ ...filters, maxDistance: value })}
                   className="w-full"
                 />
-                <div className="text-sm text-gray-600">
+                <div className="text-sm font-medium text-gray-700">
                   {filters.maxDistance} km
                   {filters.maxDistance >= 50 && ' (All)'}
                 </div>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Reset Button */}
+        {/* Fixed Bottom Actions */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t flex gap-3">
           <button
-            onClick={() => {
-              onSearchChange('');
-              onFiltersChange({
-                maxDistance: 50,
-                minPrice: 0,
-                maxPrice: 500,
-              });
-              onSortChange('newest');
-            }}
-            className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+            onClick={handleReset}
+            className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold transition-colors"
           >
             Reset Filters
+          </button>
+          <button
+            onClick={handleApply}
+            className="flex-1 py-3 px-4 bg-[#00C896] hover:bg-[#00b285] text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          >
+            Apply Filters
           </button>
         </div>
       </SheetContent>
