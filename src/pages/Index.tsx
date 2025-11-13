@@ -261,23 +261,9 @@ export default function Index() {
 
         {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 m-0 p-0 !mt-0 !pt-0 -mt-[1px]">
+          <section className="bg-white relative z-30 pb-24 -mt-2">
             {/* Content with padding */}
-            <div className="px-4 pt-3 !mt-0">
-
-            {/* Category Pills */}
-            <div className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide">
-              <button className="px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap">
-                Food Item
-              </button>
-              <button className="px-4 py-2 bg-gray-100 rounded-full text-sm font-medium whitespace-nowrap">
-                Drink Item
-              </button>
-              <button className="px-5 py-2 bg-yellow-400 rounded-full text-sm font-bold whitespace-nowrap">
-                Dessert Item
-              </button>
-            </div>
-
+            <div className="px-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               {filteredOffers.map((offer) => {
                 const getDistanceText = () => {
