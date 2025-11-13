@@ -10,6 +10,8 @@ interface MapSectionProps {
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   onLocationChange: (location: [number, number] | null) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export function MapSection({
@@ -18,11 +20,26 @@ export function MapSection({
   selectedCategory,
   onCategorySelect,
   onLocationChange,
+  searchQuery,
+  onSearchChange,
 }: MapSectionProps) {
   const [mapActivated, setMapActivated] = useState(false);
 
   return (
-    <div className="relative w-full h-[70vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-2xl">
+    <div className="relative w-full">
+      {/* Search Bar at top of map */}
+      <div className="w-full flex justify-center items-center py-4 mb-3">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => onSearchChange(e.target.value)}
+          placeholder="Search offers, partners, categories..."
+          className="w-full max-w-2xl px-6 py-3 rounded-full border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-[#00C896] focus:border-transparent text-base"
+        />
+      </div>
+
+      {/* Map Container */}
+      <div className="relative w-full h-[70vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-2xl">
       {/* Map Activation Overlay */}
       {!mapActivated && (
         <div
@@ -109,6 +126,7 @@ export function MapSection({
         >
           <Locate className="h-5 w-5" />
         </Button>
+      </div>
       </div>
     </div>
   );

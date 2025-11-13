@@ -8,13 +8,11 @@ interface CategoryTabsProps {
 const categories = [
   { id: '', label: 'All', emoji: '🌍' },
   { id: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
-  { id: 'COFFEE', label: 'Coffee', emoji: '☕' },
+  { id: 'CAFE', label: 'Café', emoji: '☕' },
   { id: 'BAKERY', label: 'Bakery', emoji: '🍰' },
-  { id: 'SHOP', label: 'Shop', emoji: '🛍️' },
-  { id: 'PIZZA', label: 'Pizza', emoji: '🍕' },
-  { id: 'SALAD', label: 'Salad', emoji: '🥗' },
-  { id: 'BURGER', label: 'Burger', emoji: '🍔' },
-  { id: 'DESSERT', label: 'Dessert', emoji: '🍨' },
+  { id: 'GROCERY', label: 'Grocery', emoji: '🛍️' },
+  { id: 'FAST_FOOD', label: 'Fast Food', emoji: '�' },
+  { id: 'ALCOHOL', label: 'Alcohol', emoji: '�' },
 ];
 
 export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTabsProps) {
