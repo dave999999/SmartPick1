@@ -261,9 +261,9 @@ export default function Index() {
 
         {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 -mt-16 rounded-t-3xl shadow-2xl">
+          <section className="bg-white relative z-30 pb-24 -mt-24 rounded-t-3xl shadow-2xl">
             {/* Content with padding */}
-            <div className="px-4 pt-8">
+            <div className="px-4 pt-10">
             <div className="grid grid-cols-2 gap-4">
               {filteredOffers.map((offer) => {
                 const getDistanceText = () => {
