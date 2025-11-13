@@ -478,99 +478,101 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                     },
                   }}
                 >
-                  <Popup maxWidth={400} maxHeight={400}>
-                    <div className="p-2 max-h-[350px] overflow-y-auto">
-                      <h3 className="font-bold text-lg mb-2 sticky top-0 bg-white pb-2 border-b">
-                        {location.partnerName}
-                      </h3>
-                      <p className="text-xs text-gray-500 mb-3">
-                        {location.offers.length} offer{location.offers.length > 1 ? 's' : ''} available
-                      </p>
-                      <div className="mb-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Custom event so parent can open a modal with all partner offers
-                            const detail = { partnerId: location.partnerId, partnerName: location.partnerName };
-                            window.dispatchEvent(new CustomEvent('smartpick:viewPartnerOffers', { detail }));
-                          }}
-                          className="w-full text-center text-xs font-semibold bg-[#00C896] hover:bg-[#00b285] text-white py-2 rounded-md shadow-sm transition"
-                        >
-                          View All Items from {location.partnerName}
-                        </button>
+                  <Popup
+                    maxWidth={320}
+                    minWidth={280}
+                    closeButton={true}
+                    className="compact-popup"
+                  >
+                    <div className="w-full">
+                      {/* Restaurant Header - Compact */}
+                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-4 py-3 -mx-2 -mt-2 mb-3 rounded-t-lg">
+                        <h3 className="font-bold text-base mb-0.5 leading-tight">
+                          {location.partnerName}
+                        </h3>
+                        <p className="text-xs text-gray-300">
+                          {location.offers.length} offer{location.offers.length > 1 ? 's' : ''} available
+                        </p>
                       </div>
-                      
-                      <div className="space-y-3">
-                        {location.offers.map((offer) => {
+
+                      {/* Compact Offer Cards */}
+                      <div className="space-y-2 max-h-[280px] overflow-y-auto px-1">
+                        {location.offers.slice(0, 5).map((offer) => {
                           const pickupTimes = getPickupTimes(offer);
                           const expiry = getOfferExpiry(offer);
                           const expiringSoon = isExpiringSoon(expiry);
                           const expired = isExpired(expiry);
-                          
+
                           return (
                             <div
                               key={offer.id}
-                              className={`relative border rounded-lg p-3 hover:shadow-lg cursor-pointer transition-all overflow-hidden ${
-                                expired ? 'opacity-40' : expiringSoon ? 'border-orange-400' : ''
+                              className={`bg-white border border-gray-200 rounded-xl p-2.5 hover:shadow-md cursor-pointer transition-all ${
+                                expired ? 'opacity-50' : ''
                               }`}
-                              onClick={() => onOfferClick(offer)}
+                              onClick={() => {
+                                onOfferClick(offer);
+                              }}
                             >
-                              {/* Background Image with 60% opacity */}
-                              {offer.images && offer.images[0] && (
-                                <>
-                                  <div
-                                    className="absolute inset-0 bg-cover bg-center"
-                                    style={{
-                                      backgroundImage: `url(${resolveOfferImageUrl(offer.images[0], offer.category)})`,
-                                      opacity: 0.6,
-                                    }}
-                                  />
-                                  {/* White overlay for text readability */}
-                                  <div className="absolute inset-0 bg-white/40" />
-                                </>
-                              )}
-
-                              {/* Content with relative positioning to appear above background */}
-                              <div className="relative z-10">
-                                <div className="flex items-start justify-between mb-2">
-                                  <h4 className="font-bold text-sm flex-1 text-gray-900 drop-shadow">{offer.title}</h4>
-                                  <div className="flex items-center gap-1 ml-2">
-                                    <FavoriteButton id={offer.id} className="bg-white/90 hover:bg-white" />
-                                    <Badge className="text-xs shadow-sm" style={{ backgroundColor: CATEGORY_COLORS[offer.category] }}>
-                                      {offer.category}
-                                    </Badge>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 mb-2">
-                                  <span className="text-lg font-bold text-[#00C896] drop-shadow">
-                                    {offer.smart_price} GEL
-                                  </span>
-                                  <span className="text-xs text-gray-600 line-through font-semibold">
-                                    {offer.original_price} GEL
-                                  </span>
-                                  <Badge variant="outline" className="text-xs ml-auto bg-white/80 border-gray-400 font-semibold">
-                                    {offer.quantity_available} left
-                                  </Badge>
-                                </div>
-
-                                {pickupTimes.start && pickupTimes.end && (
-                                  <div className="text-xs text-gray-700 font-medium flex items-center gap-1 mb-1 drop-shadow-sm">
-                                    <Clock className="w-3 h-3" />
-                                    {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
+                              <div className="flex gap-2.5">
+                                {/* Compact Image */}
+                                {offer.images && offer.images[0] && (
+                                  <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                                    <img
+                                      src={resolveOfferImageUrl(offer.images[0], offer.category)}
+                                      alt={offer.title}
+                                      className="w-full h-full object-cover"
+                                    />
                                   </div>
                                 )}
 
-                                <div className={`text-xs font-bold drop-shadow ${
-                                  expired ? 'text-gray-700' : expiringSoon ? 'text-orange-600' : 'text-coral-600'
-                                }`}>
-                                  {getTimeRemaining(expiry)}
+                                {/* Compact Info */}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-sm text-gray-900 line-clamp-1 mb-1">
+                                    {offer.title}
+                                  </h4>
+
+                                  <div className="flex items-center gap-1.5 mb-1">
+                                    <span className="text-base font-bold text-[#FF6B5A]">
+                                      ${offer.smart_price}
+                                    </span>
+                                    {offer.original_price > offer.smart_price && (
+                                      <span className="text-xs text-gray-400 line-through">
+                                        ${offer.original_price}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] text-gray-500 font-medium">
+                                      {offer.quantity_available} left
+                                    </span>
+                                    {pickupTimes.start && (
+                                      <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                                        <Clock className="w-2.5 h-2.5" />
+                                        {formatTime(pickupTimes.start)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
                           );
                         })}
                       </div>
+
+                      {/* View All Button - If more than 5 offers */}
+                      {location.offers.length > 5 && (
+                        <button
+                          type="button"
+                          className="w-full mt-3 text-center text-xs font-semibold text-gray-600 hover:text-gray-900 py-2 border-t border-gray-100 transition"
+                          onClick={() => {
+                            const detail = { partnerId: location.partnerId, partnerName: location.partnerName };
+                            window.dispatchEvent(new CustomEvent('smartpick:viewPartnerOffers', { detail }));
+                          }}
+                        >
+                          View all {location.offers.length} offers →
+                        </button>
+                      )}
                     </div>
                   </Popup>
                 </Marker>
@@ -607,7 +609,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
       {/* Offers Grid - Moved to RecentOffersSlider component */}
 
-      {/* Global marker styles */}
+      {/* Global marker and popup styles */}
       <style>{`
         /* Map fade-in animation */
         .leaflet-container {
@@ -641,6 +643,63 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
         .smartpick-marker:active .marker-circle {
           transform: scale(0.95);
+        }
+
+        /* Compact Mobile-Friendly Popup Styles */
+        .leaflet-popup-content-wrapper {
+          padding: 0 !important;
+          border-radius: 12px !important;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+          overflow: hidden !important;
+        }
+
+        .leaflet-popup-content {
+          margin: 0 !important;
+          width: 280px !important;
+          max-width: 90vw !important;
+        }
+
+        .leaflet-popup-close-button {
+          color: white !important;
+          font-size: 20px !important;
+          padding: 8px !important;
+          width: 32px !important;
+          height: 32px !important;
+          top: 4px !important;
+          right: 4px !important;
+          z-index: 10 !important;
+          background: rgba(0, 0, 0, 0.2) !important;
+          border-radius: 50% !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        .leaflet-popup-close-button:hover {
+          background: rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .leaflet-popup-tip-container {
+          display: none !important;
+        }
+
+        /* Scrollbar styling for offer list */
+        .leaflet-popup-content ::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        .leaflet-popup-content ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 2px;
+        }
+
+        .leaflet-popup-content ::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 2px;
+        }
+
+        .leaflet-popup-content ::-webkit-scrollbar-thumb:hover {
+          background: #555;
         }
 
         /* Hide scrollbar for category pills */
