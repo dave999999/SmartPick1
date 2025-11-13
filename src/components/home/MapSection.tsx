@@ -18,9 +18,9 @@ export function MapSection({
   onLocationChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full h-full">
-      {/* Map - Full screen */}
-      <div className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full m-0 p-0">
+      {/* Borderless Full Screen Map */}
+      <div className="w-full h-full m-0 p-0">
         <OfferMap
           offers={offers}
           onOfferClick={onOfferClick}
@@ -30,9 +30,9 @@ export function MapSection({
         />
       </div>
 
-      {/* Center Location Button - Crosshair icon in white circle - positioned above overlay */}
+      {/* Center Location Button - positioned above bottom overlay */}
       <button
-        className="absolute bottom-[48%] right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-[50]"
+        className="absolute bottom-[47%] right-4 bg-white rounded-full p-3 shadow-md hover:shadow-lg transition-shadow z-[50]"
         onClick={() => {
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -46,7 +46,7 @@ export function MapSection({
           }
         }}
       >
-        <Crosshair className="w-6 h-6 text-gray-900" />
+        <Crosshair className="w-5 h-5 text-gray-900" />
       </button>
     </div>
   );
