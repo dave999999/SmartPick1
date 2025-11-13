@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Offer } from '@/lib/types';
 import OfferMap from '@/components/OfferMap';
-import { Navigation, Locate } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Navigation } from 'lucide-react';
 
 interface MapSectionProps {
   offers: Offer[];
@@ -10,8 +8,6 @@ interface MapSectionProps {
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   onLocationChange: (location: [number, number] | null) => void;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
 }
 
 export function MapSection({
@@ -20,22 +16,9 @@ export function MapSection({
   selectedCategory,
   onCategorySelect,
   onLocationChange,
-  searchQuery,
-  onSearchChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full h-[70vh] md:h-[65vh]" style={{ marginBottom: 0, paddingBottom: 0, lineHeight: 0, marginLeft: 0, marginRight: 0 }}>
-      {/* Search Bar OVERLAY on top of map */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => onSearchChange(e.target.value)}
-          placeholder="Search dishes, restaurants, categories..."
-          className="w-full px-5 py-3 rounded-full bg-white shadow-xl border-0 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-base placeholder-gray-400"
-        />
-      </div>
-
+    <div className="relative w-full h-[65vh]" style={{ marginBottom: 0, paddingBottom: 0, lineHeight: 0 }}>
       {/* Map - Full width, no gaps */}
       <div className="absolute inset-0 w-full h-full" style={{ margin: 0, padding: 0, lineHeight: 0, fontSize: 0 }}>
         <style>{`
@@ -51,6 +34,21 @@ export function MapSection({
           onLocationChange={onLocationChange}
         />
       </div>
+
+      {/* Center Location Button */}
+      <button
+        className="absolute bottom-6 right-6 bg-white rounded-full p-3 shadow-lg z-10"
+        onClick={() => {
+          // Get user's current location
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+              onLocationChange([position.coords.latitude, position.coords.longitude]);
+            });
+          }
+        }}
+      >
+        <Navigation className="w-5 h-5 text-gray-900" />
+      </button>
     </div>
   );
 }
