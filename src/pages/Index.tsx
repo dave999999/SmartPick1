@@ -233,7 +233,7 @@ export default function Index() {
     <>
       <SplashScreen />
 
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50 overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50 overflow-x-hidden p-0 m-0">
         {/* Category Tabs at very top - sticky */}
         <CategoryTabs
           selectedCategory={selectedCategory}
@@ -241,7 +241,7 @@ export default function Index() {
         />
 
         {/* Map Section - Full Width, No Gaps */}
-        <section className="w-full relative z-0">
+        <section className="w-full relative z-0 p-0 m-0">
           {isLoading ? (
             <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 animate-pulse flex items-center justify-center">
               <p className="text-orange-600 font-medium">Loading delicious offers...</p>
