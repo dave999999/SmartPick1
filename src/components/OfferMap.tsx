@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Offer } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, Navigation, Maximize2, Minimize2 } from 'lucide-react';
-import { subscribeToOffers, resolveOfferImageUrl } from '@/lib/api';
+import { MapPin, Navigation, Minimize2 } from 'lucide-react';
+import { subscribeToOffers } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import FavoriteButton from '@/components/FavoriteButton';
@@ -97,6 +97,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 interface OfferMapProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
+  onMarkerClick?: (partnerName: string, partnerAddress: string | undefined, offers: Offer[]) => void;
   selectedCategory?: string;
   onCategorySelect?: (category: string) => void;
   highlightedOfferId?: string;
@@ -122,7 +123,7 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export default function OfferMap({ offers, onOfferClick, selectedCategory, onCategorySelect, highlightedOfferId, onLocationChange }: OfferMapProps) {
+export default function OfferMap({ offers, onOfferClick, onMarkerClick, selectedCategory, onCategorySelect, highlightedOfferId, onLocationChange }: OfferMapProps) {
   const { t } = useI18n();
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   // Always show map, including on mobile
@@ -484,9 +485,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   iconSize: [24, 24],
                   iconAnchor: [12, 12],
                 })}
-              >
-                <Popup>📍 Your Location</Popup>
-              </Marker>
+              />
             )}
             
             {groupedLocations.map((location, index) => {
@@ -500,121 +499,24 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   icon={makeCategoryIcon(primaryOffer.category, location.offers.length, isHighlighted)}
                   eventHandlers={{
                     click: (e) => {
-                      console.log('🎯 Marker clicked:', location.partnerName, location.lat, location.lng);
+                      console.log('🎯 Marker clicked:', location.partnerName);
+
                       // Prevent event from bubbling to map
-                      L.DomEvent.stopPropagation(e.originalEvent);
-                      L.DomEvent.preventDefault(e.originalEvent);
-                      e.target.openPopup();
-                      console.log('📍 Popup should be open now');
-                    },
-                    mouseover: (e) => {
-                      console.log('🖱️ Marker hovered:', location.partnerName);
-                      e.target.openPopup();
+                      if (e.originalEvent) {
+                        L.DomEvent.stopPropagation(e.originalEvent);
+                        L.DomEvent.preventDefault(e.originalEvent);
+                      }
+
+                      // If onMarkerClick is provided, show partner offers modal
+                      // Otherwise, directly open reservation for first offer
+                      if (onMarkerClick) {
+                        onMarkerClick(location.partnerName, primaryOffer.partner?.address, location.offers);
+                      } else {
+                        onOfferClick(primaryOffer);
+                      }
                     },
                   }}
                 >
-                  <Popup
-                    maxWidth={260}
-                    minWidth={240}
-                    closeButton={true}
-                    className="compact-popup"
-                    autoPan={true}
-                    autoClose={false}
-                    closeOnClick={false}
-                  >
-                    <div className="w-full">
-                      {/* Restaurant Header - Compact */}
-                      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-4 py-3 -mx-2 -mt-2 mb-3 rounded-t-lg">
-                        <h3 className="font-bold text-base mb-0.5 leading-tight">
-                          {location.partnerName}
-                        </h3>
-                        <p className="text-xs text-gray-300">
-                          {location.offers.length} offer{location.offers.length > 1 ? 's' : ''} available
-                        </p>
-                      </div>
-
-                      {/* Compact Offer Cards */}
-                      <div className="space-y-2 max-h-[280px] overflow-y-auto px-1">
-                        {location.offers.slice(0, 5).map((offer) => {
-                          const pickupTimes = getPickupTimes(offer);
-                          const expiry = getOfferExpiry(offer);
-                          const expiringSoon = isExpiringSoon(expiry);
-                          const expired = isExpired(expiry);
-
-                          return (
-                            <div
-                              key={offer.id}
-                              className={`bg-white border border-gray-200 rounded-xl p-2.5 hover:shadow-md cursor-pointer transition-all ${
-                                expired ? 'opacity-50' : ''
-                              }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log('Offer clicked in popup:', offer.id, offer.title);
-                                onOfferClick(offer);
-                              }}
-                            >
-                              <div className="flex gap-2.5">
-                                {/* Compact Image */}
-                                {offer.images && offer.images[0] && (
-                                  <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                                    <img
-                                      src={resolveOfferImageUrl(offer.images[0], offer.category)}
-                                      alt={offer.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-
-                                {/* Compact Info */}
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm text-gray-900 line-clamp-1 mb-1">
-                                    {offer.title}
-                                  </h4>
-
-                                  <div className="flex items-center gap-1.5 mb-1">
-                                    <span className="text-base font-bold text-[#FF6B5A]">
-                                      ${offer.smart_price}
-                                    </span>
-                                    {offer.original_price > offer.smart_price && (
-                                      <span className="text-xs text-gray-400 line-through">
-                                        ${offer.original_price}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] text-gray-500 font-medium">
-                                      {offer.quantity_available} left
-                                    </span>
-                                    {pickupTimes.start && (
-                                      <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                                        <Clock className="w-2.5 h-2.5" />
-                                        {formatTime(pickupTimes.start)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* View All Button - If more than 5 offers */}
-                      {location.offers.length > 5 && (
-                        <button
-                          type="button"
-                          className="w-full mt-3 text-center text-xs font-semibold text-gray-600 hover:text-gray-900 py-2 border-t border-gray-100 transition"
-                          onClick={() => {
-                            const detail = { partnerId: location.partnerId, partnerName: location.partnerName };
-                            window.dispatchEvent(new CustomEvent('smartpick:viewPartnerOffers', { detail }));
-                          }}
-                        >
-                          View all {location.offers.length} offers →
-                        </button>
-                      )}
-                    </div>
-                  </Popup>
                 </Marker>
               );
             })}

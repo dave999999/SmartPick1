@@ -21,6 +21,7 @@ import { MapSection } from '@/components/home/MapSection';
 import { RestaurantFoodSection } from '@/components/home/RestaurantFoodSection';
 import { BottomNavBar } from '@/components/home/BottomNavBar';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
+import PartnerOffersModal from '@/components/PartnerOffersModal';
 
 // Existing components for offers grid
 import { MapPin, Clock } from 'lucide-react';
@@ -36,6 +37,8 @@ export default function Index() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
+  const [showPartnerOffersModal, setShowPartnerOffersModal] = useState(false);
+  const [selectedPartner, setSelectedPartner] = useState<{ name: string; address?: string; offers: Offer[] } | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
   const [showBottomNav, setShowBottomNav] = useState(false);
@@ -229,6 +232,11 @@ export default function Index() {
   setSelectedOffer(null);
   }, []);
 
+  const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, offers: Offer[]) => {
+    setSelectedPartner({ name: partnerName, address: partnerAddress, offers });
+    setShowPartnerOffersModal(true);
+  }, []);
+
   return (
     <>
       <SplashScreen />
@@ -247,6 +255,7 @@ export default function Index() {
                 <MapSection
                   offers={filteredOffers}
                   onOfferClick={handleOfferClick}
+                  onMarkerClick={handleMarkerClick}
                   selectedCategory={selectedCategory}
                   onCategorySelect={setSelectedCategory}
                   onLocationChange={setUserLocation}
@@ -297,6 +306,15 @@ export default function Index() {
         />
 
         {/* Modals */}
+        <PartnerOffersModal
+          partnerName={selectedPartner?.name || ''}
+          partnerAddress={selectedPartner?.address}
+          offers={selectedPartner?.offers || []}
+          open={showPartnerOffersModal}
+          onOpenChange={setShowPartnerOffersModal}
+          onOfferClick={handleOfferClick}
+        />
+
         <ReservationModal
           offer={selectedOffer}
           user={user}

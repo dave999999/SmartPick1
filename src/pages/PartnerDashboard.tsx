@@ -1156,18 +1156,18 @@ const generate24HourOptions = (): string[] => {
               <p className="text-[11px] md:text-xs text-neutral-500">{t('partner.dashboard.title')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Partner Points Display */}
+          <div className="flex items-center gap-1.5 md:gap-2">
+            {/* Partner Points Display - Mobile: compact, Desktop: full */}
             {partnerPoints && (
               <Button
                 variant="outline"
                 onClick={() => setIsPurchaseSlotDialogOpen(true)}
-                className="hidden md:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00C896] to-[#009B77] text-white rounded-full border-none hover:from-[#00B588] hover:to-[#008866] hover:scale-105 transition-all"
+                className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 h-9 md:h-auto bg-gradient-to-r from-[#00C896] to-[#009B77] text-white rounded-full border-none hover:from-[#00B588] hover:to-[#008866] hover:scale-105 transition-all"
               >
-                <DollarSign className="w-4 h-4" />
+                <DollarSign className="w-3.5 h-3.5 md:w-4 md:h-4" />
                 <div className="flex flex-col items-start leading-tight">
-                  <span className="text-xs font-semibold">{partnerPoints.balance} {t('partner.points.points')}</span>
-                  <span className="text-[10px] opacity-90">{partnerPoints.offer_slots} {t('partner.points.slots')}</span>
+                  <span className="text-[10px] md:text-xs font-semibold">{partnerPoints.balance}</span>
+                  <span className="text-[9px] md:text-[10px] opacity-90 hidden sm:inline">{partnerPoints.offer_slots} slots</span>
                 </div>
               </Button>
             )}
@@ -1180,19 +1180,24 @@ const generate24HourOptions = (): string[] => {
               <span className="hidden sm:inline">{t('partner.dashboard.editProfile')}</span>
               <span className="sm:hidden">{t('partner.dashboard.edit')}</span>
             </Button>
+            {/* Customer View - Mobile: icon only, Desktop: full text */}
             <Button
               variant="outline"
-              className="hidden md:flex h-11 rounded-full"
+              className="h-9 md:h-11 rounded-full px-2 md:px-4"
               onClick={() => navigate('/')}
+              title={t('partner.dashboard.customerView')}
             >
-              🏠 {t('partner.dashboard.customerView')}
+              <span className="md:hidden text-base">🏠</span>
+              <span className="hidden md:inline">🏠 {t('partner.dashboard.customerView')}</span>
             </Button>
+            {/* Sign Out - Mobile: icon only, Desktop: with text */}
             <Button
               variant="outline"
-              className="h-9 md:h-11 rounded-full"
+              className="h-9 md:h-11 rounded-full px-2 md:px-4"
               onClick={handleSignOut}
+              title={t('partner.dashboard.signOut')}
             >
-              <LogOut className="w-3 h-3 md:w-4 md:h-4 mr-0 md:mr-2" />
+              <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2" />
               <span className="hidden md:inline">{t('partner.dashboard.signOut')}</span>
             </Button>
           </div>

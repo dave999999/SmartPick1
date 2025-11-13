@@ -310,7 +310,7 @@ export default function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00C896]"></div>
       </div>
     );
@@ -319,21 +319,20 @@ export default function UserProfile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen bg-white pb-20">
       {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800 shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 md:py-4">
-          <div className="flex items-center gap-2 md:gap-4">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/')}
-              className="h-9 w-9 md:h-10 md:w-10 text-gray-300 hover:text-white hover:bg-gray-800"
+              className="h-10 w-10 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text flex items-center gap-2">
-              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#00C896]" />
+            <h1 className="text-2xl font-bold text-gray-900">
               {t('profile.title')}
             </h1>
           </div>
@@ -341,7 +340,7 @@ export default function UserProfile() {
       </header>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
             <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
@@ -367,34 +366,34 @@ export default function UserProfile() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Profile Info - Left/Center (2 cols on large screens) */}
-                <Card className="shadow-xl border-2 border-[#00C896]/30 bg-gradient-to-br from-gray-800 to-gray-900 lg:col-span-2">
-                  <CardContent className="pt-4 md:pt-6">
+                <Card className="shadow-sm border border-gray-100 bg-white lg:col-span-2">
+                  <CardContent className="pt-6">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-                      <Avatar className="h-20 w-20 md:h-28 md:w-28 border-4 border-[#00C896] shadow-lg">
-                        <AvatarFallback className="bg-gradient-to-br from-[#00C896] to-[#009B77] text-white text-2xl md:text-4xl font-bold">
+                      <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-gray-200">
+                        <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-600 text-white text-2xl md:text-3xl font-bold">
                           {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-2xl md:text-4xl font-black text-white mb-2">{user.name}</h2>
-                        <p className="text-base md:text-lg text-gray-300 mb-3">{user.email}</p>
+                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{user.name}</h2>
+                        <p className="text-base text-gray-500 mb-3">{user.email}</p>
                         <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
                           <Badge
                             variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
-                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-[#00C896] text-white'}
+                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-gray-900 text-white'}
                           >
                             {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
                             {user.role}
                           </Badge>
                           {user.phone && (
-                            <Badge variant="outline" className="gap-1 border-gray-600 text-gray-300">
+                            <Badge variant="outline" className="gap-1 border-gray-300 text-gray-600">
                               <Phone className="w-3 h-3" />
                               {user.phone}
                             </Badge>
                           )}
-                          <Badge variant="outline" className="gap-1 border-gray-600 text-gray-300">
+                          <Badge variant="outline" className="gap-1 border-gray-300 text-gray-600">
                             <Calendar className="w-3 h-3" />
                             {t('profile.memberSince')} {formatDate(user.created_at)}
                           </Badge>

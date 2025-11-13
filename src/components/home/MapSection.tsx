@@ -5,6 +5,7 @@ import { Crosshair } from 'lucide-react';
 interface MapSectionProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
+  onMarkerClick?: (partnerName: string, partnerAddress: string | undefined, offers: Offer[]) => void;
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   onLocationChange: (location: [number, number] | null) => void;
@@ -13,6 +14,7 @@ interface MapSectionProps {
 export function MapSection({
   offers,
   onOfferClick,
+  onMarkerClick,
   selectedCategory,
   onCategorySelect,
   onLocationChange,
@@ -24,6 +26,7 @@ export function MapSection({
         <OfferMap
           offers={offers}
           onOfferClick={onOfferClick}
+          onMarkerClick={onMarkerClick}
           selectedCategory={selectedCategory}
           onCategorySelect={onCategorySelect}
           onLocationChange={onLocationChange}
