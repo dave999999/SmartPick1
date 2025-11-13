@@ -649,26 +649,29 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
           transform: scale(0.95);
         }
 
-        /* Ensure map markers are clickable */
-        .leaflet-marker-icon,
+        /* Ensure map markers are clickable and above listings overlay */
         .leaflet-marker-pane {
+          z-index: 30 !important;
+        }
+
+        .leaflet-marker-icon {
           pointer-events: auto !important;
           cursor: pointer !important;
-          z-index: 600 !important;
         }
 
         .leaflet-popup-pane {
           pointer-events: auto !important;
-          z-index: 800 !important;
+          z-index: 60 !important;
         }
 
-        .leaflet-container {
+        .leaflet-shadow-pane {
+          z-index: 29 !important;
+        }
+
+        /* Ensure map base layers stay below */
+        .leaflet-tile-pane,
+        .leaflet-overlay-pane {
           z-index: 1 !important;
-        }
-
-        /* Ensure all map panes have proper pointer events */
-        .leaflet-pane {
-          pointer-events: auto !important;
         }
 
         /* Compact Mobile-Friendly Popup Styles */
