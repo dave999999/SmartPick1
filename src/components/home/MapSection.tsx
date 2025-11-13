@@ -29,7 +29,7 @@ export function MapSection({
       <div className="relative w-full h-[70vh] md:h-[60vh]">
       
       {/* Search Bar OVERLAY on top of map */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-xl px-4">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4">
         <input
           type="text"
           value={searchQuery}
@@ -54,7 +54,7 @@ export function MapSection({
       </div>
 
       {/* My Location Button Only */}
-      <div className="absolute bottom-4 right-4 z-[1000]">
+      <div className="absolute bottom-4 right-4 z-10">
         <Button
           size="icon"
           className="h-12 w-12 rounded-full bg-white hover:bg-gray-50 text-[#FF6B35] shadow-xl border-0"
