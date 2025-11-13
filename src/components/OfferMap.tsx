@@ -398,15 +398,16 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   return (
     <div className="w-full">{/* Clean map without header */}
 
-      {/* Interactive Map - Centered with elegant frame */}
+      {/* Interactive Map - Borderless Fullscreen */}
       {showMap && (
-        <div className={`relative mx-auto ${isFullscreen ? 'fixed inset-0 z-50 bg-white w-full' : 'w-[95%] md:w-[85%] lg:w-[80%] h-[450px] md:h-[550px]'} rounded-2xl overflow-hidden border-4 border-white shadow-2xl transition-opacity duration-800 ease-in-out ${mapLoaded ? 'opacity-100' : 'opacity-0'}`} style={{ boxShadow: '0 8px 32px rgba(0, 200, 150, 0.15), 0 0 0 1px rgba(0, 200, 150, 0.1)' }}>
+        <div className="absolute inset-0 w-full h-full m-0 p-0 border-none">
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
             className="w-full h-full"
-            style={{ height: '100%', width: '100%' }}
+            style={{ height: '100%', width: '100%', margin: 0, padding: 0, border: 'none' }}
             scrollWheelZoom={true}
+            zoomControl={false}
             whenReady={() => {
               try {
                 const map = mapRef.current;
