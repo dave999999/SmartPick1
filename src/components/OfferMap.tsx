@@ -651,7 +651,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
         /* Ensure map markers are clickable and above listings overlay */
         .leaflet-marker-pane {
-          z-index: 30 !important;
+          z-index: 1000 !important;
         }
 
         .leaflet-marker-icon {
@@ -661,11 +661,11 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
         .leaflet-popup-pane {
           pointer-events: auto !important;
-          z-index: 60 !important;
+          z-index: 2000 !important;
         }
 
         .leaflet-shadow-pane {
-          z-index: 29 !important;
+          z-index: 999 !important;
         }
 
         /* Ensure map base layers stay below */
