@@ -30,9 +30,9 @@ export function MapSection({
         />
       </div>
 
-      {/* Center Location Button - Crosshair icon in white circle */}
+      {/* Center Location Button - Crosshair icon in white circle - positioned above overlay */}
       <button
-        className="absolute bottom-[42vh] right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-[50]"
+        className="absolute bottom-[48%] right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-[50]"
         onClick={() => {
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(

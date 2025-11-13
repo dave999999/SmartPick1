@@ -233,12 +233,9 @@ export default function Index() {
     <>
       <SplashScreen />
 
-      <div className="min-h-screen bg-white overflow-x-hidden">
-        {/* Top Search Bar - Fixed */}
-        <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
-
-        {/* Map Section - Full Screen with Overlay */}
-        <section className="w-full relative">
+      <div className="min-h-screen bg-white overflow-x-hidden overflow-y-hidden">
+        {/* Map Section - Full Screen with Overlays */}
+        <section className="w-full h-screen relative overflow-hidden">
           {isLoading ? (
             <div className="h-screen bg-gray-100 animate-pulse flex items-center justify-center">
               <p className="text-gray-600 font-medium">Loading offers...</p>
@@ -246,7 +243,7 @@ export default function Index() {
           ) : (
             <>
               {/* Map - Full viewport height */}
-              <div className="h-screen w-full">
+              <div className="absolute inset-0 w-full h-full">
                 <MapSection
                   offers={filteredOffers}
                   onOfferClick={handleOfferClick}
@@ -256,19 +253,26 @@ export default function Index() {
                 />
               </div>
 
-              {/* Restaurant Listings Overlay - Positioned on top of map (starts around 40% from bottom) */}
+              {/* Search Bar - ON TOP OF MAP */}
+              <div className="absolute top-4 left-4 right-4 z-[100]">
+                <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
+              </div>
+
+              {/* Restaurant Listings Overlay - Starts from middle of map, covers bottom half */}
               {filteredOffers.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-20 min-h-[40vh] max-h-[65vh] overflow-y-auto">
-                  <RestaurantFoodSection
-                    offers={filteredOffers}
-                    onOfferClick={handleOfferClick}
-                  />
+                <div className="absolute top-[55%] left-0 right-0 bottom-0 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] overflow-y-auto z-[60]">
+                  <div className="pb-24">
+                    <RestaurantFoodSection
+                      offers={filteredOffers}
+                      onOfferClick={handleOfferClick}
+                    />
+                  </div>
                 </div>
               )}
 
               {/* Empty State */}
               {filteredOffers.length === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-20 py-12 px-4 text-center">
+                <div className="absolute top-[55%] left-0 right-0 bottom-0 bg-white rounded-t-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] z-[60] py-12 px-4 text-center">
                   <p className="text-gray-500">No offers available</p>
                 </div>
               )}
