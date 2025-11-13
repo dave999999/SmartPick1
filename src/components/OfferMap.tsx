@@ -158,9 +158,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 48 : 42;
-    const bgColor = '#FF6347'; // Tomato orange from reference
-    const shadow = '0 4px 16px rgba(255, 99, 71, 0.5)';
+    const size = isHighlighted ? 50 : 44;
+    const bgColor = '#FF6B5A'; // Coral orange from screenshot
+    const shadow = '0 6px 20px rgba(255, 107, 90, 0.4)';
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -168,27 +168,38 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
         <div class="marker-container" style="
           position: relative;
           width: ${size}px;
-          height: ${size + 12}px;
+          height: ${size + 14}px;
           filter: drop-shadow(${shadow});
         ">
-          <svg width="${size}" height="${size + 12}" viewBox="0 0 40 50" style="position: relative;">
-            <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35c0-8.284-6.716-15-15-15z"
-              fill="${bgColor}" />
-            <circle cx="20" cy="15" r="11" fill="white" />
-            <g transform="translate(20, 15)">
-              <!-- Fork icon -->
-              <path d="M-3 -6 L-3 -2 L-4 -2 L-4 3 L-2 3 L-2 -2 L-1 -2 L-1 -6 M-1 -6 L-1 -4"
-                stroke="black" stroke-width="0.8" fill="none" stroke-linecap="round"/>
-              <!-- Knife icon -->
-              <path d="M2 -6 L2 0 C2 2 3 3 3 3 M2 -4 L4 -5"
-                stroke="black" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+          <svg width="${size}" height="${size + 14}" viewBox="0 0 44 58" xmlns="http://www.w3.org/2000/svg">
+            <!-- Teardrop shape -->
+            <path d="M22 0C13.163 0 6 7.163 6 16c0 9.837 16 42 16 42s16-32.163 16-42c0-8.837-7.163-16-16-16z"
+              fill="${bgColor}" stroke="none"/>
+            
+            <!-- White circle background -->
+            <circle cx="22" cy="16" r="12" fill="white" />
+            
+            <!-- Fork and Knife icon -->
+            <g transform="translate(22, 16)">
+              <!-- Fork (left side) -->
+              <g transform="translate(-4, 0)">
+                <line x1="0" y1="-5" x2="0" y2="5" stroke="#1F2937" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="-2" y1="-5" x2="-2" y2="1" stroke="#1F2937" stroke-width="1.2" stroke-linecap="round"/>
+                <line x1="2" y1="-5" x2="2" y2="1" stroke="#1F2937" stroke-width="1.2" stroke-linecap="round"/>
+              </g>
+              
+              <!-- Knife (right side) -->
+              <g transform="translate(4, 0)">
+                <line x1="0" y1="-5" x2="0" y2="5" stroke="#1F2937" stroke-width="1.2" stroke-linecap="round"/>
+                <path d="M-2,-4 L2,-5 L0,-3 Z" fill="#1F2937"/>
+              </g>
             </g>
           </svg>
         </div>
       `,
-      iconSize: [size, size + 12],
-      iconAnchor: [size / 2, size + 12],
-      popupAnchor: [0, -(size + 12)],
+      iconSize: [size, size + 14],
+      iconAnchor: [size / 2, size + 14],
+      popupAnchor: [0, -(size + 14)],
     });
   };
 
