@@ -444,6 +444,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
             style={{ height: '100%', width: '100%', margin: 0, padding: 0, border: 'none' }}
             scrollWheelZoom={true}
             zoomControl={false}
+            doubleClickZoom={false}
             whenReady={() => {
               try {
                 const map = mapRef.current;
@@ -500,6 +501,9 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   eventHandlers={{
                     click: (e) => {
                       console.log('🎯 Marker clicked:', location.partnerName, location.lat, location.lng);
+                      // Prevent event from bubbling to map
+                      L.DomEvent.stopPropagation(e.originalEvent);
+                      L.DomEvent.preventDefault(e.originalEvent);
                       e.target.openPopup();
                       console.log('📍 Popup should be open now');
                     },
