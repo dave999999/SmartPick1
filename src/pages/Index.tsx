@@ -240,8 +240,8 @@ export default function Index() {
           onCategorySelect={setSelectedCategory}
         />
 
-        {/* Map Section - Full Width */}
-        <section className="w-full relative z-0">
+        {/* Map Section - Full Width, No Gaps */}
+        <section className="w-full relative z-0 m-0 p-0">
           {isLoading ? (
             <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 animate-pulse flex items-center justify-center">
               <p className="text-orange-600 font-medium">Loading delicious offers...</p>
@@ -259,11 +259,11 @@ export default function Index() {
           )}
         </section>
 
-        {/* Point-based Item List - Starts immediately after map */}
+        {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24">
+          <section className="bg-white relative z-30 pb-24 m-0 p-0">
             {/* Content with padding */}
-            <div className="px-4 pt-4">
+            <div className="px-4 pt-3">
 
             {/* Category Pills */}
             <div className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide">
