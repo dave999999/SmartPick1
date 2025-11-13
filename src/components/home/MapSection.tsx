@@ -24,9 +24,9 @@ export function MapSection({
   onSearchChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full -mx-8 m-0 p-0">
+    <div className="relative w-full -mx-8 m-0 p-0 border-none rounded-none shadow-none overflow-visible">
       {/* Map Container - Full Width, No Gaps */}
-      <div className="relative w-[calc(100vw+4rem)] h-[75vh] md:h-[65vh] m-0 p-0">
+      <div className="relative w-[calc(100vw+4rem)] h-[75vh] md:h-[65vh] m-0 p-0 border-none rounded-none shadow-none overflow-visible">
       
       {/* Search Bar OVERLAY on top of map */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4">
@@ -40,10 +40,10 @@ export function MapSection({
       </div>
 
       {/* Map - Hide zoom controls, no spacing */}
-      <div className="w-full h-full m-0 p-0 leading-none">
+      <div className="w-full h-full m-0 p-0 leading-none border-none rounded-none shadow-none overflow-visible">
         <style>{`
           .leaflet-control-zoom { display: none !important; }
-          .leaflet-container { margin: 0 !important; padding: 0 !important; display: block; line-height: 0; }
+          .leaflet-container { margin: 0 !important; padding: 0 !important; display: block; line-height: 0; border: none !important; }
         `}</style>
         <OfferMap
           offers={offers}
