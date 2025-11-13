@@ -434,56 +434,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   };
 
   return (
-    <div className="w-full space-y-4">
-      {/* Modern Control Panel - Wolt Style Dark */}
-      <div className="bg-gray-900 px-4 md:px-6 py-6 space-y-5 rounded-t-3xl">
-        {/* Near Me Button and Offer Count */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="default"
-            onClick={handleNearMe}
-            className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 px-6 py-2.5 font-semibold text-sm"
-          >
-            <Navigation className="w-4 h-4 mr-2" />
-            Near Me
-          </Button>
-          <div className="text-sm text-gray-300 font-medium flex items-center gap-2">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-[#00C896] to-[#009B77] text-white font-bold text-xs shadow-sm">
-              {displayOffers.length}
-            </span>
-            <span className="hidden sm:inline">{userLocation ? 'Near you' : 'Available'}</span>
-          </div>
-        </div>
-
-        {/* SmartPick Category Pills - Unique Design */}
-        {onCategorySelect && (
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            {categories.map((category) => {
-              const isActive = selectedCategory === category.value;
-              return (
-                <button
-                  key={category.value}
-                  onClick={() => onCategorySelect(category.value)}
-                  className={`
-                    flex-shrink-0 flex items-center gap-2.5 px-4 py-2.5 rounded-full transition-all duration-200
-                    ${isActive
-                      ? `${category.bgColor} shadow-xl scale-105 ring-2 ring-white/30`
-                      : 'bg-gray-800/60 hover:bg-gray-800 shadow-md hover:shadow-lg hover:scale-105 border border-gray-700'
-                    }
-                  `}
-                >
-                  {/* Icon */}
-                  <span className="text-2xl leading-none">{category.emoji}</span>
-                  {/* Label */}
-                  <span className="font-semibold text-sm text-white whitespace-nowrap">
-                    {t(category.labelKey)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
+    <div className="w-full">{/* Clean map without header */}
 
       {/* Interactive Map - Centered with elegant frame */}
       {showMap && (
