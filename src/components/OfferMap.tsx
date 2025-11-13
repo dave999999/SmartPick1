@@ -321,16 +321,26 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   // Group offers by partner location
   const groupOffersByLocation = (): GroupedLocation[] => {
     const locationMap = new Map<string, GroupedLocation>();
-    
+
+    console.log('🔍 Grouping offers by location, total filtered offers:', filteredOffers.length);
+
     filteredOffers.forEach(offer => {
       const location = getPartnerLocation(offer);
-      if (!location || !offer.partner) return;
-      
+      if (!location) {
+        console.warn('⚠️ Offer missing location:', offer.id, offer.title);
+        return;
+      }
+      if (!offer.partner) {
+        console.warn('⚠️ Offer missing partner:', offer.id, offer.title);
+        return;
+      }
+
       const key = `${location.lat},${location.lng}`;
-      
+
       if (locationMap.has(key)) {
         locationMap.get(key)!.offers.push(offer);
       } else {
+        console.log('✅ Creating marker at:', location.lat, location.lng, 'for', offer.partner.business_name);
         locationMap.set(key, {
           lat: location.lat,
           lng: location.lng,
@@ -340,8 +350,10 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
         });
       }
     });
-    
-    return Array.from(locationMap.values());
+
+    const result = Array.from(locationMap.values());
+    console.log('📍 Total grouped locations (markers):', result.length);
+    return result;
   };
 
   // Get user's current location
