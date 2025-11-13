@@ -29,7 +29,7 @@ export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTab
 
   return (
     <div className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-      <div className="container mx-auto px-4">
+      <div className="w-full px-4">
         <div
           ref={scrollRef}
           className="flex gap-3 overflow-x-auto scrollbar-hide py-4 scroll-smooth snap-x snap-mandatory"
