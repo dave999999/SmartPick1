@@ -237,39 +237,44 @@ export default function Index() {
         {/* Top Search Bar - Fixed */}
         <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
 
-        {/* Map Section - Full Screen */}
+        {/* Map Section - Full Screen with Overlay */}
         <section className="w-full relative">
           {isLoading ? (
-            <div className="h-[65vh] bg-gray-100 animate-pulse flex items-center justify-center">
+            <div className="h-screen bg-gray-100 animate-pulse flex items-center justify-center">
               <p className="text-gray-600 font-medium">Loading offers...</p>
             </div>
           ) : (
-            <MapSection
-              offers={filteredOffers}
-              onOfferClick={handleOfferClick}
-              selectedCategory={selectedCategory}
-              onCategorySelect={setSelectedCategory}
-              onLocationChange={setUserLocation}
-            />
+            <>
+              {/* Map - Full viewport height */}
+              <div className="h-screen w-full">
+                <MapSection
+                  offers={filteredOffers}
+                  onOfferClick={handleOfferClick}
+                  selectedCategory={selectedCategory}
+                  onCategorySelect={setSelectedCategory}
+                  onLocationChange={setUserLocation}
+                />
+              </div>
+
+              {/* Restaurant Listings Overlay - Positioned on top of map */}
+              {filteredOffers.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-2xl pb-24 max-h-[60vh] overflow-y-auto">
+                  <RestaurantFoodSection
+                    offers={filteredOffers}
+                    onOfferClick={handleOfferClick}
+                  />
+                </div>
+              )}
+
+              {/* Empty State */}
+              {filteredOffers.length === 0 && (
+                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-2xl pb-24 py-12 px-4 text-center">
+                  <p className="text-gray-500">No offers available</p>
+                </div>
+              )}
+            </>
           )}
         </section>
-
-        {/* Restaurant Food Cards - Scrollable */}
-        {!isLoading && filteredOffers.length > 0 && (
-          <section className="pb-24">
-            <RestaurantFoodSection
-              offers={filteredOffers}
-              onOfferClick={handleOfferClick}
-            />
-          </section>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && filteredOffers.length === 0 && (
-          <section className="py-12 px-4 text-center">
-            <p className="text-gray-500">No offers available</p>
-          </section>
-        )}
 
         {/* Bottom Navigation */}
         <BottomNavBar />

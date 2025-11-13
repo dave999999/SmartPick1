@@ -18,8 +18,8 @@ export function MapSection({
   onLocationChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full h-[65vh]" style={{ marginBottom: 0, paddingBottom: 0, lineHeight: 0 }}>
-      {/* Map - Full width, no gaps */}
+    <div className="relative w-full h-full" style={{ marginBottom: 0, paddingBottom: 0, lineHeight: 0 }}>
+      {/* Map - Full width and height, no gaps */}
       <div className="absolute inset-0 w-full h-full" style={{ margin: 0, padding: 0, lineHeight: 0, fontSize: 0 }}>
         <style>{`
           .leaflet-control-zoom { display: none !important; }
@@ -35,9 +35,9 @@ export function MapSection({
         />
       </div>
 
-      {/* Center Location Button */}
+      {/* Center Location Button - Positioned above bottom overlay */}
       <button
-        className="absolute bottom-6 right-6 bg-white rounded-full p-3 shadow-lg z-10"
+        className="absolute bottom-[65vh] right-6 bg-white rounded-full p-3 shadow-lg z-10"
         onClick={() => {
           // Get user's current location
           if (navigator.geolocation) {
