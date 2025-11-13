@@ -9,10 +9,10 @@ const categories = [
   { id: '', label: 'All', emoji: '🌍' },
   { id: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
   { id: 'CAFE', label: 'Café', emoji: '☕' },
-  { id: 'BAKERY', label: 'Bakery', emoji: '🍰' },
-  { id: 'GROCERY', label: 'Grocery', emoji: '🛍️' },
-  { id: 'FAST_FOOD', label: 'Fast Food', emoji: '�' },
-  { id: 'ALCOHOL', label: 'Alcohol', emoji: '�' },
+  { id: 'BAKERY', label: 'Bakery', emoji: '🥐' },
+  { id: 'GROCERY', label: 'Grocery', emoji: '�' },
+  { id: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
+  { id: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
 ];
 
 export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTabsProps) {

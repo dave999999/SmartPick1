@@ -27,8 +27,8 @@ export function MapSection({
 
   return (
     <div className="relative w-full">
-      {/* Map Container */}
-      <div className="relative w-full h-[70vh] md:h-[60vh] rounded-2xl overflow-hidden shadow-lg">
+      {/* Map Container - Full Width, No Border */}
+      <div className="relative w-full h-[70vh] md:h-[60vh] overflow-hidden">
       
       {/* Search Bar OVERLAY on top of map */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-xl px-4">
@@ -67,8 +67,11 @@ export function MapSection({
         </div>
       )}
 
-      {/* Map */}
+      {/* Map - Hide zoom controls */}
       <div className={`w-full h-full ${!mapActivated ? 'pointer-events-none' : ''}`}>
+        <style>{`
+          .leaflet-control-zoom { display: none !important; }
+        `}</style>
         <OfferMap
           offers={offers}
           onOfferClick={onOfferClick}
