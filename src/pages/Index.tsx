@@ -256,9 +256,9 @@ export default function Index() {
                 />
               </div>
 
-              {/* Restaurant Listings Overlay - Positioned on top of map */}
+              {/* Restaurant Listings Overlay - Positioned on top of map (starts around 40% from bottom) */}
               {filteredOffers.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-2xl pb-24 max-h-[60vh] overflow-y-auto">
+                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-20 min-h-[40vh] max-h-[65vh] overflow-y-auto">
                   <RestaurantFoodSection
                     offers={filteredOffers}
                     onOfferClick={handleOfferClick}
@@ -268,7 +268,7 @@ export default function Index() {
 
               {/* Empty State */}
               {filteredOffers.length === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] shadow-2xl pb-24 py-12 px-4 text-center">
+                <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[40px] shadow-[0_-4px_20px_rgba(0,0,0,0.15)] pb-20 py-12 px-4 text-center">
                   <p className="text-gray-500">No offers available</p>
                 </div>
               )}
