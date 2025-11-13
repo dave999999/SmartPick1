@@ -233,7 +233,7 @@ export default function Index() {
     <>
       <SplashScreen />
 
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50">
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50 overflow-x-hidden">
         {/* Category Tabs at very top - sticky */}
         <CategoryTabs
           selectedCategory={selectedCategory}
@@ -241,7 +241,7 @@ export default function Index() {
         />
 
         {/* Map Section - Full Width, No Gaps */}
-        <section className="w-full relative z-0 m-0 p-0">
+        <section className="w-full relative z-0 m-0 p-0 -mb-8">
           {isLoading ? (
             <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 animate-pulse flex items-center justify-center">
               <p className="text-orange-600 font-medium">Loading delicious offers...</p>
@@ -261,9 +261,9 @@ export default function Index() {
 
         {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 -mt-2">
+          <section className="bg-white relative z-30 pb-24 -mt-8 rounded-t-3xl shadow-2xl">
             {/* Content with padding */}
-            <div className="px-4 pt-4">
+            <div className="px-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               {filteredOffers.map((offer) => {
                 const getDistanceText = () => {
