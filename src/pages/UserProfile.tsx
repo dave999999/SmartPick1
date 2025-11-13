@@ -54,7 +54,7 @@ function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; on
   }, [penaltyUntil, onExpire]);
 
   return (
-    <div className="flex items-center justify-center gap-2 bg-white/70 rounded-lg p-3 border-2 border-orange-300">
+    <div className="flex items-center justify-center gap-2 bg-orange-50 rounded-lg p-3 border border-orange-200">
       <Clock className="w-5 h-5 text-orange-600" />
       <div className="flex gap-1 text-2xl font-bold text-orange-700 font-mono">
         {timeLeft.hours > 0 && <span>{String(timeLeft.hours).padStart(2, '0')}:</span>}
@@ -121,8 +121,8 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
   if (status.isBanned) {
     return (
-      <div className="bg-red-100 border-2 border-red-400 rounded-lg p-4">
-  <p className="text-sm text-red-800 font-bold">🚫 {t('penalty.banned')}</p>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+  <p className="text-sm text-red-700 font-semibold">🚫 {t('penalty.banned')}</p>
   <p className="text-xs text-red-600 mt-1">{t('penalty.contactSupport')}</p>
       </div>
     );
@@ -141,7 +141,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
           <Button
             onClick={handleLiftPenalty}
             disabled={isLifting}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg"
             size="sm"
           >
             {isLifting ? (
@@ -156,7 +156,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
         )}
 
         {!canLift && penaltyCount >= 3 && (
-          <div className="text-xs text-orange-700 bg-orange-100/50 p-2 rounded text-center">
+          <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded-lg text-center border border-orange-200">
             ⏳ {t('penalty.cannotLift')}
           </div>
         )}
@@ -165,8 +165,8 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
   }
 
   return (
-    <div className="bg-green-100 border-2 border-green-300 rounded-lg p-3">
-      <p className="text-sm text-green-800 font-semibold">✓ {t('penalty.noneActive')}</p>
+    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+      <p className="text-sm text-green-700 font-medium">✓ {t('penalty.noneActive')}</p>
     </div>
   );
 }
@@ -403,31 +403,31 @@ export default function UserProfile() {
                   </CardContent>
                 </Card>
 
-                {/* Penalty Status - Right (1 col on large screens) */}
-                <Card className={`shadow-xl border-2 ${
+                {/* Account Status - Right (1 col on large screens) */}
+                <Card className={`shadow-sm border ${
                   user.penalty_count && user.penalty_count > 0
-                    ? 'border-orange-400 bg-gradient-to-br from-orange-900/40 to-red-900/40'
-                    : 'border-green-400 bg-gradient-to-br from-green-900/40 to-emerald-900/40'
+                    ? 'border-orange-200 bg-white'
+                    : 'border-green-200 bg-white'
                 }`}>
-                  <CardHeader className="pb-2 md:pb-3">
-                    <CardTitle className={`text-base md:text-lg flex items-center gap-2 ${
-                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-300' : 'text-green-300'
+                  <CardHeader className="pb-3">
+                    <CardTitle className={`text-base font-semibold flex items-center gap-2 ${
+                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-600' : 'text-green-600'
                     }`}>
                       {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} {t('profile.accountStatus')}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {user.penalty_count && user.penalty_count > 0 ? (
-                      <div className="space-y-2 md:space-y-3">
-                        <div className="bg-gray-800/50 rounded-lg p-2 md:p-3 border border-orange-700">
-                          <p className="text-xs md:text-sm font-semibold text-orange-300 mb-2">
+                      <div className="space-y-3">
+                        <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                          <p className="text-sm font-medium text-orange-700 mb-2">
                             {t('penalty.pointsLabel')} {user.penalty_count}
                           </p>
                           <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} onUpdate={loadUser} />
                         </div>
-                        <div className="text-xs text-orange-300 bg-orange-900/30 p-2 rounded">
-                          <p className="font-semibold mb-1">{t('penalty.escalation')}</p>
-                          <ul className="space-y-0.5 pl-3">
+                        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                          <p className="font-medium mb-2 text-gray-700">{t('penalty.escalation')}</p>
+                          <ul className="space-y-1 pl-3 list-disc list-inside">
                             <li>{t('penalty.firstPenalty')}</li>
                             <li>{t('penalty.secondPenalty')}</li>
                             <li>{t('penalty.thirdPenalty')}</li>
@@ -437,11 +437,11 @@ export default function UserProfile() {
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        <div className="bg-gray-800/50 rounded-lg p-2 md:p-3 border border-green-700">
-                          <p className="text-xs md:text-sm font-semibold text-gray-900 mb-1">✓ {t('profile.goodStanding')}</p>
-                          <p className="text-xs md:text-sm text-green-400">{t('penalty.noneActive')}</p>
+                        <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                          <p className="text-sm font-medium text-green-700 mb-1">✓ {t('profile.goodStanding')}</p>
+                          <p className="text-sm text-green-600">{t('penalty.noneActive')}</p>
                         </div>
-                        <p className="text-xs text-green-400">{t('penalty.encouragement')}</p>
+                        <p className="text-xs text-gray-500">{t('penalty.encouragement')}</p>
                       </div>
                     )}
                   </CardContent>
