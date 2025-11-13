@@ -261,9 +261,9 @@ export default function Index() {
 
         {/* Point-based Item List - Flush with map, no gap */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 m-0 p-0">
+          <section className="bg-white relative z-30 pb-24 m-0 p-0 !mt-0 !pt-0 -mt-[1px]">
             {/* Content with padding */}
-            <div className="px-4 pt-3">
+            <div className="px-4 pt-3 !mt-0">
 
             {/* Category Pills */}
             <div className="flex gap-3 overflow-x-auto pb-4 mb-4 scrollbar-hide">

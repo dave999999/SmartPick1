@@ -83,3 +83,33 @@
   .hover\:bg-mint-700:hover { background-color: hsl(var(--mint-700)); }
   .hover\:bg-mint-50:hover { background-color: hsl(var(--mint-50)); }
 }
+
+/* Leaflet Map - Remove all spacing and gaps */
+.leaflet-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: block !important;
+}
+
+.leaflet-pane,
+.leaflet-map-pane {
+  bottom: 0 !important;
+}
+
+.leaflet-bottom {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.leaflet-control-container {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.leaflet-top,
+.leaflet-right,
+.leaflet-left {
+  margin: 0 !important;
+  padding: 0 !important;
+}
