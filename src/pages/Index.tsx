@@ -220,18 +220,18 @@ export default function Index() {
     <>
       <SplashScreen />
 
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50">
         {/* Category Tabs at very top - sticky */}
         <CategoryTabs
           selectedCategory={selectedCategory}
           onCategorySelect={setSelectedCategory}
         />
 
-        {/* Map Section with search bar inside */}
-        <section className="container mx-auto px-4 pt-4">
+        {/* Map Section with search bar overlaid */}
+        <section className="container mx-auto px-4 pt-6">
           {isLoading ? (
-            <div className="h-[70vh] md:h-[60vh] bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center">
-              <p className="text-gray-400">Loading...</p>
+            <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl animate-pulse flex items-center justify-center">
+              <p className="text-orange-600 font-medium">Loading delicious offers...</p>
             </div>
           ) : (
             <MapSection
@@ -248,17 +248,17 @@ export default function Index() {
 
         {/* Point-based Item List - scrollable below map */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="container mx-auto px-4 py-8">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Available Offers
+          <section className="container mx-auto px-4 py-10">
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Popular Near You 🔥
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {filteredOffers.length} offer{filteredOffers.length !== 1 ? 's' : ''} near you
+              <p className="text-base text-gray-600">
+                {filteredOffers.length} delicious offer{filteredOffers.length !== 1 ? 's' : ''} available
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredOffers.map((offer) => {
                 const getDistanceText = () => {
                   if (!userLocation || !offer.partner) return null;
@@ -284,42 +284,48 @@ export default function Index() {
                 return (
                   <div
                     key={offer.id}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-xl cursor-pointer transition-all duration-200 overflow-hidden border border-gray-100"
+                    className="bg-white rounded-3xl shadow-sm hover:shadow-2xl cursor-pointer transition-all duration-300 overflow-hidden border border-gray-100 hover:border-orange-200 group"
                     onClick={() => handleOfferClick(offer)}
                   >
                     {/* Image */}
-                    <div className="relative h-48 w-full overflow-hidden">
+                    <div className="relative h-52 w-full overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100">
                       <img
                         src={offer.images && offer.images.length > 0 ? resolveOfferImageUrl(offer.images[0], offer.category) : '/placeholder.png'}
                         alt={offer.title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                         onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                       />
+                      {/* Rating Badge */}
+                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1">
+                        <span className="text-yellow-500 text-base">★</span>
+                        <span className="font-bold text-sm text-gray-900">4.8</span>
+                      </div>
                     </div>
 
                     {/* Content */}
-                    <div className="p-4">
-                      <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-1">
+                    <div className="p-5">
+                      <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-[#FF6B35] transition-colors">
                         {offer.title}
                       </h3>
                       
-                      <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-                        <span className="font-bold text-[#00C896] text-2xl">{offer.smart_price} pts</span>
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-500 font-semibold">⭐ 4.8</span>
-                        </div>
+                      {/* Points Price - Prominent */}
+                      <div className="flex items-baseline gap-2 mb-4">
+                        <span className="font-extrabold text-[#FF6B35] text-3xl">{offer.smart_price}</span>
+                        <span className="font-bold text-[#FF6B35] text-lg">pts</span>
+                        <span className="text-sm text-gray-400 line-through ml-auto">{offer.original_price} ₾</span>
                       </div>
 
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
+                      {/* Location & Time */}
+                      <div className="space-y-2 text-xs text-gray-600">
                         {getDistanceText() && (
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{getDistanceText()}km</span>
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span className="font-medium">{getDistanceText()} km away</span>
                           </div>
                         )}
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span>{pickupTime}</span>
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-gray-400" />
+                          <span className="font-medium">{pickupTime}</span>
                         </div>
                       </div>
                     </div>

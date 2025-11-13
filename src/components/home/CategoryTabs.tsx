@@ -28,11 +28,11 @@ export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTab
   }, [selectedCategory]);
 
   return (
-    <div className="bg-slate-800/60 backdrop-blur-sm border-b border-white/10 sticky top-14 md:top-16 z-40">
+    <div className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div
           ref={scrollRef}
-          className="flex gap-2 overflow-x-auto scrollbar-hide py-3 scroll-smooth snap-x snap-mandatory"
+          className="flex gap-3 overflow-x-auto scrollbar-hide py-4 scroll-smooth snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {categories.map((category) => {
@@ -43,17 +43,17 @@ export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTab
                 data-category={category.id}
                 onClick={() => onCategorySelect(category.id)}
                 className={`
-                  flex items-center gap-1.5 px-4 py-2 rounded-full whitespace-nowrap
-                  transition-all duration-200 snap-center shrink-0
+                  flex items-center gap-2 px-5 py-2.5 rounded-full whitespace-nowrap
+                  transition-all duration-200 snap-center shrink-0 font-medium
                   ${
                     isActive
-                      ? 'bg-[#00C896] text-white shadow-lg shadow-[#00C896]/30 scale-105'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                      ? 'bg-[#FF6B35] text-white shadow-lg shadow-[#FF6B35]/30'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                   }
                 `}
               >
-                <span className="text-base">{category.emoji}</span>
-                <span className="text-sm font-medium">{category.label}</span>
+                <span className="text-lg">{category.emoji}</span>
+                <span className="text-sm">{category.label}</span>
               </button>
             );
           })}
