@@ -1,4 +1,4 @@
-import { Star, ChevronRight } from 'lucide-react';
+import { Star, ChevronRight, Heart } from 'lucide-react';
 import { Offer } from '@/lib/types';
 import { resolveOfferImageUrl } from '@/lib/api';
 
@@ -25,53 +25,63 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
   });
 
   return (
-    <div className="bg-white">
+    <div className="bg-white pt-6">
       {Object.values(groupedOffers).map(({ partner, offers: partnerOffers }) => (
-        <div key={partner.id} className="mb-6">
+        <div key={partner.id} className="mb-8">
           {/* Restaurant Header */}
-          <div className="px-4 py-4 flex items-center justify-between">
+          <div className="px-4 pb-3 flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{partner.business_name}</h2>
-              <p className="text-sm text-gray-500">{partner.business_type || 'Restaurant'}</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-0.5">{partner.business_name}</h2>
+              <p className="text-sm text-gray-500">
+                {partner.address || 'Breakfast, lunch, and...'}
+              </p>
             </div>
-            <button className="flex items-center text-sm text-gray-600">
+            <button className="text-sm text-gray-700 hover:text-gray-900 mt-1">
               See more
-              <ChevronRight className="w-4 h-4 ml-1" />
             </button>
           </div>
 
-          {/* Horizontal Scrolling Food Items */}
-          <div className="flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
-            {partnerOffers.slice(0, 6).map((offer) => (
-              <div
-                key={offer.id}
-                onClick={() => onOfferClick(offer)}
-                className="flex-shrink-0 w-40 cursor-pointer"
-              >
-                {/* Food Image */}
-                <div className="relative w-40 h-40 rounded-2xl overflow-hidden mb-2">
-                  <img
-                    src={offer.images && offer.images.length > 0
-                      ? resolveOfferImageUrl(offer.images[0], offer.category)
-                      : '/placeholder.png'}
-                    alt={offer.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
-                  />
+          {/* Horizontal Scrolling Food Cards */}
+          <div className="flex gap-4 overflow-x-auto px-4 pb-2 scrollbar-hide snap-x snap-mandatory">
+            {partnerOffers.slice(0, 6).map((offer) => {
+              const imageUrl = offer.images && offer.images.length > 0
+                ? resolveOfferImageUrl(offer.images[0], offer.category)
+                : '/placeholder.png';
 
-                  {/* Rating Badge */}
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 flex items-center gap-1">
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                    <span className="text-xs font-semibold text-gray-900">4.6</span>
+              return (
+                <div
+                  key={offer.id}
+                  onClick={() => onOfferClick(offer)}
+                  className="flex-shrink-0 w-[160px] cursor-pointer snap-start"
+                >
+                  {/* Food Image Card with Rating Badge */}
+                  <div className="relative w-full h-[160px] rounded-2xl overflow-hidden mb-2 bg-gray-100">
+                    <img
+                      src={imageUrl}
+                      alt={offer.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg';
+                      }}
+                    />
+
+                    {/* Star Rating Badge - Top Right */}
+                    <div className="absolute top-2 right-2 bg-amber-500 rounded-lg px-2 py-1 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-white text-white" />
+                      <span className="text-xs font-bold text-white">4.6</span>
+                    </div>
+
+                    {/* Heart Icon - Bottom Right */}
+                    <button className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-full p-2 hover:bg-white transition-colors">
+                      <Heart className="w-4 h-4 text-gray-700" />
+                    </button>
                   </div>
-                </div>
 
-                {/* Food Info */}
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2">
+                  {/* Food Title and Price */}
+                  <h3 className="text-sm font-bold text-gray-900 mb-1 line-clamp-2 leading-tight">
                     {offer.title}
                   </h3>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <span className="text-base font-bold text-gray-900">
                       ${offer.smart_price}
                     </span>
@@ -82,8 +92,8 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
