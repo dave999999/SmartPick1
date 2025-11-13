@@ -24,9 +24,9 @@ export function MapSection({
   onSearchChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full -mx-4">
+    <div className="relative w-full -mx-8">
       {/* Map Container - Full Width, Extended */}
-      <div className="relative w-screen h-[75vh] md:h-[65vh]">
+      <div className="relative w-[calc(100vw+4rem)] h-[75vh] md:h-[65vh]">
       
       {/* Search Bar OVERLAY on top of map */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4">
@@ -51,32 +51,6 @@ export function MapSection({
           onCategorySelect={onCategorySelect}
           onLocationChange={onLocationChange}
         />
-      </div>
-
-      {/* My Location Button Only */}
-      <div className="absolute bottom-4 right-4 z-10">
-        <Button
-          size="icon"
-          className="h-12 w-12 rounded-full bg-white hover:bg-gray-50 text-[#FF6B35] shadow-xl border-0"
-          onClick={() => {
-            if (navigator.geolocation) {
-              navigator.geolocation.getCurrentPosition(
-                (position) => {
-                  const location: [number, number] = [
-                    position.coords.latitude,
-                    position.coords.longitude,
-                  ];
-                  onLocationChange(location);
-                },
-                (error) => {
-                  console.error('Error getting location:', error);
-                }
-              );
-            }
-          }}
-        >
-          <Locate className="h-5 w-5" />
-        </Button>
       </div>
       </div>
     </div>
