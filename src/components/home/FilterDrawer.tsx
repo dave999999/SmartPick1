@@ -46,23 +46,17 @@ export function FilterDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
-        <SheetHeader className="pb-4 border-b">
-          <SheetTitle className="flex items-center gap-2 text-lg font-semibold">
+      <SheetContent side="right" className="w-[90vw] sm:w-[400px] overflow-y-auto">
+        <SheetHeader className="pb-4">
+          <SheetTitle className="flex items-center gap-2 text-base font-semibold">
             <SlidersHorizontal className="h-5 w-5" />
             Search & Filters
           </SheetTitle>
-          <button 
-            onClick={() => onOpenChange(false)}
-            className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
-          >
-            ✕
-          </button>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6 overflow-y-auto pb-24" style={{ maxHeight: 'calc(85vh - 140px)' }}>
+        <div className="space-y-5 pb-6">
           {/* Search */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label htmlFor="search" className="text-sm font-medium text-gray-700">Search</Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -71,16 +65,21 @@ export function FilterDrawer({
                 placeholder="Search offers..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10 h-12 rounded-xl border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]"
+                className="pl-10 h-11 rounded-lg border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]"
               />
             </div>
+            {searchQuery && (
+              <p className="text-xs text-gray-500">
+                Searching in titles, restaurants, and categories
+              </p>
+            )}
           </div>
 
           {/* Sort */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label htmlFor="sort" className="text-sm font-medium text-gray-700">Sort by</Label>
             <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
-              <SelectTrigger id="sort" className="h-12 rounded-xl border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]">
+              <SelectTrigger id="sort" className="h-11 rounded-lg border-gray-200 focus:border-[#00C896] focus:ring-[#00C896]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -93,9 +92,9 @@ export function FilterDrawer({
           </div>
 
           {/* Price Range */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Label className="text-sm font-medium text-gray-700">Price Range</Label>
-            <div className="space-y-4 px-1">
+            <div className="space-y-3 pt-2">
               <Slider
                 min={0}
                 max={500}
@@ -113,9 +112,9 @@ export function FilterDrawer({
 
           {/* Distance Filter */}
           {showDistanceFilter && (
-            <div className="space-y-4">
+            <div className="space-y-3">
               <Label className="text-sm font-medium text-gray-700">Maximum Distance</Label>
-              <div className="space-y-4 px-1">
+              <div className="space-y-3 pt-2">
                 <Slider
                   min={1}
                   max={50}
@@ -125,28 +124,28 @@ export function FilterDrawer({
                   className="w-full"
                 />
                 <div className="text-sm font-medium text-gray-700">
-                  {filters.maxDistance} km
-                  {filters.maxDistance >= 50 && ' (All)'}
+                  Within {filters.maxDistance} km
+                  {filters.maxDistance >= 50 && ' (All locations)'}
                 </div>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Fixed Bottom Actions */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t flex gap-3">
-          <button
-            onClick={handleReset}
-            className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-semibold transition-colors"
-          >
-            Reset Filters
-          </button>
-          <button
-            onClick={handleApply}
-            className="flex-1 py-3 px-4 bg-[#00C896] hover:bg-[#00b285] text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
-          >
-            Apply Filters
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t">
+            <button
+              onClick={handleReset}
+              className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+            >
+              Reset Filters
+            </button>
+            <button
+              onClick={handleApply}
+              className="flex-1 py-2.5 px-4 bg-[#00C896] hover:bg-[#00b285] text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+            >
+              Apply
+            </button>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
