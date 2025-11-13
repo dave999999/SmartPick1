@@ -473,14 +473,14 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   position={[location.lat, location.lng]}
                   icon={makeCategoryIcon(primaryOffer.category, location.offers.length, isHighlighted)}
                   eventHandlers={{
-                    mouseover: (e) => {
+                    click: (e) => {
                       e.target.openPopup();
                     },
                   }}
                 >
                   <Popup
-                    maxWidth={320}
-                    minWidth={280}
+                    maxWidth={260}
+                    minWidth={240}
                     closeButton={true}
                     className="compact-popup"
                   >
@@ -655,7 +655,7 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
 
         .leaflet-popup-content {
           margin: 0 !important;
-          width: 280px !important;
+          width: 240px !important;
           max-width: 90vw !important;
         }
 
