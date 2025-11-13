@@ -9,6 +9,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import PartnerApplication from './pages/PartnerApplication';
 import ReservationDetail from './pages/ReservationDetail';
 import MyPicks from './pages/MyPicks';
+import Favorites from './pages/Favorites';
 import AdminPanel from './pages/AdminPanel';
 import AdminDashboard from './pages/AdminDashboard';
 import ReserveOffer from './pages/ReserveOffer';
@@ -84,6 +85,7 @@ const AppContent = () => {
         />
         <Route path="/partner/apply" element={<PartnerApplication />} />
         <Route path="/my-picks" element={<MyPicks />} />
+        <Route path="/favorites" element={<Favorites />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/reservation/:id" element={<ReservationDetail />} />
         <Route path="/reserve/:offerId" element={<ReserveOffer />} />
