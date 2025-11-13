@@ -654,11 +654,21 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
         .leaflet-marker-pane {
           pointer-events: auto !important;
           cursor: pointer !important;
+          z-index: 600 !important;
         }
 
         .leaflet-popup-pane {
           pointer-events: auto !important;
-          z-index: 700 !important;
+          z-index: 800 !important;
+        }
+
+        .leaflet-container {
+          z-index: 1 !important;
+        }
+
+        /* Ensure all map panes have proper pointer events */
+        .leaflet-pane {
+          pointer-events: auto !important;
         }
 
         /* Compact Mobile-Friendly Popup Styles */
