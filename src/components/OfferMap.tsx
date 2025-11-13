@@ -149,18 +149,18 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   // Default center: Tbilisi, Georgia
   const defaultCenter: [number, number] = [41.7151, 44.8271];
 
-  // Use bright, modern CARTO Voyager style (like Glovo/Wolt)
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+  // Use light pink/beige map style like in reference
+  const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
-  // Create orange marker icon (like in reference design)
+  // Create orange teardrop pin with fork/knife icon (exactly like reference)
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 44 : 38;
-    const bgColor = '#FF6B35'; // Orange color from reference
-    const shadow = '0 4px 12px rgba(255, 107, 53, 0.4)';
+    const size = isHighlighted ? 48 : 42;
+    const bgColor = '#FF6347'; // Tomato orange from reference
+    const shadow = '0 4px 16px rgba(255, 99, 71, 0.5)';
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -168,33 +168,27 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
         <div class="marker-container" style="
           position: relative;
           width: ${size}px;
-          height: ${size + 10}px;
+          height: ${size + 12}px;
           filter: drop-shadow(${shadow});
         ">
-          <div class="marker-pin" style="
-            width: ${size}px;
-            height: ${size}px;
-            border-radius: 50% 50% 50% 0;
-            background: ${bgColor};
-            transform: rotate(-45deg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.25s ease;
-          ">
-            <div style="
-              width: ${size - 8}px;
-              height: ${size - 8}px;
-              border-radius: 50%;
-              background: white;
-              transform: rotate(45deg);
-            "></div>
-          </div>
+          <svg width="${size}" height="${size + 12}" viewBox="0 0 40 50" style="position: relative;">
+            <path d="M20 0C11.716 0 5 6.716 5 15c0 8.284 15 35 15 35s15-26.716 15-35c0-8.284-6.716-15-15-15z"
+              fill="${bgColor}" />
+            <circle cx="20" cy="15" r="11" fill="white" />
+            <g transform="translate(20, 15)">
+              <!-- Fork icon -->
+              <path d="M-3 -6 L-3 -2 L-4 -2 L-4 3 L-2 3 L-2 -2 L-1 -2 L-1 -6 M-1 -6 L-1 -4"
+                stroke="black" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+              <!-- Knife icon -->
+              <path d="M2 -6 L2 0 C2 2 3 3 3 3 M2 -4 L4 -5"
+                stroke="black" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+            </g>
+          </svg>
         </div>
       `,
-      iconSize: [size, size + 10],
-      iconAnchor: [size / 2, size + 10],
-      popupAnchor: [0, -(size + 10)],
+      iconSize: [size, size + 12],
+      iconAnchor: [size / 2, size + 12],
+      popupAnchor: [0, -(size + 12)],
     });
   };
 

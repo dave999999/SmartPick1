@@ -1,6 +1,6 @@
 import { Offer } from '@/lib/types';
 import OfferMap from '@/components/OfferMap';
-import { Navigation } from 'lucide-react';
+import { Crosshair } from 'lucide-react';
 
 interface MapSectionProps {
   offers: Offer[];
@@ -18,14 +18,9 @@ export function MapSection({
   onLocationChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full h-full" style={{ marginBottom: 0, paddingBottom: 0, lineHeight: 0 }}>
-      {/* Map - Full width and height, no gaps */}
-      <div className="absolute inset-0 w-full h-full" style={{ margin: 0, padding: 0, lineHeight: 0, fontSize: 0 }}>
-        <style>{`
-          .leaflet-control-zoom { display: none !important; }
-          .leaflet-container { margin: 0 !important; padding: 0 !important; border: none !important; line-height: 0 !important; }
-          .leaflet-bottom { margin: 0 !important; padding: 0 !important; }
-        `}</style>
+    <div className="relative w-full h-full">
+      {/* Map - Full screen */}
+      <div className="absolute inset-0 w-full h-full">
         <OfferMap
           offers={offers}
           onOfferClick={onOfferClick}
@@ -35,19 +30,23 @@ export function MapSection({
         />
       </div>
 
-      {/* Center Location Button - Positioned above bottom overlay */}
+      {/* Center Location Button - Crosshair icon in white circle */}
       <button
-        className="absolute bottom-[65vh] right-6 bg-white rounded-full p-3 shadow-lg z-10"
+        className="absolute bottom-[42vh] right-4 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-shadow z-[50]"
         onClick={() => {
-          // Get user's current location
           if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-              onLocationChange([position.coords.latitude, position.coords.longitude]);
-            });
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                onLocationChange([position.coords.latitude, position.coords.longitude]);
+              },
+              (error) => {
+                console.error('Error getting location:', error);
+              }
+            );
           }
         }}
       >
-        <Navigation className="w-5 h-5 text-gray-900" />
+        <Crosshair className="w-6 h-6 text-gray-900" />
       </button>
     </div>
   );
