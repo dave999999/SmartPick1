@@ -240,10 +240,10 @@ export default function Index() {
           onCategorySelect={setSelectedCategory}
         />
 
-        {/* Map Section with search bar overlaid */}
-        <section className="container mx-auto px-4 pt-6">
+        {/* Map Section - Full Width */}
+        <section className="w-full">
           {isLoading ? (
-            <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl animate-pulse flex items-center justify-center">
+            <div className="h-[70vh] md:h-[60vh] bg-gradient-to-br from-orange-100 to-orange-50 animate-pulse flex items-center justify-center">
               <p className="text-orange-600 font-medium">Loading delicious offers...</p>
             </div>
           ) : (
@@ -259,11 +259,11 @@ export default function Index() {
           )}
         </section>
 
-        {/* Point-based Item List - Like in screenshot */}
+        {/* Point-based Item List - Starts immediately after map */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 py-6 pb-24">
-            {/* Popular Items Header */}
-            <div className="flex items-center justify-between mb-6">
+          <section className="bg-white relative z-10 pb-24">
+            {/* Popular Items Header - Sticky */}
+            <div className="sticky top-0 z-20 bg-white border-b border-gray-200 flex items-center justify-between px-4 py-3">
               <button className="p-2">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -276,6 +276,9 @@ export default function Index() {
                 </svg>
               </button>
             </div>
+
+            {/* Content with padding */}
+            <div className="px-4 pt-4">
 
             {/* Category Pills */}
             <div className="flex gap-3 overflow-x-auto pb-4 mb-6 scrollbar-hide">
@@ -364,6 +367,7 @@ export default function Index() {
                   </div>
                 );
               })}
+            </div>
             </div>
           </section>
         )}
