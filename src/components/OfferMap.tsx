@@ -159,169 +159,204 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 70 : 60;
+    const size = isHighlighted ? 56 : 50;
     
-    // Complete pin SVGs - Full icons EXACTLY as shown in reference images
+    // Complete pin SVGs - Full teardrop pins EXACTLY matching reference images
     const categoryPins: Record<string, string> = {
       GROCERY: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#7FD47F"/>
-              <stop offset="50%" style="stop-color:#4CAF50"/>
+            <linearGradient id="greenGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" style="stop-color:#80E27E"/>
+              <stop offset="40%" style="stop-color:#4CAF50"/>
               <stop offset="100%" style="stop-color:#2E7D32"/>
             </linearGradient>
-            <radialGradient id="greenGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="greenGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#greenGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#greenGloss)"/>
-          <g transform="translate(25, 20) scale(0.8)">
-            <path d="M-7,-6 L-5,-6 L-2,5 L5,5" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="-1.5" y="-1" width="7" height="6" stroke="#FFFEF5" stroke-width="3" fill="none" rx="1"/>
-            <circle cx="0.5" cy="7.5" r="1.5" fill="#FFFEF5"/>
-            <circle cx="4.5" cy="7.5" r="1.5" fill="#FFFEF5"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#greenGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#greenGloss_pin)"/>
+          <!-- Shopping cart icon -->
+          <g transform="translate(50, 48)">
+            <path d="M-14,-10 L-10,-10 L-6,10 L10,10" stroke="#FFFEF5" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="-4" y="-2" width="12" height="10" stroke="#FFFEF5" stroke-width="5" fill="none" rx="2"/>
+            <circle cx="-1" cy="15" r="2.5" fill="#FFFEF5"/>
+            <circle cx="7" cy="15" r="2.5" fill="#FFFEF5"/>
           </g>
         </svg>
       `,
       RESTAURANT: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#FF8A65"/>
-              <stop offset="50%" style="stop-color:#FF6B5A"/>
+            <linearGradient id="orangeGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" style="stop-color:#FF9E80"/>
+              <stop offset="40%" style="stop-color:#FF6B5A"/>
               <stop offset="100%" style="stop-color:#D84315"/>
             </linearGradient>
-            <radialGradient id="orangeGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="orangeGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#orangeGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#orangeGloss)"/>
-          <g transform="translate(25, 20)">
-            <g transform="rotate(-30) translate(-4, 0) scale(0.9)">
-              <line x1="-1.5" y1="-7" x2="-1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-              <line x1="1.5" y1="-7" x2="1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#orangeGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#orangeGloss_pin)"/>
+          <!-- Crossed fork and knife -->
+          <g transform="translate(50, 48)">
+            <!-- Fork (left, rotated) -->
+            <g transform="rotate(-30) translate(-7, 0)">
+              <line x1="-3" y1="-12" x2="-3" y2="-3" stroke="#FFFEF5" stroke-width="4.5" stroke-linecap="round"/>
+              <line x1="0" y1="-12" x2="0" y2="12" stroke="#FFFEF5" stroke-width="4.5" stroke-linecap="round"/>
+              <line x1="3" y1="-12" x2="3" y2="-3" stroke="#FFFEF5" stroke-width="4.5" stroke-linecap="round"/>
             </g>
-            <g transform="rotate(30) translate(4, 0) scale(0.9)">
-              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-              <path d="M-2.5,-6 L2.5,-7.5 L0,-4 Z" fill="#FFFEF5"/>
+            <!-- Knife (right, rotated) -->
+            <g transform="rotate(30) translate(7, 0)">
+              <line x1="0" y1="-12" x2="0" y2="12" stroke="#FFFEF5" stroke-width="4.5" stroke-linecap="round"/>
+              <path d="M-4,-10 L4,-12 L0,-6 Z" fill="#FFFEF5"/>
             </g>
           </g>
         </svg>
       `,
       FAST_FOOD: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="fastfoodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#FFB74D"/>
-              <stop offset="50%" style="stop-color:#FF9800"/>
+            <linearGradient id="fastfoodGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" style="stop-color:#FFCC80"/>
+              <stop offset="40%" style="stop-color:#FF9800"/>
               <stop offset="100%" style="stop-color:#E65100"/>
             </linearGradient>
-            <radialGradient id="fastfoodGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="fastfoodGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#fastfoodGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#fastfoodGloss)"/>
-          <g transform="translate(25, 20) scale(0.75)">
-            <g transform="translate(-4.5, 0)">
-              <ellipse cx="0" cy="-5" rx="4.5" ry="2.5" fill="#FFFEF5"/>
-              <rect x="-4.5" y="-3" width="9" height="2" fill="#FFFEF5" rx="0.8"/>
-              <circle cx="-2" cy="-2" r="0.7" fill="#FF9800" opacity="0.4"/>
-              <circle cx="1" cy="-2" r="0.7" fill="#FF9800" opacity="0.4"/>
-              <circle cx="3" cy="-1.5" r="0.7" fill="#FF9800" opacity="0.4"/>
-              <path d="M-4.5,0.5 L-3.5,3.5 L3.5,3.5 L4.5,0.5 Z" fill="#FFFEF5"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#fastfoodGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#fastfoodGloss_pin)"/>
+          <!-- Burger and drink -->
+          <g transform="translate(50, 48)">
+            <!-- Burger (left) -->
+            <g transform="translate(-10, 0)">
+              <ellipse cx="0" cy="-9" rx="8" ry="4" fill="#FFFEF5"/>
+              <rect x="-8" y="-5" width="16" height="3" fill="#FFFEF5" rx="1"/>
+              <circle cx="-4" cy="-3.5" r="1.2" fill="#FF9800" opacity="0.4"/>
+              <circle cx="1" cy="-3.5" r="1.2" fill="#FF9800" opacity="0.4"/>
+              <circle cx="5" cy="-2.5" r="1.2" fill="#FF9800" opacity="0.4"/>
+              <path d="M-8,0 L-6,5 L6,5 L8,0 Z" fill="#FFFEF5"/>
             </g>
-            <g transform="translate(6, 0)">
-              <rect x="-2.2" y="-2" width="4.4" height="7.5" fill="none" stroke="#FFFEF5" stroke-width="2.8" rx="0.7"/>
-              <line x1="-3" y1="5.5" x2="3" y2="5.5" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-              <line x1="0" y1="-5" x2="1.2" y2="-3" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+            <!-- Drink (right) -->
+            <g transform="translate(12, 0)">
+              <rect x="-4" y="-4" width="8" height="13" fill="none" stroke="#FFFEF5" stroke-width="5" rx="1"/>
+              <line x1="-5" y1="9" x2="5" y2="9" stroke="#FFFEF5" stroke-width="5" stroke-linecap="round"/>
+              <line x1="0" y1="-8" x2="2" y2="-5" stroke="#FFFEF5" stroke-width="5" stroke-linecap="round"/>
             </g>
           </g>
         </svg>
       `,
       BAKERY: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:#FFD54F"/>
-              <stop offset="50%" style="stop-color:#FFA726"/>
+            <linearGradient id="yellowGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" style="stop-color:#FFE082"/>
+              <stop offset="40%" style="stop-color:#FFA726"/>
               <stop offset="100%" style="stop-color:#EF6C00"/>
             </linearGradient>
-            <radialGradient id="yellowGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="yellowGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#yellowGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#yellowGloss)"/>
-          <g transform="translate(25, 20) scale(0.85)">
-            <path d="M-8,4 Q-9,1 -6,-3 Q-3,-5 0,-4 Q3,-5 6,-3 Q9,1 8,4 Q6,5 3,4.5 Q0,5 -3,4.5 Q-6,5 -8,4 Z" fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2.2" stroke-linejoin="round"/>
-            <ellipse cx="-5" cy="0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
-            <ellipse cx="-1.5" cy="-0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
-            <ellipse cx="2" cy="-0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
-            <ellipse cx="5.5" cy="0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#yellowGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#yellowGloss_pin)"/>
+          <!-- Croissant -->
+          <g transform="translate(50, 50)">
+            <path d="M-15,7 Q-17,2 -12,-6 Q-6,-9 0,-7 Q6,-9 12,-6 Q17,2 15,7 Q11,9 5,8 Q0,9 -5,8 Q-11,9 -15,7 Z" 
+                  fill="#FFFEF5" stroke="#FFFEF5" stroke-width="3.5" stroke-linejoin="round"/>
+            <ellipse cx="-9" cy="1" rx="2.5" ry="1.8" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="-3" cy="-1" rx="2.5" ry="1.8" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="3" cy="-1" rx="2.5" ry="1.8" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="10" cy="1" rx="2.5" ry="1.8" fill="#FFD699" opacity="0.7"/>
           </g>
         </svg>
       `,
       ALCOHOL: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient id="purpleGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
               <stop offset="0%" style="stop-color:#CE93D8"/>
-              <stop offset="50%" style="stop-color:#AB47BC"/>
+              <stop offset="40%" style="stop-color:#AB47BC"/>
               <stop offset="100%" style="stop-color:#6A1B9A"/>
             </linearGradient>
-            <radialGradient id="purpleGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="purpleGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#purpleGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#purpleGloss)"/>
-          <g transform="translate(25, 20) scale(0.9)">
-            <path d="M-5.5,-7 L-4,-2 Q-4,3.5 0,5 L0,8" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <path d="M5.5,-7 L4,-2 Q4,3.5 0,5" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round"/>
-            <line x1="-4" y1="8" x2="4" y2="8" stroke="#FFFEF5" stroke-width="3" stroke-linecap="round"/>
-            <line x1="-5.5" y1="-7" x2="5.5" y2="-7" stroke="#FFFEF5" stroke-width="3" stroke-linecap="round"/>
-            <path d="M-3.5,-3 Q-3.5,1 0,2.5 Q3.5,1 3.5,-3" fill="#BA68C8" opacity="0.3"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#purpleGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#purpleGloss_pin)"/>
+          <!-- Wine glass -->
+          <g transform="translate(50, 48)">
+            <path d="M-10,-12 L-7,-4 Q-7,6 0,9 L0,14" stroke="#FFFEF5" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M10,-12 L7,-4 Q7,6 0,9" stroke="#FFFEF5" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <line x1="-7" y1="14" x2="7" y2="14" stroke="#FFFEF5" stroke-width="5" stroke-linecap="round"/>
+            <line x1="-10" y1="-12" x2="10" y2="-12" stroke="#FFFEF5" stroke-width="5" stroke-linecap="round"/>
+            <path d="M-6,-5 Q-6,2 0,4 Q6,2 6,-5" fill="#BA68C8" opacity="0.35"/>
           </g>
         </svg>
       `,
       CAFE: `
-        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+        <svg width="100%" height="100%" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" style="display: block;">
           <defs>
-            <linearGradient id="brownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <linearGradient id="brownGrad_pin" x1="50%" y1="0%" x2="50%" y2="100%">
               <stop offset="0%" style="stop-color:#BCAAA4"/>
-              <stop offset="50%" style="stop-color:#8D6E63"/>
+              <stop offset="40%" style="stop-color:#8D6E63"/>
               <stop offset="100%" style="stop-color:#4E342E"/>
             </linearGradient>
-            <radialGradient id="brownGloss" cx="35%" cy="20%">
-              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
-              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            <radialGradient id="brownGloss_pin" cx="45%" cy="25%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.7"/>
+              <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
             </radialGradient>
           </defs>
-          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#brownGrad)"/>
-          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#brownGloss)"/>
-          <g transform="translate(25, 20) scale(0.8)">
-            <path d="M-6.5,-3.5 L-6.5,5 Q-6.5,7.5 -4,7.5 L4,7.5 Q6.5,7.5 6.5,5 L6.5,-3.5 Z" fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2.5" stroke-linejoin="round"/>
-            <ellipse cx="0" cy="-3.5" rx="6.5" ry="2.8" fill="#FFFEF5"/>
-            <path d="M6.5,0.5 L9.5,0.5 Q11,0.5 11,2.5 Q11,4.5 9.5,4.5 L6.5,4.5" stroke="#FFFEF5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-            <path d="M-3,-7.5 Q-3,-8.5 -1.5,-9" stroke="#FFFEF5" stroke-width="2" fill="none" opacity="0.75" stroke-linecap="round"/>
-            <path d="M1,-7.5 Q1,-9.5 2.5,-10" stroke="#FFFEF5" stroke-width="2" fill="none" opacity="0.75" stroke-linecap="round"/>
-            <ellipse cx="0" cy="8" rx="8" ry="1.2" fill="#FFFEF5" opacity="0.9"/>
+          <!-- Teardrop pin shape -->
+          <path d="M50 10 C30 10 15 25 15 45 C15 70 50 130 50 130 C50 130 85 70 85 45 C85 25 70 10 50 10 Z" 
+                fill="url(#brownGrad_pin)" stroke="none"/>
+          <!-- Glossy highlight -->
+          <ellipse cx="45" cy="35" rx="25" ry="30" fill="url(#brownGloss_pin)"/>
+          <!-- Coffee cup -->
+          <g transform="translate(50, 48)">
+            <path d="M-12,-6 L-12,9 Q-12,13 -7,13 L7,13 Q12,13 12,9 L12,-6 Z" 
+                  fill="#FFFEF5" stroke="#FFFEF5" stroke-width="4" stroke-linejoin="round"/>
+            <ellipse cx="0" cy="-6" rx="12" ry="5" fill="#FFFEF5"/>
+            <!-- Handle -->
+            <path d="M12,1 L17,1 Q20,1 20,5 Q20,9 17,9 L12,9" 
+                  stroke="#FFFEF5" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <!-- Steam -->
+            <path d="M-6,-13 Q-6,-15 -3,-16" stroke="#FFFEF5" stroke-width="3.5" fill="none" opacity="0.75" stroke-linecap="round"/>
+            <path d="M2,-13 Q2,-17 5,-18" stroke="#FFFEF5" stroke-width="3.5" fill="none" opacity="0.75" stroke-linecap="round"/>
+            <!-- Saucer -->
+            <ellipse cx="0" cy="14" rx="15" ry="2.5" fill="#FFFEF5" opacity="0.9"/>
           </g>
         </svg>
       `
     };
 
     const pinSvg = categoryPins[category] || categoryPins['RESTAURANT'];
+    const height = size * 1.4; // Teardrop is taller than wide
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -329,34 +364,34 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
         <div class="marker-container" style="
           position: relative;
           width: ${size}px;
-          height: ${size + 16}px;
-          filter: drop-shadow(0 8px 20px rgba(0,0,0,0.4));
+          height: ${height}px;
+          filter: drop-shadow(0 10px 25px rgba(0,0,0,0.45));
         ">
           ${pinSvg}
           ${count > 1 ? `
             <div style="
               position: absolute;
-              top: -6px;
-              right: -6px;
+              top: 0px;
+              right: 0px;
               background: linear-gradient(135deg, #FF5252 0%, #C62828 100%);
               color: white;
               border-radius: 50%;
-              width: 24px;
-              height: 24px;
+              width: 26px;
+              height: 26px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 13px;
+              font-size: 14px;
               font-weight: bold;
               border: 3px solid white;
-              box-shadow: 0 4px 10px rgba(0,0,0,0.45);
+              box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             ">${count}</div>
           ` : ''}
         </div>
       `,
-      iconSize: [size, size + 16],
-      iconAnchor: [size / 2, size + 16],
-      popupAnchor: [0, -(size + 16)],
+      iconSize: [size, height],
+      iconAnchor: [size / 2, height],
+      popupAnchor: [0, -height],
     });
   };
 
