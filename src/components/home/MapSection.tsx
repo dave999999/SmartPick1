@@ -24,9 +24,9 @@ export function MapSection({
   onSearchChange,
 }: MapSectionProps) {
   return (
-    <div className="relative w-full">
-      {/* Map Container - Full Width, No Border, No Box */}
-      <div className="relative w-full h-[70vh] md:h-[60vh]">
+    <div className="relative w-full -mx-4">
+      {/* Map Container - Full Width, Extended */}
+      <div className="relative w-screen h-[75vh] md:h-[65vh]">
       
       {/* Search Bar OVERLAY on top of map */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 w-full max-w-xl px-4">

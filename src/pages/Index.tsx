@@ -261,7 +261,7 @@ export default function Index() {
 
         {/* Point-based Item List - Starts immediately after map */}
         {!isLoading && filteredOffers.length > 0 && (
-          <section className="bg-white relative z-30 pb-24 -mt-1">
+          <section className="bg-white relative z-30 pb-24">
             {/* Content with padding */}
             <div className="px-4 pt-4">
 
