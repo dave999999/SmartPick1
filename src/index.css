@@ -90,21 +90,31 @@
   padding: 0 !important;
   border: none !important;
   display: block !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
 }
 
 .leaflet-pane,
 .leaflet-map-pane {
   bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .leaflet-bottom {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  bottom: 0 !important;
 }
 
 .leaflet-control-container {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.leaflet-control-attribution {
+  margin: 0 !important;
+  padding: 2px 4px !important;
 }
 
 .leaflet-top,
