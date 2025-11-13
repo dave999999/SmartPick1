@@ -396,6 +396,19 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
   const displayOffers = userLocation ? getOffersNearUser() : filteredOffers;
   const groupedLocations = groupOffersByLocation();
 
+  // Debug logging
+  console.log('🗺️ OfferMap Debug:', {
+    totalOffers: offers.length,
+    filteredOffers: filteredOffers.length,
+    groupedLocations: groupedLocations.length,
+    groupedData: groupedLocations.map(loc => ({
+      partner: loc.partnerName,
+      lat: loc.lat,
+      lng: loc.lng,
+      offerCount: loc.offers.length
+    }))
+  });
+
   // Handle offer click from list to highlight on map
   const handleOfferClickFromList = (offer: Offer) => {
     const location = getPartnerLocation(offer);
@@ -474,9 +487,12 @@ export default function OfferMap({ offers, onOfferClick, selectedCategory, onCat
                   icon={makeCategoryIcon(primaryOffer.category, location.offers.length, isHighlighted)}
                   eventHandlers={{
                     click: (e) => {
+                      console.log('🎯 Marker clicked:', location.partnerName, location.lat, location.lng);
                       e.target.openPopup();
+                      console.log('📍 Popup should be open now');
                     },
                     mouseover: (e) => {
+                      console.log('🖱️ Marker hovered:', location.partnerName);
                       e.target.openPopup();
                     },
                   }}
