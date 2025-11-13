@@ -153,129 +153,175 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
   // Use light pink/beige map style like in reference
   const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
-  // Create category-specific teardrop pin icons - EXACT match to reference images
+  // Create category-specific teardrop pin icons - COMPLETE pins as shown in reference
   const makeCategoryIcon = (
     category: string,
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 56 : 50;
+    const size = isHighlighted ? 70 : 60;
     
-    // Category-specific styles - EXACT recreation of reference images with realistic 3D glossy effect
-    const categoryStyles: Record<string, { baseColor: string; darkColor: string; iconSvg: string }> = {
-      GROCERY: {
-        baseColor: '#66BB6A',
-        darkColor: '#2E7D32',
-        iconSvg: `
-          <!-- Shopping Cart Icon -->
-          <g transform="translate(25, 19) scale(0.75)">
-            <path d="M-7,-5 L-5,-5 L-2,6 L5,6" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <rect x="-1" y="0" width="6" height="5" stroke="#FFFEF5" stroke-width="3" fill="none" rx="1"/>
-            <circle cx="0" cy="8.5" r="1.5" fill="#FFFEF5"/>
-            <circle cx="4" cy="8.5" r="1.5" fill="#FFFEF5"/>
+    // Complete pin SVGs - Full icons EXACTLY as shown in reference images
+    const categoryPins: Record<string, string> = {
+      GROCERY: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="greenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#7FD47F"/>
+              <stop offset="50%" style="stop-color:#4CAF50"/>
+              <stop offset="100%" style="stop-color:#2E7D32"/>
+            </linearGradient>
+            <radialGradient id="greenGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#greenGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#greenGloss)"/>
+          <g transform="translate(25, 20) scale(0.8)">
+            <path d="M-7,-6 L-5,-6 L-2,5 L5,5" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="-1.5" y="-1" width="7" height="6" stroke="#FFFEF5" stroke-width="3" fill="none" rx="1"/>
+            <circle cx="0.5" cy="7.5" r="1.5" fill="#FFFEF5"/>
+            <circle cx="4.5" cy="7.5" r="1.5" fill="#FFFEF5"/>
           </g>
-        `
-      },
-      RESTAURANT: {
-        baseColor: '#FF7043',
-        darkColor: '#D84315',
-        iconSvg: `
-          <!-- Fork and Knife Icon (CROSSED) -->
-          <g transform="translate(25, 19)">
-            <!-- Fork (left, rotated) -->
-            <g transform="rotate(-35) translate(-3, 0)">
-              <line x1="-1.5" y1="-7" x2="-1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="1.5" y1="-7" x2="1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+      `,
+      RESTAURANT: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#FF8A65"/>
+              <stop offset="50%" style="stop-color:#FF6B5A"/>
+              <stop offset="100%" style="stop-color:#D84315"/>
+            </linearGradient>
+            <radialGradient id="orangeGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#orangeGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#orangeGloss)"/>
+          <g transform="translate(25, 20)">
+            <g transform="rotate(-30) translate(-4, 0) scale(0.9)">
+              <line x1="-1.5" y1="-7" x2="-1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+              <line x1="1.5" y1="-7" x2="1.5" y2="-1" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
             </g>
-            <!-- Knife (right, rotated) -->
-            <g transform="rotate(35) translate(3, 0)">
-              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
-              <path d="M-2.5,-6 L2.5,-7 L0,-4 Z" fill="#FFFEF5"/>
+            <g transform="rotate(30) translate(4, 0) scale(0.9)">
+              <line x1="0" y1="-7" x2="0" y2="7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+              <path d="M-2.5,-6 L2.5,-7.5 L0,-4 Z" fill="#FFFEF5"/>
             </g>
           </g>
-        `
-      },
-      FAST_FOOD: {
-        baseColor: '#FF9800',
-        darkColor: '#E65100',
-        iconSvg: `
-          <!-- Burger and Drink Icon -->
-          <g transform="translate(25, 19) scale(0.7)">
-            <!-- Burger (left) -->
-            <g transform="translate(-4, 0)">
+        </svg>
+      `,
+      FAST_FOOD: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="fastfoodGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#FFB74D"/>
+              <stop offset="50%" style="stop-color:#FF9800"/>
+              <stop offset="100%" style="stop-color:#E65100"/>
+            </linearGradient>
+            <radialGradient id="fastfoodGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#fastfoodGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#fastfoodGloss)"/>
+          <g transform="translate(25, 20) scale(0.75)">
+            <g transform="translate(-4.5, 0)">
               <ellipse cx="0" cy="-5" rx="4.5" ry="2.5" fill="#FFFEF5"/>
               <rect x="-4.5" y="-3" width="9" height="2" fill="#FFFEF5" rx="0.8"/>
-              <circle cx="-2" cy="-2" r="0.6" fill="#FF9800" opacity="0.5"/>
-              <circle cx="1" cy="-2" r="0.6" fill="#FF9800" opacity="0.5"/>
-              <circle cx="3" cy="-1.5" r="0.6" fill="#FF9800" opacity="0.5"/>
-              <path d="M-4.5,0 L-3.5,3 L3.5,3 L4.5,0 Z" fill="#FFFEF5"/>
+              <circle cx="-2" cy="-2" r="0.7" fill="#FF9800" opacity="0.4"/>
+              <circle cx="1" cy="-2" r="0.7" fill="#FF9800" opacity="0.4"/>
+              <circle cx="3" cy="-1.5" r="0.7" fill="#FF9800" opacity="0.4"/>
+              <path d="M-4.5,0.5 L-3.5,3.5 L3.5,3.5 L4.5,0.5 Z" fill="#FFFEF5"/>
             </g>
-            <!-- Drink (right) -->
-            <g transform="translate(5, 0)">
-              <rect x="-2" y="-2" width="4" height="7" fill="none" stroke="#FFFEF5" stroke-width="2.5" rx="0.5"/>
-              <line x1="-3" y1="5" x2="3" y2="5" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
-              <line x1="0" y1="-5" x2="1" y2="-3" stroke="#FFFEF5" stroke-width="2.5" stroke-linecap="round"/>
+            <g transform="translate(6, 0)">
+              <rect x="-2.2" y="-2" width="4.4" height="7.5" fill="none" stroke="#FFFEF5" stroke-width="2.8" rx="0.7"/>
+              <line x1="-3" y1="5.5" x2="3" y2="5.5" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
+              <line x1="0" y1="-5" x2="1.2" y2="-3" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
             </g>
           </g>
-        `
-      },
-      BAKERY: {
-        baseColor: '#FFA726',
-        darkColor: '#EF6C00',
-        iconSvg: `
-          <!-- Croissant Icon -->
-          <g transform="translate(25, 19) scale(0.8)">
-            <path d="M-8,4 Q-9,1 -6,-3 Q-3,-5 0,-4 Q3,-5 6,-3 Q9,1 8,4 Q6,5 3,4.5 Q0,5 -3,4.5 Q-6,5 -8,4 Z" 
-              fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2" stroke-linejoin="round"/>
-            <!-- Croissant layers -->
-            <ellipse cx="-4.5" cy="0.5" rx="1.5" ry="1" fill="#FFC870" opacity="0.6"/>
-            <ellipse cx="-1" cy="-0.5" rx="1.5" ry="1" fill="#FFC870" opacity="0.6"/>
-            <ellipse cx="2" cy="-0.5" rx="1.5" ry="1" fill="#FFC870" opacity="0.6"/>
-            <ellipse cx="5" cy="0.5" rx="1.5" ry="1" fill="#FFC870" opacity="0.6"/>
+        </svg>
+      `,
+      BAKERY: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#FFD54F"/>
+              <stop offset="50%" style="stop-color:#FFA726"/>
+              <stop offset="100%" style="stop-color:#EF6C00"/>
+            </linearGradient>
+            <radialGradient id="yellowGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#yellowGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#yellowGloss)"/>
+          <g transform="translate(25, 20) scale(0.85)">
+            <path d="M-8,4 Q-9,1 -6,-3 Q-3,-5 0,-4 Q3,-5 6,-3 Q9,1 8,4 Q6,5 3,4.5 Q0,5 -3,4.5 Q-6,5 -8,4 Z" fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2.2" stroke-linejoin="round"/>
+            <ellipse cx="-5" cy="0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="-1.5" cy="-0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="2" cy="-0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
+            <ellipse cx="5.5" cy="0.5" rx="1.5" ry="1" fill="#FFD699" opacity="0.7"/>
           </g>
-        `
-      },
-      ALCOHOL: {
-        baseColor: '#AB47BC',
-        darkColor: '#6A1B9A',
-        iconSvg: `
-          <!-- Wine Glass Icon -->
-          <g transform="translate(25, 19) scale(0.85)">
-            <path d="M-5,-7 L-4,-2 Q-4,3 0,4.5 L0,7" 
-              stroke="#FFFEF5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-            <path d="M5,-7 L4,-2 Q4,3 0,4.5" 
-              stroke="#FFFEF5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
-            <line x1="-3.5" y1="7" x2="3.5" y2="7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="-5" y1="-7" x2="5" y2="-7" stroke="#FFFEF5" stroke-width="2.8" stroke-linecap="round"/>
-            <!-- Wine fill -->
-            <path d="M-3.5,-3 Q-3.5,1 0,2 Q3.5,1 3.5,-3" fill="#BA68C8" opacity="0.3"/>
+        </svg>
+      `,
+      ALCOHOL: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#CE93D8"/>
+              <stop offset="50%" style="stop-color:#AB47BC"/>
+              <stop offset="100%" style="stop-color:#6A1B9A"/>
+            </linearGradient>
+            <radialGradient id="purpleGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#purpleGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#purpleGloss)"/>
+          <g transform="translate(25, 20) scale(0.9)">
+            <path d="M-5.5,-7 L-4,-2 Q-4,3.5 0,5 L0,8" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M5.5,-7 L4,-2 Q4,3.5 0,5" stroke="#FFFEF5" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <line x1="-4" y1="8" x2="4" y2="8" stroke="#FFFEF5" stroke-width="3" stroke-linecap="round"/>
+            <line x1="-5.5" y1="-7" x2="5.5" y2="-7" stroke="#FFFEF5" stroke-width="3" stroke-linecap="round"/>
+            <path d="M-3.5,-3 Q-3.5,1 0,2.5 Q3.5,1 3.5,-3" fill="#BA68C8" opacity="0.3"/>
           </g>
-        `
-      },
-      CAFE: {
-        baseColor: '#8D6E63',
-        darkColor: '#4E342E',
-        iconSvg: `
-          <!-- Coffee Cup Icon -->
-          <g transform="translate(25, 19) scale(0.75)">
-            <path d="M-6,-3 L-6,5 Q-6,7 -4,7 L4,7 Q6,7 6,5 L6,-3 Z" 
-              fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2.2" stroke-linejoin="round"/>
-            <ellipse cx="0" cy="-3" rx="6" ry="2.5" fill="#FFFEF5"/>
-            <!-- Handle -->
-            <path d="M6,1 L9,1 Q10.5,1 10.5,3 Q10.5,5 9,5 L6,5" 
-              stroke="#FFFEF5" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-            <!-- Steam -->
-            <path d="M-3,-7 Q-3,-8 -2,-8.5" stroke="#FFFEF5" stroke-width="1.8" fill="none" opacity="0.7" stroke-linecap="round"/>
-            <path d="M1,-7 Q1,-9 2,-9.5" stroke="#FFFEF5" stroke-width="1.8" fill="none" opacity="0.7" stroke-linecap="round"/>
-            <!-- Saucer line -->
-            <line x1="-7" y1="7.5" x2="7" y2="7.5" stroke="#FFFEF5" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+        </svg>
+      `,
+      CAFE: `
+        <svg viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="brownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#BCAAA4"/>
+              <stop offset="50%" style="stop-color:#8D6E63"/>
+              <stop offset="100%" style="stop-color:#4E342E"/>
+            </linearGradient>
+            <radialGradient id="brownGloss" cx="35%" cy="20%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.6"/>
+              <stop offset="70%" style="stop-color:#ffffff;stop-opacity:0"/>
+            </radialGradient>
+          </defs>
+          <path d="M25 2C15.6 2 8 9.6 8 19c0 11 17 45 17 45s17-34 17-45c0-9.4-7.6-17-17-17z" fill="url(#brownGrad)"/>
+          <ellipse cx="22" cy="15" rx="14" ry="16" fill="url(#brownGloss)"/>
+          <g transform="translate(25, 20) scale(0.8)">
+            <path d="M-6.5,-3.5 L-6.5,5 Q-6.5,7.5 -4,7.5 L4,7.5 Q6.5,7.5 6.5,5 L6.5,-3.5 Z" fill="#FFFEF5" stroke="#FFFEF5" stroke-width="2.5" stroke-linejoin="round"/>
+            <ellipse cx="0" cy="-3.5" rx="6.5" ry="2.8" fill="#FFFEF5"/>
+            <path d="M6.5,0.5 L9.5,0.5 Q11,0.5 11,2.5 Q11,4.5 9.5,4.5 L6.5,4.5" stroke="#FFFEF5" stroke-width="2.8" fill="none" stroke-linecap="round"/>
+            <path d="M-3,-7.5 Q-3,-8.5 -1.5,-9" stroke="#FFFEF5" stroke-width="2" fill="none" opacity="0.75" stroke-linecap="round"/>
+            <path d="M1,-7.5 Q1,-9.5 2.5,-10" stroke="#FFFEF5" stroke-width="2" fill="none" opacity="0.75" stroke-linecap="round"/>
+            <ellipse cx="0" cy="8" rx="8" ry="1.2" fill="#FFFEF5" opacity="0.9"/>
           </g>
-        `
-      }
+        </svg>
+      `
     };
 
-    const style = categoryStyles[category] || categoryStyles['RESTAURANT'];
+    const pinSvg = categoryPins[category] || categoryPins['RESTAURANT'];
 
     return L.divIcon({
       className: 'smartpick-marker',
@@ -284,61 +330,26 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
           position: relative;
           width: ${size}px;
           height: ${size + 16}px;
-          filter: drop-shadow(0 6px 16px rgba(0,0,0,0.35));
+          filter: drop-shadow(0 8px 20px rgba(0,0,0,0.4));
         ">
-          <svg width="${size}" height="${size + 16}" viewBox="0 0 50 66" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <!-- Main gradient for pin -->
-              <linearGradient id="pinGrad_${category}" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:${style.baseColor};stop-opacity:1" />
-                <stop offset="100%" style="stop-color:${style.darkColor};stop-opacity:1" />
-              </linearGradient>
-              
-              <!-- Glossy highlight on top -->
-              <radialGradient id="glossHighlight_${category}" cx="35%" cy="25%">
-                <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.5" />
-                <stop offset="50%" style="stop-color:#ffffff;stop-opacity:0.2" />
-                <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
-              </radialGradient>
-              
-              <!-- Shadow at bottom -->
-              <linearGradient id="pinShadow_${category}" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" style="stop-color:#000000;stop-opacity:0" />
-                <stop offset="80%" style="stop-color:#000000;stop-opacity:0.15" />
-              </linearGradient>
-            </defs>
-            
-            <!-- Teardrop pin shape -->
-            <path d="M25 0C16.163 0 9 7.163 9 16c0 9.837 16 50 16 50s16-40.163 16-50c0-8.837-7.163-16-16-16z"
-              fill="url(#pinGrad_${category})" stroke="none"/>
-            
-            <!-- Glossy highlight effect -->
-            <ellipse cx="22" cy="12" rx="12" ry="14" fill="url(#glossHighlight_${category})"/>
-            
-            <!-- Dark bottom shadow -->
-            <path d="M25 16c-4.4 0-8 3.6-8 8 0 4.4 3.6 8 8 8s8-3.6 8-8c0-4.4-3.6-8-8-8z" 
-              fill="url(#pinShadow_${category})" opacity="0.2"/>
-            
-            <!-- Icon content -->
-            ${style.iconSvg}
-          </svg>
+          ${pinSvg}
           ${count > 1 ? `
             <div style="
               position: absolute;
-              top: -5px;
-              right: -5px;
+              top: -6px;
+              right: -6px;
               background: linear-gradient(135deg, #FF5252 0%, #C62828 100%);
               color: white;
               border-radius: 50%;
-              width: 22px;
-              height: 22px;
+              width: 24px;
+              height: 24px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 12px;
+              font-size: 13px;
               font-weight: bold;
-              border: 2.5px solid white;
-              box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+              border: 3px solid white;
+              box-shadow: 0 4px 10px rgba(0,0,0,0.45);
             ">${count}</div>
           ` : ''}
         </div>
