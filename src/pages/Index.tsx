@@ -38,6 +38,7 @@ export default function Index() {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
+  const [showBottomNav, setShowBottomNav] = useState(false);
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,6 +81,17 @@ export default function Index() {
       toast.success(`🎁 Welcome! Referral code ${refParam.toUpperCase()} is ready to use!`);
     }
   }, [searchParams]);
+
+  // Scroll detection for bottom nav
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.scrollY > 300;
+      setShowBottomNav(scrolled);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const checkUser = async () => {
     const { user } = await getCurrentUser();
@@ -355,25 +367,13 @@ export default function Index() {
           </section>
         )}
 
-        {/* Bottom Navigation Menu - Like in screenshot */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-around z-50 shadow-lg">
+        {/* Bottom Navigation Menu - Shows on scroll */}
+        <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-around z-50 shadow-lg transition-transform duration-300 ${showBottomNav ? 'translate-y-0' : 'translate-y-full'}`}>
           <button className="flex flex-col items-center gap-1">
             <svg className="w-6 h-6 text-gray-900" fill="currentColor" viewBox="0 0 24 24">
               <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
             </svg>
             <span className="text-xs font-medium text-gray-900">Home</span>
-          </button>
-          <button className="flex flex-col items-center gap-1">
-            <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
-            </svg>
-            <span className="text-xs font-medium text-gray-400">Order</span>
-          </button>
-          <button className="flex flex-col items-center gap-1">
-            <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-            <span className="text-xs font-medium text-gray-400">Chart</span>
           </button>
           <button className="flex flex-col items-center gap-1">
             <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24">

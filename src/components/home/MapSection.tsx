@@ -23,12 +23,10 @@ export function MapSection({
   searchQuery,
   onSearchChange,
 }: MapSectionProps) {
-  const [mapActivated, setMapActivated] = useState(false);
-
   return (
     <div className="relative w-full">
-      {/* Map Container - Full Width, No Border */}
-      <div className="relative w-full h-[70vh] md:h-[60vh] overflow-hidden">
+      {/* Map Container - Full Width, No Border, No Box */}
+      <div className="relative w-full h-[70vh] md:h-[60vh]">
       
       {/* Search Bar OVERLAY on top of map */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-xl px-4">
@@ -41,34 +39,8 @@ export function MapSection({
         />
       </div>
 
-      {/* Map Activation Overlay */}
-      {!mapActivated && (
-        <div
-          className="absolute inset-0 z-[999] bg-black/10 backdrop-blur-[0.5px] flex items-center justify-center cursor-pointer"
-          onDoubleClick={() => setMapActivated(true)}
-          onTouchStart={(e) => {
-            // Handle double tap on mobile
-            const now = Date.now();
-            const lastTap = (e.currentTarget as any).lastTap || 0;
-            if (now - lastTap < 300) {
-              setMapActivated(true);
-            }
-            (e.currentTarget as any).lastTap = now;
-          }}
-        >
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-xl text-center">
-            <p className="text-sm md:text-base font-semibold text-gray-900">
-              Double tap to activate map
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Tap to explore nearby
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Map - Hide zoom controls */}
-      <div className={`w-full h-full ${!mapActivated ? 'pointer-events-none' : ''}`}>
+      <div className="w-full h-full">
         <style>{`
           .leaflet-control-zoom { display: none !important; }
         `}</style>
