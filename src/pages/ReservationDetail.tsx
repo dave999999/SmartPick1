@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Download, Phone, MessageCircle, MapPin, Clock, QrCode, CheckCircle, Eye, CreditCard } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
@@ -28,6 +28,7 @@ import QRCodeModal from '@/components/reservations/QRCodeModal';
 import CountdownBar from '@/components/reservations/CountdownBar';
 import PartnerBlock from '@/components/reservations/PartnerBlock';
 import PenaltyModal from '@/components/PenaltyModal';
+import PickupSuccessModal from '@/components/PickupSuccessModal';
 
 export default function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,9 @@ export default function ReservationDetail() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [userPenaltyInfo, setUserPenaltyInfo] = useState<{penaltyCount: number; penaltyUntil: string | null; isBanned: boolean}>({penaltyCount: 0, penaltyUntil: null, isBanned: false});
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [savedAmount, setSavedAmount] = useState(0);
+  const [pointsEarned, setPointsEarned] = useState(0);
 
   const loadReservation = async () => {
     try {
@@ -94,6 +98,91 @@ export default function ReservationDetail() {
   useEffect(() => {
     loadReservation();
   }, [id]);
+
+  // Real-time subscription to reservation status changes
+  useEffect(() => {
+    if (!id) return;
+
+    console.log('🔔 Setting up real-time subscription for reservation:', id);
+
+    const channel = supabase
+      .channel(`reservation-${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reservations',
+          filter: `id=eq.${id}`
+        },
+        (payload) => {
+          console.log('🚨 REAL-TIME UPDATE RECEIVED:', payload);
+          logger.info('Reservation updated:', payload);
+          
+          // Immediately update the local state with the new data
+          if (payload.new) {
+            console.log('📦 Updating reservation with new data:', payload.new);
+            loadReservation();
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to reservation updates');
+        }
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up subscription for reservation:', id);
+      supabase.removeChannel(channel);
+    };
+  }, [id]);
+
+  // Polling fallback: Check for status updates every 3 seconds when ACTIVE
+  useEffect(() => {
+    if (!reservation || reservation.status !== 'ACTIVE') return;
+
+    console.log('🔄 Starting polling for reservation status updates');
+    const pollInterval = setInterval(() => {
+      console.log('🔍 Polling for reservation updates...');
+      loadReservation();
+    }, 3000); // Poll every 3 seconds
+
+    return () => {
+      console.log('⏹️ Stopping polling');
+      clearInterval(pollInterval);
+    };
+  }, [reservation?.status]);
+
+  // Detect when order is picked up and show success modal
+  useEffect(() => {
+    if (reservation && reservation.status === 'PICKED_UP') {
+      console.log('🎉 Order picked up detected! Status:', reservation.status);
+      const celebrationKey = `pickup-celebrated-${reservation.id}`;
+      const alreadyCelebrated = localStorage.getItem(celebrationKey);
+      
+      if (!alreadyCelebrated) {
+        console.log('🎊 Showing celebration modal for the first time');
+        // Calculate savings
+        const originalPrice = reservation.offer?.original_price || 0;
+        const smartPrice = reservation.total_price;
+        const saved = (originalPrice * reservation.quantity) - Number(smartPrice);
+        setSavedAmount(saved);
+        
+        // Don't show points earned (user spent points on this order)
+        setPointsEarned(0);
+        
+        // Show modal
+        setSuccessModalOpen(true);
+        
+        // Mark as celebrated
+        localStorage.setItem(celebrationKey, 'true');
+      } else {
+        console.log('✨ Celebration already shown for this reservation');
+      }
+    }
+  }, [reservation]);
 
   // Watch user location for live map updates
   useEffect(() => {
@@ -214,34 +303,119 @@ export default function ReservationDetail() {
 
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-2xl">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl sm:text-2xl">{reservation.offer?.title}</CardTitle>
-                <CardDescription className="text-sm sm:text-base">{reservation.partner?.business_name}</CardDescription>
+          <CardHeader className="space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg sm:text-xl mb-1">{reservation.offer?.title}</CardTitle>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-gray-700">{reservation.partner?.business_name}</p>
+                  {partnerAddress && (
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {partnerAddress}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <Badge className={`${statusColorMap[reservation.status] || 'bg-gray-400'} text-white`}>{reservation.status}</Badge>
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                <Badge className={`${statusColorMap[reservation.status] || 'bg-gray-400'} text-white text-xs`}>
+                  {reservation.status}
+                </Badge>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-gray-900">{Number(reservation.total_price).toFixed(2)} GEL</p>
+                  <p className="text-xs text-gray-500">{reservation.quantity} × {(Number(reservation.total_price) / reservation.quantity).toFixed(2)} GEL</p>
+                </div>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-5 sm:space-y-6">
-            {/* Map preview in rounded container - FIRST */}
-            {reservation.partner?.latitude && reservation.partner?.longitude && (
-              <div className="rounded-xl overflow-hidden shadow border">
-                {/* Route profile toggle */}
-                <div className="px-3 sm:px-4 py-2.5 border-b bg-gray-50">
-                  <div className="grid grid-cols-3 gap-1 rounded-md overflow-hidden">
-                    {(['driving','walking','cycling'] as const).map(p => (
-                      <button
-                        key={p}
-                        className={`${routeProfile===p ? 'bg-white border border-gray-300' : 'bg-gray-100 border border-transparent'} px-3 py-2 text-sm`}
-                        onClick={() => setRouteProfile(p)}
-                      >{p.charAt(0).toUpperCase()+p.slice(1)}</button>
-                    ))}
+            {/* HERO: Status Badge + Countdown - Priority #1 */}
+            {reservation.status === 'ACTIVE' && (
+              <div className="bg-gradient-to-br from-green-50 via-emerald-50 to-mint-50 rounded-xl p-5 border-2 border-green-200 shadow-md">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75"></div>
+                      <CheckCircle className="relative h-8 w-8 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-green-800">Ready to Pickup!</h3>
+                      <p className="text-xs text-green-600 font-mono">ID: {reservation.id.slice(0, 8).toUpperCase()}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="h-64 sm:h-72 w-full">
+                <CountdownBar expiresAt={reservation.expires_at} />
+                <p className="text-xs text-green-700 text-center mt-2">
+                  Expires: {new Date(reservation.expires_at).toLocaleString('en-GB', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    day: '2-digit',
+                    month: 'short'
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* PICKED_UP Status - Show completion message */}
+            {reservation.status === 'PICKED_UP' && (
+              <div className="bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 rounded-xl p-5 border-2 border-gray-300 shadow-md">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <CheckCircle className="h-10 w-10 text-gray-600" />
+                  <div className="text-center">
+                    <h3 className="text-xl font-bold text-gray-800">Order Completed!</h3>
+                    <p className="text-sm text-gray-600 mt-1">Successfully picked up</p>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 font-mono">ID: {reservation.id.slice(0, 8).toUpperCase()}</p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Picked up at: {reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleString('en-GB') : 'Just now'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Payment Information - Critical for new users */}
+            {reservation.status === 'ACTIVE' && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                    <CreditCard className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-blue-900 mb-1.5 flex items-center gap-2">
+                      💳 Payment at Pickup
+                    </h4>
+                    <p className="text-sm text-blue-800 mb-2">
+                      Pay <span className="font-bold text-lg text-green-600">{Number(reservation.total_price).toFixed(2)} GEL</span>
+                      {' '}(reserved price) when you collect your order
+                    </p>
+                    {reservation.offer?.original_price && (
+                      <div className="flex items-center gap-2 text-xs text-blue-700">
+                        <span className="line-through text-gray-500">
+                          {Number(reservation.offer.original_price * reservation.quantity).toFixed(2)} GEL original
+                        </span>
+                        <Badge className="bg-green-500 text-white text-xs">
+                          You save {(Number(reservation.offer.original_price * reservation.quantity) - Number(reservation.total_price)).toFixed(2)} GEL
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Map with Enhanced Navigation - Priority Position #2 */}
+            {reservation.partner?.latitude && reservation.partner?.longitude && (
+              <div className="rounded-xl overflow-hidden shadow-lg border-2 border-gray-200">
+                <div 
+                  className="h-64 sm:h-72 w-full cursor-pointer relative group"
+                  onClick={() => {
+                    if (partnerLat && partnerLng) {
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`, '_blank');
+                    }
+                  }}
+                >
                   <MapContainer
                     center={[reservation.partner.latitude, reservation.partner.longitude]}
                     zoom={15}
@@ -294,43 +468,61 @@ export default function ReservationDetail() {
               </div>
             )}
 
-            {/* Get Directions button */}
-            {partnerLat && partnerLng && (
-              <Button variant="outline" className="w-full" onClick={() => {
-                window.open(`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`, '_blank');
-              }}>
-                {t('button.getDirections')}
-              </Button>
-            )}
-
-            {/* Product details and QR code in one section */}
-            <div className="border rounded-xl p-4 sm:p-5 bg-white shadow-sm">
-              {/* Partner/Product block */}
-              <PartnerBlock
-                partnerName={reservation.partner?.business_name || ''}
-                productImage={(reservation.offer as any)?.image_url}
-                price={Number(reservation.total_price) || 0}
-                quantity={reservation.quantity}
-              />
-
-              {/* QR code - smaller, clickable */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-start gap-4">
-                  <div 
-                    onClick={() => setQrModalOpen(true)}
-                    className="flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28 cursor-pointer hover:opacity-80 transition"
-                  >
-                    <img src={qrCodeUrl} className="w-full h-full object-contain border rounded" alt="QR Code" />
+            {/* HERO: Large QR Code with 3-Step Guide */}
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-6 border-2 border-gray-200 shadow-lg">
+              <div className="flex flex-col items-center">
+                {/* Large QR Code */}
+                <div 
+                  onClick={() => setQrModalOpen(true)}
+                  className="relative w-40 h-40 sm:w-48 sm:h-48 cursor-pointer group mb-5"
+                >
+                  <div className="absolute inset-0 bg-mint-500/20 rounded-2xl animate-pulse"></div>
+                  <div className="relative w-full h-full bg-white rounded-2xl p-3 shadow-xl border-4 border-mint-200 group-hover:border-mint-400 transition-all group-hover:scale-105">
+                    <img src={qrCodeUrl} className="w-full h-full object-contain" alt="QR Code" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-700 mb-1">Scan to pickup</div>
-                    <div className="text-xs text-gray-500 font-mono break-all mb-2">{reservation.qr_code}</div>
-                    <CountdownBar expiresAt={reservation.expires_at} />
+                  <div className="absolute -top-2 -right-2 bg-mint-500 text-white rounded-full p-2 shadow-lg">
+                    <Eye className="h-4 w-4" />
                   </div>
                 </div>
-                <p className="mt-3 text-center text-xs sm:text-sm text-gray-600">Show this QR code when you arrive at the location.</p>
+
+                {/* 3-Step Visual Guide */}
+                <div className="w-full space-y-3 mb-4">
+                  <h4 className="text-center font-bold text-gray-800 mb-3">How to Claim Your Order</h4>
+                  
+                  <div className="flex items-center gap-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <MapPin className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm font-medium text-gray-800">Arrive at partner location</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-purple-50 rounded-lg p-3 border border-purple-200">
+                    <div className="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <QrCode className="h-4 w-4 text-purple-600" />
+                      <span className="text-sm font-medium text-gray-800">Show this QR code to staff</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-green-50 rounded-lg p-3 border border-green-200">
+                    <div className="flex-shrink-0 w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-gray-800">Pay reserved price & receive order</span>
+                      </div>
+                      <p className="text-xs text-green-700 font-semibold ml-6">
+                        💰 Pay only {Number(reservation.total_price).toFixed(2)} GEL at pickup
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
+
+
 
             {/* Actions */}
             {reservation.status === 'ACTIVE' && (
@@ -369,6 +561,21 @@ export default function ReservationDetail() {
         penaltyCount={userPenaltyInfo.penaltyCount}
         penaltyUntil={userPenaltyInfo.penaltyUntil}
         isBanned={userPenaltyInfo.isBanned}
+      />
+
+      {/* Pickup Success Celebration Modal */}
+      <PickupSuccessModal
+        open={successModalOpen}
+        onClose={() => setSuccessModalOpen(false)}
+        savedAmount={savedAmount}
+        pointsEarned={pointsEarned}
+        newAchievements={[
+          // TODO: Fetch from gamification system
+          // Example achievements:
+          // { id: '1', title: 'First Pickup', description: 'Complete your first order', icon: '🏆', points: 50 },
+          // { id: '2', title: 'Weekend Warrior', description: 'Order on a weekend', icon: '🎯', points: 25 }
+        ]}
+        availableRewardsCount={0} // TODO: Fetch from rewards system
       />
     </div>
   );

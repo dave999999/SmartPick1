@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import {
   MAX_RESERVATION_QUANTITY,
   MAX_ACTIVE_RESERVATIONS,
+  RESERVATION_HOLD_MINUTES,
   PENALTY_FIRST_OFFENSE_HOURS,
   PENALTY_SECOND_OFFENSE_HOURS,
   PENALTY_THIRD_OFFENSE_HOURS,
@@ -536,9 +537,9 @@ export const createReservation = async (
   const randomPart = crypto.randomUUID().substring(0, 8).toUpperCase();
   const qrCode = `SP-${timestamp.toString(36).toUpperCase()}-${randomPart}`;
 
-  // Set expiration to 90 minutes from now (1.5 hours)
+  // Set expiration to 1 hour from now
   const expiresAt = new Date();
-  expiresAt.setMinutes(expiresAt.getMinutes() + 90);
+  expiresAt.setMinutes(expiresAt.getMinutes() + RESERVATION_HOLD_MINUTES);
 
   // Get offer to calculate price
   const offer = await getOfferById(offerId);

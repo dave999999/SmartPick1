@@ -22,6 +22,7 @@ import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { OfflineBanner } from './components/OfflineBanner';
 import { getCurrentUser } from './lib/api';
 import 'leaflet/dist/leaflet.css';
+import TopRightMenu from './components/layout/TopRightMenu';
 
 const queryClient = new QueryClient();
 
@@ -40,8 +41,8 @@ const AppContent = () => {
       }
 
       try {
-        const user = await getCurrentUser();
-        setIsAdmin(user?.role === 'ADMIN');
+        const { user } = await getCurrentUser();
+        setIsAdmin((user as any)?.role === 'ADMIN');
       } catch (error) {
         // If there's an error fetching user, assume not admin
         setIsAdmin(false);
@@ -65,6 +66,8 @@ const AppContent = () => {
 
   return (
     <BrowserRouter>
+      {/* Global quick actions menu (top-right) */}
+      <TopRightMenu />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route

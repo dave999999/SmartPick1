@@ -226,6 +226,9 @@ devDependencies:
   '@tailwindcss/typography':
     specifier: ^0.5.15
     version: 0.5.19(tailwindcss@3.4.18)
+  '@types/canvas-confetti':
+    specifier: ^1.9.0
+    version: 1.9.0
   '@types/node':
     specifier: ^22.5.5
     version: 22.19.0
@@ -244,6 +247,9 @@ devDependencies:
   autoprefixer:
     specifier: ^10.4.20
     version: 10.4.22(postcss@8.5.6)
+  canvas-confetti:
+    specifier: ^1.9.4
+    version: 1.9.4
   eslint:
     specifier: ^9.9.0
     version: 9.39.1
@@ -2723,6 +2729,10 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
+  /@types/canvas-confetti@1.9.0:
+    resolution: {integrity: sha512-aBGj/dULrimR1XDZLtG9JwxX1b4HPRF6CX9Yfwh3NvstZEm1ZL7RBnel4keCPSqs1ANRu1u2Aoz9R+VmtjYuTg==}
+    dev: true
+
   /@types/d3-array@3.2.2:
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
     dev: false
@@ -3310,6 +3320,10 @@ packages:
 
   /caniuse-lite@1.0.30001754:
     resolution: {integrity: sha512-x6OeBXueoAceOmotzx3PO4Zpt4rzpeIFsSr6AAePTZxSkXiYDUmpypEl7e2+8NCd9bD7bXjqyef8CJYPC1jfxg==}
+    dev: true
+
+  /canvas-confetti@1.9.4:
+    resolution: {integrity: sha512-yxQbJkAVrFXWNbTUjPqjF7G+g6pDotOUHGbkZq2NELZUMDpiJ85rIEazVb8GTaAptNW2miJAXbs1BtioA251Pw==}
     dev: true
 
   /canvg@3.0.11:

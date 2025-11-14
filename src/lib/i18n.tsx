@@ -289,7 +289,7 @@ const translations: Record<Language, Record<string, string>> = {
   'reservation.creating': 'Creating Reservation...',
   'reservation.confirm': 'Confirm Reservation',
   'reservation.blocked': 'Blocked -',
-  'reservation.heldNotice': 'Your reservation will be held for 90 minutes. You\'ll receive a QR code for pickup.',
+  'reservation.heldNotice': 'Your reservation will be held for 1 hour. You\'ll receive a QR code for pickup.',
   'reservation.penaltyWarningPrefix': 'You have',
   'reservation.penaltyWarningSuffix': 'missed pickup(s). Missing this one will result in a penalty.',
   'offer.savePrefix': 'Save ',
