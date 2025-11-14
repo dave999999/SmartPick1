@@ -1,15 +1,12 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
-import { getActiveOffers, getCurrentUser, signOut, getPartnerByUserId } from '@/lib/api';
+import { getActiveOffers, getCurrentUser } from '@/lib/api';
 import { isDemoMode } from '@/lib/supabase';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import SplashScreen from '@/components/SplashScreen';
 import AuthDialog from '@/components/AuthDialog';
 import ReservationModal from '@/components/ReservationModal';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
@@ -23,17 +20,12 @@ import { BottomNavBar } from '@/components/home/BottomNavBar';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import PartnerOffersModal from '@/components/PartnerOffersModal';
 
-// Existing components for offers grid
-import { MapPin, Clock } from 'lucide-react';
-import { resolveOfferImageUrl } from '@/lib/api';
-
 export default function Index() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [isPartner, setIsPartner] = useState<boolean>(false);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
@@ -41,7 +33,6 @@ export default function Index() {
   const [selectedPartner, setSelectedPartner] = useState<{ name: string; address?: string; offers: Offer[] } | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
-  const [showBottomNav, setShowBottomNav] = useState(false);
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +51,6 @@ export default function Index() {
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
 
   function loadOffers() {
@@ -92,27 +82,11 @@ export default function Index() {
     }
   }, [searchParams]);
 
-  // Scroll detection for bottom nav
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY > 300;
-      setShowBottomNav(scrolled);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   const checkUser = async () => {
     const { user } = await getCurrentUser();
     setUser(user);
 
-    if (user) {
-      const partner = await getPartnerByUserId(user.id);
-      setIsPartner(partner !== null && partner.status === 'APPROVED');
-    } else {
-      setIsPartner(false);
-    }
+    // Partner status check removed (unused)
   };
 
   // Calculate distance between two points

@@ -68,6 +68,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Explicitly specify public directory (default is 'public', but being explicit helps)
+  publicDir: 'public',
   build: {
     // Ensure clean builds - remove old chunks
     emptyOutDir: true,

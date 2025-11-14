@@ -8,11 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, QrCode, Download, Star, MapPin, Phone, Mail, XCircle, X, Bell, BellOff, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Clock, QrCode, Star, MapPin, Phone, Mail, XCircle, X, Bell, CheckCircle2 } from 'lucide-react';
 import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation, cleanupOldHistory, clearAllHistory, userConfirmPickup, userCancelReservationWithSplit } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
-import jsPDF from 'jspdf';
+// jsPDF removed - receipt download feature removed
 import { useI18n } from '@/lib/i18n';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import { usePickupReminders } from '@/hooks/usePickupReminders';
@@ -34,7 +34,7 @@ export default function MyPicks() {
   const [confirmingPickup, setConfirmingPickup] = useState<string | null>(null);
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { permission, requestPermission, scheduleMultipleReminders, hasPermission } = usePickupReminders();
+  const { requestPermission, scheduleMultipleReminders, hasPermission } = usePickupReminders();
 
   useEffect(() => {
     loadUserAndReservations();
@@ -66,17 +66,21 @@ export default function MyPicks() {
     }
   }, [user]);
 
-  // Separate polling effect that checks for active reservations
+  // Fallback polling (power/data friendly):
+  // We already have realtime; poll only as a safety net every 30s,
+  // and only when there are active reservations, the tab is visible, and the device is online.
   useEffect(() => {
     if (!user) return;
 
     const pollingInterval = setInterval(() => {
       const hasActiveReservations = reservations.some(r => r.status === 'ACTIVE');
-      if (hasActiveReservations) {
-        logger.log('🔄 Polling: Checking for reservation updates...');
+      const isVisible = typeof document !== 'undefined' ? document.visibilityState === 'visible' : true;
+      const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+      if (hasActiveReservations && isVisible && isOnline) {
+        logger.log('🔄 Fallback polling: checking for reservation updates...');
         loadReservations();
       }
-    }, 3000); // Poll every 3 seconds for faster updates
+    }, 30000); // 30s fallback polling
 
     return () => {
       clearInterval(pollingInterval);
@@ -299,10 +303,6 @@ export default function MyPicks() {
     }
   };
 
-  const isExpired = (expiresAt: string) => {
-    return new Date(expiresAt).getTime() < new Date().getTime();
-  };
-
   const handleRatePartner = async () => {
     if (!showRating) return;
 
@@ -327,46 +327,7 @@ export default function MyPicks() {
     }
   };
 
-  const handleDownloadReceipt = (reservation: Reservation) => {
-    try {
-      const doc = new jsPDF();
-      
-  // Add title
-  doc.setFontSize(20);
-  doc.text(t('receipt.title'), 20, 30);
-      
-      // Add reservation details
-      doc.setFontSize(12);
-  doc.text(`${t('receipt.reservationId')}: ${reservation.id}`, 20, 50);
-  doc.text(`${t('receipt.partner')}: ${reservation.partner?.business_name || t('fallback.unknownPartner')}`, 20, 65);
-  doc.text(`${t('receipt.item')}: ${reservation.offer?.title || t('fallback.unknown')}`, 20, 80);
-  doc.text(`${t('receipt.quantity')}: ${reservation.quantity}`, 20, 95);
-  doc.text(`${t('receipt.totalPrice')}: $${reservation.total_price?.toFixed(2) || '0.00'}`, 20, 110);
-  doc.text(`${t('receipt.pickupDate')}: ${reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleDateString() : 'N/A'}`, 20, 125);
-  doc.text(`${t('receipt.status')}: ${reservation.status}`, 20, 140);
-      
-      // Add partner contact info if available
-      if (reservation.partner) {
-        doc.text(t('receipt.partnerContact'), 20, 160);
-        // Hide partner contact for customers in receipt export
-        // Only include if user is admin (showContact flag could be added later)
-        const showContact = user.role === 'ADMIN';
-        if (showContact && reservation.partner.email) {
-          doc.text(`${t('receipt.email')} ${reservation.partner.email}`, 20, 175);
-        }
-        if (showContact && reservation.partner.phone) {
-          doc.text(`${t('receipt.phone')} ${reservation.partner.phone}`, 20, 190);
-        }
-      }
-      
-      // Save the PDF
-  doc.save(`smartpick-receipt-${reservation.id}.pdf`);
-  toast.success(t('toast.receiptDownloaded'));
-    } catch (error) {
-      logger.error('Error generating receipt:', error);
-      toast.error('Failed to generate receipt');
-    }
-  };
+  // PDF receipt download feature removed per user request
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -721,14 +682,6 @@ export default function MyPicks() {
                             >
                               <Star className="h-4 w-4 mr-2" />
                               {t('mypicks.rate')}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => handleDownloadReceipt(reservation)}
-                              className="h-11 flex-1 sm:flex-none"
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              {t('mypicks.receipt')}
                             </Button>
                           </>
                         )}

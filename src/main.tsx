@@ -5,6 +5,7 @@ import { I18nProvider } from './lib/i18n';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { SpeedInsights } from '@vercel/speed-insights/react'; // ✅ Vercel Speed Insights for Core Web Vitals monitoring
 import { logger } from './lib/logger';
+import Maintenance from './pages/Maintenance';
 
 /**
  * 📊 Vercel Speed Insights
@@ -22,14 +23,24 @@ import { logger } from './lib/logger';
  * Data appears after 30-60 seconds of real user traffic.
  */
 
+const isMaintenance = import.meta.env.PROD && String(import.meta.env.VITE_MAINTENANCE_MODE || '').toLowerCase() === 'true';
+
 createRoot(document.getElementById('root')!).render(
-	<ErrorBoundary>
-		<I18nProvider>
-			<App />
-			{/* 👇 Speed Insights runs on every page */}
-			<SpeedInsights />
-		</I18nProvider>
-	</ErrorBoundary>
+  isMaintenance ? (
+    <ErrorBoundary>
+      <I18nProvider>
+        <Maintenance />
+      </I18nProvider>
+    </ErrorBoundary>
+  ) : (
+    <ErrorBoundary>
+      <I18nProvider>
+        <App />
+        {/* 👇 Speed Insights runs on every page */}
+        <SpeedInsights />
+      </I18nProvider>
+    </ErrorBoundary>
+  )
 );
 
 // ============================================

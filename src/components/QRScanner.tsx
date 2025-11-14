@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, CameraOff, AlertCircle } from 'lucide-react';
@@ -13,24 +12,26 @@ interface QRScannerProps {
 export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRef = useRef<any | null>(null);
   const [cameras, setCameras] = useState<any[]>([]);
   const hasScannedRef = useRef(false); // Prevent multiple scans
 
   useEffect(() => {
     // Get available cameras on mount
-    Html5Qrcode.getCameras()
-      .then((devices) => {
+    (async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const devices = await Html5Qrcode.getCameras();
         if (devices && devices.length > 0) {
           setCameras(devices);
         } else {
           setError('No cameras found on this device');
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         logger.error('Error getting cameras:', err);
         setError('Unable to access camera');
-      });
+      }
+    })();
 
     return () => {
       stopScanning();
@@ -50,6 +51,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         await stopScanning();
       }
 
+      const { Html5Qrcode } = await import('html5-qrcode');
       const scanner = new Html5Qrcode('qr-reader');
       scannerRef.current = scanner;
       logger.log('📷 Initializing scanner...');
@@ -109,7 +111,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
             }
           }, 100);
         },
-        (errorMessage) => {
+        (_errorMessage) => {
           // Error callback (called continuously while scanning)
           // We don't want to show these continuous scan errors
         }

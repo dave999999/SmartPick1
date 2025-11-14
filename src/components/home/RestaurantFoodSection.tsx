@@ -1,4 +1,4 @@
-﻿import { MapPin, Clock, TrendingDown, Star, Heart } from 'lucide-react';
+﻿import { Star, Heart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Offer } from '@/lib/types';
 
@@ -21,17 +21,6 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
     const now = new Date();
     const hoursDiff = (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60);
     return hoursDiff > 0 && hoursDiff < 2;
-  };
-
-  const getTimeAgo = (offer: Offer): string => {
-    const createdAt = new Date(offer.created_at);
-    const now = new Date();
-    const minutesDiff = Math.floor((now.getTime() - createdAt.getTime()) / (1000 * 60));
-    if (minutesDiff < 60) return `${minutesDiff}m ago`;
-    const hoursDiff = Math.floor(minutesDiff / 60);
-    if (hoursDiff < 24) return `${hoursDiff}h ago`;
-    const daysDiff = Math.floor(hoursDiff / 24);
-    return `${daysDiff}d ago`;
   };
 
   const getDiscountPercent = (originalPrice: number, smartPrice: number): number => {
@@ -137,12 +126,12 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
   }
 
   return (
-    <div className="h-full overflow-y-auto px-5 py-6">
+    <div className="h-full overflow-y-auto px-4 py-3">
       {newOffers.length > 0 && (
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-2xl"></span>
-            <h2 className="text-2xl font-bold text-gray-900">Just Added</h2>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-3xl"></span>
+            <h2 className="text-3xl font-bold text-gray-900">Just Added</h2>
             <Badge className="bg-mint-500 text-white font-semibold">
               {newOffers.length} new
             </Badge>
@@ -154,8 +143,8 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
       )}
       {regularOffers.length > 0 && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">All Available Offers</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-3xl font-bold text-gray-900">All Available Offers</h2>
             <span className="text-sm text-gray-500">{regularOffers.length} offers</span>
           </div>
           <div className="grid grid-cols-2 gap-4">

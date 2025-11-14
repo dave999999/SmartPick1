@@ -8,9 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Edit, Trash2, Play, Pause, Package } from 'lucide-react';
+import { Search, Edit, Trash2, Play, Pause } from 'lucide-react';
 import { getOffersPaged, updateOffer, deleteOffer, pauseOffer, resumeOffer } from '@/lib/admin-api';
-import type { Offer } from '@/lib/types';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 

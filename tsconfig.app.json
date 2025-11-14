@@ -14,12 +14,11 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    /* Linting - Full Strict Mode Enabled ✅ */
+    "strict": true,                // ✅ All strict checks enabled
+    "noUnusedLocals": true,       // ✅ Detect unused variables
+    "noUnusedParameters": true,    // ✅ Detect unused function parameters
+    "noFallthroughCasesInSwitch": true,  // ✅ Prevent switch fallthrough bugs
 
     "baseUrl": ".",
     "paths": {

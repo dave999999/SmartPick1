@@ -8,7 +8,6 @@ export function BottomNavBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isPartner, setIsPartner] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(true); // Always visible for debugging
   const lastScrollY = useRef(0);
 
@@ -52,7 +51,6 @@ export function BottomNavBar() {
       const partner = await getPartnerByUserId(user.id);
       setIsPartner(partner !== null && partner.status === 'APPROVED');
     }
-    setIsLoading(false);
   };
 
   const isActive = (path: string) => location.pathname === path;

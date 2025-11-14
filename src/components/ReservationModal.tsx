@@ -12,12 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
-import { Badge } from '@/components/ui/badge';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, Minus, Plus, Coins, Shield, X } from 'lucide-react';
+import { AlertCircle, Shield, X, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
 import { getUserPoints } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
