@@ -15,7 +15,7 @@ import { logger } from '@/lib/logger';
 import { Badge } from '@/components/ui/badge';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, MapPin, AlertCircle, Minus, Plus, Coins, Shield } from 'lucide-react';
+import { Clock, MapPin, AlertCircle, Minus, Plus, Coins, Shield, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
@@ -58,6 +58,12 @@ export default function ReservationModal({
   const isProcessingRef = useRef(false);
   const lastClickTimeRef = useRef(0);
 
+  // Swipe-to-close state
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const modalRef = useRef<HTMLDivElement>(null);
+
   const POINTS_PER_UNIT = 5; // 5 points per unit (quantity-based pricing)
   const DEBOUNCE_MS = 2000; // 2 second debounce
 
@@ -79,6 +85,43 @@ export default function ReservationModal({
     const totalNeeded = POINTS_PER_UNIT * quantity;
     setInsufficientPoints(pointsBalance < totalNeeded);
   }, [pointsBalance, quantity]);
+
+  // Swipe-to-close handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - dragStartY.current;
+    
+    // Only allow downward dragging
+    if (delta > 0) {
+      setDragY(delta);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    
+    // If dragged down more than 150px, close the modal
+    if (dragY > 150) {
+      onOpenChange(false);
+    }
+    
+    // Reset position
+    setDragY(0);
+  };
+
+  // Reset drag state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setDragY(0);
+      setIsDragging(false);
+    }
+  }, [open]);
 
   const loadPointsBalance = async () => {
     if (!user) return;
@@ -345,9 +388,32 @@ export default function ReservationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[95vh] overflow-y-auto p-0 bg-transparent border-none shadow-none">
+      <DialogContent 
+        ref={modalRef}
+        className="max-w-lg max-h-[95vh] overflow-y-auto p-0 bg-transparent border-none shadow-none"
+        style={{
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s ease-out',
+          opacity: isDragging ? Math.max(0.5, 1 - dragY / 400) : 1,
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {/* Hidden DialogTitle for accessibility */}
         <DialogTitle className="sr-only">{offer.title}</DialogTitle>
+        
+        {/* Drag Handle Indicator */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-12 h-1 bg-gray-300 rounded-full" />
+        
+        {/* Close Button - Near Instagram Button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute top-[214px] right-6 z-50 w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 shadow-md transition-all duration-200 hover:scale-110"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5 text-gray-700" />
+        </button>
         
         {/* Header Image Component */}
         {offer.images && offer.images.length > 0 && (
