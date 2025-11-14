@@ -60,6 +60,9 @@ export default defineConfig({
     react(),
     injectBuildVersion()
   ],
+  optimizeDeps: {
+    exclude: ['@marsidev/react-turnstile']
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
