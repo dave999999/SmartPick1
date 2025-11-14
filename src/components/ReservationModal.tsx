@@ -423,7 +423,7 @@ export default function ReservationModal({
         )}
 
         {/* Content Area with padding - white background starts here */}
-        <div className="px-5 pb-5 pt-24 space-y-3 bg-white rounded-b-xl shadow-xl">
+        <div className="px-5 pb-6 pt-24 space-y-4 bg-white rounded-b-xl shadow-xl">
           {/* Title Section Component */}
           <TitleSection
             title={offer.title}
