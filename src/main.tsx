@@ -35,7 +35,8 @@ createRoot(document.getElementById('root')!).render(
 // ============================================
 // PWA Service Worker Registration
 // ============================================
-if ('serviceWorker' in navigator) {
+// Disable service worker in development to prevent caching issues
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
 			.register('/service-worker.js')
@@ -89,6 +90,14 @@ if ('serviceWorker' in navigator) {
 				refreshing = true;
 				window.location.reload();
 			}
+		});
+	});
+} else if ('serviceWorker' in navigator && import.meta.env.DEV) {
+	// Unregister service worker in development
+	navigator.serviceWorker.getRegistrations().then((registrations) => {
+		registrations.forEach((registration) => {
+			registration.unregister();
+			logger.log('[DEV] Service Worker unregistered');
 		});
 	});
 }
