@@ -225,25 +225,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
             "
             onerror="this.style.display='none'"
           />
-          ${count > 1 ? `
-            <div style="
-              position: absolute;
-              top: -5px;
-              right: -5px;
-              background: linear-gradient(135deg, #FF5252 0%, #C62828 100%);
-              color: white;
-              border-radius: 50%;
-              width: 20px;
-              height: 20px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-size: 11px;
-              font-weight: bold;
-              border: 2px solid white;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            ">${count}</div>
-          ` : ''}
         </div>
       `,
       iconSize: [size, height],
