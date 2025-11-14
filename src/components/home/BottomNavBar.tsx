@@ -9,32 +9,41 @@ export function BottomNavBar() {
   const location = useLocation();
   const [isPartner, setIsPartner] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(false); // Start hidden
   const lastScrollY = useRef(0);
 
   useEffect(() => {
     checkUserType();
   }, []);
 
-  // Auto-hide on scroll down, show on scroll up
+  // Show when scrolling down offers list
   useEffect(() => {
+    // Find the scrollable container (the offers list)
+    const scrollContainer = document.querySelector('.overflow-y-auto');
+    
+    if (!scrollContainer) return;
+
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = scrollContainer.scrollTop;
       
-      // Show navbar when scrolling up or at top
-      if (currentScrollY < lastScrollY.current || currentScrollY < 50) {
+      // At top - hide
+      if (currentScrollY < 50) {
+        setIsVisible(false);
+      }
+      // Scrolling down - show
+      else if (currentScrollY > lastScrollY.current) {
         setIsVisible(true);
-      } 
-      // Hide navbar when scrolling down
-      else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+      }
+      // Scrolling up - hide
+      else if (currentScrollY < lastScrollY.current) {
         setIsVisible(false);
       }
       
       lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, []);
 
   const checkUserType = async () => {
@@ -65,12 +74,12 @@ export function BottomNavBar() {
 
   return (
     <div 
-      className={`fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 z-[70] transition-transform duration-300 ${
-        isVisible ? 'translate-y-0' : 'translate-y-full'
+      className={`fixed bottom-6 left-0 right-0 z-[9999] transition-all duration-500 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'
       }`}
     >
-      {/* Navigation Icons - Compact Version */}
-      <div className="flex items-center justify-around px-2 py-1.5">
+      {/* Floating Navigation Icons - All Cosmic Orange */}
+      <div className="flex items-center justify-center gap-4 px-4">
         {navItems.map((item, index) => {
           const Icon = item.icon;
           const active = isActive(item.path);
@@ -79,30 +88,21 @@ export function BottomNavBar() {
             <button
               key={index}
               onClick={item.onClick}
-              className={`flex items-center justify-center flex-1 py-1.5 transition-colors ${
-                active ? 'text-gray-900' : 'text-gray-400'
+              style={{ transitionDelay: isVisible ? `${index * 50}ms` : '0ms' }}
+              className={`flex items-center justify-center transition-all duration-300 pointer-events-auto ${
+                active
+                  ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full w-14 h-14 shadow-2xl shadow-orange-500/50 scale-110'
+                  : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-full w-12 h-12 shadow-xl shadow-orange-400/40 hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-95'
               }`}
             >
-              {/* Icon with filled circle background when active - smaller */}
-              <div
-                className={`flex items-center justify-center transition-all ${
-                  active
-                    ? 'bg-gray-900 text-white rounded-full w-11 h-9 shadow-sm'
-                    : 'w-5 h-5'
-                }`}
-              >
-                <Icon 
-                  className={active ? 'w-4 h-4' : 'w-5 h-5'} 
-                  strokeWidth={2} 
-                />
-              </div>
+              <Icon 
+                className={active ? 'w-6 h-6' : 'w-5 h-5'} 
+                strokeWidth={2.5} 
+              />
             </button>
           );
         })}
       </div>
-
-      {/* iPhone home indicator bar - smaller */}
-      <div className="h-1 bg-gray-900 rounded-full w-24 mx-auto mb-1 opacity-30" />
     </div>
   );
 }
