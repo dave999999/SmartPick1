@@ -8,7 +8,6 @@ import { getCSRFToken } from '@/lib/csrf';
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
@@ -21,14 +20,6 @@ import { Facebook, Twitter, Instagram } from 'lucide-react';
 import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
 import { getUserPoints } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
-
-// Import modular reservation components (v2.0 - Unified Design)
-import HeaderImage from './reservation/HeaderImage';
-import TitleSection from './reservation/TitleSection';
-import UnifiedPriceCard from './reservation/UnifiedPriceCard';
-import SmartPickHint from './reservation/SmartPickHint';
-import PickupWindowCard from './reservation/PickupWindowCard';
-import ReserveButton from './reservation/ReserveButton';
 
 interface ReservationModalProps {
   offer: Offer | null;
@@ -346,125 +337,273 @@ export default function ReservationModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[95vh] overflow-y-auto p-0">
-        {/* Hidden DialogTitle for accessibility */}
-        <DialogTitle className="sr-only">{offer.title}</DialogTitle>
-        
-        {/* Header Image Component */}
+        {/* Hero Image - Reduced height by 50%, modern gradient overlay */}
         {offer.images && offer.images.length > 0 && (
-          <HeaderImage
-            imageUrl={resolveOfferImageUrl(offer.images[0], offer.category)}
-            title={offer.title}
-            categoryName={offer.category}
-          />
+          <div className="relative h-36 w-full overflow-hidden rounded-t-lg">
+            <img
+              src={resolveOfferImageUrl(offer.images[0], offer.category)}
+              alt={offer.title}
+              className="w-full h-full object-cover"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
+            />
+            {/* Gradient overlay for readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            <Badge className="absolute top-3 right-3 bg-mint-500 hover:bg-mint-600 text-white text-xs px-2 py-1 shadow-md">
+              {offer.category}
+            </Badge>
+          </div>
         )}
 
         {/* Content Area with padding */}
         <div className="px-5 pb-5 pt-4 space-y-4">
-          {/* Title Section Component */}
-          <TitleSection
-            title={offer.title}
-            description={offer.description}
-            partnerName={offer.partner?.business_name || 'Unknown'}
-            partnerAddress={offer.partner?.address}
-            onShareFacebook={handleShareFacebook}
-            onShareTwitter={handleShareTwitter}
-            onShareInstagram={handleShareInstagram}
-          />
+          {/* Title + Partner */}
+          <div className="mb-1">
+            <h2 className="text-xl font-bold text-gray-900 leading-tight mb-1.5">
+              {offer.title}
+            </h2>
+            <div className="flex items-center gap-1.5 text-sm text-gray-600">
+              <MapPin className="h-3.5 w-3.5 text-mint-600" />
+              <span>{offer.partner?.business_name}</span>
+            </div>
+          </div>
 
-          {/* Unified Price Card - Balance + Price + Quantity in ONE */}
-          <UnifiedPriceCard
-            balance={pointsBalance}
-            cost={POINTS_PER_UNIT * quantity}
-            smartPrice={offer.smart_price}
-            originalPrice={offer.original_price}
-            quantity={quantity}
-            maxQuantity={maxQuantity}
-            availableStock={offer.quantity_available}
-            onQuantityChange={setQuantity}
-            disabled={penaltyInfo?.isUnderPenalty || false}
-          />
+          {/* Social Share - Minimalist Icons Only */}
+          <div className="flex items-center gap-2 pb-3 mb-1 border-b border-gray-100">
+            <span className="text-xs text-gray-500">Share:</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareFacebook();
+              }}
+              className="p-1.5 rounded-full hover:bg-blue-50 transition-colors"
+              aria-label="Share on Facebook"
+            >
+              <Facebook className="h-4 w-4 text-gray-400 hover:text-blue-600" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareTwitter();
+              }}
+              className="p-1.5 rounded-full hover:bg-sky-50 transition-colors"
+              aria-label="Share on Twitter"
+            >
+              <Twitter className="h-4 w-4 text-gray-400 hover:text-sky-600" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShareInstagram();
+              }}
+              className="p-1.5 rounded-full hover:bg-pink-50 transition-colors"
+              aria-label="Share on Instagram"
+            >
+              <Instagram className="h-4 w-4 text-gray-400 hover:text-pink-600" />
+            </button>
+          </div>
+          {/* Wallet + Points Info Card - Compact Modern Design */}
+          <div className="bg-[#EFFFF8] rounded-xl p-3 border border-mint-200/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-mint-100 rounded-lg p-1.5">
+                  <Coins className="w-4 h-4 text-mint-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Your Balance</p>
+                  <p className="text-sm font-bold text-gray-900">{pointsBalance} SmartPoints</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500">This costs</p>
+                <p className="text-sm font-bold text-mint-600">{POINTS_PER_UNIT * quantity} pts</p>
+              </div>
+            </div>
+          </div>
 
-          {/* Smart Context-Aware Alerts - Only show when relevant */}
+          {/* Insufficient Points Warning */}
           {insufficientPoints && (
             <Alert className="bg-orange-50 border-orange-200">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-900">
                 <strong>⚠️ Insufficient SmartPoints</strong>
                 <p className="mt-1">
-                  You need {POINTS_PER_UNIT * quantity} more points.
+                  You need {POINTS_PER_UNIT * quantity} SmartPoints to reserve {quantity} unit(s) ({POINTS_PER_UNIT} pts each).
+                  Buy 100 points for ₾1 to continue.
                 </p>
                 <Button
                   size="sm"
                   onClick={() => setShowBuyPointsModal(true)}
                   className="mt-2 bg-orange-600 hover:bg-orange-700"
                 >
-                  Buy SmartPoints
+                  Buy SmartPoints Now
                 </Button>
               </AlertDescription>
             </Alert>
           )}
 
+          {/* Expired Offer Warning */}
           {isExpired && (
             <Alert variant="destructive" className="bg-red-50 border-red-200">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-900">
-                <strong>Expired</strong> - This offer is no longer available
+                <strong>This offer has expired</strong>
+                <p className="mt-1">
+                  This offer is no longer available for reservation. Please browse other active offers.
+                </p>
               </AlertDescription>
             </Alert>
           )}
 
+          {/* Penalty Warning */}
           {!isExpired && penaltyInfo?.isUnderPenalty && (
             <Alert className="bg-red-50 border-red-200">
               <AlertCircle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-900">
-                <strong>Account Penalty</strong> - Blocked for: {countdown}
+                <strong>Account Penalty Active</strong>
+                <p className="mt-1">
+                  You missed {penaltyInfo.penaltyCount} pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}.
+                  Reservations are blocked for: <strong>{countdown}</strong>
+                </p>
               </AlertDescription>
             </Alert>
           )}
 
-          {!isExpired && isExpiringSoon && !penaltyInfo?.isUnderPenalty && (
+          {/* Expiring Soon Warning */}
+          {!isExpired && isExpiringSoon && (
             <Alert className="bg-orange-50 border-orange-200">
               <Clock className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-900">
-                <strong>Hurry!</strong> Expires in {timeRemaining}
+                <strong>Hurry!</strong> This offer expires soon: {timeRemaining}
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Collapsible SmartPick Info Hint */}
-          <SmartPickHint />
-
-          {/* Pickup Window Card Component */}
-          {pickupTimes.start && pickupTimes.end && (
-            <PickupWindowCard
-              startTime={formatTime(pickupTimes.start)}
-              endTime={formatTime(pickupTimes.end)}
-              countdown={timeRemaining}
-              is24Hours={offer.partner?.open_24h || false}
-              businessHours={offer.partner?.open_24h ? null : (
-                offer.partner?.opening_time && offer.partner?.closing_time
-                  ? { open: offer.partner.opening_time, close: offer.partner.closing_time }
-                  : null
-              )}
-            />
+          {/* Description */}
+          {offer.description && (
+            <p className="text-sm text-gray-600 leading-relaxed">{offer.description}</p>
           )}
 
-          {/* Reserve Button Component with Total Price */}
-          <ReserveButton
-            onClick={handleReserve}
-            disabled={isReserving || isExpired || offer.quantity_available === 0 || penaltyInfo?.isUnderPenalty || false}
-            isLoading={isReserving}
-            totalPrice={totalPrice}
-          />
+          {/* Smart Price Section - Clean Modern Design */}
+          <div className="bg-gradient-to-br from-mint-50 to-mint-100/30 rounded-xl p-3.5 border border-mint-200/50">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-gray-600">Smart Price</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-mint-600">{offer.smart_price} GEL</span>
+                <span className="text-sm text-gray-400 line-through">
+                  {offer.original_price} GEL
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-mint-700 font-medium mt-1.5">
+              Save {((1 - offer.smart_price / offer.original_price) * 100).toFixed(0)}% with SmartPick
+            </p>
+          </div>
 
-          {/* Penalty warning if applicable */}
-          {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
-            <div className="text-center -mt-2">
-              <p className="text-xs text-orange-600 font-medium">
-                ⚠️ {penaltyInfo.penaltyCount} missed pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}. Don't miss this one!
+          {/* Quantity Selector - Modern Pill Style */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Select Quantity</span>
+              <Badge variant="outline" className="text-xs bg-gray-50">
+                {offer.quantity_available} left
+              </Badge>
+            </div>
+            <div className="flex items-center justify-center gap-3 bg-gray-50 rounded-full p-1.5 max-w-[200px] mx-auto">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                disabled={quantity <= 1 || penaltyInfo?.isUnderPenalty}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white border border-gray-200 hover:bg-mint-50 hover:border-mint-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                <Minus className="h-4 w-4 text-gray-600" />
+              </button>
+              <span className="text-xl font-bold text-gray-900 w-8 text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
+                disabled={quantity >= maxQuantity || penaltyInfo?.isUnderPenalty}
+                className="flex items-center justify-center w-9 h-9 rounded-full bg-white border border-gray-200 hover:bg-mint-50 hover:border-mint-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                <Plus className="h-4 w-4 text-gray-600" />
+              </button>
+            </div>
+            <p className="text-xs text-center text-gray-500 mt-1.5">Max 3 per offer</p>
+          </div>
+
+          {/* How SmartPick Works - Subtle Info Card */}
+          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            <div className="flex items-start gap-2">
+              <div className="bg-mint-100 rounded-full p-1 mt-0.5">
+                <Clock className="h-3.5 w-3.5 text-mint-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-0.5">How SmartPick works</p>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  Reserve now → Pick up within 1 hour → Show your QR code in store
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Price - Clean Bold Design */}
+          <div className="flex items-center justify-between px-4 py-3 bg-white rounded-xl border-2 border-gray-200">
+            <span className="text-base font-medium text-gray-700">Total Price</span>
+            <span className="text-2xl font-bold text-mint-600">{totalPrice.toFixed(2)} GEL</span>
+          </div>
+
+          {/* Pickup Window - Compact Modern Design */}
+          {pickupTimes.start && pickupTimes.end && (
+            <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-3 border border-orange-200/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  <span className="text-xs font-semibold text-gray-700">Pickup Window</span>
+                </div>
+                <Badge className="bg-mint-500 text-white text-xs px-2 py-0.5">
+                  {timeRemaining}
+                </Badge>
+              </div>
+              <p className="text-sm font-medium text-gray-900 mt-1.5">
+                {formatTime(pickupTimes.start)} — {formatTime(pickupTimes.end)}
               </p>
+              {offer.partner && (
+                <p className="text-xs text-gray-600 mt-1">{offer.partner.business_name}</p>
+              )}
             </div>
           )}
+
+          {/* Reserve Button - Full Width Modern */}
+          <Button
+            className="w-full bg-mint-600 hover:bg-mint-700 text-white text-base font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
+            onClick={handleReserve}
+            disabled={
+              isReserving ||
+              isExpired ||
+              offer.quantity_available === 0 ||
+              penaltyInfo?.isUnderPenalty ||
+              false
+            }
+          >
+            {isReserving
+              ? 'Creating Reservation...'
+              : isExpired
+              ? 'Offer Expired'
+              : penaltyInfo?.isUnderPenalty
+              ? `Blocked - ${countdown}`
+              : 'Reserve Now'}
+          </Button>
+
+          {/* Footer Hint */}
+          <div className="text-center space-y-1">
+            <p className="text-xs text-gray-500">
+              Your reservation will be held for 1 hour.
+            </p>
+            {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
+              <p className="text-xs text-orange-600 font-medium">
+                ⚠️ You have {penaltyInfo.penaltyCount} missed pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}.
+                Missing this one will result in a penalty.
+              </p>
+            )}
+          </div>
         </div>
       </DialogContent>
 

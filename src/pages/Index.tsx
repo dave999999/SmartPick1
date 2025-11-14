@@ -281,8 +281,8 @@ export default function Index() {
                 </div>
               )}
 
-              {/* Search Bar Overlay - Above everything except popups (z-50) */}
-              <div className="absolute top-3 left-4 right-4 z-50 pointer-events-auto">
+              {/* Search Bar Overlay - leave space on the right for top menu */}
+              <div className="absolute top-3 left-4 right-20 md:right-24 z-50 pointer-events-auto">
                 <TopSearchBar onFilterClick={() => setShowFilterDrawer(true)} />
               </div>
             </>
