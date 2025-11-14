@@ -50,9 +50,8 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
         key={offer.id}
         onClick={() => onOfferClick(offer)}
         className="relative flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-[180px]"
-        style={{ height: '200px' }}
       >
-        <div className="relative h-28 overflow-hidden">
+        <div className="relative h-40 overflow-hidden">
           <img
             src={offer.images[0] || '/placeholder-food.jpg'}
             alt={offer.title}
