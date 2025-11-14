@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { resolveOfferImageUrl } from '@/lib/api';
-import { MapPin, Clock, Heart, Tag, TrendingDown } from 'lucide-react';
+import { MapPin, Clock, Heart, Tag, TrendingDown, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface PartnerOffersModalProps {
@@ -57,9 +57,18 @@ export default function PartnerOffersModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] p-0 gap-0 overflow-hidden rounded-2xl bg-white">
         {/* Modern Partner Header with solid mint background */}
-        <DialogHeader className="px-5 pt-5 pb-5 bg-mint-600 text-white space-y-0">
+        <DialogHeader className="px-5 pt-5 pb-5 bg-mint-600 text-white space-y-0 relative">
+          {/* Close Button - Top Right */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors z-10"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+
           {/* Partner Name */}
-          <DialogTitle className="text-2xl font-bold text-white mb-3">{partnerName}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-white mb-3 pr-10">{partnerName}</DialogTitle>
           
           {/* Address with icon */}
           {partnerAddress && (
