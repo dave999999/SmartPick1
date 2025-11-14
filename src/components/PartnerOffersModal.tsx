@@ -30,12 +30,13 @@ export default function PartnerOffersModal({
   onOpenChange,
   onOfferClick,
 }: PartnerOffersModalProps) {
+  // All hooks must be called before any conditional returns
   const [sortBy, setSortBy] = useState<'savings' | 'ending-soon' | 'popular'>('savings');
-
-  if (!offers || offers.length === 0) return null;
 
   // Calculate additional data for each offer
   const enrichedOffers = useMemo(() => {
+    if (!offers || offers.length === 0) return [];
+    
     return offers.map(offer => {
       const savings = offer.original_price - offer.smart_price;
       const savingsPercent = Math.round((savings / offer.original_price) * 100);
@@ -70,6 +71,9 @@ export default function PartnerOffersModal({
 
   // Calculate total possible savings
   const totalSavings = enrichedOffers.reduce((sum, offer) => sum + offer.savings, 0);
+
+  // Don't render if no offers (but after all hooks are called)
+  if (!offers || offers.length === 0) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
