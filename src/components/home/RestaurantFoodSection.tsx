@@ -52,7 +52,7 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
         className="relative flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-[180px]"
       >
         {/* Image container with all info overlaid */}
-        <div className="relative h-48 overflow-hidden">
+        <div className="relative h-40 overflow-hidden">
           {/* Background image */}
           <img
             src={offer.images[0] || '/placeholder-food.jpg'}
@@ -105,9 +105,9 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
             <span className="text-xl font-bold text-white drop-shadow-lg">₾{offer.smart_price.toFixed(2)}</span>
           </div>
           
-          {/* Bottom right - Low stock badge only */}
+          {/* Bottom right - Low stock badge */}
           {isLowStock && (
-            <div className="absolute bottom-2 right-2">
+            <div className="absolute bottom-2 right-12">
               <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-semibold">
                 Only {offer.quantity_available} left!
               </Badge>
@@ -119,7 +119,7 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className="absolute top-2 right-12 p-1.5 bg-black/30 backdrop-blur-sm hover:bg-black/50 rounded-full transition-colors"
+            className="absolute bottom-2 right-2 p-1.5 bg-black/30 backdrop-blur-sm hover:bg-black/50 rounded-full transition-colors z-10"
           >
             <Heart className="w-4 h-4 text-white" />
           </button>
