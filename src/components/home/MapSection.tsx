@@ -1,5 +1,6 @@
 import { Offer } from '@/lib/types';
-import OfferMap from '@/components/OfferMap';
+import { Suspense, lazy } from 'react';
+const OfferMap = lazy(() => import('@/components/OfferMap'));
 import { Crosshair } from 'lucide-react';
 
 interface MapSectionProps {
@@ -23,14 +24,16 @@ export function MapSection({
     <div className="absolute inset-0 w-full h-full m-0 p-0">
       {/* Borderless Full Screen Map */}
       <div className="w-full h-full m-0 p-0">
-        <OfferMap
-          offers={offers}
-          onOfferClick={onOfferClick}
-          onMarkerClick={onMarkerClick}
-          selectedCategory={selectedCategory}
-          onCategorySelect={onCategorySelect}
-          onLocationChange={onLocationChange}
-        />
+        <Suspense fallback={<div className="w-full h-full" aria-busy="true" aria-label="Loading map..." /> }>
+          <OfferMap
+            offers={offers}
+            onOfferClick={onOfferClick}
+            onMarkerClick={onMarkerClick}
+            selectedCategory={selectedCategory}
+            onCategorySelect={onCategorySelect}
+            onLocationChange={onLocationChange}
+          />
+        </Suspense>
       </div>
 
       {/* Center Location Button - positioned above bottom overlay */}

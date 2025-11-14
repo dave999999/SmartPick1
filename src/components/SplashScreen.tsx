@@ -9,7 +9,9 @@ export default function SplashScreen() {
     try {
       const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
       if (entry?.type) navType = entry.type as string;
-    } catch {}
+    } catch (e) {
+      // Performance API not available in this browser
+    }
     if (navType === 'reload' || navType === 'back_forward') return false;
     // Session gate: only once per tab session
     const seen = sessionStorage.getItem('smartpick-splash-seen') === '1';

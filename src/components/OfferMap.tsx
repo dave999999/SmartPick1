@@ -3,16 +3,10 @@ import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Offer } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Navigation, Minimize2 } from 'lucide-react';
-import { subscribeToOffers } from '@/lib/api';
+import { Navigation, Minimize2 } from 'lucide-react';
 import { logger } from '@/lib/logger';
-import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
-import FavoriteButton from '@/components/FavoriteButton';
 import { toast } from 'sonner';
-import { useI18n } from '@/lib/i18n';
 
 // Fix Leaflet default marker icon issue
 const DefaultIcon = L.Icon.Default.prototype as L.Icon & { _getIconUrl?: () => string };
@@ -23,14 +17,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
-
-// Category colors for markers
-const CATEGORY_COLORS: Record<string, string> = {
-  BAKERY: '#F59E0B',
-  RESTAURANT: '#EF4444',
-  CAFE: '#8B5CF6',
-  GROCERY: '#10B981',
-};
 
 // Create custom marker icon using emoji for each category
 /* const createCustomIcon = (category: string, count: number, isHighlighted: boolean = false) => {
@@ -123,32 +109,13 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export default function OfferMap({ offers, onOfferClick, onMarkerClick, selectedCategory, onCategorySelect, highlightedOfferId, onLocationChange }: OfferMapProps) {
-  const { t } = useI18n();
+export default function OfferMap({ offers, onOfferClick, onMarkerClick, selectedCategory, highlightedOfferId, onLocationChange }: OfferMapProps) {
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
-  // Always show map, including on mobile
-  const [showMap, setShowMap] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([41.7151, 44.8271]); // Tbilisi
   const [mapZoom, setMapZoom] = useState(13);
   const mapRef = useRef<L.Map | null>(null);
-  const [listReady, setListReady] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
-
-  // Categories - Unique SmartPick style with brand colors
-  const categories = [
-    { value: '', emoji: '🌍', labelKey: 'category.All', bgColor: 'bg-gradient-to-br from-[#00C896] to-[#009B77]' },
-    { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY', bgColor: 'bg-gradient-to-br from-orange-400 to-orange-600' },
-    { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE', bgColor: 'bg-gradient-to-br from-amber-600 to-amber-800' },
-    { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT', bgColor: 'bg-gradient-to-br from-red-500 to-pink-600' },
-    { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD', bgColor: 'bg-gradient-to-br from-yellow-400 to-orange-500' },
-    { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL', bgColor: 'bg-gradient-to-br from-purple-500 to-purple-700' },
-    { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY', bgColor: 'bg-gradient-to-br from-blue-500 to-blue-700' },
-  ];
-
-  // Default center: Tbilisi, Georgia
-  const defaultCenter: [number, number] = [41.7151, 44.8271];
 
   // Use light pink/beige map style like in reference
   const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
@@ -160,42 +127,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     isHighlighted: boolean = false
   ) => {
     const size = isHighlighted ? 75 : 65; // Much bigger, more visible pins
-    
-    // Category colors and icons - matching your reference images
-    const categoryConfig: Record<string, { color: string; gradient: string; icon: string }> = {
-      GROCERY: {
-        color: '#4CAF50',
-        gradient: 'linear-gradient(135deg, #66BB6A 0%, #4CAF50 50%, #388E3C 100%)',
-        icon: '🛒'
-      },
-      RESTAURANT: {
-        color: '#FF6347',
-        gradient: 'linear-gradient(135deg, #FF8A65 0%, #FF6347 50%, #E64A19 100%)',
-        icon: '🍽️'
-      },
-      FAST_FOOD: {
-        color: '#FF9800',
-        gradient: 'linear-gradient(135deg, #FFB74D 0%, #FF9800 50%, #F57C00 100%)',
-        icon: '🍔'
-      },
-      BAKERY: {
-        color: '#FFA726',
-        gradient: 'linear-gradient(135deg, #FFCA28 0%, #FFA726 50%, #F57C00 100%)',
-        icon: '🥐'
-      },
-      ALCOHOL: {
-        color: '#AB47BC',
-        gradient: 'linear-gradient(135deg, #CE93D8 0%, #AB47BC 50%, #8E24AA 100%)',
-        icon: '🍷'
-      },
-      CAFE: {
-        color: '#8D6E63',
-        gradient: 'linear-gradient(135deg, #A1887F 0%, #8D6E63 50%, #6D4C41 100%)',
-        icon: '☕'
-      }
-    };
-
-    const config = categoryConfig[category] || categoryConfig['RESTAURANT'];
     const height = size * 1.3;
 
     // Map category to image filename
@@ -233,20 +164,9 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     });
   };
 
-  // Set up realtime subscription
-  useEffect(() => {
-    const subscription = subscribeToOffers((payload) => {
-      logger.log('Realtime offer update:', payload);
-      // Trigger a refresh by updating the offers state in parent
-      toast.info('Offers updated in real-time');
-    });
-
-    return () => {
-      if (subscription && typeof subscription.unsubscribe === 'function') {
-        subscription.unsubscribe();
-      }
-    };
-  }, []);
+  // Removed realtime subscription due to security vulnerability
+  // (was leaking all partner offers globally without filtering)
+  // Map now relies on parent component's refresh logic or polling
 
 
 
@@ -278,60 +198,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
   useEffect(() => {
     // No-op: previously forced list on small screens
   }, []);
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getTimeRemaining = (expiresAt?: string) => {
-    const now = new Date();
-    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-    const expires = new Date(target);
-    const diff = expires.getTime() - now.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (diff <= 0) return 'Expired';
-    if (hours > 0) return `${hours}h ${minutes}m left`;
-    return `${minutes}m left`;
-  };
-
-  const isExpiringSoon = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-    const diff = new Date(target).getTime() - new Date().getTime();
-    return diff > 0 && diff < 60 * 60 * 1000; // Less than 1 hour
-  };
-
-  const isExpired = (expiresAt?: string) => {
-    const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
-    return new Date(target).getTime() <= new Date().getTime();
-  };
-
-  // Unified expiry getter: prefer DB field, fallback to auto field, then default +12h
-  const getOfferExpiry = (offer: Offer): string => {
-    return (
-      (offer as any)?.expires_at ||
-      (offer as any)?.auto_expire_in ||
-      new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString()
-    );
-  };
-
-  // Helper function to get pickup times from offer
-  const getPickupTimes = (offer: Offer) => {
-    if (offer.pickup_window?.start && offer.pickup_window?.end) {
-      return {
-        start: offer.pickup_window.start,
-        end: offer.pickup_window.end,
-      };
-    }
-    return {
-      start: offer.pickup_start || '',
-      end: offer.pickup_end || '',
-    };
-  };
 
   // Helper function to get partner location
   const getPartnerLocation = (offer: Offer) => {
@@ -413,31 +279,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     }
   };
 
-  // Filter offers within 5km of user location
-  const getOffersNearUser = () => {
-    if (!userLocation) return filteredOffers;
-
-    return filteredOffers.filter(offer => {
-      const location = getPartnerLocation(offer);
-      if (!location) return false;
-
-      // Calculate distance using Haversine formula
-      const R = 6371; // Earth's radius in km
-      const dLat = (location.lat - userLocation[0]) * Math.PI / 180;
-      const dLon = (location.lng - userLocation[1]) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(userLocation[0] * Math.PI / 180) *
-        Math.cos(location.lat * Math.PI / 180) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c;
-
-      return distance <= 5; // Within 5km
-    });
-  };
-
-  const displayOffers = userLocation ? getOffersNearUser() : filteredOffers;
   const groupedLocations = groupOffersByLocation();
 
   // Debug logging
@@ -453,22 +294,11 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     }))
   });
 
-  // Handle offer click from list to highlight on map
-  const handleOfferClickFromList = (offer: Offer) => {
-    const location = getPartnerLocation(offer);
-    if (location && showMap) {
-      setMapCenter([location.lat, location.lng]);
-      setMapZoom(16);
-    }
-    onOfferClick(offer);
-  };
-
   return (
-    <div className="w-full">{/* Clean map without header */}
-
+    <div className="w-full">
+      {/* Clean map without header */}
       {/* Interactive Map - Borderless Fullscreen */}
-      {showMap && (
-        <div className="absolute inset-0 w-full h-full m-0 p-0 border-none">
+      <div className="absolute inset-0 w-full h-full m-0 p-0 border-none">
           <MapContainer
             center={mapCenter}
             zoom={mapZoom}
@@ -490,8 +320,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
                     }
                   }, 300);
                 }
-                setListReady(true);
-                setTimeout(() => setMapLoaded(true), 200);
               } catch (err) {
                 logger.error('Map whenReady handler failed:', err);
               }
@@ -578,7 +406,6 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
             </Button>
           )}
         </div>
-      )}
 
       {/* Offers Grid - Moved to RecentOffersSlider component */}
 

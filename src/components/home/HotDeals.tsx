@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Offer } from '@/lib/types';
 import { resolveOfferImageUrl } from '@/lib/api';
-import { Flame, MapPin, Clock } from 'lucide-react';
+import { Flame, MapPin } from 'lucide-react';
 
 interface HotDealsProps {
   offers: Offer[];
@@ -31,13 +31,6 @@ export function HotDeals({ offers, onOfferClick }: HotDealsProps) {
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {hotDeals.map((offer) => {
-          const formatTime = (dateString: string) => {
-            return new Date(dateString).toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-            });
-          };
-
           return (
             <div
               key={offer.id}

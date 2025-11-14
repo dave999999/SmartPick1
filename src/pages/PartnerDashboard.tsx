@@ -1,20 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Offer, Reservation, Partner, CreateOfferDTO } from '@/lib/types';
+import { Offer, Reservation, Partner } from '@/lib/types';
 import {
   getPartnerByUserId,
   getPartnerOffers,
   getPartnerReservations,
   getPartnerStats,
-  createOffer,
   updateOffer,
   deleteOffer,
   validateQRCode,
   markAsPickedUp,
   getCurrentUser,
   signOut,
-  uploadImages,
-  processOfferImages,
   resolveOfferImageUrl,
   getPartnerPoints,
   purchaseOfferSlot,
@@ -55,7 +52,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import Plus from 'lucide-react/dist/esm/icons/plus';
-import ShoppingBag from 'lucide-react/dist/esm/icons/shopping-bag';
 import Package from 'lucide-react/dist/esm/icons/package';
 import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
 import QrCode from 'lucide-react/dist/esm/icons/qr-code';
@@ -64,30 +60,22 @@ import Pause from 'lucide-react/dist/esm/icons/pause';
 import Play from 'lucide-react/dist/esm/icons/play';
 import LogOut from 'lucide-react/dist/esm/icons/log-out';
 import Edit from 'lucide-react/dist/esm/icons/edit';
-import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
-import Clock from 'lucide-react/dist/esm/icons/clock';
 import Lock from 'lucide-react/dist/esm/icons/lock';
 import Utensils from 'lucide-react/dist/esm/icons/utensils';
 import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
 import Calendar from 'lucide-react/dist/esm/icons/calendar';
 import DollarSign from 'lucide-react/dist/esm/icons/dollar-sign';
 import Hash from 'lucide-react/dist/esm/icons/hash';
-import Upload from 'lucide-react/dist/esm/icons/upload';
-import X from 'lucide-react/dist/esm/icons/x';
-import Eye from 'lucide-react/dist/esm/icons/eye';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Filter from 'lucide-react/dist/esm/icons/filter';
-import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down';
 import Camera from 'lucide-react/dist/esm/icons/camera';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import QRScanner from '@/components/QRScanner';
 import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
 import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
-import EnhancedOffersTable from '@/components/partner/EnhancedOffersTable';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
-import { applyNoShowPenalty } from '@/lib/penalty-system';
 import { useI18n } from '@/lib/i18n';
 import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
 import PendingPartnerStatus from '@/components/partner/PendingPartnerStatus';
@@ -120,16 +108,11 @@ export default function PartnerDashboard() {
   const [isProcessingQR, setIsProcessingQR] = useState(false);
   const isProcessingQRRef = useRef(false); // Use ref for immediate synchronous check
   const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const [lastQrResult, setLastQrResult] = useState<null | 'success' | 'error'>(null);
-  const [useBusinessHours, setUseBusinessHours] = useState(false);
-  const [pickupStartSlot, setPickupStartSlot] = useState('');
-  const [pickupEndSlot, setPickupEndSlot] = useState('');
   // Auto-expiration for 24h businesses: 12 hours by spec
   const [autoExpire6h, setAutoExpire6h] = useState(true);
   const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out' | 'scheduled'>('all');
@@ -139,8 +122,6 @@ export default function PartnerDashboard() {
   const [selectedOffers, setSelectedOffers] = useState<Set<string>>(new Set());
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const navigate = useNavigate();
-
-  const CATEGORIES = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY'];
 
   // Derive display status for an offer based on quantity and time
   const getOfferDisplayStatus = (offer: Offer): string => {
@@ -160,34 +141,6 @@ export default function PartnerDashboard() {
   
   // Check if partner operates 24 hours
   const is24HourBusiness = partner?.open_24h === true;
-
-  // Helper: Round time to nearest 15 minutes UP
-  const roundToNearest15 = (date: Date): Date => {
-    const minutes = Math.ceil(date.getMinutes() / 15) * 15;
-    const newDate = new Date(date);
-    if (minutes === 60) {
-      newDate.setHours(newDate.getHours() + 1);
-      newDate.setMinutes(0);
-    } else {
-      newDate.setMinutes(minutes);
-    }
-    newDate.setSeconds(0);
-    newDate.setMilliseconds(0);
-    return newDate;
-  };
-
-  // Helper: Generate 30-min time slots
-  const generateTimeSlots = (start: Date, end: Date): string[] => {
-    const slots: string[] = [];
-    const current = new Date(start);
-    while (current <= end) {
-      const hours = current.getHours().toString().padStart(2, '0');
-      const minutes = current.getMinutes().toString().padStart(2, '0');
-      slots.push(`${hours}:${minutes}`);
-      current.setTime(current.getTime() + 30 * 60 * 1000);
-    }
-    return slots;
-  };
 
   // Get business closing time as Date
   const getClosingTime = (): Date | null => {
@@ -394,14 +347,24 @@ export default function PartnerDashboard() {
         }
       }
 
-      // Process images (both library URLs and custom uploads)
-      let processedImages: string[] = [];
-      try {
-        processedImages = await processOfferImages(imageFiles, partner?.id || '');
-      } catch (imgErr) {
-        logger.error('Image processing/upload failed, proceeding without images:', imgErr);
-        toast.error(t('partner.dashboard.toast.imageUploadFailed'));
-        processedImages = [];
+      // Images are library URLs only (custom uploads removed)
+      // Prefer imageFiles, but fall back to selectedLibraryImage if needed
+      let processedImages: string[] = imageFiles.filter((img): img is string => typeof img === 'string');
+      if (processedImages.length === 0 && selectedLibraryImage) {
+        processedImages = [selectedLibraryImage];
+      }
+      logger.log('CreateOffer image selection debug:', {
+        imageFiles,
+        selectedLibraryImage,
+        processedImages
+      });
+
+      // Ensure at least one image is selected
+      if (processedImages.length === 0) {
+        setFormErrors(prev => ({ ...prev, images: 'Please choose an image from library' }));
+        toast.error('Please choose an image for the offer');
+        setIsSubmitting(false);
+        return;
       }
 
       const offerData = {
@@ -441,9 +404,8 @@ export default function PartnerDashboard() {
           return;
         }
 
-        // Determine status and scheduled_publish_at
+  // Determine status
         const offerStatus = isScheduled ? 'SCHEDULED' : 'ACTIVE';
-        const scheduledDate = isScheduled && scheduledPublishAt ? new Date(scheduledPublishAt).toISOString() : null;
 
         // Create offer with only columns that exist in the table
         // Note: scheduled_publish_at and auto_expire_in don't exist in offers table
@@ -485,14 +447,11 @@ export default function PartnerDashboard() {
   toast.success(isScheduled ? t('partner.dashboard.toast.offerScheduled') : t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
         setImageFiles([]);
-        setImagePreviews([]);
         setFormErrors({});
-        setUseBusinessHours(false);
-        setPickupStartSlot('');
-        setPickupEndSlot('');
         setAutoExpire6h(true);
         setIsScheduled(false);
         setScheduledPublishAt('');
+        setSelectedLibraryImage(null);
         loadPartnerData();
       }
     } catch (error) {
@@ -551,11 +510,21 @@ export default function PartnerDashboard() {
         return;
       }
 
-      // Process images (both library URLs and custom uploads)
-      const processedImages = await processOfferImages(imageFiles, partner?.id || '');
+      // Images are library URLs only (custom uploads removed)
+      let processedImages = imageFiles.filter((img): img is string => typeof img === 'string');
+      if (processedImages.length === 0 && selectedLibraryImage) {
+        processedImages = [selectedLibraryImage];
+      }
+      logger.log('EditOffer image selection debug:', {
+        imageFiles,
+        selectedLibraryImage,
+        processedImages
+      });
 
       // Use processed images if new ones were selected, otherwise keep existing
-      const imageUrls = imageFiles.length > 0 ? processedImages : (editingOffer.images || []);
+      const imageUrls = (processedImages.length > 0)
+        ? processedImages
+        : (editingOffer.images || []);
 
       // Compute pickup times automatically based on business hours (same logic as create)
       const now = new Date();
@@ -638,23 +607,7 @@ export default function PartnerDashboard() {
           return;
         }
 
-      // Set new pickup window using same logic as create offer
-      const now = new Date();
-      let pickupEnd: Date;
-
-      if (is24HourBusiness && autoExpire6h) {
-        // 24-hour business: live next 12 hours
-        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
-      } else {
-        const closing = getClosingTime();
-        if (closing && closing > now) {
-          // Live until closing time today
-          pickupEnd = closing;
-        } else {
-          // Fallback if closing unknown/past: default to +2 hours
-          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        }
-      }
+      // Pickup times are determined server-side when duplicating; no need to precompute here
 
         // Prefer server-side duplicate to keep logic simple and consistent
         await duplicateOffer(oldOffer.id, partner.id);
@@ -834,172 +787,6 @@ export default function PartnerDashboard() {
     setIsEditDialogOpen(true);
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    // Validation constants
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const MAX_IMAGES = 5;
-
-    // Check total image count
-    if (imageFiles.length + files.length > MAX_IMAGES) {
-      toast.error(`Maximum ${MAX_IMAGES} images allowed per offer`);
-      e.target.value = ''; // Reset input
-      return;
-    }
-
-    // Validate each file
-    for (const file of files) {
-      // Check file type
-      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
-        toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
-        e.target.value = '';
-        return;
-      }
-
-      // Check file size
-      if (file.size > MAX_FILE_SIZE) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
-        e.target.value = '';
-        return;
-      }
-    }
-
-    setImageFiles(files);
-
-    // Create previews
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(previews);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    // Validation constants
-    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const MAX_IMAGES = 5;
-
-    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-
-    // Check total image count
-    if (imageFiles.length + files.length > MAX_IMAGES) {
-      toast.error(`Maximum ${MAX_IMAGES} images allowed per offer`);
-      return;
-    }
-
-    // Validate each file
-    for (const file of files) {
-      // Check file type
-      if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
-        toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
-        return;
-      }
-
-      // Check file size
-      if (file.size > MAX_FILE_SIZE) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
-        return;
-      }
-    }
-
-    setImageFiles(files);
-
-    const previews = files.map(file => URL.createObjectURL(file));
-    setImagePreviews(previews);
-  };
-
-  const removeImage = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handlePickupStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const startTime = e.target.value;
-    if (startTime && !useBusinessHours && !is24HourBusiness) {
-      const startDate = new Date(startTime);
-      
-      // Check if we should use business closing time or +2 hours
-      let endDate: Date;
-      const closing = getClosingTime();
-      if (closing && closing > startDate) {
-        endDate = closing;
-      } else {
-        endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-      }
-      
-      const endTimeString = endDate.toISOString().slice(0, 16);
-      const pickupEndInput = document.getElementById('pickup_end') as HTMLInputElement;
-      if (pickupEndInput) {
-        pickupEndInput.value = endTimeString;
-      }
-    }
-  };
-
-  const handlePickupStartSlotChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedStart = e.target.value;
-    setPickupStartSlot(selectedStart);
-    
-    // Auto-update end slot to be at least 30 min after start
-    if (selectedStart) {
-      const [hours, minutes] = selectedStart.split(':').map(Number);
-      const startTime = new Date();
-      startTime.setHours(hours, minutes, 0, 0);
-      
-      const closing = getClosingTime();
-      const endTime = closing || new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-      
-      const slots = generateTimeSlots(new Date(startTime.getTime() + 30 * 60 * 1000), endTime);
-      if (slots.length > 0 && (!pickupEndSlot || pickupEndSlot <= selectedStart)) {
-        setPickupEndSlot(slots[slots.length - 1]);
-      }
-    }
-  };
-
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
-    const titleInput = document.getElementById('title') as HTMLInputElement;
-    const descInput = document.getElementById('description') as HTMLTextAreaElement;
-    const quantityInput = document.getElementById('quantity') as HTMLInputElement;
-    const originalPriceInput = document.getElementById('original_price') as HTMLInputElement;
-    const smartPriceInput = document.getElementById('smart_price') as HTMLInputElement;
-    
-  if (!titleInput?.value.trim()) errors.title = t('partner.dashboard.error.fieldRequired');
-    if (!descInput?.value.trim()) errors.description = 'Please fill this field';
-    
-    if (!quantityInput?.value || parseInt(quantityInput.value) < 1) errors.quantity = 'Please fill this field';
-    if (!originalPriceInput?.value || parseFloat(originalPriceInput.value) <= 0) errors.original_price = 'Please fill this field';
-    if (!smartPriceInput?.value || parseFloat(smartPriceInput.value) <= 0) errors.smart_price = 'Please fill this field';
-    
-    // Pickup times are auto-set based on business hours or 24h policy; no validation needed here.
-    
-    setFormErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'BAKERY': return '🥖';
@@ -1008,40 +795,6 @@ export default function PartnerDashboard() {
       case 'GROCERY': return '🛒';
       default: return '🏷️';
     }
-  };
-
-  // Generate time slot options for dropdowns
-  const getStartTimeSlots = () => {
-    const now = roundToNearest15(new Date());
-    const closing = getClosingTime();
-    const end = closing || new Date(now.getTime() + 8 * 60 * 60 * 1000); // 8 hours if no closing time
-    return generateTimeSlots(now, end);
-  };
-
-// Generate 24-hour time options (00:00 to 23:00)
-const generate24HourOptions = (): string[] => {
-  const options: string[] = [];
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute = 0; minute < 60; minute += 30) {
-      const hourStr = hour.toString().padStart(2, "0");
-      const minuteStr = minute.toString().padStart(2, "0");
-      options.push(`${hourStr}:${minuteStr}`);
-    }
-  }
-  return options;
-};
-  const getEndTimeSlots = () => {
-    if (!pickupStartSlot) return [];
-
-    const [hours, minutes] = pickupStartSlot.split(':').map(Number);
-    const startTime = new Date();
-    startTime.setHours(hours, minutes, 0, 0);
-
-    const minEndTime = new Date(startTime.getTime() + 30 * 60 * 1000); // At least 30 min after start
-    const closing = getClosingTime();
-    const maxEndTime = closing || new Date(startTime.getTime() + 8 * 60 * 60 * 1000);
-
-    return generateTimeSlots(minEndTime, maxEndTime);
   };
 
   // Purchase additional offer slot handler
@@ -1233,12 +986,9 @@ const generate24HourOptions = (): string[] => {
             setIsCreateDialogOpen(open);
             if (!open) {
               setImageFiles([]);
-              setImagePreviews([]);
               setFormErrors({});
-              setUseBusinessHours(false);
-              setPickupStartSlot('');
-              setPickupEndSlot('');
               setAutoExpire6h(true);
+              setSelectedLibraryImage(null);
             }
           }}>
             <DialogTrigger asChild>
@@ -2271,7 +2021,6 @@ const generate24HourOptions = (): string[] => {
           onNewOffer={() => {
             setIsCreateDialogOpen(true);
             setImageFiles([]);
-            setImagePreviews([]);
             setFormErrors({});
           }}
           onScanQR={() => setQrScannerOpen(true)}

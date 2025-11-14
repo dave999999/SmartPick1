@@ -142,7 +142,9 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
     if (error) throw error;
     try {
       await logAdminAction('PARTNER_UPDATED', 'PARTNER', partnerId, { updates });
-    } catch {}
+    } catch (logError) {
+      console.warn('Failed to log admin action:', logError);
+    }
     return data;
   } catch (error) {
     console.error('Admin API: Error updating partner:', error);
@@ -164,34 +166,44 @@ export const deletePartner = async (partnerId: string) => {
   if (error) throw error;
   try {
     await logAdminAction('PARTNER_DELETED', 'PARTNER', partnerId);
-  } catch {}
+  } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
 };
 
 export const approvePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'APPROVED' });
-  try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', partnerId); } catch {}
+  try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', partnerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const pausePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'PAUSED' });
-  try { await logAdminAction('PARTNER_PAUSED', 'PARTNER', partnerId); } catch {}
+  try { await logAdminAction('PARTNER_PAUSED', 'PARTNER', partnerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const unpausePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'APPROVED' });
-  try { await logAdminAction('PARTNER_UNPAUSED', 'PARTNER', partnerId); } catch {}
+  try { await logAdminAction('PARTNER_UNPAUSED', 'PARTNER', partnerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const disablePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'BLOCKED' });
-  try { await logAdminAction('PARTNER_DISABLED', 'PARTNER', partnerId); } catch {}
+  try { await logAdminAction('PARTNER_DISABLED', 'PARTNER', partnerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
@@ -261,7 +273,9 @@ export const updateUser = async (userId: string, updates: Partial<User>) => {
   if (error) throw error;
   try {
     await logAdminAction('USER_UPDATED', 'USER', userId, { updates });
-  } catch {}
+  } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return data;
 };
 
@@ -277,20 +291,26 @@ export const deleteUser = async (userId: string) => {
     .eq('id', userId);
     
   if (error) throw error;
-  try { await logAdminAction('USER_DELETED', 'USER', userId); } catch {}
+  try { await logAdminAction('USER_DELETED', 'USER', userId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
 };
 
 export const disableUser = async (userId: string) => {
   await checkAdminAccess();
   const res = await updateUser(userId, { status: 'DISABLED' });
-  try { await logAdminAction('USER_DISABLED', 'USER', userId); } catch {}
+  try { await logAdminAction('USER_DISABLED', 'USER', userId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const enableUser = async (userId: string) => {
   await checkAdminAccess();
   const res = await updateUser(userId, { status: 'ACTIVE' });
-  try { await logAdminAction('USER_ENABLED', 'USER', userId); } catch {}
+  try { await logAdminAction('USER_ENABLED', 'USER', userId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
@@ -334,7 +354,9 @@ export const unbanUser = async (userId: string) => {
       .eq('id', userId);
 
     if (error) throw error;
-    try { await logAdminAction('USER_UNBANNED', 'USER', userId); } catch {}
+    try { await logAdminAction('USER_UNBANNED', 'USER', userId); } catch (logError) {
+      console.warn('Failed to log admin action:', logError);
+    }
   } catch (error) {
     console.error('Admin API: Error unbanning user:', error);
     throw error;
@@ -395,7 +417,9 @@ export const updateOffer = async (offerId: string, updates: Partial<Offer>) => {
     .single();
     
   if (error) throw error;
-  try { await logAdminAction('OFFER_UPDATED', 'OFFER', offerId, { updates }); } catch {}
+  try { await logAdminAction('OFFER_UPDATED', 'OFFER', offerId, { updates }); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return data;
 };
 
@@ -411,34 +435,44 @@ export const deleteOffer = async (offerId: string) => {
     .eq('id', offerId);
     
   if (error) throw error;
-  try { await logAdminAction('OFFER_DELETED', 'OFFER', offerId); } catch {}
+  try { await logAdminAction('OFFER_DELETED', 'OFFER', offerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
 };
 
 export const pauseOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'PAUSED' });
-  try { await logAdminAction('OFFER_PAUSED', 'OFFER', offerId); } catch {}
+  try { await logAdminAction('OFFER_PAUSED', 'OFFER', offerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const resumeOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'ACTIVE' });
-  try { await logAdminAction('OFFER_RESUMED', 'OFFER', offerId); } catch {}
+  try { await logAdminAction('OFFER_RESUMED', 'OFFER', offerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const disableOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'EXPIRED' });
-  try { await logAdminAction('OFFER_DISABLED', 'OFFER', offerId); } catch {}
+  try { await logAdminAction('OFFER_DISABLED', 'OFFER', offerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
 export const enableOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'ACTIVE' });
-  try { await logAdminAction('OFFER_ENABLED', 'OFFER', offerId); } catch {}
+  try { await logAdminAction('OFFER_ENABLED', 'OFFER', offerId); } catch (logError) {
+    console.warn('Failed to log admin action:', logError);
+  }
   return res;
 };
 
