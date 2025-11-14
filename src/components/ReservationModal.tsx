@@ -392,7 +392,7 @@ export default function ReservationModal({
         ref={modalRef}
         className="max-w-lg max-h-[95vh] overflow-y-auto p-0 bg-transparent border-none shadow-none"
         style={{
-          transform: `translateY(${dragY}px)`,
+          transform: `translate(-50%, calc(-50% + ${dragY}px))`,
           transition: isDragging ? 'none' : 'transform 0.3s ease-out',
           opacity: isDragging ? Math.max(0.5, 1 - dragY / 400) : 1,
         }}
