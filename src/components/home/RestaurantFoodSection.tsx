@@ -49,9 +49,10 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
       <div
         key={offer.id}
         onClick={() => onOfferClick(offer)}
-        className="relative flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group w-full"
+        className="relative flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-[180px]"
+        style={{ height: '200px' }}
       >
-        <div className="relative h-52 overflow-hidden">
+        <div className="relative h-28 overflow-hidden">
           <img
             src={offer.images[0] || '/placeholder-food.jpg'}
             alt={offer.title}
@@ -83,35 +84,35 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
             </div>
           )}
         </div>
-        <div className="p-4 flex flex-col">
-          <h3 className="text-lg font-bold text-gray-900 line-clamp-2 mb-2">
+        <div className="flex-1 p-3 flex flex-col">
+          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">
             {offer.title}
           </h3>
-          <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-3">
-            <MapPin className="w-4 h-4" />
+          <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+            <MapPin className="w-3 h-3" />
             <span className="line-clamp-1">{offer.partner?.business_name || 'Unknown'}</span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 text-xs text-gray-400 mb-auto">
+            <Clock className="w-3 h-3" />
+            <span>{getTimeAgo(offer)}</span>
+          </div>
+          <div className="flex items-center justify-between mt-2">
             <div className="flex flex-col">
-              <span className="text-sm text-gray-400 line-through">₾{offer.original_price.toFixed(2)}</span>
-              <span className="text-2xl font-bold text-mint-600">₾{offer.smart_price.toFixed(2)}</span>
+              <span className="text-xs text-gray-400 line-through">₾{offer.original_price.toFixed(2)}</span>
+              <span className="text-xl font-bold text-mint-600">₾{offer.smart_price.toFixed(2)}</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-                <Clock className="w-4 h-4" />
-                <span>{getTimeAgo(offer)}</span>
-              </div>
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
-                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-semibold text-gray-700">4.8</span>
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-xs font-semibold text-gray-700">4.8</span>
               </div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <Heart className="w-5 h-5 text-gray-400 hover:text-red-500" />
+                <Heart className="w-4 h-4 text-gray-400 hover:text-red-500" />
               </button>
             </div>
           </div>
@@ -150,7 +151,7 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
             <h2 className="text-2xl font-bold text-gray-900">All Available Offers</h2>
             <span className="text-sm text-gray-500">{regularOffers.length} offers</span>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {regularOffers.map((offer) => renderOfferCard(offer, false))}
           </div>
         </div>
