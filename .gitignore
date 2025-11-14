@@ -54,3 +54,6 @@ supabase/.temp
 .mgx/
 settings.local.json
 .vercel
+
+# Misc: never commit torrent files
+*.torrent

@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Store, Package, Clock, UserCheck, AlertTriangle, Shield, Settings } from 'lucide-react';
-import { getDashboardStats, testAdminConnection, getAllPartners, getAllUsers } from '@/lib/admin-api';
+import { Package, UserCheck, AlertTriangle, Shield, Settings } from 'lucide-react';
+import { getDashboardStats, testAdminConnection } from '@/lib/admin-api';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SectionCard } from '@/components/layout/SectionCard';
@@ -16,9 +15,8 @@ import { NewUsersPanel } from '@/components/admin/NewUsersPanel';
 import { BannedUsersPanel } from '@/components/admin/BannedUsersPanel';
 import { ModerationPanel } from '@/components/admin/ModerationPanel';
 import { logger } from '@/lib/logger';
-import OfferModerationPanel from '@/components/admin/OfferModerationPanel';
 import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
-import AdminAnalyticsPanel from '@/components/admin/AdminAnalyticsPanel';
+const AdminAnalyticsPanel = lazy(() => import('@/components/admin/AdminAnalyticsPanel'));
 import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
 import AdminHealthPanel from '@/components/admin/AdminHealthPanel';
 import AuditLogs from '@/components/admin/AuditLogs';
@@ -336,7 +334,9 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <AdminAnalyticsPanel />
+            <Suspense fallback={<div className="p-4 text-sm text-gray-500">Loading analytics…</div>}>
+              <AdminAnalyticsPanel />
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="health">

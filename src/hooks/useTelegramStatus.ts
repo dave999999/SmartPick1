@@ -44,7 +44,9 @@ export function useTelegramStatus(userId?: string) {
     return () => {
       try {
         supabase.removeChannel(channel)
-      } catch {}
+      } catch (e) {
+        // Channel already removed or doesn't exist
+      }
     }
   }, [userId])
 

@@ -3,10 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Reservation } from '@/lib/types';
 import { getCustomerReservations, userCancelReservationWithSplit, generateQRCodeDataURL, getCurrentUser } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { ArrowLeft, X, Download, Phone, MessageCircle, MapPin, Clock, QrCode, CheckCircle, Eye, CreditCard } from 'lucide-react';
+import { ArrowLeft, X, MapPin, QrCode, CheckCircle, CreditCard, Eye } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
@@ -24,9 +24,7 @@ L.Icon.Default.mergeOptions({
 });
 
 // New compact UI components
-import QRCodeModal from '@/components/reservations/QRCodeModal';
 import CountdownBar from '@/components/reservations/CountdownBar';
-import PartnerBlock from '@/components/reservations/PartnerBlock';
 import PenaltyModal from '@/components/PenaltyModal';
 import PickupSuccessModal from '@/components/PickupSuccessModal';
 
@@ -36,12 +34,11 @@ export default function ReservationDetail() {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const navigate = useNavigate();
   const { t } = useI18n();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [distanceKm, setDistanceKm] = useState<number | null>(null);
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
-  const [routeProfile, setRouteProfile] = useState<'driving' | 'walking' | 'cycling'>('driving');
+  const [routeProfile] = useState<'driving' | 'walking' | 'cycling'>('driving');
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [userPenaltyInfo, setUserPenaltyInfo] = useState<{penaltyCount: number; penaltyUntil: string | null; isBanned: boolean}>({penaltyCount: 0, penaltyUntil: null, isBanned: false});
@@ -57,7 +54,6 @@ export default function ReservationDetail() {
         return;
       }
 
-      setIsAdmin(user.role === 'ADMIN');
       const reservations = await getCustomerReservations(user.id);
       const found = reservations.find(r => r.id === id);
       
@@ -272,10 +268,6 @@ export default function ReservationDetail() {
 
   // Get partner address and contact - support both flat and nested structures
   const partnerAddress = reservation.partner?.address || reservation.partner?.location?.address || '';
-  // Hide partner contact info from UI (new design)
-  // No phone/email on this page per new design
-  const partnerPhone = '';
-  const partnerEmail = '';
   
   // Get partner coordinates for directions
   const partnerLat = reservation.partner?.latitude || reservation.partner?.location?.latitude;
