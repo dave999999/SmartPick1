@@ -159,7 +159,7 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     count: number,
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 60 : 50; // Bigger, more visible pins
+    const size = isHighlighted ? 75 : 65; // Much bigger, more visible pins
     
     // Category colors and icons - matching your reference images
     const categoryConfig: Record<string, { color: string; gradient: string; icon: string }> = {
