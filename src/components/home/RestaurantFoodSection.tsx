@@ -51,70 +51,78 @@ export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSe
         onClick={() => onOfferClick(offer)}
         className="relative flex flex-col bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group min-w-[180px]"
       >
-        <div className="relative h-40 overflow-hidden">
+        {/* Image container with all info overlaid */}
+        <div className="relative h-48 overflow-hidden">
+          {/* Background image */}
           <img
             src={offer.images[0] || '/placeholder-food.jpg'}
             alt={offer.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
+          
+          {/* Dark gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/40" />
+          
+          {/* Top left - Title */}
+          <div className="absolute top-2 left-2 right-2">
+            <h3 className="text-sm font-bold text-white drop-shadow-lg line-clamp-2 mb-1">
+              {offer.title}
+            </h3>
+          </div>
+          
+          {/* Top right - Rating */}
+          <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full">
+            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-xs font-bold text-white">4.8</span>
+          </div>
+          
+          {/* Top badges (NEW, ENDING SOON, etc) */}
+          <div className="absolute top-10 left-2 flex flex-col gap-1">
             {showNewBadge && (
-              <Badge className="bg-mint-500 text-white text-xs px-2 py-0.5 font-semibold">
+              <Badge className="bg-mint-500 text-white text-xs px-2 py-0.5 font-semibold w-fit">
                  NEW
               </Badge>
             )}
             {isExpiringSoon(offer) && (
-              <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 font-semibold animate-pulse">
+              <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 font-semibold animate-pulse w-fit">
                  ENDING SOON
               </Badge>
             )}
-            {isLowStock && (
-              <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-semibold">
-                🔥 Only {offer.quantity_available} left!
-              </Badge>
-            )}
           </div>
+          
+          {/* Top right corner - Discount badge */}
           {discountPercent > 0 && (
-            <div className="absolute top-2 right-2">
-              <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold flex items-center gap-1">
-                <TrendingDown className="w-3 h-3" />
+            <div className="absolute top-10 right-2">
+              <Badge className="bg-red-500 text-white text-xs px-2 py-1 font-bold">
                 -{discountPercent}%
               </Badge>
             </div>
           )}
-        </div>
-        <div className="flex-1 p-3 flex flex-col">
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-1 mb-1">
-            {offer.title}
-          </h3>
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
-            <MapPin className="w-3 h-3" />
-            <span className="line-clamp-1">{offer.partner?.business_name || 'Unknown'}</span>
+          
+          {/* Bottom left - Price */}
+          <div className="absolute bottom-2 left-2 flex flex-col">
+            <span className="text-xs text-white/70 line-through">₾{offer.original_price.toFixed(2)}</span>
+            <span className="text-xl font-bold text-white drop-shadow-lg">₾{offer.smart_price.toFixed(2)}</span>
           </div>
-          <div className="flex items-center gap-1 text-xs text-gray-400 mb-auto">
-            <Clock className="w-3 h-3" />
-            <span>{getTimeAgo(offer)}</span>
-          </div>
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex flex-col">
-              <span className="text-xs text-gray-400 line-through">₾{offer.original_price.toFixed(2)}</span>
-              <span className="text-xl font-bold text-mint-600">₾{offer.smart_price.toFixed(2)}</span>
+          
+          {/* Bottom right - Low stock badge only */}
+          {isLowStock && (
+            <div className="absolute bottom-2 right-2">
+              <Badge className="bg-red-500 text-white text-xs px-2 py-0.5 font-semibold">
+                Only {offer.quantity_available} left!
+              </Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-semibold text-gray-700">4.8</span>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <Heart className="w-4 h-4 text-gray-400 hover:text-red-500" />
-              </button>
-            </div>
-          </div>
+          )}
+          
+          {/* Favorite heart - bottom right corner */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="absolute top-2 right-12 p-1.5 bg-black/30 backdrop-blur-sm hover:bg-black/50 rounded-full transition-colors"
+          >
+            <Heart className="w-4 h-4 text-white" />
+          </button>
         </div>
       </div>
     );
