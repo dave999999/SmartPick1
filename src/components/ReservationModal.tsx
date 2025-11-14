@@ -530,14 +530,15 @@ export default function ReservationModal({
             </Alert>
           )}
 
-          {/* Pickup Window with Business Hours */}
+          {/* Single Card: Pickup Time + Business Hours + Offer Ends */}
           {pickupTimes.start && pickupTimes.end && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-xl">
-                <div className="flex items-center gap-3">
+            <div className="p-4 bg-orange-50 border border-orange-200 rounded-2xl space-y-3">
+              {/* Pickup Window with time badge */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-orange-600 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-semibold text-orange-900 mb-1">Pickup Window</p>
+                    <p className="text-xs font-semibold text-orange-900">Pickup Window</p>
                     <p className="text-base font-bold text-orange-600">
                       {formatTime(pickupTimes.start)} — {formatTime(pickupTimes.end)}
                     </p>
@@ -550,30 +551,28 @@ export default function ReservationModal({
                 )}
               </div>
 
-              {/* Business Hours */}
-              {offer.partner?.open_24h ? (
-                <div className="flex items-center justify-center gap-2 py-2">
-                  <Badge className="bg-green-100 text-green-700 border-green-300">
-                    🕐 Open 24 Hours
+              {/* Business Hours + Offer Ends in one line */}
+              <div className="flex items-center justify-between text-sm">
+                {/* Left: Business Hours */}
+                {offer.partner?.open_24h ? (
+                  <Badge className="bg-green-100 text-green-700 border-green-300 px-2 py-1">
+                    ⏰ Open 24 Hours
                   </Badge>
-                </div>
-              ) : offer.partner?.opening_time && offer.partner?.closing_time && (
-                <div className="text-center py-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Business Hours:</span>{' '}
-                    <span className="font-semibold text-gray-900">
-                      {offer.partner.opening_time} — {offer.partner.closing_time}
-                    </span>
-                  </p>
-                </div>
-              )}
+                ) : offer.partner?.opening_time && offer.partner?.closing_time ? (
+                  <span className="text-gray-700 font-medium">
+                    ⏰ {offer.partner.opening_time} — {offer.partner.closing_time}
+                  </span>
+                ) : (
+                  <span className="text-gray-500">Business hours not set</span>
+                )}
 
-              {/* Time remaining note */}
-              {!isExpired && (
-                <p className="text-xs text-center text-orange-600 font-medium">
-                  ⏰ Offer ends {timeRemaining}
-                </p>
-              )}
+                {/* Right: Offer Ends */}
+                {!isExpired && (
+                  <span className="text-orange-600 font-semibold">
+                    🎯 Offer ends {timeRemaining}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 
