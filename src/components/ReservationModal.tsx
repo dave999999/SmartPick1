@@ -349,17 +349,14 @@ export default function ReservationModal({
         {/* Hidden DialogTitle for accessibility */}
         <DialogTitle className="sr-only">{offer.title}</DialogTitle>
         
-        {/* Circular Overlapping Image Design - Reference Style */}
-        <div className="relative">
-          {/* Colored Background Section */}
-          <div className="h-[140px] bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500" />
-          
-          {/* Circular Image - Overlapping/Merged Effect */}
+        {/* Circular Overlapping Image Design - Fixed Version */}
+        <div className="relative pt-8 pb-32 bg-white">
+          {/* Circular Image - Bigger and centered */}
           {offer.images && offer.images.length > 0 && (
-            <div className="absolute left-1/2 top-[70px] -translate-x-1/2 z-10">
+            <div className="flex justify-center">
               <div className="relative">
-                {/* White ring effect */}
-                <div className="w-[200px] h-[200px] rounded-full bg-white p-2 shadow-2xl">
+                {/* White ring effect - Bigger */}
+                <div className="w-[260px] h-[260px] rounded-full bg-white p-3 shadow-2xl">
                   <img
                     src={resolveOfferImageUrl(offer.images[0], offer.category)}
                     alt={offer.title}
@@ -370,7 +367,7 @@ export default function ReservationModal({
                   />
                 </div>
                 {/* Category badge on image */}
-                <Badge className="absolute top-2 right-2 bg-white/95 text-gray-900 shadow-md hover:bg-white font-semibold px-3 py-1 text-xs">
+                <Badge className="absolute top-3 right-3 bg-white/95 text-gray-900 shadow-md hover:bg-white font-semibold px-3 py-1 text-xs">
                   {offer.category}
                 </Badge>
               </div>
@@ -378,8 +375,8 @@ export default function ReservationModal({
           )}
         </div>
 
-        {/* Content Area - Starts below circular image */}
-        <div className="px-6 pb-6 pt-[110px] space-y-5 bg-white rounded-t-3xl -mt-4 relative z-0">
+        {/* Content Area - Clear spacing, no overlap */}
+        <div className="px-6 pb-6 space-y-5 bg-white -mt-28">
           {/* Clean Title Section - Reference Style */}
           <div className="text-center space-y-3">
             {/* Title with inline quantity controls */}
@@ -533,20 +530,49 @@ export default function ReservationModal({
             </Alert>
           )}
 
-          {/* Pickup Time - Minimal */}
+          {/* Pickup Window with Business Hours */}
           {pickupTimes.start && pickupTimes.end && (
-            <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-xl">
-              <Clock className="w-4 h-4 text-orange-600 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs font-semibold text-orange-900">Pickup Window</p>
-                <p className="text-sm font-bold text-orange-600">
-                  {formatTime(pickupTimes.start)} — {formatTime(pickupTimes.end)}
-                </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-4 bg-orange-50 border border-orange-200 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-semibold text-orange-900 mb-1">Pickup Window</p>
+                    <p className="text-base font-bold text-orange-600">
+                      {formatTime(pickupTimes.start)} — {formatTime(pickupTimes.end)}
+                    </p>
+                  </div>
+                </div>
+                {!isExpired && (
+                  <Badge className="bg-green-500 text-white border-0 text-sm font-bold px-3 py-1.5">
+                    {timeRemaining}
+                  </Badge>
+                )}
               </div>
+
+              {/* Business Hours */}
+              {offer.partner?.open_24h ? (
+                <div className="flex items-center justify-center gap-2 py-2">
+                  <Badge className="bg-green-100 text-green-700 border-green-300">
+                    🕐 Open 24 Hours
+                  </Badge>
+                </div>
+              ) : offer.partner?.opening_time && offer.partner?.closing_time && (
+                <div className="text-center py-2">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Business Hours:</span>{' '}
+                    <span className="font-semibold text-gray-900">
+                      {offer.partner.opening_time} — {offer.partner.closing_time}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {/* Time remaining note */}
               {!isExpired && (
-                <Badge className="bg-green-500 text-white border-0 text-xs">
-                  {timeRemaining}
-                </Badge>
+                <p className="text-xs text-center text-orange-600 font-medium">
+                  ⏰ Offer ends {timeRemaining}
+                </p>
               )}
             </div>
           )}
