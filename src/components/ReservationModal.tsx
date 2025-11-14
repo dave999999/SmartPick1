@@ -24,7 +24,6 @@ import { BuyPointsModal } from './BuyPointsModal';
 import HeaderImage from './reservation/HeaderImage';
 import TitleSection from './reservation/TitleSection';
 import UnifiedPriceCard from './reservation/UnifiedPriceCard';
-import SmartPickHint from './reservation/SmartPickHint';
 import PickupWindowCard from './reservation/PickupWindowCard';
 import ReserveButton from './reservation/ReserveButton';
 
@@ -448,7 +447,7 @@ export default function ReservationModal({
             disabled={penaltyInfo?.isUnderPenalty || false}
           />
 
-          {/* Smart Context-Aware Alerts - Only show when relevant */}
+          {/* Smart Context-Aware Alerts - Only show critical ones */}
           {insufficientPoints && (
             <Alert className="bg-orange-50 border-orange-200">
               <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -494,9 +493,6 @@ export default function ReservationModal({
               </AlertDescription>
             </Alert>
           )}
-
-          {/* Collapsible SmartPick Info Hint */}
-          <SmartPickHint />
 
           {/* Pickup Window Card Component */}
           {pickupTimes.start && pickupTimes.end && (

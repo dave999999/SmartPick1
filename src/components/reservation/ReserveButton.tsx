@@ -4,7 +4,7 @@ interface ReserveButtonProps {
   onClick: () => void;
   disabled: boolean;
   isLoading: boolean;
-  totalPrice: number;
+  totalPrice?: number; // Optional now since we don't display it
   className?: string;
 }
 
@@ -12,18 +12,11 @@ export default function ReserveButton({
   onClick,
   disabled,
   isLoading,
-  totalPrice,
   className = ''
 }: ReserveButtonProps) {
   return (
     <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 pt-4 pb-3 -mx-5 px-5 md:static md:bg-transparent md:backdrop-blur-none md:border-0 md:pt-0 md:pb-0 md:mx-0 md:px-0 space-y-3">
-      {/* Reserved Price Row */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-mint-50 to-emerald-50 rounded-xl border border-mint-200/50">
-        <span className="text-sm font-semibold text-gray-700">Reserved Price</span>
-        <span className="text-2xl font-bold text-mint-600">{totalPrice.toFixed(2)} GEL</span>
-      </div>
-      
-      {/* Reserve Button */}
+      {/* Reserve Button with Price */}
       <Button
         onClick={onClick}
         disabled={disabled || isLoading}
@@ -50,7 +43,7 @@ export default function ReserveButton({
             Creating Reservation...
           </span>
         ) : (
-          'Preserve Price'
+          'Reserve Price'
         )}
       </Button>
       

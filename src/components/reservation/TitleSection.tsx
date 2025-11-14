@@ -1,5 +1,10 @@
-import { MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { MapPin, Facebook, Twitter, Instagram, HelpCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface TitleSectionProps {
   title: string;
@@ -64,8 +69,58 @@ export default function TitleSection({
         </div>
       </div>
       
-      {/* Product name (ევზარიანი საცხობი) - now below partner info */}
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      {/* Product name with How To icons */}
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+        
+        {/* How To Icons */}
+        <div className="flex items-center gap-1.5">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-blue-50 hover:scale-110 transition-all duration-200"
+              >
+                <HelpCircle className="h-5 w-5 text-blue-500" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">How SmartPick Works</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>1️⃣ <strong>Reserve</strong> - Lock in this price now</p>
+                  <p>2️⃣ <strong>Pay</strong> - Payment at pickup</p>
+                  <p>3️⃣ <strong>Pick up</strong> - Collect within 1 hour</p>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-mint-50 hover:scale-110 transition-all duration-200"
+              >
+                <Info className="h-5 w-5 text-mint-600" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm">Reservation Details</h4>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <p>• <strong>Held for 1 hour</strong> after reservation</p>
+                  <p>• <strong>Pay on pickup</strong> - No upfront payment</p>
+                  <p>• <strong>SmartPoints</strong> reserved from your balance</p>
+                  <p>• <strong>Free cancellation</strong> available</p>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
       
       {/* Product description (სვანური) */}
       {description && (
