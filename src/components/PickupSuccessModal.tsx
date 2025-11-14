@@ -116,7 +116,7 @@ export default function PickupSuccessModal({
 
   const handleViewAchievements = () => {
     onClose();
-    navigate('/achievements');
+    navigate('/profile', { state: { tab: 'achievements' } });
   };
 
   const handleClaimRewards = () => {
