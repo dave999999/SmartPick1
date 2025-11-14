@@ -22,13 +22,6 @@ export default function TitleSection({
 }: TitleSectionProps) {
   return (
     <div className="space-y-2">
-      {/* Product description (სვანური) */}
-      {description && (
-        <p className="text-sm text-gray-600 leading-relaxed">
-          {description}
-        </p>
-      )}
-      
       {/* Restaurant name & address + Social icons row */}
       <div className="flex items-start justify-between gap-3 pb-2 border-b border-gray-100">
         <div className="flex-1">
@@ -70,6 +63,16 @@ export default function TitleSection({
           </Button>
         </div>
       </div>
+      
+      {/* Product name (ევზარიანი საცხობი) - now below partner info */}
+      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      
+      {/* Product description (სვანური) */}
+      {description && (
+        <p className="text-sm text-gray-600 leading-relaxed">
+          {description}
+        </p>
+      )}
     </div>
   );
 }

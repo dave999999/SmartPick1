@@ -49,7 +49,7 @@ export default function ReserveButton({
             Creating Reservation...
           </span>
         ) : (
-          'Reserve Now'
+          'Preserve Price'
         )}
       </Button>
       

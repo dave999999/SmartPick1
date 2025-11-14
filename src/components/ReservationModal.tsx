@@ -345,147 +345,44 @@ export default function ReservationModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[95vh] overflow-y-auto p-0 gap-0">
+      <DialogContent className="max-w-lg max-h-[95vh] overflow-y-auto p-0 bg-transparent border-none shadow-none">
         {/* Hidden DialogTitle for accessibility */}
         <DialogTitle className="sr-only">{offer.title}</DialogTitle>
         
-        {/* Polished Circular Image Design */}
-        <div className="relative pt-6 pb-28 bg-white">
-          {/* Circular Image - Optimized size with elegant shadow */}
-          {offer.images && offer.images.length > 0 && (
-            <div className="flex justify-center">
-              <div className="relative">
-                {/* White ring with enhanced shadow depth */}
-                <div className="w-[240px] h-[240px] rounded-full bg-white p-2.5 shadow-[0_10px_40px_rgba(0,0,0,0.15)]">
-                  <img
-                    src={resolveOfferImageUrl(offer.images[0], offer.category)}
-                    alt={offer.title}
-                    className="w-full h-full rounded-full object-cover"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg';
-                    }}
-                  />
-                </div>
-                {/* Elegant category badge */}
-                <Badge className="absolute top-2 right-2 bg-mint-500 text-white shadow-lg hover:bg-mint-600 font-bold px-3 py-1.5 text-xs">
-                  {offer.category}
-                </Badge>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Header Image Component */}
+        {offer.images && offer.images.length > 0 && (
+          <HeaderImage
+            imageUrl={resolveOfferImageUrl(offer.images[0], offer.category)}
+            title={offer.title}
+            categoryName={offer.category}
+          />
+        )}
 
-        {/* Content Area - Tighter, more polished spacing */}
-        <div className="px-6 pb-6 space-y-4 bg-white -mt-24">
-          {/* Polished Title Section */}
-          <div className="text-center space-y-2.5">
-            {/* Title with inline quantity - more compact */}
-            <div className="flex items-center justify-center gap-3">
-              <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                {offer.title}
-              </h2>
-              
-              {/* Compact inline quantity selector */}
-              <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-2.5 py-1">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={quantity <= 1 || penaltyInfo?.isUnderPenalty}
-                  className="w-5 h-5 flex items-center justify-center text-gray-700 hover:text-mint-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-sm font-bold text-gray-900 min-w-[1.2rem] text-center">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                  disabled={quantity >= maxQuantity || penaltyInfo?.isUnderPenalty}
-                  className="w-5 h-5 flex items-center justify-center text-gray-700 hover:text-mint-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+        {/* Content Area with padding - white background starts here */}
+        <div className="px-5 pb-5 pt-24 space-y-3 bg-white rounded-b-xl shadow-xl">
+          {/* Title Section Component */}
+          <TitleSection
+            title={offer.title}
+            description={offer.description}
+            partnerName={offer.partner?.business_name || 'Unknown'}
+            partnerAddress={offer.partner?.address}
+            onShareFacebook={handleShareFacebook}
+            onShareTwitter={handleShareTwitter}
+            onShareInstagram={handleShareInstagram}
+          />
 
-            {/* Prominent rating */}
-            <div className="flex items-center justify-center gap-1.5">
-              <span className="text-yellow-500 text-lg">⭐</span>
-              <span className="text-sm font-bold text-gray-900">4.9</span>
-              <span className="text-xs text-gray-500 font-medium">(3.3k)</span>
-            </div>
-
-            {/* Clean description */}
-            {offer.description && (
-              <p className="text-sm text-gray-600 leading-relaxed max-w-sm mx-auto px-2">
-                {offer.description}
-              </p>
-            )}
-          </div>
-
-          {/* Compact Size Selector Pills */}
-          <div className="space-y-2.5">
-            <div className="grid grid-cols-3 gap-2.5">
-              {[1, 2, 3].map((size) => {
-                const isSelected = quantity === size;
-                const isAvailable = size <= maxQuantity;
-                const price = (offer.smart_price * size).toFixed(2);
-                
-                return (
-                  <button
-                    key={size}
-                    onClick={() => isAvailable && setQuantity(size)}
-                    disabled={!isAvailable || penaltyInfo?.isUnderPenalty}
-                    className={`
-                      flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all
-                      ${isSelected 
-                        ? 'border-mint-500 bg-mint-50 shadow-md' 
-                        : 'border-gray-200 bg-white hover:border-mint-200 hover:bg-gray-50'
-                      }
-                      ${!isAvailable ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-                    `}
-                  >
-                    <div className={`w-7 h-7 rounded-full mb-1.5 flex items-center justify-center transition-colors ${
-                      isSelected ? 'bg-mint-500' : 'bg-gray-100'
-                    }`}>
-                      <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-600'}`}>
-                        {size}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 font-medium mb-0.5">
-                      {size}-Piece{size > 1 ? 's' : ''}
-                    </p>
-                    <p className="text-sm font-bold text-gray-900">
-                      {price} ₾
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex items-center justify-center gap-2 text-xs">
-              <span className={`font-semibold ${offer.quantity_available <= 10 ? 'text-orange-600' : 'text-gray-600'}`}>
-                {offer.quantity_available} left
-              </span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-500">Max {maxQuantity}</span>
-            </div>
-          </div>
-
-          {/* Elegant Balance & Points Card */}
-          <div className="flex items-center justify-between p-4 bg-gradient-to-r from-amber-50/70 to-yellow-50/70 rounded-xl border border-amber-200/60 shadow-sm">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md">
-                <Coins className="w-4.5 h-4.5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 font-medium">Balance</p>
-                <p className="text-base font-bold text-gray-900">{pointsBalance} pts</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-600 font-medium">Cost</p>
-              <p className="text-base font-bold text-mint-600">{POINTS_PER_UNIT * quantity} pts</p>
-            </div>
-          </div>
+          {/* Unified Price Card - Balance + Price + Quantity in ONE */}
+          <UnifiedPriceCard
+            balance={pointsBalance}
+            cost={POINTS_PER_UNIT * quantity}
+            smartPrice={offer.smart_price}
+            originalPrice={offer.original_price}
+            quantity={quantity}
+            maxQuantity={maxQuantity}
+            availableStock={offer.quantity_available}
+            onQuantityChange={setQuantity}
+            disabled={penaltyInfo?.isUnderPenalty || false}
+          />
 
           {/* Smart Context-Aware Alerts - Only show when relevant */}
           {insufficientPoints && (
@@ -534,81 +431,31 @@ export default function ReservationModal({
             </Alert>
           )}
 
-          {/* Refined Pickup Window Card */}
+          {/* Collapsible SmartPick Info Hint */}
+          <SmartPickHint />
+
+          {/* Pickup Window Card Component */}
           {pickupTimes.start && pickupTimes.end && (
-            <div className="p-3.5 bg-orange-50/70 border border-orange-200/60 rounded-xl space-y-2.5 shadow-sm">
-              {/* Pickup Window with time badge */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4.5 h-4.5 text-orange-600 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-orange-900">Pickup Window</p>
-                    <p className="text-sm font-bold text-orange-600">
-                      {formatTime(pickupTimes.start)} — {formatTime(pickupTimes.end)}
-                    </p>
-                  </div>
-                </div>
-                {!isExpired && (
-                  <Badge className="bg-green-500 text-white border-0 text-xs font-bold px-2.5 py-1 shadow-md">
-                    {timeRemaining}
-                  </Badge>
-                )}
-              </div>
-
-              {/* Business Hours + Offer Ends in one line */}
-              <div className="flex items-center justify-between text-xs">
-                {/* Left: Business Hours */}
-                {offer.partner?.open_24h ? (
-                  <Badge className="bg-green-100 text-green-700 border-green-200 px-2 py-0.5 text-xs font-semibold">
-                    ⏰ Open 24 Hours
-                  </Badge>
-                ) : offer.partner?.opening_time && offer.partner?.closing_time ? (
-                  <span className="text-gray-700 font-semibold">
-                    ⏰ {offer.partner.opening_time} — {offer.partner.closing_time}
-                  </span>
-                ) : (
-                  <span className="text-gray-500">Hours not set</span>
-                )}
-
-                {/* Right: Offer Ends */}
-                {!isExpired && (
-                  <span className="text-orange-600 font-bold">
-                    🎯 Offer ends {timeRemaining}
-                  </span>
-                )}
-              </div>
-            </div>
+            <PickupWindowCard
+              startTime={formatTime(pickupTimes.start)}
+              endTime={formatTime(pickupTimes.end)}
+              countdown={timeRemaining}
+              is24Hours={offer.partner?.open_24h || false}
+              businessHours={offer.partner?.open_24h ? null : (
+                offer.partner?.opening_time && offer.partner?.closing_time
+                  ? { open: offer.partner.opening_time, close: offer.partner.closing_time }
+                  : null
+              )}
+            />
           )}
 
-          {/* Polished Total & Reserve Button */}
-          <div className="space-y-3 pt-1">
-            <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 rounded-xl">
-              <span className="text-sm font-bold text-gray-900">Total Amount</span>
-              <span className="text-2xl font-black text-mint-600">{totalPrice.toFixed(2)} ₾</span>
-            </div>
-
-            <Button
-              onClick={handleReserve}
-              disabled={isReserving || isExpired || offer.quantity_available === 0 || penaltyInfo?.isUnderPenalty || false}
-              className="w-full bg-gradient-to-r from-mint-500 to-emerald-600 hover:from-mint-600 hover:to-emerald-700 text-white font-extrabold py-5 rounded-xl shadow-lg hover:shadow-2xl transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-              size="lg"
-            >
-              {isReserving ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Reserving...
-                </>
-              ) : isExpired ? (
-                'Offer Expired'
-              ) : offer.quantity_available === 0 ? (
-                'Sold Out'
-              ) : penaltyInfo?.isUnderPenalty ? (
-                'Account Blocked'
-              ) : (
-                'Reserve Now'
-              )}
-            </Button>
-          </div>
+          {/* Reserve Button Component with Total Price */}
+          <ReserveButton
+            onClick={handleReserve}
+            disabled={isReserving || isExpired || offer.quantity_available === 0 || penaltyInfo?.isUnderPenalty || false}
+            isLoading={isReserving}
+            totalPrice={totalPrice}
+          />
 
           {/* Penalty warning if applicable */}
           {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
