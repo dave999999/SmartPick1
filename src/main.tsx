@@ -33,9 +33,21 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // ============================================
-// PWA Service Worker Registration
+// PWA Service Worker - DISABLED (Unregister old workers)
 // ============================================
-// Disable service worker in development to prevent caching issues
+// Force unregister any existing service workers to fix MIME type errors
+if ('serviceWorker' in navigator) {
+	navigator.serviceWorker.getRegistrations().then((registrations) => {
+		registrations.forEach((registration) => {
+			registration.unregister();
+			logger.log('[PWA] Old Service Worker unregistered');
+		});
+	});
+}
+
+// Temporarily disabled to fix service worker issues
+// Will re-enable after clearing old registrations
+/*
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
@@ -92,13 +104,6 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 			}
 		});
 	});
-} else if ('serviceWorker' in navigator && import.meta.env.DEV) {
-	// Unregister service worker in development
-	navigator.serviceWorker.getRegistrations().then((registrations) => {
-		registrations.forEach((registration) => {
-			registration.unregister();
-			logger.log('[DEV] Service Worker unregistered');
-		});
-	});
 }
+*/
 
