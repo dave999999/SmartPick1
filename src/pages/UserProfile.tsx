@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User } from '@/lib/types';
 import { getCurrentUser, updateUserProfile } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -172,17 +172,22 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 }
 
 export default function UserProfile() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [unclaimedCount, setUnclaimedCount] = useState<number>(0);
+  
+  // Get initial tab from navigation state or default to "overview"
+  const initialTab = (location.state as any)?.tab || 'overview';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
   });
-  const navigate = useNavigate();
   const { t } = useI18n();
 
   const loadUser = useCallback(async () => {
@@ -341,7 +346,7 @@ export default function UserProfile() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
             <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
             {userStats && (
