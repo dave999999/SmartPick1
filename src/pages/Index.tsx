@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
@@ -51,6 +51,12 @@ export default function Index() {
     maxPrice: 500,
   });
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+
+  // Bottom sheet swipe states
+  const [sheetHeight, setSheetHeight] = useState(45); // Percentage: 45% = half, 90% = full
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartY = useRef(0);
+  const dragStartHeight = useRef(45);
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
@@ -262,10 +268,45 @@ export default function Index() {
                 />
               </div>
 
-              {/* Restaurant Listings Card - Above map (z-20) but below markers */}
+              {/* Swipeable Bottom Sheet - Restaurant Listings */}
               {filteredOffers.length > 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-20 pointer-events-none">
-                  <div className="h-full overflow-y-auto pb-4 pointer-events-auto">
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.1)] overflow-hidden z-20 transition-all duration-300"
+                  style={{ 
+                    height: `${sheetHeight}%`,
+                    maxHeight: 'calc(100% - 80px)' // Stop below search bar
+                  }}
+                  onTouchStart={(e) => {
+                    dragStartY.current = e.touches[0].clientY;
+                    dragStartHeight.current = sheetHeight;
+                    setIsDragging(true);
+                  }}
+                  onTouchMove={(e) => {
+                    if (!isDragging) return;
+                    const currentY = e.touches[0].clientY;
+                    const deltaY = dragStartY.current - currentY;
+                    const windowHeight = window.innerHeight;
+                    const deltaPercent = (deltaY / windowHeight) * 100;
+                    const newHeight = Math.max(45, Math.min(90, dragStartHeight.current + deltaPercent));
+                    setSheetHeight(newHeight);
+                  }}
+                  onTouchEnd={() => {
+                    setIsDragging(false);
+                    // Snap to nearest position
+                    if (sheetHeight > 67) {
+                      setSheetHeight(90); // Snap to full
+                    } else {
+                      setSheetHeight(45); // Snap to half
+                    }
+                  }}
+                >
+                  {/* Drag Handle */}
+                  <div className="flex justify-center pt-2 pb-3 pointer-events-auto">
+                    <div className="w-12 h-1 bg-gray-300 rounded-full" />
+                  </div>
+                  
+                  {/* Scrollable Content */}
+                  <div className="h-[calc(100%-28px)] overflow-y-auto pb-4 pointer-events-auto">
                     <RestaurantFoodSection
                       offers={filteredOffers}
                       onOfferClick={handleOfferClick}
