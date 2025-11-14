@@ -13,6 +13,9 @@ export const MAX_RESERVATION_QUANTITY = 3;
 /** Maximum active reservations a user can have at once (1 = only one at a time) */
 export const MAX_ACTIVE_RESERVATIONS = 1;
 
+/** Reservation hold time in minutes (how long a reservation is valid before expiring) */
+export const RESERVATION_HOLD_MINUTES = 60; // 1 hour
+
 // ============================================================================
 // PENALTY SYSTEM
 // ============================================================================
