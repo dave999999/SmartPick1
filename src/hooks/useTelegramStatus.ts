@@ -12,13 +12,49 @@ export function useTelegramStatus(userId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('notification_preferences')
-      .select('enable_telegram, telegram_username')
+      .select('enable_telegram, telegram_username, telegram_chat_id')
       .eq('user_id', userId)
       .maybeSingle()
+    
+    console.log('🔍 Telegram Status Debug:', {
+      userId,
+      data,
+      error,
+      enable_telegram: data?.enable_telegram,
+      telegram_chat_id: (data as any)?.telegram_chat_id,
+      telegram_username: (data as any)?.telegram_username
+    })
+    
     if (!error && data) {
-      setConnected(!!data.enable_telegram)
+      // User is connected only if enable_telegram is true AND telegram_chat_id exists
+      const isConnected = !!data.enable_telegram && !!(data as any).telegram_chat_id
+      console.log('✅ Setting connected status:', isConnected)
+      setConnected(isConnected)
       setUsername((data as any).telegram_username || null)
     } else if (!data) {
+      console.log('❌ No data found, creating initial row...')
+      // Create initial row with defaults
+      const { error: insertError } = await supabase
+        .from('notification_preferences')
+        .insert({
+          user_id: userId,
+          enable_telegram: false,
+          telegram_chat_id: null,
+          telegram_username: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+      
+      if (insertError) {
+        console.error('❌ Error creating initial row:', insertError)
+      } else {
+        console.log('✅ Initial row created successfully')
+      }
+      
+      setConnected(false)
+      setUsername(null)
+    } else if (error) {
+      console.error('❌ Error fetching telegram status:', error)
       setConnected(false)
       setUsername(null)
     }
@@ -62,6 +98,10 @@ export function useTelegramStatus(userId?: string) {
     await fetchTelegramStatus()
   }
 
-  return { connected, username, loading, connect, disconnect }
+  async function refresh() {
+    await fetchTelegramStatus()
+  }
+
+  return { connected, username, loading, connect, disconnect, refresh }
 }
 

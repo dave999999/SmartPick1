@@ -72,11 +72,12 @@ export function BottomNavBar() {
 
   return (
     <div 
-      className={`fixed bottom-6 left-0 right-0 z-[9999] transition-all duration-500 ease-out ${
+      className={`fixed bottom-0 left-0 right-0 z-[9999] transition-all duration-500 ease-out ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'
       }`}
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
     >
-      {/* Floating Navigation Icons - All Cosmic Orange */}
+      {/* Floating Navigation Icons - unified color/size */}
       <div className="flex items-center justify-center gap-4 px-4">
         {navItems.map((item, index) => {
           const Icon = item.icon;
@@ -87,16 +88,13 @@ export function BottomNavBar() {
               key={index}
               onClick={item.onClick}
               style={{ transitionDelay: isVisible ? `${index * 50}ms` : '0ms' }}
-              className={`flex items-center justify-center transition-all duration-300 pointer-events-auto ${
-                active
-                  ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-full w-14 h-14 shadow-2xl shadow-orange-500/50 scale-110'
-                  : 'bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-full w-12 h-12 shadow-xl shadow-orange-400/40 hover:scale-110 hover:shadow-2xl hover:shadow-orange-500/50 active:scale-95'
+              className={`flex items-center justify-center transition-all duration-200 pointer-events-auto rounded-full w-12 h-12 backdrop-blur-sm hover:scale-105 active:scale-95 ${
+                active 
+                  ? 'bg-mint-500 text-white shadow-lg' 
+                  : 'bg-white/90 text-gray-600 hover:bg-white shadow-md border border-gray-100'
               }`}
             >
-              <Icon 
-                className={active ? 'w-6 h-6' : 'w-5 h-5'} 
-                strokeWidth={2.5} 
-              />
+              <Icon className="w-5 h-5" strokeWidth={2.5} />
             </button>
           );
         })}

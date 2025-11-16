@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import { useI18n } from '@/lib/i18n';
 
 export function TopRightMenu() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { language, setLanguage, t } = useI18n();
 
   const [authOpen, setAuthOpen] = useState(false);
@@ -42,6 +43,11 @@ export function TopRightMenu() {
     };
     init();
   }, []);
+
+  // Hide on partner dashboard - it has its own menu
+  if (location.pathname === '/partner') {
+    return null;
+  }
 
   const handleSignOut = async () => {
     await signOut();

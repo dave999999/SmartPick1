@@ -1,5 +1,4 @@
-import { Button } from '@/components/ui/button';
-import { Plus, QrCode, BarChart3, HelpCircle } from 'lucide-react';
+import { Plus, QrCode } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface QuickActionsProps {
@@ -12,85 +11,76 @@ interface QuickActionsProps {
 export default function QuickActions({
   onNewOffer,
   onScanQR,
-  onViewAnalytics,
-  onHelp,
 }: QuickActionsProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
-  const actions = [
-    {
-      icon: Plus,
-      label: 'New Offer',
-      onClick: onNewOffer,
-      variant: 'default' as const,
-      className: 'bg-[#00C896] hover:bg-[#00B588] text-white',
-    },
-    {
-      icon: QrCode,
-      label: 'Scan QR',
-      onClick: onScanQR,
-      variant: 'outline' as const,
-    },
-  ];
-
-  // Mobile: Fixed bottom bar
+  // Mobile: Fixed bottom bar with elegant redesigned buttons
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t shadow-lg safe-bottom">
-        <div className="grid grid-cols-2 gap-2 p-3">
-          {actions.map((action, index) => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={index}
-                onClick={action.onClick}
-                variant={action.variant}
-                className={`h-14 flex flex-col gap-1 ${action.className || ''}`}
-                size="lg"
-              >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{action.label}</span>
-              </Button>
-            );
-          })}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-gray-100 shadow-2xl safe-bottom">
+        <div className="grid grid-cols-2 gap-3 p-4">
+          {/* New Offer Button - Primary CTA */}
+          <button
+            onClick={onNewOffer}
+            className="group relative h-16 rounded-2xl bg-gradient-to-br from-[#00C896] via-[#00B588] to-[#009B77] shadow-lg hover:shadow-2xl active:scale-[0.98] transition-all duration-300 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex flex-col items-center justify-center h-full gap-1.5">
+              <Plus className="w-6 h-6 text-white drop-shadow-md" strokeWidth={2.5} />
+              <span className="text-sm font-bold text-white tracking-wide">New Offer</span>
+            </div>
+            {/* Shine effect */}
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </button>
+
+          {/* Scan QR Button - Secondary elegant style */}
+          <button
+            onClick={onScanQR}
+            className="group relative h-16 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#00C896] shadow-md hover:shadow-xl active:scale-[0.98] transition-all duration-300 overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00C896]/5 to-[#009B77]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex flex-col items-center justify-center h-full gap-1.5">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-[#00C896]/10 to-[#009B77]/10 group-hover:from-[#00C896]/20 group-hover:to-[#009B77]/20 transition-colors duration-300">
+                <QrCode className="w-5 h-5 text-[#00C896]" strokeWidth={2.5} />
+              </div>
+              <span className="text-sm font-bold text-gray-700 group-hover:text-[#00C896] transition-colors duration-300">Scan QR</span>
+            </div>
+          </button>
         </div>
       </div>
     );
   }
 
-  // Desktop: Horizontal action bar
+  // Desktop: Elegant horizontal buttons with breathing room
   return (
-    <div className="flex flex-wrap gap-3 items-center justify-between p-4 bg-white rounded-lg border shadow-sm">
-      <div className="flex gap-2 flex-1">
-        {actions.map((action, index) => {
-          const Icon = action.icon;
-          return (
-            <Button
-              key={index}
-              onClick={action.onClick}
-              variant={action.variant}
-              className={action.className || ''}
-            >
-              <Icon className="w-4 h-4 mr-2" />
-              {action.label}
-            </Button>
-          );
-        })}
-      </div>
-      <div className="flex gap-2">
-        {onViewAnalytics && (
-          <Button onClick={onViewAnalytics} variant="ghost" size="sm">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Analytics
-          </Button>
-        )}
-        {onHelp && (
-          <Button onClick={onHelp} variant="ghost" size="sm">
-            <HelpCircle className="w-4 h-4 mr-2" />
-            Help
-          </Button>
-        )}
-      </div>
+    <div className="flex gap-4 items-stretch">
+      {/* New Offer Button - Primary CTA */}
+      <button
+        onClick={onNewOffer}
+        className="group relative flex-1 h-14 rounded-2xl bg-gradient-to-br from-[#00C896] via-[#00B588] to-[#009B77] shadow-lg hover:shadow-2xl active:scale-[0.99] transition-all duration-300 overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="relative flex items-center justify-center h-full gap-3 px-6">
+          <Plus className="w-5 h-5 text-white drop-shadow-md" strokeWidth={2.5} />
+          <span className="text-base font-bold text-white tracking-wide">New Offer</span>
+        </div>
+        {/* Shine effect */}
+        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      </button>
+
+      {/* Scan QR Button - Secondary elegant style */}
+      <button
+        onClick={onScanQR}
+        className="group relative flex-1 h-14 rounded-2xl bg-white border-2 border-gray-200 hover:border-[#00C896] shadow-md hover:shadow-xl active:scale-[0.99] transition-all duration-300 overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-[#00C896]/5 to-[#009B77]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="relative flex items-center justify-center h-full gap-3 px-6">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-[#00C896]/10 to-[#009B77]/10 group-hover:from-[#00C896]/20 group-hover:to-[#009B77]/20 transition-colors duration-300">
+            <QrCode className="w-5 h-5 text-[#00C896]" strokeWidth={2.5} />
+          </div>
+          <span className="text-base font-bold text-gray-700 group-hover:text-[#00C896] transition-colors duration-300">Scan QR</span>
+        </div>
+      </button>
     </div>
   );
 }

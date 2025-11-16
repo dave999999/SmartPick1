@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Offer } from '@/lib/types';
@@ -88,6 +88,8 @@ interface OfferMapProps {
   onCategorySelect?: (category: string) => void;
   highlightedOfferId?: string;
   onLocationChange?: (location: [number, number] | null) => void;
+  // Scope user location feature (marker + circle + auto-watch) to callers that opt-in
+  showUserLocation?: boolean;
 }
 
 interface GroupedLocation {
@@ -109,24 +111,46 @@ function MapController({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-export default function OfferMap({ offers, onOfferClick, onMarkerClick, selectedCategory, highlightedOfferId, onLocationChange }: OfferMapProps) {
+export default function OfferMap({ offers, onOfferClick, onMarkerClick, selectedCategory, highlightedOfferId, onLocationChange, showUserLocation = false }: OfferMapProps) {
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([41.7151, 44.8271]); // Tbilisi
   const [mapZoom, setMapZoom] = useState(13);
+  // userAccuracy retained in watch for potential future use (e.g., dynamic radius) but not required now
+  // Remove state to eliminate unused variable warning until needed.
+  // const [userAccuracy, setUserAccuracy] = useState<number | null>(null);
+  const USER_RADIUS_METERS = 3000; // Fixed 3km visibility radius
   const mapRef = useRef<L.Map | null>(null);
+  // Ensure we only auto-fit to user radius once on load/permission grant
+  const hasFittedToUserRef = useRef(false);
+  // View preferences: show a bit more context around the radius
+  const FIT_PADDING_PX: [number, number] = [72, 72];
+  const FIT_MAX_ZOOM = 11; // 2x closer than zoom 10
 
-  // Use light pink/beige map style like in reference
-  const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  // Map theme configuration for easier future switching.
+  // Current: CARTO Dark Matter (close to provided reference).
+  // To try MapTiler Dark (needs key): `https://api.maptiler.com/maps/dark/{z}/{x}/{y}.png?key=YOUR_KEY`
+  // To try Stadia Alidade Dark: `https://tiles.stadiamaps.com/tiles/alidade_dark/{z}/{x}/{y}{r}.png`
+  // If you obtain a Mapbox style & token using MapLibre, migrate to vector for pixel‑perfect colors.
+  const MAP_THEME = {
+    // Light grayscale theme similar to provided reference screenshot.
+    // Options if you want variations:
+    //  - carto light_nolabels + custom label overlay
+    //  - stamen toner-lite (retina issues)
+    //  - maptiler basic (needs API key)
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  } as const;
 
   // Create category-specific teardrop pin icons using optimized images
   const makeCategoryIcon = (
     category: string,
-    count: number,
+    _count: number, // count intentionally unused (badge hidden per request)
     isHighlighted: boolean = false
   ) => {
-    const size = isHighlighted ? 75 : 65; // Much bigger, more visible pins
+    const size = isHighlighted ? 60 : 50; // Smaller partner icons
     const height = size * 1.3;
 
     // Map category to image filename
@@ -152,7 +176,7 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
               width: 100%;
               height: 100%;
               object-fit: contain;
-              filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+              filter: drop-shadow(0 4px 12px rgba(0,0,0,0.55));
             "
             onerror="this.style.display='none'"
           />
@@ -180,6 +204,19 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
     return () => clearTimeout(t);
   }, []);
 
+  // Invalidate on container resize (handles responsive height changes)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const el = map.getContainer();
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => {
+      try { map.invalidateSize(); } catch { /* noop */ }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Update filtered offers when offers or selectedCategory changes
   useEffect(() => {
     logger.log('Offers received:', offers.length);
@@ -198,6 +235,43 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
   useEffect(() => {
     // No-op: previously forced list on small screens
   }, []);
+
+  // Automatically watch user location & update marker. On first fix, fit map to show full 3km radius.
+  useEffect(() => {
+    if (!showUserLocation) return;
+    if (!('geolocation' in navigator)) {
+      logger.warn('Geolocation not supported');
+      return;
+    }
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const loc: [number, number] = [pos.coords.latitude, pos.coords.longitude];
+        setUserLocation(loc);
+        // On first successful location, fit the map so the entire 3km circle is visible
+        try {
+          const map = mapRef.current;
+          if (map && !hasFittedToUserRef.current) {
+            const bounds = L.circle(loc, { radius: USER_RADIUS_METERS }).getBounds();
+            map.fitBounds(bounds, { padding: FIT_PADDING_PX, maxZoom: FIT_MAX_ZOOM });
+            // Sync state to current map view to keep MapController in agreement
+            setMapCenter([map.getCenter().lat, map.getCenter().lng]);
+            setMapZoom(map.getZoom());
+            hasFittedToUserRef.current = true;
+          }
+        } catch (e) {
+          // Fallback: center on user with a reasonable zoom if fitBounds fails
+          setMapCenter(loc);
+          setMapZoom(FIT_MAX_ZOOM);
+        }
+        onLocationChange?.(loc);
+      },
+      (err) => {
+        logger.warn('Geolocation watch error', err);
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [onLocationChange, showUserLocation]);
 
   // Helper function to get partner location
   const getPartnerLocation = (offer: Offer) => {
@@ -264,8 +338,21 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
             position.coords.longitude,
           ];
           setUserLocation(userPos);
-          setMapCenter(userPos);
-          setMapZoom(14);
+          try {
+            const map = mapRef.current;
+            if (map) {
+              const bounds = L.circle(userPos, { radius: USER_RADIUS_METERS }).getBounds();
+              map.fitBounds(bounds, { padding: FIT_PADDING_PX, maxZoom: FIT_MAX_ZOOM });
+              setMapCenter([map.getCenter().lat, map.getCenter().lng]);
+              setMapZoom(map.getZoom());
+            } else {
+              setMapCenter(userPos);
+              setMapZoom(FIT_MAX_ZOOM);
+            }
+          } catch {
+            setMapCenter(userPos);
+            setMapZoom(FIT_MAX_ZOOM);
+          }
           onLocationChange?.(userPos);
           toast.success('Showing offers near you');
         },
@@ -328,22 +415,34 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
           >
             <MapController center={mapCenter} zoom={mapZoom} />
             <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-              url={tileUrl}
+              attribution={MAP_THEME.attribution}
+              url={MAP_THEME.url}
               subdomains="abcd"
               maxZoom={20}
             />
             
-            {/* User location marker */}
-            {userLocation && (
+            {/* User location marker - Custom pin with pulse animation */}
+            {showUserLocation && userLocation && (
               <Marker
                 position={userLocation}
                 icon={L.divIcon({
                   className: 'user-location-marker',
-                  html: '<div style="background: linear-gradient(135deg, #00C896 0%, #009B77 100%); width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 3px 12px rgba(0, 200, 150, 0.4);"></div>',
-                  iconSize: [24, 24],
-                  iconAnchor: [12, 12],
+                  html: `
+                    <div class="user-marker-wrapper">
+                      <div class="user-pulse-ring"></div>
+                      <div class="user-pulse-ring" style="animation-delay: 0.6s;"></div>
+                      <img src="/images/pins/user-pin.png" alt="Your location" class="user-marker-pin" />
+                    </div>`,
+                  iconSize: [1, 1],
+                  iconAnchor: [0, 0],
                 })}
+              />
+            )}
+            {showUserLocation && userLocation && (
+              <Circle
+                center={userLocation}
+                radius={USER_RADIUS_METERS}
+                pathOptions={{ color: '#00C896', fillColor: '#00C896', fillOpacity: 0.10, weight: 1 }}
               />
             )}
             
@@ -385,14 +484,13 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
 
           {/* Floating Near Me button - Always visible */}
           {!isFullscreen && (
-            <Button
-              variant="default"
-              className="absolute bottom-6 right-6 z-[1000] bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white px-6 py-3 rounded-full shadow-2xl hover:shadow-[0_8px_30px_rgba(0,200,150,0.4)] active:scale-95 transition-all duration-300 font-semibold flex items-center gap-2"
+            <button
               onClick={handleNearMe}
+              className="absolute bottom-6 right-6 z-[1000] w-12 h-12 bg-white/95 backdrop-blur-sm hover:bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 flex items-center justify-center border border-gray-100"
+              aria-label="Near Me"
             >
-              <Navigation className="w-5 h-5" />
-              <span>Near Me</span>
-            </Button>
+              <Navigation className="w-5 h-5 text-mint-600" strokeWidth={2.5} />
+            </button>
           )}
 
           {isFullscreen && (
@@ -414,6 +512,11 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
         /* Map fade-in animation */
         .leaflet-container {
           transition: opacity 0.8s ease-in-out;
+          background:#f5f5f6; /* Light neutral while tiles load */
+        }
+        .leaflet-tile {
+          /* Subtle contrast for crisp roads; no heavy darkening */
+          filter: contrast(1.04) saturate(0.55);
         }
 
         .smartpick-marker {
@@ -434,6 +537,35 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
             transform: scale(1) translateY(0);
             opacity: 1;
           }
+        }
+
+        /* User location pulse */
+        @keyframes userPulse {
+          0% { transform: scale(0.4); opacity: 0.6; }
+          60% { transform: scale(1.8); opacity: 0; }
+          100% { transform: scale(1.8); opacity: 0; }
+        }
+        .user-marker-wrapper {
+          position: relative;
+          width: 30px; height: 30px;
+        }
+        .user-marker-core {
+          position: absolute; inset: 0;
+          border-radius: 50%;
+          background: linear-gradient(135deg,#00D8A0,#00AA80);
+          border: 3px solid #fff;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+        .user-marker-core::after {
+          content: '';
+          position: absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+          width: 10px; height: 10px; border-radius:50%; background:#ffffff;
+        }
+        .user-pulse-ring {
+          position: absolute; inset:0; border-radius:50%;
+          background: rgba(0,200,150,0.35);
+          animation: userPulse 3s ease-out infinite;
+          pointer-events:none;
         }
 
         .smartpick-marker:hover .marker-circle {
@@ -474,18 +606,22 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
         .leaflet-popup-content-wrapper {
           padding: 0 !important;
           border-radius: 12px !important;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12) !important;
           overflow: hidden !important;
+            background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
         }
 
         .leaflet-popup-content {
           margin: 0 !important;
           width: 240px !important;
           max-width: 90vw !important;
+          color: #374151 !important;
+          font-weight: 500;
         }
 
         .leaflet-popup-close-button {
-          color: white !important;
+          color: #6b7280 !important;
           font-size: 20px !important;
           padding: 8px !important;
           width: 32px !important;
@@ -493,7 +629,7 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
           top: 4px !important;
           right: 4px !important;
           z-index: 10 !important;
-          background: rgba(0, 0, 0, 0.2) !important;
+          background: rgba(0, 0, 0, 0.05) !important;
           border-radius: 50% !important;
           display: flex !important;
           align-items: center !important;
@@ -501,7 +637,7 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
         }
 
         .leaflet-popup-close-button:hover {
-          background: rgba(0, 0, 0, 0.3) !important;
+          background: rgba(0,0,0,0.10) !important;
         }
 
         .leaflet-popup-tip-container {
@@ -514,17 +650,17 @@ export default function OfferMap({ offers, onOfferClick, onMarkerClick, selected
         }
 
         .leaflet-popup-content ::-webkit-scrollbar-track {
-          background: #f1f1f1;
+          background: #f1f5f9;
           border-radius: 2px;
         }
 
         .leaflet-popup-content ::-webkit-scrollbar-thumb {
-          background: #888;
+          background: #cbd5e1;
           border-radius: 2px;
         }
 
         .leaflet-popup-content ::-webkit-scrollbar-thumb:hover {
-          background: #555;
+          background: #94a3b8;
         }
 
         /* Hide scrollbar for category pills */

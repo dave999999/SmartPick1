@@ -21,8 +21,8 @@ export function MapSection({
   onLocationChange,
 }: MapSectionProps) {
   return (
-    <div className="absolute inset-0 w-full h-full m-0 p-0">
-      {/* Borderless Full Screen Map */}
+    <div className="relative w-full m-0 p-0 h-[58vh] min-h-[420px] md:h-[56vh] lg:h-[52vh] xl:h-[48vh]">
+      {/* Responsive-height Map */}
       <div className="w-full h-full m-0 p-0">
         <Suspense fallback={<div className="w-full h-full" aria-busy="true" aria-label="Loading map..." /> }>
           <OfferMap
@@ -32,13 +32,14 @@ export function MapSection({
             selectedCategory={selectedCategory}
             onCategorySelect={onCategorySelect}
             onLocationChange={onLocationChange}
+            showUserLocation
           />
         </Suspense>
       </div>
 
-      {/* Center Location Button - positioned above bottom overlay */}
+      {/* Center Location Button */}
       <button
-        className="absolute bottom-[47%] right-4 bg-white rounded-full p-3 shadow-md hover:shadow-lg transition-shadow z-30"
+        className="absolute bottom-6 right-4 bg-white rounded-full p-3 shadow-md hover:shadow-lg transition-shadow z-30"
         onClick={() => {
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(

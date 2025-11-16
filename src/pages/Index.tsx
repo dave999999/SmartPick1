@@ -37,9 +37,9 @@ export default function Index() {
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({
-    maxDistance: 50,
+    maxDistance: 10,
     minPrice: 0,
-    maxPrice: 500,
+    maxPrice: 100,
   });
   const [sortBy, setSortBy] = useState<SortOption>('newest');
 
@@ -142,6 +142,10 @@ export default function Index() {
       Number(offer.smart_price) <= filters.maxPrice
     );
 
+    if (filters.availableNow) {
+      filtered = filtered.filter(offer => offer.available_quantity > 0);
+    }
+
     if (userLocation && filters.maxDistance < 50) {
       filtered = filtered.filter(offer => {
         const location = getPartnerLocation(offer);
@@ -191,6 +195,7 @@ export default function Index() {
     filters.minPrice,
     filters.maxPrice,
     filters.maxDistance,
+    filters.availableNow,
     userLocation,
     sortBy
   ]);

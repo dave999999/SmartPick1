@@ -20,6 +20,7 @@ export interface FilterState {
   maxDistance: number;
   minPrice: number;
   maxPrice: number;
+  availableNow?: boolean;
 }
 
 export type SortOption = 'nearest' | 'cheapest' | 'expiring' | 'newest';
@@ -57,6 +58,7 @@ export default function SearchAndFilters({
       maxDistance: 50,
       minPrice: 0,
       maxPrice: 500,
+      availableNow: false,
     };
     setLocalFilters(defaultFilters);
     onFiltersChange(defaultFilters);

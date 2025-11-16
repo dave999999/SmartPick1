@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { getCurrentUser, updateUserProfile } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+// Removed Badge (unused)
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Sparkles, Edit, Coins, Clock } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Edit, Coins, Clock, Bell, Lock, CreditCard, Settings, HelpCircle, ChevronRight, Globe, Utensils, MapPin, Moon, Sun, Trash2, Key, FileText } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 import { onPointsChange } from '@/lib/pointsEventBus';
@@ -22,9 +24,10 @@ import { StreakTracker } from '@/components/gamification/StreakTracker';
 import { UserLevelCard } from '@/components/gamification/UserLevelCard';
 import { ReferralCard } from '@/components/gamification/ReferralCard';
 import { AchievementsGrid } from '@/components/gamification/AchievementsGrid';
+import { TelegramConnect } from '@/components/TelegramConnect';
 import { checkUserPenaltyStatus, PenaltyStatus, liftPenaltyWithPoints } from '@/lib/penalty-system';
 import { getUserStats, UserStats } from '@/lib/gamification-api';
-import { motion } from 'framer-motion';
+// motion import removed (unused in this file after refactor)
 
 function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -54,9 +57,9 @@ function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; on
   }, [penaltyUntil, onExpire]);
 
   return (
-    <div className="flex items-center justify-center gap-2 bg-orange-50 rounded-lg p-3 border border-orange-200">
-      <Clock className="w-5 h-5 text-orange-600" />
-      <div className="flex gap-1 text-2xl font-bold text-orange-700 font-mono">
+    <div className="flex items-center justify-center gap-2 bg-orange-50 rounded-lg p-2 border border-orange-200">
+      <Clock className="w-4 h-4 text-orange-600" />
+      <div className="flex gap-0.5 text-lg font-bold text-orange-700 font-mono">
         {timeLeft.hours > 0 && <span>{String(timeLeft.hours).padStart(2, '0')}:</span>}
         <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
         <span>:</span>
@@ -113,7 +116,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
   if (!status) {
     return fallbackUntil ? (
-      <div className="space-y-3">
+      <div className="space-y-2">
         <PenaltyCountdown penaltyUntil={fallbackUntil} onExpire={onUpdate} />
       </div>
     ) : null;
@@ -121,9 +124,9 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
   if (status.isBanned) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-  <p className="text-sm text-red-700 font-semibold">🚫 {t('penalty.banned')}</p>
-  <p className="text-xs text-red-600 mt-1">{t('penalty.contactSupport')}</p>
+      <div className="bg-red-50 border border-red-200 rounded-lg p-2">
+        <p className="text-xs text-red-700 font-semibold">🚫 {t('penalty.banned')}</p>
+        <p className="text-xs text-red-600 mt-0.5">{t('penalty.contactSupport')}</p>
       </div>
     );
   }
@@ -134,21 +137,20 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
     const pointsCost = penaltyCount === 1 ? 30 : penaltyCount === 2 ? 90 : 0;
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         <PenaltyCountdown penaltyUntil={status.penaltyUntil} onExpire={onUpdate} />
-        
+
         {canLift && (
           <Button
             onClick={handleLiftPenalty}
             disabled={isLifting}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg"
-            size="sm"
+            className="w-full h-8 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg text-xs"
           >
             {isLifting ? (
               t('penalty.processing')
             ) : (
               <>
-                <Coins className="w-4 h-4 mr-2" />
+                <Coins className="w-3.5 h-3.5 mr-1.5" />
                 {t('penalty.lift')} ({pointsCost} points)
               </>
             )}
@@ -165,8 +167,8 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
   }
 
   return (
-    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-      <p className="text-sm text-green-700 font-medium">✓ {t('penalty.noneActive')}</p>
+    <div className="bg-green-50 border border-green-200 rounded-lg p-2">
+      <p className="text-xs text-green-700 font-medium">✓ {t('penalty.noneActive')}</p>
     </div>
   );
 }
@@ -188,6 +190,14 @@ export default function UserProfile() {
     name: '',
     phone: '',
   });
+
+  // Settings preferences state
+  const [notificationPrefs, setNotificationPrefs] = useState({
+    email: true,
+    push: true,
+    sms: false,
+  });
+
   const { t } = useI18n();
 
   const loadUser = useCallback(async () => {
@@ -325,19 +335,19 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen bg-white pb-20">
-      {/* Header */}
+      {/* Header - Compact */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/')}
-              className="h-10 w-10 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full"
+              className="h-9 w-9 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-full"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900">
               {t('profile.title')}
             </h1>
           </div>
@@ -345,314 +355,475 @@ export default function UserProfile() {
       </header>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl mx-auto`}>
-            <TabsTrigger value="overview">{t('profile.tabs.overview')}</TabsTrigger>
+      <div className="container mx-auto px-4 py-4 max-w-6xl">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-xl mx-auto h-9`}>
+            <TabsTrigger value="overview" className="text-xs">{t('profile.tabs.overview')}</TabsTrigger>
             {userStats && (
-              <TabsTrigger value="achievements" className="relative">
+              <TabsTrigger value="achievements" className="relative text-xs">
                 {t('profile.tabs.achievements')}
                 {unclaimedCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md animate-pulse">
                     {unclaimedCount}
                   </span>
                 )}
               </TabsTrigger>
             )}
-            {userStats && <TabsTrigger value="wallet">{t('profile.tabs.wallet')}</TabsTrigger>}
-            <TabsTrigger value="settings">{t('profile.tabs.settings')}</TabsTrigger>
+            {userStats && <TabsTrigger value="wallet" className="text-xs">{t('profile.tabs.wallet')}</TabsTrigger>}
+            <TabsTrigger value="settings" className="text-xs">{t('profile.tabs.settings')}</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
-          <TabsContent value="overview" className="space-y-6">
-            {/* Profile Header Card with Penalty Status on Right */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Profile Info - Left/Center (2 cols on large screens) */}
-                <Card className="shadow-sm border border-gray-100 bg-white lg:col-span-2">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-                      <Avatar className="h-20 w-20 md:h-24 md:w-24 border-2 border-gray-200">
-                        <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-600 text-white text-2xl md:text-3xl font-bold">
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-center md:text-left">
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{user.name}</h2>
-                        <p className="text-base text-gray-500 mb-3">{user.email}</p>
-                        <div className="flex items-center gap-2 justify-center md:justify-start flex-wrap">
-                          <Badge
-                            variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
-                            className={user.role === 'ADMIN' ? 'bg-red-500 text-white' : 'bg-gray-900 text-white'}
-                          >
-                            {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
-                            {user.role}
-                          </Badge>
-                          {user.phone && (
-                            <Badge variant="outline" className="gap-1 border-gray-300 text-gray-600">
-                              <Phone className="w-3 h-3" />
-                              {user.phone}
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="gap-1 border-gray-300 text-gray-600">
-                            <Calendar className="w-3 h-3" />
-                            {t('profile.memberSince')} {formatDate(user.created_at)}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Account Status - Right (1 col on large screens) */}
-                <Card className={`shadow-sm border ${
-                  user.penalty_count && user.penalty_count > 0
-                    ? 'border-orange-200 bg-white'
-                    : 'border-green-200 bg-white'
-                }`}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className={`text-base font-semibold flex items-center gap-2 ${
-                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-600' : 'text-green-600'
+          <TabsContent value="overview" className="space-y-4">
+            {/* Account Status - Top Priority */}
+            <Card className={`border-2 ${
+              user.penalty_count && user.penalty_count > 0
+                ? 'border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100/50'
+                : 'border-green-200 bg-gradient-to-br from-green-50 to-green-100/50'
+            } shadow-sm`}>
+              <CardContent className="p-3">
+                <div className="flex items-center gap-3">
+                  <div className={`flex items-center justify-center w-12 h-12 rounded-xl ${
+                    user.penalty_count && user.penalty_count > 0
+                      ? 'bg-gradient-to-br from-orange-500 to-orange-600'
+                      : 'bg-gradient-to-br from-green-500 to-green-600'
+                  }`}>
+                    <span className="text-2xl">
+                      {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-bold ${
+                      user.penalty_count && user.penalty_count > 0 ? 'text-orange-700' : 'text-green-700'
                     }`}>
-                      {user.penalty_count && user.penalty_count > 0 ? '⚠️' : '✅'} {t('profile.accountStatus')}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                      {user.penalty_count && user.penalty_count > 0 ? t('penalty.pointsLabel') : t('profile.goodStanding')}
+                    </p>
                     {user.penalty_count && user.penalty_count > 0 ? (
-                      <div className="space-y-3">
-                        <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
-                          <p className="text-sm font-medium text-orange-700 mb-2">
-                            {t('penalty.pointsLabel')} {user.penalty_count}
-                          </p>
-                          <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until} onUpdate={loadUser} />
-                        </div>
-                        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <p className="font-medium mb-2 text-gray-700">{t('penalty.escalation')}</p>
-                          <ul className="space-y-1 pl-3 list-disc list-inside">
-                            <li>{t('penalty.firstPenalty')}</li>
-                            <li>{t('penalty.secondPenalty')}</li>
-                            <li>{t('penalty.thirdPenalty')}</li>
-                            <li>{t('penalty.fourthPenalty')}</li>
-                          </ul>
-                        </div>
-                      </div>
+                      <p className="text-xs text-orange-600">{user.penalty_count} penalty points</p>
                     ) : (
-                      <div className="space-y-2">
-                        <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-                          <p className="text-sm font-medium text-green-700 mb-1">✓ {t('profile.goodStanding')}</p>
-                          <p className="text-sm text-green-600">{t('penalty.noneActive')}</p>
-                        </div>
-                        <p className="text-xs text-gray-500">{t('penalty.encouragement')}</p>
-                      </div>
+                      <p className="text-xs text-green-600">{t('penalty.noneActive')}</p>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
-            </motion.div>
+                  </div>
+                  <Avatar className="h-12 w-12 border-2 border-white">
+                    <AvatarFallback className="bg-gradient-to-br from-teal-600 to-teal-700 text-white text-base font-bold">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
 
-            {/* Stats Row */}
+                {/* Penalty Details */}
+                {user.penalty_count && user.penalty_count > 0 && (
+                  <div className="mt-3 pt-3 border-t border-orange-200">
+                    <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until || undefined} onUpdate={loadUser} />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* User Info - Compact */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <UserIcon className="w-3.5 h-3.5" />
+                <span className="truncate">{user.name}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Mail className="w-3.5 h-3.5" />
+                <span className="truncate">{user.email}</span>
+              </div>
+              {user.phone && (
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>{user.phone}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <Shield className="w-3.5 h-3.5" />
+                <span>{user.role}</span>
+              </div>
+            </div>
+
+            {/* Tabs for Stats/Level/Streak/Referral */}
             {userStats ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-              >
-                <UserStatsCard stats={userStats} />
-              </motion.div>
+              <Tabs defaultValue="stats" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 h-8">
+                  <TabsTrigger value="stats" className="text-xs">Stats</TabsTrigger>
+                  <TabsTrigger value="level" className="text-xs">Level</TabsTrigger>
+                  <TabsTrigger value="streak" className="text-xs">Streak</TabsTrigger>
+                  <TabsTrigger value="referral" className="text-xs">Refer</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="stats" className="mt-3">
+                  <UserStatsCard stats={userStats} />
+                </TabsContent>
+
+                <TabsContent value="level" className="mt-3">
+                  <UserLevelCard stats={userStats} />
+                </TabsContent>
+
+                <TabsContent value="streak" className="mt-3">
+                  <StreakTracker stats={userStats} />
+                </TabsContent>
+
+                <TabsContent value="referral" className="mt-3">
+                  <ReferralCard userId={user.id} totalReferrals={userStats.total_referrals} />
+                </TabsContent>
+              </Tabs>
             ) : (
-              <Card className="shadow-lg border-yellow-200 bg-yellow-50">
-                <CardContent className="py-8 text-center">
-                  <p className="text-yellow-800 font-medium mb-2">🎮 Gamification Features Coming Soon!</p>
-                  <p className="text-sm text-yellow-600">
-                    Database tables need to be set up. Check GAMIFICATION_SETUP.md for instructions.
+              <Card className="border-yellow-200 bg-yellow-50 shadow-sm">
+                <CardContent className="p-3 text-center">
+                  <p className="text-yellow-800 font-medium text-xs mb-1">🎮 Gamification Features Coming Soon!</p>
+                  <p className="text-xs text-yellow-600">
+                    Database tables need to be set up.
                   </p>
                 </CardContent>
               </Card>
             )}
-
-            {/* Level & Streak Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {userStats && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                  >
-                    <UserLevelCard stats={userStats} />
-                  </motion.div>
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: 0.3 }}
-                  >
-                    <StreakTracker stats={userStats} />
-                  </motion.div>
-                </>
-              )}
-            </div>
-
-            {/* Referral Card */}
-            {userStats && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.4 }}
-              >
-                <ReferralCard userId={user.id} totalReferrals={userStats.total_referrals} />
-              </motion.div>
-            )}
           </TabsContent>
 
           {/* ACHIEVEMENTS TAB */}
-          <TabsContent value="achievements" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <AchievementsGrid 
-                userId={user.id}
-                onUnclaimedCountChange={setUnclaimedCount}
-              />
-            </motion.div>
+          <TabsContent value="achievements" className="space-y-4">
+            <AchievementsGrid
+              userId={user.id}
+              onUnclaimedCountChange={setUnclaimedCount}
+            />
           </TabsContent>
 
           {/* WALLET TAB */}
-          <TabsContent value="wallet" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <SmartPointsWallet userId={user.id} />
-            </motion.div>
+          <TabsContent value="wallet" className="space-y-4">
+            <SmartPointsWallet userId={user.id} />
           </TabsContent>
 
           {/* SETTINGS TAB */}
-          <TabsContent value="settings">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className="shadow-lg bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-[#00C896]/30">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Edit className="w-5 h-5 text-[#00C896]" />
-                    {t('profile.editCard.title')}
-                  </CardTitle>
-                  <CardDescription className="text-gray-400">{t('profile.editCard.subtitle')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isEditing ? (
-                    // Edit Mode
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-gray-300">{t('profile.name')}</Label>
-                        <div className="relative">
-                          <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="pl-10 bg-gray-700 border-gray-600 text-white"
-                            placeholder="Enter your name"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone" className="text-gray-300">{t('profile.phone')}</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <Input
-                            id="phone"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            className="pl-10 bg-gray-700 border-gray-600 text-white"
-                            placeholder="+995 XXX XXX XXX"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 pt-4">
-                        <Button
-                          onClick={handleSave}
-                          disabled={isSaving}
-                          className="flex-1 bg-[#00C896] hover:bg-[#009B77]"
-                        >
-                          {isSaving ? t('profile.saving') : t('profile.saveChanges')}
-                        </Button>
-                        <Button
-                          onClick={handleCancel}
-                          disabled={isSaving}
-                          variant="outline"
-                          className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800"
-                        >
-                          {t('profile.cancel')}
-                        </Button>
+          <TabsContent value="settings" className="space-y-3">
+            {/* ACCOUNT INFORMATION */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white text-sm">
+                  <UserIcon className="w-4 h-4 text-teal-400" />
+                  Account Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="name" className="text-gray-300 text-xs">{t('profile.name')}</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="pl-9 h-9 bg-gray-700 border-gray-600 text-white text-sm"
+                          placeholder="Enter your name"
+                        />
                       </div>
                     </div>
-                  ) : (
-                    // View Mode
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Mail className="w-4 h-4" />
-                            <span>{t('profile.email')}</span>
-                          </div>
-                          <p className="text-white font-medium">{user.email}</p>
-                        </div>
 
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Phone className="w-4 h-4" />
-                            <span>{t('profile.phone')}</span>
-                          </div>
-                          <p className="text-white font-medium">
-                            {user.phone || 'Not provided'}
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Calendar className="w-4 h-4" />
-                            <span>{t('profile.memberSince')}</span>
-                          </div>
-                          <p className="text-white font-medium">
-                            {formatDate(user.created_at)}
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Shield className="w-4 h-4" />
-                            <span>{t('profile.role')}</span>
-                          </div>
-                          <p className="text-white font-medium capitalize">
-                            {user.role.toLowerCase()}
-                          </p>
-                        </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="phone" className="text-gray-300 text-xs">{t('profile.phone')}</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-3.5 h-3.5" />
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          className="pl-9 h-9 bg-gray-700 border-gray-600 text-white text-sm"
+                          placeholder="+995 XXX XXX XXX"
+                        />
                       </div>
+                    </div>
 
+                    <div className="grid grid-cols-2 gap-2 pt-2">
                       <Button
-                        onClick={() => setIsEditing(true)}
-                        className="w-full md:w-auto bg-[#00C896] hover:bg-[#009B77]"
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="h-9 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm"
                       >
-                        <Edit className="w-4 h-4 mr-2" />
-                        {t('profile.editProfile')}
+                        {isSaving ? t('profile.saving') : t('profile.saveChanges')}
+                      </Button>
+                      <Button
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                        variant="outline"
+                        className="h-9 border-gray-600 text-gray-300 hover:bg-gray-800 text-sm"
+                      >
+                        {t('profile.cancel')}
                       </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>{t('profile.email')}</span>
+                        </div>
+                        <p className="text-white font-medium text-sm truncate">{user.email}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>{t('profile.phone')}</span>
+                        </div>
+                        <p className="text-white font-medium text-sm">
+                          {user.phone || 'Not provided'}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>{t('profile.memberSince')}</span>
+                        </div>
+                        <p className="text-white font-medium text-sm">
+                          {formatDate(user.created_at)}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>{t('profile.role')}</span>
+                        </div>
+                        <p className="text-white font-medium text-sm capitalize">
+                          {user.role.toLowerCase()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <Button
+                      onClick={() => setIsEditing(true)}
+                      className="w-full h-9 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white text-sm"
+                    >
+                      <Edit className="w-3.5 h-3.5 mr-1.5" />
+                      {t('profile.editProfile')}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* NOTIFICATIONS */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white text-sm">
+                  <Bell className="w-4 h-4 text-blue-400" />
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription className="text-gray-400 text-xs">
+                  Manage how you receive updates
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Telegram Integration */}
+                <div className="mb-3">
+                  <TelegramConnect userId={user.id} userType="customer" />
+                </div>
+
+                {/* Email Notifications */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30">
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-white text-sm font-medium">Email Notifications</p>
+                      <p className="text-gray-400 text-xs">Receive updates via email</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs.email}
+                    onCheckedChange={(checked) => setNotificationPrefs({ ...notificationPrefs, email: checked })}
+                  />
+                </div>
+
+                {/* Push Notifications */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30">
+                  <div className="flex items-start gap-3">
+                    <Bell className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-white text-sm font-medium">Push Notifications</p>
+                      <p className="text-gray-400 text-xs">Browser push alerts</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs.push}
+                    onCheckedChange={(checked) => setNotificationPrefs({ ...notificationPrefs, push: checked })}
+                  />
+                </div>
+
+                {/* SMS Notifications */}
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30">
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-white text-sm font-medium">SMS Notifications</p>
+                      <p className="text-gray-400 text-xs">Text message alerts</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={notificationPrefs.sms}
+                    onCheckedChange={(checked) => setNotificationPrefs({ ...notificationPrefs, sms: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* PRIVACY & SECURITY */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white text-sm">
+                  <Lock className="w-4 h-4 text-purple-400" />
+                  Privacy & Security
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <button
+                  onClick={() => toast.info('Password change feature coming soon')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Key className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Change Password</p>
+                      <p className="text-gray-400 text-xs">Update your password</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => toast.info('Account deletion requires admin approval')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-red-900/30 hover:bg-red-900/20 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                    <div>
+                      <p className="text-red-400 text-sm font-medium">Delete Account</p>
+                      <p className="text-gray-400 text-xs">Permanently remove your account</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+              </CardContent>
+            </Card>
+
+            {/* PREFERENCES */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white text-sm">
+                  <Settings className="w-4 h-4 text-orange-400" />
+                  Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <button
+                  onClick={() => toast.info('Language settings in top-right menu')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Globe className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Language</p>
+                      <p className="text-gray-400 text-xs">Change app language</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => toast.info('Location preferences coming soon')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Default Location</p>
+                      <p className="text-gray-400 text-xs">Set your preferred area</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => toast.info('Dietary preferences coming soon')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Utensils className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Dietary Restrictions</p>
+                      <p className="text-gray-400 text-xs">Vegan, vegetarian, allergies</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+              </CardContent>
+            </Card>
+
+            {/* SUPPORT */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-white text-sm">
+                  <HelpCircle className="w-4 h-4 text-green-400" />
+                  Support & Legal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <button
+                  onClick={() => toast.info('Help center coming soon')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Help Center</p>
+                      <p className="text-gray-400 text-xs">FAQs and guides</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => toast.info('Contact support: support@smartpick.ge')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Contact Support</p>
+                      <p className="text-gray-400 text-xs">Get help from our team</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+
+                <button
+                  onClick={() => toast.info('Terms & Privacy coming soon')}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-700/30 border border-gray-600/30 hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-white text-sm font-medium">Terms & Privacy</p>
+                      <p className="text-gray-400 text-xs">Legal information</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                </button>
+              </CardContent>
+            </Card>
+
+            {/* APP INFO */}
+            <Card className="border-none shadow-sm bg-gradient-to-br from-gray-800 to-gray-900">
+              <CardContent className="pt-6 pb-4">
+                <div className="text-center space-y-1">
+                  <p className="text-gray-400 text-xs">SmartPick v1.0.0</p>
+                  <p className="text-gray-500 text-xs">© 2025 SmartPick. All rights reserved.</p>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

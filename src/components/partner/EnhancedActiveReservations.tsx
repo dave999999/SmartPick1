@@ -55,202 +55,175 @@ export default function EnhancedActiveReservations({
 
   if (reservations.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Package className="w-5 h-5" />
-            Active Reservations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-gray-500">
-            <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p>No active reservations</p>
-            <p className="text-sm mt-1">Customers waiting for pickup will appear here</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="text-center py-12">
+        <Clock className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-500 text-sm">No active reservations</p>
+        <p className="text-xs text-gray-400 mt-1">Customers waiting for pickup will appear here</p>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Package className="w-5 h-5" />
-            Active Reservations
-            <Badge className="ml-2 bg-coral-500">{reservations.length}</Badge>
-          </CardTitle>
-          <span className="text-xs sm:text-sm text-gray-500">
-            Customers waiting for pickup
-          </span>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {reservations.map((reservation) => {
-          const isProcessing = processingIds.has(reservation.id);
-          const timeRemaining = getTimeRemaining(reservation.expires_at);
-          const isExpiringSoon = timeRemaining.includes('m remaining') && !timeRemaining.includes('h');
+    <div className="space-y-2">
+      {/* Header with count */}
+      <div className="flex items-center gap-2 px-1 mb-2">
+        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+        <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wide">Active Reservations</h3>
+        <Badge className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+          {reservations.length}
+        </Badge>
+      </div>
 
-          return (
-            <Card
-              key={reservation.id}
-              className={`${
-                isExpiringSoon ? 'border-orange-300 bg-orange-50' : 'border-gray-200'
-              }`}
-            >
-              <CardContent className="p-3 sm:p-4">
-                <div className="space-y-3">
-                  {/* Customer Info */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="font-semibold text-sm sm:text-base truncate">
-                          {reservation.customer?.name || 'Customer'}
-                        </span>
-                      </div>
-                      {/* Do not show customer phone to partners for privacy */}
-                    </div>
+      {/* Reservation Cards */}
+      {reservations.map((reservation) => {
+        const isProcessing = processingIds.has(reservation.id);
+        const timeRemaining = getTimeRemaining(reservation.expires_at);
+        const isExpiringSoon = timeRemaining.includes('m remaining') && !timeRemaining.includes('h');
+        const expired = isExpired(reservation.expires_at);
 
-                    {/* Time Badge */}
-                    <Badge
-                      className={`text-xs px-2 py-1 ${
-                        isExpiringSoon
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-blue-500 text-white'
-                      }`}
-                    >
-                      <Clock className="w-3 h-3 mr-1" />
-                      {timeRemaining}
-                    </Badge>
+        return (
+          <Card
+            key={reservation.id}
+            className={`border-none shadow-sm overflow-hidden ${
+              expired
+                ? 'bg-gradient-to-br from-red-50 to-red-100/50'
+                : isExpiringSoon
+                ? 'bg-gradient-to-br from-orange-50 to-orange-100/50'
+                : 'bg-gradient-to-br from-blue-50 to-blue-100/50'
+            }`}
+          >
+            <CardContent className="p-3">
+              {/* Customer + Time + Price - Single Row */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                    <User className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-gray-900 text-xs truncate">
+                      {reservation.customer?.name || 'Customer'}
+                    </p>
+                    <p className="text-xs text-gray-600 truncate">
+                      {reservation.offer?.title}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-sm font-bold text-teal-600">
+                    ₾{reservation.total_price.toFixed(2)}
+                  </span>
+                  <Badge
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      expired
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                        : isExpiringSoon
+                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                    }`}
+                  >
+                    <Clock className="w-3 h-3 mr-0.5" />
+                    {timeRemaining}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Qty + QR Code - Compact Row */}
+              <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-gray-200/50">
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <Package className="w-3 h-3" />
+                  <span>x{reservation.quantity}</span>
+                </div>
+                <div className="font-mono font-bold text-xs text-gray-900">
+                  {reservation.qr_code}
+                </div>
+              </div>
+
+              {/* Action Buttons - Compact */}
+              {expired ? (
+                <div className="space-y-1.5">
+                  {/* Expired warning - compact */}
+                  <div className="bg-red-100 border border-red-300 rounded-lg px-2 py-1">
+                    <p className="text-xs text-red-700 font-medium text-center">
+                      ⚠️ Expired
+                    </p>
                   </div>
 
-                  {/* Offer Details */}
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{reservation.offer?.title}</p>
-                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-                          <span>Qty: {reservation.quantity}</span>
-                          <span className="font-semibold text-green-600">
-                            {reservation.total_price} ₾
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Primary: Mark as Picked Up */}
+                  <Button
+                    onClick={() => onMarkAsPickedUp(reservation)}
+                    disabled={isProcessing}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white h-8 rounded-lg font-semibold text-xs shadow-sm"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        Picked Up
+                      </>
+                    )}
+                  </Button>
 
-                    {/* Pickup Window */}
-                    <div className="flex items-center gap-2 text-xs text-gray-600 pt-2 border-t">
-                      <Clock className="w-3 h-3" />
-                      <span>
-                        Pickup: {formatTime(reservation.offer?.pickup_start || reservation.created_at)} -{' '}
-                        {formatTime(reservation.expires_at)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* QR Code */}
-                  <div className="bg-blue-50 rounded-lg p-2 text-center">
-                    <p className="text-xs text-gray-600 mb-1">QR Code</p>
-                    <p className="font-mono font-bold text-sm">{reservation.qr_code}</p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  {isExpired(reservation.expires_at) ? (
-                    // Show three buttons for expired reservations
-                    <div className="space-y-2">
-                      <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
-                        <p className="text-xs text-red-700 font-medium text-center">
-                          ⚠️ This reservation has expired
-                        </p>
-                      </div>
-                      {/* Picked Up button */}
-                      <Button
-                        onClick={() => onMarkAsPickedUp(reservation)}
-                        disabled={isProcessing}
-                        className="w-full bg-green-600 hover:bg-green-700 h-11"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Picked Up
-                          </>
-                        )}
-                      </Button>
-                      {/* No-Show buttons */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <Button
-                          onClick={() => onConfirmNoShow(reservation)}
-                          disabled={isProcessing}
-                          variant="destructive"
-                          className="w-full h-11"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Confirm No-Show
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          onClick={() => onForgiveCustomer(reservation)}
-                          disabled={isProcessing}
-                          variant="outline"
-                          className="w-full h-11 border-green-400 text-green-700 hover:bg-green-50"
-                        >
-                          {isProcessing ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-700 mr-2"></div>
-                              Processing...
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Forgive Customer
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Single button for active reservations
+                  {/* Secondary Actions */}
+                  <div className="grid grid-cols-2 gap-1.5">
                     <Button
-                      onClick={() => onMarkAsPickedUp(reservation)}
+                      onClick={() => onConfirmNoShow(reservation)}
                       disabled={isProcessing}
-                      className="w-full bg-green-600 hover:bg-green-700 h-11 sm:h-12"
+                      className="h-8 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 font-medium text-xs"
                     >
                       {isProcessing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Processing...
-                        </>
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-700"></div>
                       ) : (
                         <>
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          ✅ Mark as Picked Up
+                          <XCircle className="w-3.5 h-3.5 mr-0.5" />
+                          No-Show
                         </>
                       )}
                     </Button>
-                  )}
+                    <Button
+                      onClick={() => onForgiveCustomer(reservation)}
+                      disabled={isProcessing}
+                      className="h-8 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 border border-green-300 font-medium text-xs"
+                    >
+                      {isProcessing ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-green-700"></div>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5 mr-0.5" />
+                          Forgive
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </CardContent>
-    </Card>
+              ) : (
+                <Button
+                  onClick={() => onMarkAsPickedUp(reservation)}
+                  disabled={isProcessing}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white h-9 rounded-lg font-semibold text-sm shadow-sm hover:shadow-md transition-all duration-300"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-1.5" />
+                      Mark as Picked Up
+                    </>
+                  )}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 

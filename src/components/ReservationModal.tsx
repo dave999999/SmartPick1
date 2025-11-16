@@ -24,7 +24,6 @@ import { BuyPointsModal } from './BuyPointsModal';
 import HeaderImage from './reservation/HeaderImage';
 import TitleSection from './reservation/TitleSection';
 import UnifiedPriceCard from './reservation/UnifiedPriceCard';
-import PickupWindowCard from './reservation/PickupWindowCard';
 import ReserveButton from './reservation/ReserveButton';
 
 interface ReservationModalProps {
@@ -307,13 +306,6 @@ export default function ReservationModal({
     toast.success(`🎉 Success! You now have ${newBalance} SmartPoints`);
   };
 
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const getTimeRemaining = (expiresAt: string) => {
     const now = new Date();
@@ -327,11 +319,7 @@ export default function ReservationModal({
     return `${minutes}m left`;
   };
 
-  const getPickupTimes = (offer: Offer) => {
-    const start = offer.pickup_start || offer.pickup_window?.start || '';
-    const end = offer.pickup_end || offer.pickup_window?.end || '';
-    return { start, end };
-  };
+  // Pickup window helpers removed (section no longer displayed)
 
   const handleShareFacebook = () => {
     if (!offer) return;
@@ -375,13 +363,12 @@ export default function ReservationModal({
 
   if (!offer) return null;
 
-  const pickupTimes = getPickupTimes(offer);
   const totalPrice = offer.smart_price * quantity;
   const maxQuantity = Math.min(3, offer.quantity_available); // Enforce 3-unit max
   const timeRemaining = getTimeRemaining(offer.expires_at);
   const isExpired = offer.expires_at && new Date(offer.expires_at).getTime() <= Date.now();
-  const isExpiringSoon = offer.expires_at &&
-    new Date(offer.expires_at).getTime() - new Date().getTime() < 60 * 60 * 1000; // Less than 1 hour
+  const isExpiringSoon = Boolean(offer.expires_at &&
+    new Date(offer.expires_at).getTime() - new Date().getTime() < 60 * 60 * 1000); // Less than 1 hour
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -422,13 +409,15 @@ export default function ReservationModal({
         )}
 
         {/* Content Area with padding - white background starts here */}
-        <div className="px-5 pb-6 pt-24 space-y-4 bg-white rounded-b-xl shadow-xl">
+  <div className="px-5 pb-6 pt-24 space-y-4 bg-white rounded-b-xl shadow-xl">
           {/* Title Section Component */}
           <TitleSection
             title={offer.title}
             description={offer.description}
             partnerName={offer.partner?.business_name || 'Unknown'}
             partnerAddress={offer.partner?.address}
+              timeRemaining={timeRemaining}
+              isExpiringSoon={isExpiringSoon}
             onShareFacebook={handleShareFacebook}
             onShareTwitter={handleShareTwitter}
             onShareInstagram={handleShareInstagram}
@@ -494,20 +483,7 @@ export default function ReservationModal({
             </Alert>
           )}
 
-          {/* Pickup Window Card Component */}
-          {pickupTimes.start && pickupTimes.end && (
-            <PickupWindowCard
-              startTime={formatTime(pickupTimes.start)}
-              endTime={formatTime(pickupTimes.end)}
-              countdown={timeRemaining}
-              is24Hours={offer.partner?.open_24h || false}
-              businessHours={offer.partner?.open_24h ? null : (
-                offer.partner?.opening_time && offer.partner?.closing_time
-                  ? { open: offer.partner.opening_time, close: offer.partner.closing_time }
-                  : null
-              )}
-            />
-          )}
+          {/* Pickup window section removed per request */}
 
           {/* Reserve Button Component with Total Price */}
           <ReserveButton

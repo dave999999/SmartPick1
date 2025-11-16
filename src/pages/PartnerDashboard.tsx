@@ -39,36 +39,31 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuShortcut,
+} from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import Plus from 'lucide-react/dist/esm/icons/plus';
-import Package from 'lucide-react/dist/esm/icons/package';
 import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
 import QrCode from 'lucide-react/dist/esm/icons/qr-code';
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
-import Pause from 'lucide-react/dist/esm/icons/pause';
-import Play from 'lucide-react/dist/esm/icons/play';
 import LogOut from 'lucide-react/dist/esm/icons/log-out';
-import Edit from 'lucide-react/dist/esm/icons/edit';
 import Lock from 'lucide-react/dist/esm/icons/lock';
-import Utensils from 'lucide-react/dist/esm/icons/utensils';
-import MessageSquare from 'lucide-react/dist/esm/icons/message-square';
-import Calendar from 'lucide-react/dist/esm/icons/calendar';
-import DollarSign from 'lucide-react/dist/esm/icons/dollar-sign';
-import Hash from 'lucide-react/dist/esm/icons/hash';
-import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
-import Filter from 'lucide-react/dist/esm/icons/filter';
+import User from 'lucide-react/dist/esm/icons/user';
+import Home from 'lucide-react/dist/esm/icons/home';
+import Wallet from 'lucide-react/dist/esm/icons/wallet';
 import Camera from 'lucide-react/dist/esm/icons/camera';
+import { Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import QRScanner from '@/components/QRScanner';
 import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
@@ -80,13 +75,14 @@ import { useI18n } from '@/lib/i18n';
 import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
 import PendingPartnerStatus from '@/components/partner/PendingPartnerStatus';
 import PartnerAnalytics from '@/components/partner/PartnerAnalytics';
+import PartnerOffers from '@/components/partner/PartnerOffers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
 // (Language switch removed from this page — language control moved to Index header)
 
 export default function PartnerDashboard() {
   logger.log('🚨🚨🚨 PARTNER DASHBOARD LOADED - Debug Build 20251109204500 🚨🚨🚨');
-  const { t } = useI18n();
+  const { t, language, setLanguage } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]); // Active reservations only
@@ -102,6 +98,7 @@ export default function PartnerDashboard() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [activeView, setActiveView] = useState('reservations');
   const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -115,26 +112,10 @@ export default function PartnerDashboard() {
   const [lastQrResult, setLastQrResult] = useState<null | 'success' | 'error'>(null);
   // Auto-expiration for 24h businesses: 12 hours by spec
   const [autoExpire6h, setAutoExpire6h] = useState(true);
-  const [offerFilter, setOfferFilter] = useState<'all' | 'active' | 'expired' | 'sold_out' | 'scheduled'>('all');
   // Offer scheduling
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledPublishAt, setScheduledPublishAt] = useState('');
-  const [selectedOffers, setSelectedOffers] = useState<Set<string>>(new Set());
-  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
   const navigate = useNavigate();
-
-  // Derive display status for an offer based on quantity and time
-  const getOfferDisplayStatus = (offer: Offer): string => {
-    const now = Date.now();
-    if (offer.expires_at) {
-      const exp = new Date(offer.expires_at).getTime();
-      if (!isNaN(exp) && exp <= now) return 'EXPIRED';
-    }
-    if (typeof offer.quantity_available === 'number' && offer.quantity_available <= 0) {
-      return 'SOLD_OUT';
-    }
-    return offer.status;
-  };
 
   // Check if partner is pending - case insensitive
   const isPending = partner?.status?.toUpperCase() === 'PENDING';
@@ -216,15 +197,22 @@ export default function PartnerDashboard() {
         setPartnerPoints(pointsData);
 
         // Calculate analytics
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         const totalReservations = reservationsData.length;
         const itemsSold = reservationsData.filter(r => r.status === 'PICKED_UP').reduce((sum, r) => sum + r.quantity, 0);
-        const revenue = reservationsData.filter(r => r.status === 'PICKED_UP').reduce((sum, r) => sum + r.total_price, 0);
+        
+        // Calculate TODAY'S revenue (must match itemsPickedUp timeframe)
+        const todayRevenue = reservationsData
+          .filter(r => r.status === 'PICKED_UP' && r.picked_up_at && new Date(r.picked_up_at) >= today)
+          .reduce((sum, r) => sum + r.total_price, 0);
         
         setAnalytics({
           totalOffers: offersData.length,
           totalReservations,
           itemsSold,
-          revenue
+          revenue: todayRevenue  // Changed from all-time revenue to today's revenue
         });
       } else {
         // Status is REJECTED or other
@@ -266,7 +254,15 @@ export default function PartnerDashboard() {
           // Close create dialog and open purchase dialog
           setIsCreateDialogOpen(false);
           setIsPurchaseSlotDialogOpen(true);
-          toast.info(t('partner.points.needMoreSlots'));
+          
+          // Show prominent error with clear explanation
+          toast.error(
+            `You've used all ${partnerPoints.offer_slots} listing slots! Buy more slots to create new offers.`,
+            { 
+              duration: 6000,
+              description: `Current: ${activeOfferCount}/${partnerPoints.offer_slots} slots used`
+            }
+          );
           setIsSubmitting(false);
           return;
         }
@@ -615,7 +611,22 @@ export default function PartnerDashboard() {
         await loadPartnerData();
       } catch (error) {
         logger.error('Error creating new offer:', error);
-    toast.error(t('partner.dashboard.toast.offerCreateFailed'));
+        
+        // Check if error is about slot limits
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('maximum') || errorMessage.includes('slots') || errorMessage.includes('slot limit')) {
+          // Open purchase dialog with clear message
+          setIsPurchaseSlotDialogOpen(true);
+          toast.error(
+            `🚫 All listing slots are in use!`,
+            { 
+              duration: 6000,
+              description: errorMessage
+            }
+          );
+        } else {
+          toast.error(t('partner.dashboard.toast.offerCreateFailed'));
+        }
       } finally {
         setProcessingIds(prev => {
           const next = new Set(prev);
@@ -787,16 +798,6 @@ export default function PartnerDashboard() {
     setIsEditDialogOpen(true);
   };
 
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'BAKERY': return '🥖';
-      case 'RESTAURANT': return '🍽️';
-      case 'CAFE': return '☕';
-      case 'GROCERY': return '🛒';
-      default: return '🏷️';
-    }
-  };
-
   // Purchase additional offer slot handler
   const handlePurchaseSlot = async () => {
     if (!partnerPoints) return;
@@ -831,18 +832,6 @@ export default function PartnerDashboard() {
       setIsPurchasing(false);
     }
   };
-
-  // Filter offers based on selected filter
-  const filteredOffers = offers.filter(offer => {
-    const displayStatus = getOfferDisplayStatus(offer);
-
-    if (offerFilter === 'all') return true;
-    if (offerFilter === 'active') return displayStatus === 'ACTIVE';
-    if (offerFilter === 'expired') return displayStatus === 'EXPIRED';
-    if (offerFilter === 'sold_out') return displayStatus === 'SOLD_OUT';
-
-    return true;
-  });
 
   if (isLoading) {
     return (
@@ -898,10 +887,9 @@ export default function PartnerDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9]" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
       {/* Header */}
-      <header className="bg-white border-b border-[#E8F9F4] sticky top-0 z-50 shadow-sm">
+      <header className="bg-white/95 backdrop-blur-md border-b border-[#E8F9F4] sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <img src="/icon1.png" alt="SmartPick icon" className="h-8 md:h-10 w-8 md:w-10 object-contain" />
             <div className="leading-tight">
               <h1 className="text-lg md:text-xl font-extrabold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
                 {partner?.business_name}
@@ -909,50 +897,117 @@ export default function PartnerDashboard() {
               <p className="text-[11px] md:text-xs text-neutral-500">{t('partner.dashboard.title')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 md:gap-2">
-            {/* Partner Points Display - Mobile: compact, Desktop: full */}
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Elegant Wallet Button - Always visible */}
             {partnerPoints && (
-              <Button
-                variant="outline"
+              <button
                 onClick={() => setIsPurchaseSlotDialogOpen(true)}
-                className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-1.5 md:py-2 h-9 md:h-auto bg-gradient-to-r from-[#00C896] to-[#009B77] text-white rounded-full border-none hover:from-[#00B588] hover:to-[#008866] hover:scale-105 transition-all"
+                className="group shrink-0 relative h-11 md:h-12 px-4 md:px-5 rounded-2xl bg-gradient-to-br from-[#00C896] via-[#00B588] to-[#009B77] shadow-lg hover:shadow-2xl active:scale-[0.98] transition-all duration-300 overflow-hidden"
               >
-                <DollarSign className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                <div className="flex flex-col items-start leading-tight">
-                  <span className="text-[10px] md:text-xs font-semibold">{partnerPoints.balance}</span>
-                  <span className="text-[9px] md:text-[10px] opacity-90 hidden sm:inline">{partnerPoints.offer_slots} slots</span>
+                {/* Shine effect */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                
+                {/* Content */}
+                <div className="relative flex items-center gap-2.5 md:gap-3">
+                  {/* Wallet Icon in elegant container */}
+                  <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-white/20 backdrop-blur-sm">
+                    <Wallet className="w-4 h-4 md:w-[18px] md:h-[18px] text-white drop-shadow-md" strokeWidth={2.5} />
+                  </div>
+                  
+                  {/* Balance and Label */}
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-xs md:text-sm font-bold text-white drop-shadow-sm tracking-wide">
+                      {partnerPoints.balance} ₾
+                    </span>
+                    <span className="text-[10px] md:text-xs text-white/90 font-medium">
+                      Wallet
+                    </span>
+                  </div>
+                  
+                  {/* Slots badge - desktop only */}
+                  <div className="hidden md:flex items-center gap-1 ml-1 px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur-sm">
+                    <span className="text-[10px] font-semibold text-white/95">{partnerPoints.offer_slots}</span>
+                    <span className="text-[9px] text-white/80">slots</span>
+                  </div>
                 </div>
-              </Button>
+              </button>
             )}
-            <Button
-              variant="outline"
-              className="h-9 md:h-11 rounded-full text-xs md:text-sm"
-              onClick={() => setIsEditProfileOpen(true)}
-            >
-              <Edit className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">{t('partner.dashboard.editProfile')}</span>
-              <span className="sm:hidden">{t('partner.dashboard.edit')}</span>
-            </Button>
-            {/* Customer View - Mobile: icon only, Desktop: full text */}
-            <Button
-              variant="outline"
-              className="h-9 md:h-11 rounded-full px-2 md:px-4"
-              onClick={() => navigate('/')}
-              title={t('partner.dashboard.customerView')}
-            >
-              <span className="md:hidden text-base">🏠</span>
-              <span className="hidden md:inline">🏠 {t('partner.dashboard.customerView')}</span>
-            </Button>
-            {/* Sign Out - Mobile: icon only, Desktop: with text */}
-            <Button
-              variant="outline"
-              className="h-9 md:h-11 rounded-full px-2 md:px-4"
-              onClick={handleSignOut}
-              title={t('partner.dashboard.signOut')}
-            >
-              <LogOut className="w-3.5 h-3.5 md:w-4 md:h-4 md:mr-2" />
-              <span className="hidden md:inline">{t('partner.dashboard.signOut')}</span>
-            </Button>
+            
+            {/* Combined Menu - All options in one dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 h-9 w-9 md:h-10 md:w-10 rounded-full border-2 border-gray-200 hover:border-[#00C896] hover:bg-gray-50 transition-all"
+                >
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-gray-700" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg">
+                <DropdownMenuLabel className="font-semibold text-gray-900">
+                  {partner?.business_name}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                {/* Customer View Options */}
+                <DropdownMenuItem onClick={() => navigate('/my-picks')} className="cursor-pointer py-2.5 focus:bg-gray-50">
+                  <Star className="w-4 h-4 mr-3 text-gray-600" />
+                  <span className="text-sm font-medium">{t('header.myPicks')}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/favorites')} className="cursor-pointer py-2.5 focus:bg-gray-50">
+                  <Heart className="w-4 h-4 mr-3 text-gray-600" />
+                  <span className="text-sm font-medium">Favorites</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer py-2.5 focus:bg-gray-50">
+                  <UserCircle className="w-4 h-4 mr-3 text-gray-600" />
+                  <span className="text-sm font-medium">{t('header.profile')}</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Partner Options */}
+                <DropdownMenuItem onClick={() => navigate('/')} className="cursor-pointer py-2.5 focus:bg-gray-50">
+                  <Home className="w-4 h-4 mr-3 text-gray-600" />
+                  <span className="text-sm font-medium">{t('partner.dashboard.customerView')}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setIsEditProfileOpen(true)}
+                  className="cursor-pointer py-2.5 focus:bg-gray-50"
+                >
+                  <Edit className="w-4 h-4 mr-3 text-gray-600" />
+                  <span className="text-sm font-medium">{t('partner.dashboard.editProfile')}</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Language Submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="cursor-pointer py-2.5">
+                    <Languages className="w-4 h-4 mr-3 text-gray-600" />
+                    <span className="text-sm font-medium">Language</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer">
+                      🇬🇧 English {language === 'en' && <DropdownMenuShortcut>✓</DropdownMenuShortcut>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLanguage('ka')} className="cursor-pointer">
+                      🇬🇪 ქართული {language === 'ka' && <DropdownMenuShortcut>✓</DropdownMenuShortcut>}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="cursor-pointer py-2.5 text-red-600 focus:bg-red-50 focus:text-red-700"
+                >
+                  <LogOut className="w-4 h-4 mr-3" />
+                  <span className="text-sm font-medium">{t('partner.dashboard.signOut')}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -976,12 +1031,16 @@ export default function PartnerDashboard() {
                 reservationsToday: stats.reservationsToday,
                 itemsPickedUp: stats.itemsPickedUp,
                 revenue: analytics.revenue,
+                usedSlots: stats.activeOffers,
+                totalSlots: partnerPoints?.offer_slots || 0,
               }}
+              activeView={activeView}
+              onCardClick={setActiveView}
               className="mb-6 md:mb-8"
             />
 
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
+            {/* Action Buttons - Hidden, but Dialogs kept for functionality via QuickActions */}
+            <div className="hidden flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
           <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
             setIsCreateDialogOpen(open);
             if (!open) {
@@ -1001,263 +1060,221 @@ export default function PartnerDashboard() {
                 {isPending && <Lock className="w-4 h-4 ml-2" />}
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
-              <DialogHeader>
-                <DialogTitle className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-                  {t('partner.dashboard.dialog.createTitle')}
+            <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto rounded-3xl">
+              <DialogHeader className="pb-3">
+                <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-teal-600" />
+                  Create New Offer
                 </DialogTitle>
-                <DialogDescription className="text-sm md:text-base">{t('partner.dashboard.dialog.createDescription')}</DialogDescription>
+                <DialogDescription className="text-sm text-gray-500">Fill in the details for your offer</DialogDescription>
               </DialogHeader>
 
-              {/* Single Page Form Header */}
-              <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] p-4 rounded-xl border-l-4 border-[#00C896] mb-6 shadow-sm">
-                <h3 className="font-semibold text-gray-900 mb-1">📝 {t('partner.dashboard.section.basic')}</h3>
-                <p className="text-sm text-gray-600">{t('partner.dashboard.dialog.createDescription')}</p>
-              </div>
-
-              <form onSubmit={handleCreateOffer} className="space-y-6">
-                {/* Basic Info Section */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.basic')}</h4>
-
-                    <div>
-                      <Label htmlFor="title" className="flex items-center gap-2 text-base font-semibold mb-2">
-                        <Utensils className="w-4 h-4 text-[#4CC9A8]" />
-                        {t('partner.dashboard.label.offerTitle')}
-                      </Label>
-                      <Input
-                        id="title"
-                        name="title"
-                        required
-                        placeholder={t('partner.dashboard.placeholder.title')}
-                        className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
-                      />
-                      {formErrors.title && <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="description" className="flex items-center gap-2 text-base font-semibold mb-2">
-                        <MessageSquare className="w-4 h-4 text-[#4CC9A8]" />
-                        {t('partner.dashboard.label.description')}
-                      </Label>
-                      <Textarea
-                        id="description"
-                        name="description"
-                        required
-                        placeholder={t('partner.dashboard.placeholder.description')}
-                        className="text-base min-h-[100px] rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
-                      />
-                      {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
-                    </div>
-
-                    {/* Auto Category Display */}
-                    <div>
-                      <Label className="flex items-center gap-2 text-base font-semibold mb-2">
-                        <Package className="w-4 h-4 text-[#4CC9A8]" />
-                        {t('partner.dashboard.label.category')}
-                      </Label>
-                      <div className="bg-gradient-to-r from-[#F9FFFB] to-[#EFFFF8] border border-[#DFF5ED] rounded-xl px-4 py-6 flex items-center gap-2">
-                        <span className="text-2xl">{getCategoryIcon(partner?.business_type || 'RESTAURANT')}</span>
-                        <span className="text-base font-medium text-gray-900">{partner?.business_type || 'RESTAURANT'}</span>
-                        <span className="text-sm text-[#00C896] ml-2">{t('partner.dashboard.category.auto')}</span>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{t('partner.dashboard.category.hint')}</p>
-                    </div>
-
-                    {/* Choose Image (opens library modal) */}
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setShowImageModal(true)}
-                        className="w-full rounded-lg bg-[#00C896] py-2 font-medium text-white transition hover:bg-[#009B77]"
-                      >
-                        {t('partner.dashboard.chooseImage')}
-                      </button>
-                      {selectedLibraryImage && (
-                        <img
-                          src={selectedLibraryImage}
-                          className="mt-2 h-40 w-full rounded-xl object-cover"
-                          alt="Selected product"
-                        />
-                      )}
-
-                      {showImageModal && (
-                        <ImageLibraryModal
-                          category={partner?.business_type || 'RESTAURANT'}
-                          onSelect={(url) => {
-                            setSelectedLibraryImage(url);
-                            setImageFiles([url]);
-                          }}
-                          onClose={() => setShowImageModal(false)}
-                        />
-                      )}
-                    </div>
-                </div>
-
-                {/* Pricing & Quantity Section */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.pricing')}</h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="quantity" className="flex items-center gap-2 text-base font-semibold mb-2">
-                          <Hash className="w-4 h-4 text-[#4CC9A8]" />
-                          {t('partner.dashboard.label.quantity')}
-                        </Label>
-                        <Input
-                          id="quantity"
-                          name="quantity"
-                          type="number"
-                          required
-                          min="1"
-                          placeholder="10"
-                          className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
-                        />
-                        {formErrors.quantity && <p className="text-red-500 text-sm mt-1">{formErrors.quantity}</p>}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="original_price" className="flex items-center gap-2 text-base font-semibold mb-2">
-                          <DollarSign className="w-4 h-4 text-gray-500" />
-                          {t('partner.dashboard.label.originalPrice')}
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="original_price"
-                            name="original_price"
-                            type="number"
-                            step="0.01"
-                            required
-                            placeholder="10.00"
-                            className="text-base py-6 pr-12 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
-                          />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₾</span>
-                        </div>
-                        {formErrors.original_price && <p className="text-red-500 text-sm mt-1">{formErrors.original_price}</p>}
-                      </div>
-                      <div>
-                        <Label htmlFor="smart_price" className="flex items-center gap-2 text-base font-semibold mb-2">
-                          <DollarSign className="w-4 h-4 text-[#4CC9A8]" />
-                          {t('partner.dashboard.label.smartPrice')}
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="smart_price"
-                            name="smart_price"
-                            type="number"
-                            step="0.01"
-                            required
-                            placeholder="6.00"
-                            className="text-base py-6 pr-12 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
-                          />
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4CC9A8] font-semibold">₾</span>
-                        </div>
-                        {formErrors.smart_price && <p className="text-red-500 text-sm mt-1">{formErrors.smart_price}</p>}
-                      </div>
-                    </div>
-
-                    {/* 24-Hour Business Auto-Expire Checkbox */}
-                    {is24HourBusiness && (
-                      <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <Checkbox
-                          id="auto_expire_6h"
-                          checked={autoExpire6h}
-                          onCheckedChange={(checked) => {
-                            setAutoExpire6h(checked as boolean);
-                            setFormErrors({});
-                          }}
-                        />
-                        <Label htmlFor="auto_expire_6h" className="text-sm cursor-pointer">
-                          This offer expires automatically in 12 hours
-                        </Label>
-                      </div>
-                    )}
-                </div>
-
-                {/* Pickup timing is set automatically */}
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.pickupTime')}</h4>
-                  <p className="text-sm text-gray-600">
-                    {t('partner.dashboard.pickup.autoSetTimes')}
-                    {" "}
-                    <span className="font-medium">{t('partner.dashboard.pickup.untilClosing')}</span> {t('partner.dashboard.pickup.ifDailyHours')}
-                    {" "}
-                    <span className="font-medium">{t('partner.dashboard.pickup.next12Hours')}</span> {t('partner.dashboard.pickup.if24h')}
-                  </p>
-                </div>
-
-                {/* Offer Scheduling Section */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900 text-lg border-b pb-2">{t('partner.dashboard.section.schedule')}</h4>
-
-                  <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <Checkbox
-                      id="is_scheduled"
-                      checked={isScheduled}
-                      onCheckedChange={(checked) => {
-                        setIsScheduled(checked as boolean);
-                        if (!checked) {
-                          setScheduledPublishAt('');
-                        }
-                      }}
-                    />
-                    <Label htmlFor="is_scheduled" className="text-sm cursor-pointer font-medium">
-                      {t('partner.dashboard.schedule.toggleLabel')}
-                    </Label>
+              <form onSubmit={handleCreateOffer} className="space-y-4">
+                {/* Basic Details */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="text-base">📝</span>
+                    <span>Basic Details</span>
                   </div>
 
-                  {isScheduled && (
+                  <div>
+                    <Label htmlFor="title" className="text-sm text-gray-600">
+                      Title / დასახელება
+                    </Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      required
+                      placeholder="e.g., Fresh Croissants"
+                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                    {formErrors.title && <p className="text-red-500 text-sm mt-1">{formErrors.title}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="description" className="text-sm text-gray-600">
+                      Description / აღწერა
+                    </Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      required
+                      placeholder="Describe your offer..."
+                      className="mt-1.5 min-h-[80px] rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 resize-none"
+                    />
+                    {formErrors.description && <p className="text-red-500 text-sm mt-1">{formErrors.description}</p>}
+                  </div>
+                </div>
+
+                {/* Pricing & Quantity */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <span className="text-base">💰</span>
+                    <span>Pricing & Quantity</span>
+                  </div>
+
+                  {/* Quantity */}
+                  <div>
+                    <Label htmlFor="quantity" className="text-sm text-gray-600">Quantity *</Label>
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      required
+                      min="1"
+                      placeholder="10"
+                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                    {formErrors.quantity && <p className="text-red-500 text-sm mt-1">{formErrors.quantity}</p>}
+                  </div>
+
+                  {/* Prices - Side by Side */}
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="scheduled_publish_at" className="flex items-center gap-2 text-base font-semibold mb-2">
-                        <Calendar className="w-4 h-4 text-[#4CC9A8]" />
-                        {t('partner.dashboard.label.publishDateTime')}
-                      </Label>
+                      <Label htmlFor="original_price" className="text-sm text-gray-600">Original Price (₾)</Label>
                       <Input
-                        id="scheduled_publish_at"
-                        type="datetime-local"
-                        value={scheduledPublishAt}
-                        onChange={(e) => setScheduledPublishAt(e.target.value)}
-                        min={new Date().toISOString().slice(0, 16)}
-                        required={isScheduled}
-                        className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896]"
+                        id="original_price"
+                        name="original_price"
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder="10.00"
+                        className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        The offer will automatically go live at the specified time
-                      </p>
+                      {formErrors.original_price && <p className="text-red-500 text-sm mt-1">{formErrors.original_price}</p>}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="smart_price" className="text-sm text-gray-600">Smart Price (₾)</Label>
+                      <Input
+                        id="smart_price"
+                        name="smart_price"
+                        type="number"
+                        step="0.01"
+                        required
+                        placeholder="6.00"
+                        className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                      />
+                      {formErrors.smart_price && <p className="text-red-500 text-sm mt-1">{formErrors.smart_price}</p>}
+                    </div>
+                  </div>
+
+                  {/* 24-Hour Business Auto-Expire Checkbox */}
+                  {is24HourBusiness && (
+                    <div className="flex items-center space-x-2 p-2.5 bg-blue-50 rounded-lg border border-blue-200">
+                      <Checkbox
+                        id="auto_expire_6h"
+                        checked={autoExpire6h}
+                        onCheckedChange={(checked) => {
+                          setAutoExpire6h(checked as boolean);
+                          setFormErrors({});
+                        }}
+                      />
+                      <Label htmlFor="auto_expire_6h" className="text-xs cursor-pointer text-gray-700">
+                        Auto-expire in 12 hours
+                      </Label>
                     </div>
                   )}
                 </div>
 
-                {/* Submit Buttons */}
-                <div className="flex gap-3 pt-6 border-t">
-                  <Button
+                {/* Choose Image */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-gray-600">Product Image</Label>
+                  <button
                     type="button"
-                    variant="outline"
-                    onClick={() => setIsCreateDialogOpen(false)}
-                    className="flex-1 py-6 text-base rounded-full border-[#E8F9F4] hover:border-gray-400"
+                    onClick={() => setShowImageModal(true)}
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium text-sm transition-all duration-300 hover:shadow-lg"
                   >
-                    {t('partner.dashboard.button.cancel')}
-                  </Button>
+                    📷 Choose Image
+                  </button>
+                  {selectedLibraryImage && (
+                    <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-teal-500">
+                      <img
+                        src={selectedLibraryImage}
+                        alt="Selected"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 left-2 bg-teal-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                        ✓ Selected
+                      </div>
+                    </div>
+                  )}
 
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 text-lg font-bold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        {t('partner.dashboard.button.creatingOffer')}
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-5 h-5 mr-2" />
-                        {t('partner.dashboard.button.createOffer')}
-                      </>
-                    )}
-                  </Button>
+                  {showImageModal && (
+                    <ImageLibraryModal
+                      category={partner?.business_type || 'RESTAURANT'}
+                      onSelect={(url) => {
+                        setSelectedLibraryImage(url);
+                        setImageFiles([url]);
+                      }}
+                      onClose={() => setShowImageModal(false)}
+                    />
+                  )}
+                </div>
+
+                {/* Offer Scheduling - Compact */}
+                {isScheduled && (
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_publish_at" className="text-sm text-gray-600">
+                      Publish At (optional)
+                    </Label>
+                    <Input
+                      id="scheduled_publish_at"
+                      type="datetime-local"
+                      value={scheduledPublishAt}
+                      onChange={(e) => setScheduledPublishAt(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      required={isScheduled}
+                      className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2 p-2.5 bg-gray-50 rounded-lg">
+                  <Checkbox
+                    id="is_scheduled"
+                    checked={isScheduled}
+                    onCheckedChange={(checked) => {
+                      setIsScheduled(checked as boolean);
+                      if (!checked) {
+                        setScheduledPublishAt('');
+                      }
+                    }}
+                  />
+                  <Label htmlFor="is_scheduled" className="text-xs cursor-pointer text-gray-700">
+                    Schedule for later
+                  </Label>
+                </div>
+
+                {/* Action Buttons - Sticky Footer */}
+                <div className="sticky bottom-0 bg-white pt-4 pb-2 -mx-6 px-6 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      className="rounded-xl border-gray-300 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white mr-1.5"></div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4 mr-1.5" />
+                          Create Offer
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </form>
             </DialogContent>
@@ -1385,6 +1402,10 @@ export default function PartnerDashboard() {
           </Dialog>
         </div>
 
+        {/* Content sections controlled by clickable stats cards */}
+
+          {activeView === 'reservations' && (
+            <div>
         {/* Active Reservations - Enhanced Mobile-First */}
         {isPending ? (
           <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg opacity-60">
@@ -1416,286 +1437,46 @@ export default function PartnerDashboard() {
             />
           </div>
         )}
+            </div>
+          )}
 
-        {/* Your Offers with Filter Tabs */}
-  <Card className={`mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg ${isPending ? 'opacity-60' : ''}`}>
-          <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
-                  📦 Your Offers
-                  {isPending && <Lock className="w-5 h-5 text-gray-400" />}
-                </CardTitle>
-                <CardDescription className="text-sm md:text-base">
-                  {isPending ? 'This section will be available after approval' : 'Manage your Smart-Time offers'}
-                </CardDescription>
-              </div>
-
-              {/* Filter Tabs */}
-              {!isPending && offers.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
-                  <Button
-                    variant={offerFilter === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setOfferFilter('all')}
-                    className={`rounded-full transition-all duration-300 ${
-                      offerFilter === 'all'
-                        ? 'bg-gradient-to-r from-[#00C896] to-[#009B77] text-white'
-                        : 'border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]'
-                    }`}
-                  >
-                    All ({offers.length})
-                  </Button>
-                  <Button
-                    variant={offerFilter === 'active' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setOfferFilter('active')}
-                    className={`rounded-full transition-all duration-300 ${
-                      offerFilter === 'active'
-                        ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'border-[#E8F9F4] hover:border-green-500 hover:bg-green-50'
-                    }`}
-                  >
-                    Active ({offers.filter(o => getOfferDisplayStatus(o) === 'ACTIVE').length})
-                  </Button>
-                  <Button
-                    variant={offerFilter === 'expired' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setOfferFilter('expired')}
-                    className={`rounded-full transition-all duration-300 ${
-                      offerFilter === 'expired'
-                        ? 'bg-gray-500 text-white hover:bg-gray-600'
-                        : 'border-[#E8F9F4] hover:border-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    Expired ({offers.filter(o => getOfferDisplayStatus(o) === 'EXPIRED').length})
-                  </Button>
-                  <Button
-                    variant={offerFilter === 'sold_out' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setOfferFilter('sold_out')}
-                    className={`rounded-full transition-all duration-300 ${
-                      offerFilter === 'sold_out'
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'border-[#E8F9F4] hover:border-red-500 hover:bg-red-50'
-                    }`}
-                  >
-                    Sold Out ({offers.filter(o => getOfferDisplayStatus(o) === 'SOLD_OUT').length})
-                  </Button>
-                </div>
+          {activeView === 'offers' && (
+            <div>
+              {isPending ? (
+                <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                      📦 Your Offers
+                      <Lock className="w-5 h-5 text-gray-400" />
+                    </CardTitle>
+                    <CardDescription className="text-sm md:text-base">
+                      This section will be available after approval
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 md:py-12">
+                      <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.pending.offersDisabled')}</p>
+                      <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.pending.createReach')}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <PartnerOffers
+                  offers={offers}
+                  onToggleOffer={handleToggleOffer}
+                  onEditOffer={openEditDialog}
+                  onDeleteOffer={handleDeleteOffer}
+                  onRefreshQuantity={handleRefreshQuantity}
+                  onCloneOffer={handleCreateNewFromOld}
+                  processingIds={processingIds}
+                />
               )}
             </div>
-          </CardHeader>
-          <CardContent>
-            {isPending ? (
-              <div className="text-center py-8 md:py-12">
-                <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.pending.offersDisabled')}</p>
-                <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.pending.createReach')}</p>
-              </div>
-            ) : offers.length === 0 ? (
-                <div className="text-center py-8 md:py-12">
-                  <Package className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.empty.noOffers')}</p>
-                  <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.offers.emptyCta')}</p>
-                </div>
-            ) : filteredOffers.length === 0 ? (
-              <div className="text-center py-8 md:py-12">
-                <Filter className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-sm md:text-base">{t('partner.dashboard.filter.none')}</p>
-              </div>
-            ) : (
-              <>
-                {/* Bulk Actions Toolbar */}
-                {selectedOffers.size > 0 && (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-                    <span className="text-sm font-medium text-blue-900">
-                      {selectedOffers.size} offer(s) selected
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          setIsBulkProcessing(true);
-                          for (const offerId of selectedOffers) {
-                            await handleToggleOffer(offerId, 'ACTIVE');
-                          }
-                          setSelectedOffers(new Set());
-                          setIsBulkProcessing(false);
-                        }}
-                        disabled={isBulkProcessing}
-                        className="bg-yellow-500 text-white hover:bg-yellow-600 border-none"
-                      >
-                        <Pause className="w-4 h-4 mr-1" /> Pause All
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          setIsBulkProcessing(true);
-                          for (const offerId of selectedOffers) {
-                            await handleToggleOffer(offerId, 'PAUSED');
-                          }
-                          setSelectedOffers(new Set());
-                          setIsBulkProcessing(false);
-                        }}
-                        disabled={isBulkProcessing}
-                        className="bg-green-500 text-white hover:bg-green-600 border-none"
-                      >
-                        <Play className="w-4 h-4 mr-1" /> Resume All
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedOffers(new Set())}
-                        disabled={isBulkProcessing}
-                      >
-                        Clear Selection
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-[#E8F9F4]">
-                        <TableHead className="w-12">
-                          <Checkbox
-                            checked={selectedOffers.size === filteredOffers.length && filteredOffers.length > 0}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedOffers(new Set(filteredOffers.map(o => o.id)));
-                              } else {
-                                setSelectedOffers(new Set());
-                              }
-                            }}
-                          />
-                        </TableHead>
-                        <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.title')}</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.category')}</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.price')}</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.available')}</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.status')}</TableHead>
-                      <TableHead className="text-gray-700 font-semibold">{t('partner.dashboard.table.actions')}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {filteredOffers.map((offer) => (
-                      <TableRow key={offer.id} className="border-[#E8F9F4] hover:bg-[#F9FFFB] transition-colors">
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedOffers.has(offer.id)}
-                            onCheckedChange={(checked) => {
-                              const newSelected = new Set(selectedOffers);
-                              if (checked) {
-                                newSelected.add(offer.id);
-                              } else {
-                                newSelected.delete(offer.id);
-                              }
-                              setSelectedOffers(newSelected);
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="font-semibold text-gray-900">{offer.title}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <span className="text-lg">{getCategoryIcon(offer.category)}</span>
-                            <span className="text-sm text-gray-600">{offer.category}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-bold text-[#00C896]">{offer.smart_price} ₾</div>
-                            <div className="text-xs text-gray-400 line-through">{offer.original_price} ₾</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="border-[#E8F9F4] font-medium">
-                            {offer.quantity_available}/{offer.quantity_total}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {(() => {
-                            const st = getOfferDisplayStatus(offer);
-                            const isActive = st === 'ACTIVE';
-                            const cls = isActive
-                              ? 'bg-green-100 text-green-800 border-green-200'
-                              : st === 'SOLD_OUT'
-                                ? 'bg-red-100 text-red-800 border-red-200'
-                                : st === 'EXPIRED'
-                                  ? 'bg-gray-100 text-gray-800 border-gray-200'
-                                  : st === 'PAUSED'
-                                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                    : 'bg-gray-100 text-gray-800 border-gray-200';
-                            return (
-                              <Badge className={`${cls} rounded-full font-medium`}>
-                                {st}
-                              </Badge>
-                            );
-                          })()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1.5">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
-                              onClick={() => handleToggleOffer(offer.id, offer.status)}
-                              disabled={processingIds.has(offer.id)}
-                              title={offer.status === 'ACTIVE' ? t('partner.dashboard.action.pause') : t('partner.dashboard.action.activate')}
-                            >
-                              {offer.status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-[#E8F9F4] hover:border-blue-500 hover:bg-blue-50"
-                              onClick={() => handleRefreshQuantity(offer.id)}
-                              disabled={processingIds.has(offer.id)}
-                              title={t('partner.dashboard.action.refreshQty')}
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="rounded-full bg-green-500 hover:bg-green-600 text-white"
-                              onClick={() => handleCreateNewFromOld(offer)}
-                              disabled={processingIds.has(offer.id) || isPending}
-                              title={t('partner.dashboard.action.clone')}
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-[#E8F9F4] hover:border-[#00C896] hover:bg-[#F9FFFB]"
-                              onClick={() => openEditDialog(offer)}
-                              title={t('partner.dashboard.action.edit')}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-full border-[#E8F9F4] hover:border-red-500 hover:bg-red-50"
-                              onClick={() => handleDeleteOffer(offer.id)}
-                              title={t('partner.dashboard.action.delete')}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+          )}
 
+          {activeView === 'analytics' && (
+            <div>
         {/* Partner Analytics */}
             <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
               <CardHeader>
@@ -1714,6 +1495,31 @@ export default function PartnerDashboard() {
                 />
               </CardContent>
             </Card>
+            </div>
+          )}
+
+          {activeView === 'today' && (
+            <div>
+        {/* Today's Performance - Items Picked Up */}
+            <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                  ✅ Today's Performance
+                </CardTitle>
+                <CardDescription className="text-sm md:text-base">
+                  Items picked up and completed reservations for today
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+                  <p className="text-4xl font-bold text-gray-900 mb-2">{stats.itemsPickedUp}</p>
+                  <p className="text-gray-600">Items picked up today</p>
+                </div>
+              </CardContent>
+            </Card>
+            </div>
+          )}
 
             {/* Notification Settings - Telegram */}
             {partner && (
@@ -1747,25 +1553,27 @@ export default function PartnerDashboard() {
         </button>
       )}
 
-      {/* Edit Offer Dialog */}
+      {/* Edit Offer Dialog - Minimalistic & Compact */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
-              {t('partner.dashboard.edit.dialogTitle')}
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto rounded-3xl">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <Edit className="w-5 h-5 text-teal-600" />
+              Edit Offer
             </DialogTitle>
-            <DialogDescription className="text-base">{t('partner.dashboard.edit.dialogDescription')}</DialogDescription>
+            <DialogDescription className="text-sm text-gray-500">Update your offer details</DialogDescription>
           </DialogHeader>
           {editingOffer && (
-            <form onSubmit={handleEditOffer} className="space-y-6">
-              {/* 📋 Basic Details Section */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
-                  <span>🏷️</span> Basic Details
-                </h4>
+            <form onSubmit={handleEditOffer} className="space-y-4">
+              {/* Basic Details */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <span className="text-base">📝</span>
+                  <span>Basic Details</span>
+                </div>
 
                 <div>
-                  <Label htmlFor="edit_title" className="text-sm font-semibold">
+                  <Label htmlFor="edit_title" className="text-sm text-gray-600">
                     Title / დასახელება
                   </Label>
                   <Input
@@ -1773,13 +1581,12 @@ export default function PartnerDashboard() {
                     name="title"
                     required
                     defaultValue={editingOffer.title}
-                    placeholder="e.g., Fresh Croissants / ახალი კრუასანები"
-                    className="mt-1"
+                    className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="edit_description" className="text-sm font-semibold">
+                  <Label htmlFor="edit_description" className="text-sm text-gray-600">
                     Description / აღწერა
                   </Label>
                   <Textarea
@@ -1787,49 +1594,36 @@ export default function PartnerDashboard() {
                     name="description"
                     required
                     defaultValue={editingOffer.description}
-                    placeholder={t('partner.dashboard.placeholder.descriptionEdit')}
-                    className="mt-1 min-h-[100px] resize-y"
+                    className="mt-1.5 min-h-[80px] rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 resize-none"
                   />
                 </div>
               </div>
 
-              {/* 💰 Pricing & Quantity Section */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
-                  <span>💰</span> {t('partner.dashboard.section.pricing')}
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit_category" className="text-sm font-semibold">{t('partner.dashboard.label.category')}</Label>
-                    <Input
-                      id="edit_category"
-                      value={partner?.business_type || editingOffer.category}
-                      disabled
-                      className="mt-1 bg-gray-50 cursor-not-allowed"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">{t('partner.dashboard.autoSetCategory')}</p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="edit_quantity" className="text-sm font-semibold">{t('partner.dashboard.label.quantity')}</Label>
-                    <Input
-                      id="edit_quantity"
-                      name="quantity"
-                      type="number"
-                      required
-                      min="1"
-                      defaultValue={editingOffer.quantity_total}
-                      className="mt-1"
-                    />
-                  </div>
+              {/* Pricing & Quantity */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                  <span className="text-base">💰</span>
+                  <span>Pricing & Quantity</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Quantity */}
+                <div>
+                  <Label htmlFor="edit_quantity" className="text-sm text-gray-600">Quantity *</Label>
+                  <Input
+                    id="edit_quantity"
+                    name="quantity"
+                    type="number"
+                    required
+                    min="1"
+                    defaultValue={editingOffer.quantity_total}
+                    className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                  />
+                </div>
+
+                {/* Prices - Side by Side */}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label htmlFor="edit_original_price" className="text-sm font-semibold">
-                      {t('partner.dashboard.label.originalPriceCurrency')}
-                    </Label>
+                    <Label htmlFor="edit_original_price" className="text-sm text-gray-600">Original Price (₾)</Label>
                     <Input
                       id="edit_original_price"
                       name="original_price"
@@ -1837,14 +1631,12 @@ export default function PartnerDashboard() {
                       step="0.01"
                       required
                       defaultValue={editingOffer.original_price}
-                      className="mt-1"
+                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="edit_smart_price" className="text-sm font-semibold">
-                      {t('partner.dashboard.label.smartPriceCurrency')}
-                    </Label>
+                    <Label htmlFor="edit_smart_price" className="text-sm text-gray-600">Smart Price (₾)</Label>
                     <Input
                       id="edit_smart_price"
                       name="smart_price"
@@ -1852,164 +1644,84 @@ export default function PartnerDashboard() {
                       step="0.01"
                       required
                       defaultValue={editingOffer.smart_price}
-                      className="mt-1"
+                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>
                 </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">{t('partner.dashboard.tip.smartPrice')}</p>
-                </div>
               </div>
 
-              {/* 🕒 Pickup Time Section */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
-                  <span>🕒</span> Pickup Time Window
-                </h4>
-
-                <div className="bg-[#F0FDF9] border border-[#DFF5ED] rounded-lg p-4">
-                  <p className="text-sm text-gray-700 mb-2">
-                    ⚙️ Pickup times are set <strong>automatically</strong> based on your business hours.
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {is24HourBusiness ? (
-                      <>📅 <strong>24/7 business:</strong> Your offer will be live for the next <strong>12 hours</strong>.</>
-                    ) : (
-                      <>📅 <strong>Regular hours:</strong> Your offer will be live until <strong>closing time today</strong>.</>
-                    )}
-                  </p>
-                  {editingOffer.pickup_start && editingOffer.pickup_end && (
-                    <div className="mt-3 pt-3 border-t border-[#DFF5ED]">
-                      <p className="text-sm font-semibold text-[#00C896]">
-                        Current window: {new Date(editingOffer.pickup_start).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        {' → '}
-                        {new Date(editingOffer.pickup_end).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        (Will be updated to current business hours on save)
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 📸 Product Image Section */}
-              <div className="space-y-3">
-                <h4 className="font-semibold text-gray-900 text-lg border-b pb-2 flex items-center gap-2">
-                  <span>📸</span> Product Image
-                </h4>
-
-                {/* Current Image Preview */}
-                {editingOffer.images && editingOffer.images.length > 0 && (
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">{t('partner.dashboard.edit.currentImage')}</p>
+              {/* Current Image Preview - Compact */}
+              {editingOffer.images && editingOffer.images.length > 0 && (
+                <div>
+                  <Label className="text-sm text-gray-600 mb-2 block">Current Image</Label>
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-gray-200">
                     <img
                       src={resolveOfferImageUrl(editingOffer.images[0], editingOffer.category)}
                       alt="Current offer"
-                      className="h-32 w-48 object-cover rounded-lg border-2 border-gray-200"
+                      className="w-full h-full object-cover"
                     />
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Choose Image Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowImageModal(true);
-                  }}
-                  className="w-full rounded-lg bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] py-3 font-semibold text-white transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2"
-                >
-                  📷 Choose New Image from Library
-                </button>
+              {/* Choose Image Button */}
+              <button
+                type="button"
+                onClick={() => setShowImageModal(true)}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium text-sm transition-all duration-300 hover:shadow-lg"
+              >
+                📷 Choose New Image
+              </button>
 
-                {selectedLibraryImage && (
-                  <div className="mt-2">
-                    <p className="text-sm text-green-600 font-medium">✓ New image selected from library</p>
-                    <img
-                      src={selectedLibraryImage}
-                      alt="Selected"
-                      className="mt-2 h-32 w-48 object-cover rounded-lg border-2 border-[#00C896]"
-                    />
-                  </div>
-                )}
-
-                {/* Image Library Modal */}
-                {showImageModal && (
-                  <ImageLibraryModal
-                    category={partner?.business_type || 'RESTAURANT'}
-                    onSelect={(url) => {
-                      setSelectedLibraryImage(url);
-                      setImageFiles([url]);
-                    }}
-                    onClose={() => setShowImageModal(false)}
+              {selectedLibraryImage && (
+                <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-teal-500">
+                  <img
+                    src={selectedLibraryImage}
+                    alt="Selected"
+                    className="w-full h-full object-cover"
                   />
-                )}
-
-                {/* Optional: Custom Upload for Approved Partners */}
-                {partner?.approved_for_upload && (
-                  <div className="mt-3 pt-3 border-t">
-                    <Label htmlFor="edit_custom_upload" className="text-sm text-gray-600">
-                      Or upload custom image (approved partners only)
-                    </Label>
-                    <Input
-                      id="edit_custom_upload"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-
-                        // Validation constants
-                        const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
-                        const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-
-                        // Check file type
-                        if (!ALLOWED_TYPES.includes(file.type.toLowerCase())) {
-                          toast.error(`${file.name}: Only JPG, PNG, and WebP images are allowed`);
-                          e.target.value = '';
-                          return;
-                        }
-
-                        // Check file size
-                        if (file.size > MAX_FILE_SIZE) {
-                          const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
-                          toast.error(`${file.name}: File too large (${sizeMB} MB). Maximum 2 MB allowed`);
-                          e.target.value = '';
-                          return;
-                        }
-
-                        setImageFiles([file]);
-                        setSelectedLibraryImage(null);
-                      }}
-                      className="mt-1"
-                    />
+                  <div className="absolute top-2 left-2 bg-teal-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                    ✓ New image
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Sticky Footer Buttons */}
-              <DialogFooter className="sticky bottom-0 bg-white pt-4 border-t mt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditDialogOpen(false);
-                    setSelectedLibraryImage(null);
-                    setImageFiles([]);
+              {/* Image Library Modal */}
+              {showImageModal && (
+                <ImageLibraryModal
+                  category={partner?.business_type || 'RESTAURANT'}
+                  onSelect={(url) => {
+                    setSelectedLibraryImage(url);
+                    setImageFiles([url]);
                   }}
-                  className="rounded-full border-[#E8F9F4] hover:border-gray-400"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  ✅ Update Offer
-                </Button>
-              </DialogFooter>
+                  onClose={() => setShowImageModal(false)}
+                />
+              )}
+
+              {/* Action Buttons - Sticky Footer */}
+              <div className="sticky bottom-0 bg-white pt-4 pb-2 -mx-6 px-6 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditDialogOpen(false);
+                      setSelectedLibraryImage(null);
+                      setImageFiles([]);
+                    }}
+                    className="rounded-xl border-gray-300 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-1.5" />
+                    Update Offer
+                  </Button>
+                </div>
+              </div>
             </form>
           )}
         </DialogContent>
@@ -2039,76 +1751,84 @@ export default function PartnerDashboard() {
 
       {/* Purchase Offer Slot Dialog */}
       <Dialog open={isPurchaseSlotDialogOpen} onOpenChange={setIsPurchaseSlotDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{t('partner.points.purchaseSlot')}</DialogTitle>
-            <DialogDescription>
-              {t('partner.points.purchaseSlotDesc')}
+        <DialogContent className="sm:max-w-md rounded-3xl p-6">
+          <DialogHeader className="pb-4">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 mx-auto mb-4">
+              <Wallet className="w-8 h-8 text-orange-600" />
+            </div>
+            <DialogTitle className="text-xl font-bold text-gray-900 text-center mb-2">
+              🚀 Need More Listing Slots?
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 text-center px-2">
+              You've reached your listing limit. Purchase additional slots to create more offers and grow your business!
             </DialogDescription>
           </DialogHeader>
+
           {partnerPoints && (
-            <div className="space-y-4 py-4">
-              <div className="bg-gradient-to-r from-[#E8F9F4] to-[#C9F9E9] p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">{t('partner.points.currentBalance')}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-[#00C896]">{partnerPoints.balance}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setIsPurchaseSlotDialogOpen(false);
-                        setIsBuyPointsModalOpen(true);
-                      }}
-                      className="text-xs bg-[#4CC9A8] text-white hover:bg-[#3db891] border-none"
-                    >
-                      + Buy Points
-                    </Button>
+            <div className="space-y-5 pt-2">
+              {/* Current Status - Clean Card */}
+              <div className="bg-gradient-to-br from-teal-50 to-teal-100/30 rounded-2xl p-5 border border-teal-200/60">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-xs text-teal-700 mb-1.5 font-medium">Current Balance</p>
+                    <p className="text-3xl font-bold text-teal-600">{partnerPoints.balance} pts</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-teal-700 mb-1.5 font-medium">Current Slots</p>
+                    <p className="text-3xl font-bold text-teal-600">{partnerPoints.offer_slots}</p>
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{t('partner.points.currentSlots')}</span>
-                  <span className="text-lg font-bold text-[#00C896]">{partnerPoints.offer_slots}</span>
-                </div>
               </div>
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-blue-900">{t('partner.points.nextSlotCost')}</span>
-                  <span className="text-xl font-bold text-blue-600">{(partnerPoints.offer_slots - 3) * 50}</span>
+
+              {/* Next Slot Cost - Prominent */}
+              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-gray-200">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-0.5">Next Slot Cost</p>
+                  <p className="text-xs text-gray-500">Price increases with each slot</p>
                 </div>
-                <p className="text-xs text-blue-700 mt-2">{t('partner.points.costIncreases')}</p>
+                <div className="text-3xl font-bold text-gray-900">{(partnerPoints.offer_slots - 3) * 50} pts</div>
               </div>
+
+              {/* Insufficient Balance Alert - Only show when needed */}
               {partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50 && (
-                <Alert className="bg-orange-50 border-orange-200">
-                  <AlertDescription className="text-orange-800">
-                    {t('partner.points.insufficientBalance')}
-                    <Button
-                      variant="link"
-                      onClick={() => {
-                        setIsPurchaseSlotDialogOpen(false);
-                        setIsBuyPointsModalOpen(true);
-                      }}
-                      className="text-[#00C896] font-semibold underline ml-2"
-                    >
-                      Buy Points
-                    </Button>
-                  </AlertDescription>
-                </Alert>
+                <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl border border-orange-200">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-orange-900 mb-1">Insufficient Balance</p>
+                    <p className="text-xs text-orange-700">You need more points to purchase this slot</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsPurchaseSlotDialogOpen(false);
+                      setIsBuyPointsModalOpen(true);
+                    }}
+                    className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-xl transition-all"
+                  >
+                    Buy Points
+                  </button>
+                </div>
               )}
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPurchaseSlotDialogOpen(false)}>
-              {t('partner.points.cancel')}
-            </Button>
-            <Button
-              onClick={handlePurchaseSlot}
-              disabled={isPurchasing || !partnerPoints || partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50}
-              className="bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white"
-            >
-              {isPurchasing ? t('partner.points.purchasing') : t('partner.points.confirmPurchase')}
-            </Button>
-          </DialogFooter>
+
+          {/* Action Buttons */}
+          <div className="pt-6 border-t border-gray-100 mt-6">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsPurchaseSlotDialogOpen(false)}
+                className="rounded-xl border-gray-300"
+              >
+                {t('partner.points.cancel')}
+              </Button>
+              <Button
+                onClick={handlePurchaseSlot}
+                disabled={isPurchasing || !partnerPoints || partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50}
+                className="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
+              >
+                {isPurchasing ? t('partner.points.purchasing') : t('partner.points.confirmPurchase')}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

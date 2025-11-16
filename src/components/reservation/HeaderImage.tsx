@@ -1,21 +1,19 @@
-import { Badge } from '@/components/ui/badge';
-
 interface HeaderImageProps {
   imageUrl: string | null;
   title: string;
   categoryName: string;
 }
 
-export default function HeaderImage({ imageUrl, title, categoryName }: HeaderImageProps) {
+export default function HeaderImage({ imageUrl, title }: HeaderImageProps) {
   return (
     <div className="relative w-full">
       {/* Header background section - transparent */}
-      <div className="relative w-full h-40 overflow-hidden rounded-t-xl">
+         <div className="relative w-full h-40 overflow-hidden rounded-t-xl">
       </div>
       
       {/* Circular plate image - overlapping */}
-      <div className="flex justify-center -mt-40 -mb-28">
-        <div className="relative w-72 h-72 rounded-full bg-white p-3 shadow-2xl">
+         <div className="flex justify-center -mt-40 -mb-28">
+        <div className="relative w-64 h-64 rounded-full bg-white p-2.5 shadow-2xl">
           {imageUrl ? (
             <img
               src={imageUrl}

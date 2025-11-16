@@ -19,11 +19,24 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
     return date;
   });
 
-  const lastActivityDate = stats.last_activity_date ? new Date(stats.last_activity_date) : null;
+  let lastActivityDate = stats.last_activity_date ? new Date(stats.last_activity_date) : null;
+  const today = new Date();
+  // Normalize to start of local day for consistent diff calculations
+  today.setHours(0,0,0,0);
+  if (lastActivityDate) {
+    lastActivityDate.setHours(0,0,0,0);
+    // Guard against future activity dates (clock skew)
+    if (lastActivityDate.getTime() > today.getTime()) {
+      lastActivityDate = today;
+    }
+  }
 
   const isDayActive = (date: Date) => {
-    if (!lastActivityDate) return false;
-    const daysDiff = Math.floor((lastActivityDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    if (!lastActivityDate || streakDays <= 0) return false;
+    // Normalize date to start of day
+    const d = new Date(date.getTime());
+    d.setHours(0,0,0,0);
+    const daysDiff = Math.floor((lastActivityDate.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
     return daysDiff >= 0 && daysDiff < streakDays;
   };
 

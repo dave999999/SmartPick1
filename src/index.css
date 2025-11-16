@@ -130,3 +130,61 @@
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* User Location Marker - Minimalist & Elegant with Pulse */
+.user-location-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.user-marker-wrapper {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pulsing rings around user location - centered at pin bottom */
+.user-pulse-ring {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  border: 3px solid #00C896;
+  border-radius: 50%;
+  animation: user-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  opacity: 0;
+  transform-origin: center center;
+}
+
+/* User pin image */
+.user-marker-pin {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  z-index: 2;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* Pulse animation keyframes */
+@keyframes user-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(2.8);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
