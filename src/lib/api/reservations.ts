@@ -266,8 +266,7 @@ export const getReservationById = async (reservationId: string): Promise<Reserva
     .select(`
       *,
       offer:offers(*),
-      partner:partners(*),
-      customer:users(name, email)
+      partner:partners(*)
     `)
     .eq('id', reservationId)
     .single();
@@ -311,8 +310,7 @@ export const getPartnerReservations = async (partnerId: string): Promise<Reserva
     .from('reservations')
     .select(`
       *,
-      offer:offers(*),
-      customer:users(name, email)
+      offer:offers(*)
     `)
     .eq('partner_id', partnerId)
     .order('created_at', { ascending: false });
@@ -385,7 +383,7 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
       // Fetch updated reservation with full details
       const { data: fetched, error: fetchError } = await supabase
         .from('reservations')
-        .select('*, offer:offers(*), customer:users(name, email), partner:partners(*)')
+        .select('*, offer:offers(*), partner:partners(*)')
         .eq('id', reservation.id)
         .single();
 
@@ -407,7 +405,6 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
     .select(`
       *,
       offer:offers(*),
-      customer:users(name, email),
       partner:partners(*)
     `)
     .eq('qr_code', qrCode)
@@ -466,7 +463,6 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     .select(`
       *,
       offer:offers(*),
-      customer:users(name, email),
       partner:partners(*)
     `)
     .eq('id', reservationId)
