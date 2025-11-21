@@ -1,0 +1,25 @@
+// Backup of ReservationModal.tsx before lazy-load / supabase indirection refactor
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Offer, User, PenaltyInfo } from '@/lib/types';
+import { createReservation, checkUserPenalty, getUserMaxSlots } from '@/lib/api';
+import { checkRateLimit } from '@/lib/rateLimiter';
+import { checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
+import { getCSRFToken } from '@/lib/csrf';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
+import { resolveOfferImageUrl } from '@/lib/api';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, Shield, X, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { updateMetaTags, generateShareUrls } from '@/lib/social-share';
+import { getUserPoints } from '@/lib/smartpoints-api';
+import { BuyPointsModal } from './BuyPointsModal';
+import { SlotUnlockModal } from './SlotUnlockModal';
+import HeaderImage from './reservation/HeaderImage';
+import TitleSection from './reservation/TitleSection';
+import UnifiedPriceCard from './reservation/UnifiedPriceCard';
+import ReserveButton from './reservation/ReserveButton';
+
+export default function ReservationModal() { return null; }

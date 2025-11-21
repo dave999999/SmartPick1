@@ -1,0 +1,63 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables (CRITICAL: Never commit these!)
+.env
+.env.*
+.env.local
+.env.example
+.env.development
+.env.captcha
+.env.example
+# DO commit these files (they have no real secrets, only feature flags)
+!.env.example
+!.env.production
+
+# SECURITY: Files with hardcoded credentials (NEVER commit!)
+create-admin.js
+create-admin-simple.js
+create-dummy-data.js
+*.service.js
+*-credentials.js
+*-secret.js
+*.key
+
+# Build output
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Supabase project files (security)
+supabase/.env
+supabase/functions/telegram-webhook/.env
+supabase/functions/telegram-webhook/secrets.json
+supabase/.temp
+.aider*
+
+# AI system config
+.mgx/
+settings.local.json
+.vercel
+
+# Misc: never commit torrent files
+*.torrent
+
+nul

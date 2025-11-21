@@ -1,0 +1,6 @@
+{
+  "version": "3.0.0-gamification",
+  "deployed": "2025-01-06T19:35:00Z",
+  "features": ["gamification", "achievements", "streaks", "levels", "referrals"],
+  "note": "Force redeploy - commit dd06e19"
+}

@@ -1,0 +1,181 @@
+import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { getCurrentUser } from './lib/api';
+import { supabase } from './lib/supabase';
+import { useActivityTracking } from './hooks/useActivityTracking';
+
+// Eager load: Only Index page (main landing) and essential components
+import Index from './pages/Index';
+import { InstallPWA } from './components/InstallPWA';
+import { IOSInstallPrompt } from './components/IOSInstallPrompt';
+import { OfflineBanner } from './components/OfflineBanner';
+import { QueueStatus } from './components/QueueStatus';
+import TopRightMenu from './components/layout/TopRightMenu';
+
+// Lazy load: All other routes for code splitting (~300 KB savings on initial load)
+const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard'));
+const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
+const ReservationDetail = lazy(() => import('./pages/ReservationDetail'));
+const MyPicks = lazy(() => import('./pages/MyPicks'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const ReserveOffer = lazy(() => import('./pages/ReserveOffer'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const NotificationsDebug = lazy(() => import('./pages/NotificationsDebug'));
+const MaintenanceMode = lazy(() => import('./pages/MaintenanceMode'));
+const UserProfile = lazy(() => import('./pages/UserProfile'));
+
+// Lazy load leaflet CSS only when map is needed
+const loadLeafletCSS = () => {
+  if (!document.querySelector('link[href*="leaflet.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+  }
+};
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white via-[#F0FFF9] to-[#E0F9F0]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+      <p className="text-gray-600 font-medium">Loading...</p>
+    </div>
+  </div>
+);
+
+const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+
+  // Track user activity for real-time monitoring
+  useActivityTracking();
+
+  useEffect(() => {
+    const checkMaintenanceAndUser = async () => {
+      try {
+        // Only check maintenance mode in production (not on localhost)
+        const isProduction = window.location.hostname !== 'localhost' && 
+                            window.location.hostname !== '127.0.0.1' &&
+                            !window.location.hostname.startsWith('192.168.');
+
+        if (!isProduction) {
+          // Skip maintenance mode check for local development
+          setIsMaintenanceMode(false);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check maintenance mode from database (only in production)
+        const { data: setting } = await supabase
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'maintenance_mode')
+          .single();
+
+        const maintenanceEnabled = setting?.value?.enabled === true;
+        setIsMaintenanceMode(maintenanceEnabled);
+
+        // If maintenance mode is enabled, check if user is admin
+        if (maintenanceEnabled) {
+          const { user } = await getCurrentUser();
+          setIsAdmin((user as any)?.role === 'ADMIN');
+        }
+      } catch (error) {
+        console.error('Error checking maintenance mode:', error);
+        setIsAdmin(false);
+        setIsMaintenanceMode(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkMaintenanceAndUser();
+  }, []);
+
+  // Show maintenance page if maintenance mode is on and user is not admin
+  if (isMaintenanceMode && !isAdmin && !isLoading) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <MaintenanceMode />
+      </Suspense>
+    );
+  }
+
+  // Show blank screen while checking user role during maintenance mode
+  if (isMaintenanceMode && isLoading) {
+    return null;
+  }
+
+  return (
+    <BrowserRouter>
+      {/* Global quick actions menu (top-right) */}
+      <TopRightMenu />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route
+            path="/partner"
+            element={
+              <ErrorBoundary
+                fallbackRender={({ error }) => (
+                  <div className="p-6 text-center">
+                    <h2 className="text-red-600 font-semibold">⚠️ Something went wrong</h2>
+                    <p className="text-gray-700">{error?.message}</p>
+                    <p className="text-sm text-gray-500">Component: Partner Dashboard</p>
+                  </div>
+                )}
+              >
+                <PartnerDashboard />
+              </ErrorBoundary>
+            }
+          />
+          <Route path="/partner/apply" element={<PartnerApplication />} />
+          <Route path="/my-picks" element={<MyPicks />} />
+          <Route path="/favorites" element={<Favorites />} />
+          <Route path="/profile" element={<UserProfile />} />
+          <Route path="/reservation/:id" element={<ReservationDetail />} />
+          <Route 
+            path="/reserve/:offerId" 
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <ReserveOffer onMount={loadLeafletCSS} />
+              </Suspense>
+            } 
+          />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/debug/notifications" element={<NotificationsDebug />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      {/* PWA Install Prompts */}
+      <InstallPWA />
+      <IOSInstallPrompt />
+      {/* Offline Banner */}
+      <OfflineBanner />
+      {/* Queue Status Indicator */}
+      <QueueStatus />
+    </BrowserRouter>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <AppContent />
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
