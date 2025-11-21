@@ -5,6 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createBOGClient } from "../../../src/lib/payments/bog.ts";
 import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts';
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { bogWebhookSchema, validateData, getValidationErrorMessage } from '../_shared/validation.ts';
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -63,20 +64,41 @@ serve(async (req) => {
       });
     }
 
-    // 3. Parse webhook body
+    // 3. Parse and validate webhook body with Zod schema
     const body = await req.json();
     console.log('[bog-webhook] Webhook body:', JSON.stringify(body, null, 2));
 
     const bog = createBOGClient();
-    const data = bog.parseWebhookData(body);
+    const rawData = bog.parseWebhookData(body);
 
-    if (!data.orderId) {
-      console.error('[bog-webhook] Missing orderId in webhook data');
-      return new Response(JSON.stringify({ error: "Missing orderId" }), { 
+    // SECURITY: Validate webhook data structure to prevent injection attacks
+    const validationResult = validateData(bogWebhookSchema, {
+      order_id: rawData.orderId,
+      external_order_id: rawData.externalOrderId || 'unknown',
+      status: rawData.status,
+      payment_hash: rawData.paymentHash,
+      transaction_id: rawData.transactionId,
+      card_mask: rawData.cardMask,
+      amount: rawData.amount,
+    });
+
+    if (!validationResult.success) {
+      const errorMsg = getValidationErrorMessage(validationResult.errors);
+      console.error('[bog-webhook] Validation failed:', errorMsg);
+      return new Response(JSON.stringify({ error: "Invalid webhook data", details: errorMsg }), { 
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
+
+    const data = {
+      orderId: validationResult.data.order_id,
+      externalOrderId: validationResult.data.external_order_id,
+      status: validationResult.data.status,
+      transactionId: validationResult.data.transaction_id,
+      paymentHash: validationResult.data.payment_hash,
+      cardMask: validationResult.data.card_mask,
+    };
 
     console.log('[bog-webhook] Parsed data:', { 
       orderId: data.orderId, 
