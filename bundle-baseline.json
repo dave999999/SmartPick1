@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2025-11-21T00:00:00.000Z",
+  "files": {
+    "map-vendor": {"rawKB": 152.48, "gzipKB": 44.20},
+    "supabase-vendor": {"rawKB": 162.88, "gzipKB": 39.60},
+    "AdminDashboard": {"rawKB": 185.52, "gzipKB": 39.99},
+    "chart-vendor": {"rawKB": 208.17, "gzipKB": 70.13},
+    "index": {"rawKB": 333.72, "gzipKB": 98.44},
+    "index-legacy": {"rawKB": 458.30, "gzipKB": 139.12}
+  }
+}

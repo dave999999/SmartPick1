@@ -1,0 +1,19 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "noImplicitAny": true,          // ✅ Force explicit types (Phase 4)
+    "noUnusedParameters": true,     // ✅ Detect unused function parameters
+    "skipLibCheck": true,           // Keep for build performance
+    "allowJs": true,                // Keep if you have JS files
+    "noUnusedLocals": true,         // ✅ Detect unused variables
+    "strictNullChecks": true        // ✅ Catch null/undefined bugs (Phase 3)
+  }
+}

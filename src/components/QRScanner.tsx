@@ -1,0 +1,225 @@
+import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Camera, CameraOff, AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
+
+interface QRScannerProps {
+  onScan: (decodedText: string) => void;
+  onError?: (error: string) => void;
+}
+
+export default function QRScanner({ onScan, onError }: QRScannerProps) {
+  const [isScanning, setIsScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<any | null>(null);
+  const [cameras, setCameras] = useState<any[]>([]);
+  const hasScannedRef = useRef(false); // Prevent multiple scans
+
+  useEffect(() => {
+    // Get available cameras on mount
+    (async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          setCameras(devices);
+        } else {
+          setError('No cameras found on this device');
+        }
+      } catch (err) {
+        logger.error('Error getting cameras:', err);
+        setError('Unable to access camera');
+      }
+    })();
+
+    return () => {
+      stopScanning();
+    };
+  }, []);
+
+  const startScanning = async () => {
+    if (!cameras.length) {
+      setError('No cameras available');
+      return;
+    }
+
+    try {
+      // Stop any existing scanner first
+      if (scannerRef.current) {
+        logger.log('⚠️ Stopping existing scanner before starting new one');
+        await stopScanning();
+      }
+
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const scanner = new Html5Qrcode('qr-reader');
+      scannerRef.current = scanner;
+      logger.log('📷 Initializing scanner...');
+
+      await scanner.start(
+        { facingMode: 'environment' }, // Use back camera if available
+        {
+          fps: 30, // Increased FPS for better detection on mobile
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Responsive qrbox size - 70% of the smaller dimension
+            const minEdgePercentage = 0.7;
+            const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+            return {
+              width: qrboxSize,
+              height: qrboxSize
+            };
+          },
+          aspectRatio: 1.0, // Square scanning box
+          disableFlip: false, // Allow flipped QR codes
+        },
+        (decodedText) => {
+          // Success callback - only process first scan
+          if (hasScannedRef.current) {
+            logger.log('✋ Already processed a scan, ignoring duplicate');
+            return;
+          }
+          
+          // Set flag IMMEDIATELY to block any further scans
+          hasScannedRef.current = true;
+          logger.log('✅ QR Code detected and scanned:', decodedText);
+          
+          // Stop scanner IMMEDIATELY to prevent duplicate scans
+          stopScanning();
+          
+          // Haptic feedback on mobile - success pattern (double vibrate)
+          if ('vibrate' in navigator) {
+            navigator.vibrate([100, 50, 100]); // Success pattern: vibrate-pause-vibrate
+          }
+          
+          // Visual feedback
+          const readerElement = document.getElementById('qr-reader');
+          if (readerElement) {
+            readerElement.style.border = '4px solid #00ff00';
+            setTimeout(() => {
+              readerElement.style.border = '';
+            }, 1000);
+          }
+          
+          // Call the onScan callback after a brief delay to ensure scanner has stopped
+          setTimeout(() => {
+            try {
+              onScan(decodedText);
+              logger.log('📤 Sent QR code to onScan callback');
+            } catch (e) {
+              logger.error('❌ Error in onScan callback:', e);
+            }
+          }, 100);
+        },
+        (_errorMessage) => {
+          // Error callback (called continuously while scanning)
+          // We don't want to show these continuous scan errors
+        }
+      );
+
+      setIsScanning(true);
+      setError(null);
+      logger.log('📷 Camera started successfully');
+    } catch (err: any) {
+      logger.error('❌ Error starting scanner:', err);
+      setError(err.message || 'Failed to start camera');
+      onError?.(err.message || 'Failed to start camera');
+    }
+  };
+
+  const stopScanning = async () => {
+    if (scannerRef.current) {
+      try {
+        if (isScanning) {
+          await scannerRef.current.stop();
+          logger.log('🛑 Scanner stopped');
+        }
+        scannerRef.current.clear();
+        scannerRef.current = null;
+      } catch (err) {
+        logger.error('❌ Error stopping scanner:', err);
+      }
+      setIsScanning(false);
+      // DON'T reset hasScannedRef here - keep it true to prevent rescans
+      // It will be reset when dialog is closed and reopened
+    }
+  };
+  
+  // Reset scan flag when scanner is mounted (dialog opens)
+  useEffect(() => {
+    hasScannedRef.current = false;
+    logger.log('🔄 QR Scanner mounted, reset scan flag');
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      {/* Scanner Container */}
+      <div className="relative rounded-lg overflow-hidden bg-black">
+        <div id="qr-reader" className="w-full"></div>
+
+        {!isScanning && (
+          <div className="aspect-video flex items-center justify-center bg-gray-100">
+            <div className="text-center p-6">
+              <CameraOff className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">Camera not active</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Click "Start Camera" to begin scanning
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Controls */}
+      <div className="flex gap-3">
+        {!isScanning ? (
+          <Button
+            onClick={startScanning}
+            disabled={!cameras.length}
+            className="flex-1 bg-[#00C896] hover:bg-[#00B588]"
+          >
+            <Camera className="w-4 h-4 mr-2" />
+            Start Camera
+          </Button>
+        ) : (
+          <Button
+            onClick={stopScanning}
+            variant="destructive"
+            className="flex-1"
+          >
+            <CameraOff className="w-4 h-4 mr-2" />
+            Stop Camera
+          </Button>
+        )}
+      </div>
+
+      {/* Instructions */}
+      <div className="text-sm text-gray-600 space-y-2">
+        <p className="font-semibold">Instructions:</p>
+        <ol className="list-decimal list-inside space-y-1 text-xs">
+          <li>Click "Start Camera" to activate your device camera</li>
+          <li>Point the camera at the customer's QR code (starts with "SP-")</li>
+          <li>Hold steady and ensure good lighting</li>
+          <li>Keep the QR code within the scanning square</li>
+          <li>The camera will stop automatically after scanning</li>
+        </ol>
+        
+        {isScanning && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-xs font-semibold text-blue-900">📷 Scanner Active</p>
+            <p className="text-xs text-blue-700 mt-1">Looking for QR codes (format: SP-XXXX-XXXXX)</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+

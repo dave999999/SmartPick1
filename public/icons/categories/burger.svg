@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <!-- Ultra-simple burger - just stacked layers -->
+
+  <!-- Top bun - semicircle -->
+  <path d="M6 14C6 10 10 7 16 7C22 7 26 10 26 14H6Z"
+        fill="#00C896"
+        stroke="#00C896"
+        stroke-width="2"/>
+
+  <!-- Patty - thick rectangle -->
+  <rect x="6" y="14" width="20" height="5"
+        fill="#00C896"/>
+
+  <!-- Bottom bun - rectangle -->
+  <rect x="6" y="19" width="20" height="5" rx="2"
+        fill="#00C896"
+        stroke="#00C896"
+        stroke-width="2"/>
+
+  <!-- Sesame seeds - bigger and fewer -->
+  <circle cx="11" cy="10" r="1.5" fill="white"/>
+  <circle cx="16" cy="9" r="1.5" fill="white"/>
+  <circle cx="21" cy="10" r="1.5" fill="white"/>
+</svg>
