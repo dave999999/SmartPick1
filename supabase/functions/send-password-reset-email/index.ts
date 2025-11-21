@@ -32,19 +32,44 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Rate limiting check
-    const { data: canSend } = await supabase.rpc('check_email_rate_limit', {
+    // Get IP address for rate limiting
+    const ipAddress = 
+      req.headers.get('cf-connecting-ip') ||
+      req.headers.get('x-real-ip') ||
+      req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      'unknown';
+
+    // Email-based rate limiting: 3 per 15 minutes per email
+    const { data: canSendEmail } = await supabase.rpc('check_email_rate_limit', {
       p_email: email,
       p_action_type: 'password_reset',
       p_max_attempts: 3,
       p_window_minutes: 15
     });
 
-    if (!canSend) {
+    if (!canSendEmail) {
       return new Response(
         JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again in 15 minutes.',
-          code: 'RATE_LIMIT_EXCEEDED'
+          error: 'Too many password reset requests for this email. Please try again in 15 minutes.',
+          code: 'EMAIL_RATE_LIMIT'
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // IP-based rate limiting: 10 per 15 minutes per IP (prevents multi-email spam)
+    const { data: canSendIP } = await supabase.rpc('check_email_rate_limit', {
+      p_email: ipAddress,
+      p_action_type: 'password_reset_ip',
+      p_max_attempts: 10,
+      p_window_minutes: 15
+    });
+
+    if (!canSendIP) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many password reset requests from your location. Please try again in 15 minutes.',
+          code: 'IP_RATE_LIMIT'
         }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
