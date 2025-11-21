@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, Reservation, Partner } from '@/lib/types';
+import { offerDataSchema, validateData, getValidationErrorMessage } from '@/lib/schemas';
 import {
   getPartnerByUserId,
   getPartnerById,
@@ -330,49 +331,27 @@ export default function PartnerDashboard() {
         }
       }
 
-      // Extract and validate title and description with defaults
-  const title = (formData.get('title') as string)?.trim() || t('partner.dashboard.fallback.untitledOffer');
-      const description = (formData.get('description') as string)?.trim() || "No description provided";
+      // Validate form data with Zod schema for security
+      const rawData = {
+        title: (formData.get('title') as string)?.trim() || t('partner.dashboard.fallback.untitledOffer'),
+        description: (formData.get('description') as string)?.trim() || "No description provided",
+        original_price: parseFloat(formData.get('original_price') as string),
+        smart_price: parseFloat(formData.get('smart_price') as string),
+        quantity: parseInt(formData.get('quantity') as string),
+        auto_expire_6h: formData.get('auto_expire_6h') ? true : false,
+      };
 
-      // Validate price
-      const MIN_PRICE = 0.50; // Minimum 50 tetri
-      const MAX_PRICE = 500.00; // Maximum ₾500
-      const originalPrice = parseFloat(formData.get('original_price') as string);
-      const smartPrice = parseFloat(formData.get('smart_price') as string);
-
-      if (!smartPrice || isNaN(smartPrice)) {
-        setFormErrors({ smart_price: 'Smart price is required' });
+      const validationResult = validateData(offerDataSchema, rawData);
+      
+      if (!validationResult.success) {
+        const errorMsg = getValidationErrorMessage(validationResult.errors);
+        toast.error(errorMsg);
+        setFormErrors({ general: errorMsg });
+        setIsSubmitting(false);
         return;
       }
 
-      if (smartPrice < MIN_PRICE) {
-        setFormErrors({ smart_price: `Minimum price is ₾${MIN_PRICE}` });
-        return;
-      }
-
-      if (smartPrice > MAX_PRICE) {
-        setFormErrors({ smart_price: `Maximum price is ₾${MAX_PRICE}` });
-        return;
-      }
-
-      if (originalPrice && originalPrice < smartPrice) {
-        setFormErrors({ original_price: 'Original price must be higher than smart price' });
-        return;
-      }
-
-      // Validate quantity
-      const MAX_QUANTITY = 100;
-      const quantity = parseInt(formData.get('quantity') as string);
-
-      if (!quantity || quantity <= 0) {
-        setFormErrors({ quantity_initial: 'Quantity is required' });
-        return;
-      }
-
-      if (quantity > MAX_QUANTITY) {
-        setFormErrors({ quantity_initial: `Maximum ${MAX_QUANTITY} items per offer` });
-        return;
-      }
+      const { title, description, original_price: originalPrice, smart_price: smartPrice, quantity } = validationResult.data;
 
       // Compute pickup times automatically based on business hours
       const autoExpireValue = formData.get('auto_expire_6h');
@@ -550,45 +529,25 @@ export default function PartnerDashboard() {
     const formData = new FormData(e.currentTarget);
 
     try {
-      // Validate price
-      const MIN_PRICE = 0.50;
-      const MAX_PRICE = 500.00;
-      const originalPrice = parseFloat(formData.get('original_price') as string);
-      const smartPrice = parseFloat(formData.get('smart_price') as string);
+      // Validate form data with Zod schema for security
+      const rawData = {
+        title: (formData.get('title') as string)?.trim(),
+        description: (formData.get('description') as string)?.trim(),
+        original_price: parseFloat(formData.get('original_price') as string),
+        smart_price: parseFloat(formData.get('smart_price') as string),
+        quantity: parseInt(formData.get('quantity') as string),
+        auto_expire_6h: autoExpire6h,
+      };
 
-      if (!smartPrice || isNaN(smartPrice)) {
-        toast.error('Smart price is required');
+      const validationResult = validateData(offerDataSchema, rawData);
+      
+      if (!validationResult.success) {
+        const errorMsg = getValidationErrorMessage(validationResult.errors);
+        toast.error(errorMsg);
         return;
       }
 
-      if (smartPrice < MIN_PRICE) {
-        toast.error(`Minimum price is ₾${MIN_PRICE}`);
-        return;
-      }
-
-      if (smartPrice > MAX_PRICE) {
-        toast.error(`Maximum price is ₾${MAX_PRICE}`);
-        return;
-      }
-
-      if (originalPrice && originalPrice < smartPrice) {
-        toast.error('Original price must be higher than smart price');
-        return;
-      }
-
-      // Validate quantity
-      const MAX_QUANTITY = 100;
-      const quantity = parseInt(formData.get('quantity') as string);
-
-      if (!quantity || quantity <= 0) {
-        toast.error('Quantity is required');
-        return;
-      }
-
-      if (quantity > MAX_QUANTITY) {
-        toast.error(`Maximum ${MAX_QUANTITY} items per offer`);
-        return;
-      }
+      const { title, description, original_price: originalPrice, smart_price: smartPrice, quantity } = validationResult.data;
 
       // Images are library URLs only (custom uploads removed)
       let processedImages = imageFiles.filter((img): img is string => typeof img === 'string');
