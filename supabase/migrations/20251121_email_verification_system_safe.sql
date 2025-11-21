@@ -170,7 +170,7 @@ BEGIN
     END IF;
 END $$;
 
-COMMENT ON TABLE email_rate_limits IS 'Rate limiting: max 3 emails per 15 minutes per email address per action type';
+COMMENT ON TABLE email_rate_limits IS 'Rate limiting for email sending - supports both email-based (3/15min) and IP-based (10/15min) limiting to prevent abuse';
 
 ALTER TABLE email_rate_limits ENABLE ROW LEVEL SECURITY;
 
