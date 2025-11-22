@@ -183,8 +183,9 @@ export default function ReserveOffer() {
       
       toast.success(t('toast.reservationCreated'));
       
-      // Small delay to ensure database transaction is committed and indexed
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Delay to ensure database transaction is committed and RLS policies can see the new row
+      // Partners reserving other partners' offers need this because of RLS policy evaluation
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {

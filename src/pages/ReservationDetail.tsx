@@ -60,7 +60,14 @@ export default function ReservationDetail() {
         return;
       }
 
-      const found = await getReservationById(id);
+      let found = await getReservationById(id);
+      
+      // Retry once after a short delay if not found (race condition with RLS)
+      if (!found) {
+        logger.warn(`Reservation ${id} not found on first attempt, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+        found = await getReservationById(id);
+      }
       
       if (!found) {
         toast.error(t('toast.reservationNotFound'));
