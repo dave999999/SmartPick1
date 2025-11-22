@@ -240,9 +240,9 @@ export default function PartnerOnboardingTour({ open, onComplete, partnerName }:
 
   return (
     <Dialog open={open} onOpenChange={handleSkip}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-gradient-to-br from-slate-50 to-gray-50">
         {/* Progress bar */}
-        <div className="h-1.5 bg-gray-100">
+        <div className="h-1.5 bg-gray-200/50">
           <div 
             className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500 ease-out"
             style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
@@ -274,7 +274,7 @@ export default function PartnerOnboardingTour({ open, onComplete, partnerName }:
         </div>
 
         {/* Footer */}
-        <div className="border-t bg-gray-50 px-8 py-4 space-y-3">
+        <div className="border-t border-gray-200/50 bg-white/60 backdrop-blur-sm px-8 py-4 space-y-3">
           {/* Don't show again checkbox */}
           <div className="flex items-center space-x-2">
             <Checkbox

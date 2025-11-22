@@ -293,7 +293,7 @@ export default function ReservationDetail() {
   const partnerLng = reservation.partner?.longitude || reservation.partner?.location?.longitude;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-white">
       {/* Header with Back Button */}
       <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
         <div className="container mx-auto px-4 py-3 max-w-2xl">
