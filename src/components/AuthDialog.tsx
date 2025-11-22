@@ -66,6 +66,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
 
+  // Email verification state
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [confirmationEmail, setConfirmationEmail] = useState('');
+
   // Check for referral code in URL on mount
   useEffect(() => {
     const refParam = searchParams.get('ref');
@@ -314,10 +318,13 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             logger.warn('Failed to update terms acceptance in users table:', err);
           }
         }, 1000); // Wait 1 second for trigger to complete
-        // Show email verification message
+        // Show email verification message prominently
+        setConfirmationEmail(signUpEmail);
+        setShowEmailConfirmation(true);
+        
         toast.success(`📧 Account created! Please check ${signUpEmail} for a verification link.`, {
           duration: 8000,
-          icon: <Mail className="w-5 h-5" />,
+          icon: <Mail className="w-4 h-4" />,
         });
 
         // Apply referral code AFTER a short delay to let trigger complete
@@ -346,13 +353,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           toast.info('Welcome bonus: 100 points added to your account!', { duration: 4000 });
         }
 
-        // Close auth dialog and show onboarding tutorial for new users
-        onOpenChange(false);
+        // Don't close dialog - let user dismiss the confirmation message
+        // Store user data for onboarding later (after email verification)
         setNewUserId(data.user.id);
         setNewUserName(signUpName);
-        setShowOnboarding(true);
-        
-        if (onSuccess) onSuccess();
       }
     } catch (err) {
       logger.error('Sign up error:', err);
@@ -368,14 +372,26 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/verify-email`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
 
       if (error) throw error;
+      
+      // Show email confirmation message for OAuth signups too
+      if (data) {
+        toast.info('Please check your email to verify your account', {
+          duration: 8000,
+          icon: <Mail className="w-4 h-4" />,
+        });
+      }
     } catch (err) {
       logger.error('Google sign in error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
@@ -544,33 +560,85 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-4 mt-0">
-              {/* PROMINENT GOOGLE SIGN-UP */}
-              <Button
-                type="button"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-                className="w-full h-13 bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg rounded-2xl font-semibold shadow-md transition-all duration-300 group relative overflow-hidden"
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-teal-50/0 via-teal-50/50 to-teal-50/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-300 relative z-10" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                <span className="relative z-10">Continue with Google</span>
-              </Button>
+              {showEmailConfirmation ? (
+                /* EMAIL CONFIRMATION MESSAGE */
+                <div className="py-8 px-4 text-center space-y-6">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-teal-400 blur-2xl opacity-40 rounded-full"></div>
+                      <div className="relative bg-gradient-to-br from-teal-50 to-emerald-50 p-6 rounded-full border-4 border-teal-100">
+                        <Mail className="w-16 h-16 text-teal-600" />
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="relative my-7">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
-                <div className="relative flex justify-center text-xs">
-                  <span className="bg-gradient-to-r from-gray-50 via-white to-gray-50 px-4 py-1 text-gray-500 font-medium rounded-full">Or create account with email</span>
-                </div>
-              </div>
+                  <div className="space-y-3">
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      Check Your Email!
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      We've sent a verification link to
+                    </p>
+                    <p className="text-lg font-semibold text-teal-600 break-all px-4">
+                      {confirmationEmail}
+                    </p>
+                  </div>
 
-              <form onSubmit={handleSignUp} className="space-y-3">
+                  <Alert className="border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50">
+                    <AlertCircle className="h-5 w-5 text-teal-600" />
+                    <AlertDescription className="text-left text-sm text-gray-700">
+                      <strong className="block mb-2">Next Steps:</strong>
+                      <ol className="list-decimal list-inside space-y-1 text-xs">
+                        <li>Open your email inbox</li>
+                        <li>Find the email from SmartPick (check spam folder)</li>
+                        <li>Click the verification link</li>
+                        <li>You'll be redirected back to complete setup</li>
+                      </ol>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="pt-4">
+                    <Button
+                      onClick={() => {
+                        setShowEmailConfirmation(false);
+                        onOpenChange(false);
+                      }}
+                      variant="outline"
+                      className="w-full h-11 border-2 border-gray-200 hover:border-teal-400 hover:bg-teal-50 rounded-xl font-semibold transition-all"
+                    >
+                      Got it!
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {/* PROMINENT GOOGLE SIGN-UP */}
+                  <Button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={isLoading}
+                    className="w-full h-13 bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg rounded-2xl font-semibold shadow-md transition-all duration-300 group relative overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-teal-50/0 via-teal-50/50 to-teal-50/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-300 relative z-10" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span className="relative z-10">Continue with Google</span>
+                  </Button>
+
+                  <div className="relative my-7">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                    </div>
+                    <div className="relative flex justify-center text-xs">
+                      <span className="bg-gradient-to-r from-gray-50 via-white to-gray-50 px-4 py-1 text-gray-500 font-medium rounded-full">Or create account with email</span>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleSignUp} className="space-y-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="signup-name" className="text-sm font-semibold text-gray-700">Full Name</Label>
                   <Input
@@ -777,6 +845,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <span className="relative z-10">{isLoading ? '🎉 Creating account...' : !isOnline ? '📡 Offline' : '✨ Create Account'}</span>
                 </Button>
               </form>
+                </>
+              )}
             </TabsContent>
           </Tabs>
         </div>
