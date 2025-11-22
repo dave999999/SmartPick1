@@ -43,11 +43,11 @@ The Resend API key (`***REMOVED_API_KEY***`) was exposed in client-side JavaScri
 ### 4. Verified Fix
 ```bash
 # Before fix:
-grep -r "re_bQNu31zi" dist/assets/
+grep -r "EXPOSED_API_KEY" dist/assets/
 # Result: API key found in multiple JS files!
 
 # After fix:
-grep -r "re_bQNu31zi" dist/assets/
+grep -r "EXPOSED_API_KEY" dist/assets/
 # Result: No matches ✅
 ```
 
@@ -181,7 +181,7 @@ await supabase.auth.signUp({
 ```bash
 # Should return 0 matches:
 grep -r "VITE_RESEND_API_KEY" src/
-grep -r "re_bQNu31zi" dist/assets/
+grep -r "EXPOSED_KEY" dist/assets/
 ```
 
 ## References
