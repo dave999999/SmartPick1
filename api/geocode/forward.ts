@@ -23,8 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // Call Nominatim API for forward geocoding (address -> coordinates)
+    // Add viewbox to bias results towards Tbilisi area for better accuracy
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address as string)}&format=json&limit=${limit}&addressdetails=1&countrycodes=ge`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address as string)}, Tbilisi, Georgia&format=json&limit=${limit}&addressdetails=1&countrycodes=ge&bounded=0&viewbox=44.6,41.8,45.0,41.6`,
       {
         headers: {
           'User-Agent': 'SmartPick-Admin/1.0',
