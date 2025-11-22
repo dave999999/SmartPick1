@@ -5,9 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY: string
   readonly VITE_MAINTENANCE_MODE: string
   readonly VITE_TURNSTILE_SITE_KEY: string
-  readonly VITE_RESEND_API_KEY: string
+  // ⚠️ REMOVED: VITE_RESEND_API_KEY (security fix - was exposing secret)
   readonly VITE_PUBLIC_BASE_URL: string
-  readonly RESEND_FROM_EMAIL: string
   readonly BOG_CLIENT_ID: string
   readonly BOG_CLIENT_SECRET: string
   readonly BOG_AUTH_URL: string

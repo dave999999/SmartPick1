@@ -1,7 +1,7 @@
 // Service Worker for offline caching and request queuing
 
 // Increment when asset strategy changes
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `smartpick-${CACHE_VERSION}`;
 const STATIC_CACHE = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE = `${CACHE_NAME}-dynamic`;
@@ -85,6 +85,25 @@ self.addEventListener('fetch', (event) => {
 
   // Skip chrome-extension and browser-specific URLs
   if (url.protocol === 'chrome-extension:' || url.protocol === 'moz-extension:') {
+    return;
+  }
+
+  // JavaScript & CSS: Network-first strategy (always get fresh version)
+  if (request.destination === 'script' || request.destination === 'style' || url.pathname.match(/\.(js|css)$/)) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          // Cache the new version
+          caches.open(DYNAMIC_CACHE).then((cache) => {
+            cache.put(request, networkResponse.clone());
+          });
+          return networkResponse;
+        })
+        .catch(() => {
+          // Fallback to cache only if network fails
+          return caches.match(request);
+        })
+    );
     return;
   }
 

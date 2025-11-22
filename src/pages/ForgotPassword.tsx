@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendPasswordResetEmail } from '../lib/api/email-verification';
+import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -25,15 +25,18 @@ export const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      await sendPasswordResetEmail(email);
+      // Use Supabase Auth's built-in password reset
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
       setIsSuccess(true);
       toast.success('Password reset email sent! Check your inbox.');
     } catch (error) {
-      if (error instanceof Error && error.message.includes('Rate limit')) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to send reset email. Please try again.');
-      }
+      toast.error('Failed to send reset email. Please try again.');
+      console.error('Password reset error:', error);
     } finally {
       setIsLoading(false);
     }

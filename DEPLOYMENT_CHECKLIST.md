@@ -72,7 +72,7 @@
 - [ ] Open `.env.local` file
 - [ ] Add these variables:
   ```env
-  VITE_RESEND_API_KEY=***REMOVED_API_KEY***
+  # REMOVED: API key was exposed - now using Supabase SMTP
   RESEND_FROM_EMAIL=no-reply@smartpick.ge
   VITE_PUBLIC_BASE_URL=http://localhost:5173
   ```
@@ -84,7 +84,7 @@
 - [ ] Add environment variables:
   | Variable | Value |
   |----------|-------|
-  | `VITE_RESEND_API_KEY` | `***REMOVED_API_KEY***` |
+  | ~~VITE_RESEND_API_KEY~~ | REMOVED - Use Supabase SMTP instead |
   | `RESEND_FROM_EMAIL` | `no-reply@smartpick.ge` |
   | `VITE_PUBLIC_BASE_URL` | `https://www.smartpick.ge` |
 - [ ] Redeploy application

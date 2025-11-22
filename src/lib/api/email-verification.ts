@@ -1,12 +1,8 @@
 import { supabase } from '../supabase';
 import crypto from 'crypto-js';
 
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-
-if (!RESEND_API_KEY) {
-  throw new Error('VITE_RESEND_API_KEY is not configured. Please add it to your .env file.');
-}
-const RESEND_FROM_EMAIL = 'no-reply@smartpick.ge';
+// ⚠️ SECURITY FIX: Removed client-side Resend API calls
+// Supabase Auth handles email verification automatically via SMTP settings
 const PUBLIC_BASE_URL = import.meta.env.VITE_PUBLIC_BASE_URL || 'https://www.smartpick.ge';
 
 // Generate a secure random token

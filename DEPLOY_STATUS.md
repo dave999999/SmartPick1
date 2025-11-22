@@ -8,7 +8,7 @@
 
 ### ✅ Environment Configured
 ```env
-VITE_RESEND_API_KEY=***REMOVED_API_KEY*** ✓
+# REMOVED: API key exposed - Use Supabase SMTP
 RESEND_FROM_EMAIL=no-reply@smartpick.ge ✓
 VITE_PUBLIC_BASE_URL=https://www.smartpick.ge ✓
 ```
