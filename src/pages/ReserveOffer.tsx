@@ -182,6 +182,10 @@ export default function ReserveOffer() {
       }
       
       toast.success(t('toast.reservationCreated'));
+      
+      // Small delay to ensure database transaction is committed and indexed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
       logger.error('Error creating reservation:', error);

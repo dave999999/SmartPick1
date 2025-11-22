@@ -261,6 +261,8 @@ export const getReservationById = async (reservationId: string): Promise<Reserva
     return null;
   }
 
+  logger.info(`Fetching reservation ${reservationId}`);
+
   const { data, error } = await supabase
     .from('reservations')
     .select(`
@@ -272,12 +274,18 @@ export const getReservationById = async (reservationId: string): Promise<Reserva
     .single();
 
   if (error) {
+    logger.error(`Error fetching reservation ${reservationId}:`, error);
     if (error.code === 'PGRST116') {
       // No rows returned
+      logger.warn(`Reservation ${reservationId} not found (PGRST116)`);
       return null;
     }
     throw error;
   }
+  
+  logger.info(`Successfully fetched reservation ${reservationId}`, data);
+
+
 
   return data as Reservation;
 };
