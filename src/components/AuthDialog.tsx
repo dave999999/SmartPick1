@@ -403,9 +403,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl p-0 overflow-hidden max-h-[95vh] flex flex-col bg-gradient-to-b from-white via-gray-50 to-white">
+      <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl p-0 overflow-y-auto max-h-[90vh] flex flex-col bg-gradient-to-b from-white via-gray-50 to-white">
         {/* Header with Elegant Gradient Background */}
-        <div className="bg-gradient-to-br from-teal-400 via-emerald-400 to-cyan-400 px-6 pt-12 pb-10 text-center relative overflow-hidden">
+        <div className="bg-gradient-to-br from-teal-400 via-emerald-400 to-cyan-400 px-6 pt-8 pb-8 text-center relative overflow-hidden flex-shrink-0">
           {/* Decorative animated gradient circles */}
           <div className="absolute -top-16 -right-16 w-40 h-40 bg-gradient-to-br from-white/20 to-emerald-300/20 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-gradient-to-tr from-cyan-300/20 to-white/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
@@ -416,8 +416,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               <img src="/icon1.png" alt="SmartPick" className="h-16 w-16 drop-shadow-lg" />
             </div>
           </div>
-          <DialogTitle className="text-3xl font-extrabold text-white mb-2 tracking-tight drop-shadow-md">Welcome to SmartPick</DialogTitle>
-          <DialogDescription className="text-white/95 text-base font-medium drop-shadow-sm">
+          <DialogTitle className="text-2xl sm:text-3xl font-extrabold text-white mb-2 tracking-tight drop-shadow-md">Welcome to SmartPick</DialogTitle>
+          <DialogDescription className="text-white/95 text-sm sm:text-base font-medium drop-shadow-sm">
             Quality meals, incredible value ✨
           </DialogDescription>
         </div>
@@ -586,7 +586,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
                   <Alert className="border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50">
                     <AlertCircle className="h-5 w-5 text-teal-600" />
-                    <AlertDescription className="text-left text-sm text-gray-700">
+                    <AlertDescription className="text-left text-sm text-gray-900">
                       <strong className="block mb-2">Next Steps:</strong>
                       <ol className="list-decimal list-inside space-y-1 text-xs">
                         <li>Open your email inbox</li>
@@ -594,6 +594,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                         <li>Click the verification link</li>
                         <li>You'll be redirected back to complete setup</li>
                       </ol>
+                      <p className="mt-3 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                        <strong>⚠️ Note:</strong> If no email arrives within 5 minutes, email verification might not be configured in Supabase settings. Contact support or sign in to continue.
+                      </p>
                     </AlertDescription>
                   </Alert>
 
