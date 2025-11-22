@@ -292,8 +292,8 @@ export default function PartnerApplication() {
     setIsLoadingAddress(true);
 
     try {
-      // Try backend proxy first, fallback to direct Nominatim if it fails
-      let response = await fetch(
+      // Use backend proxy for geocoding (avoids CORS issues)
+      const response = await fetch(
         `/api/geocode/forward?address=${encodeURIComponent(query)}&limit=5`,
         {
           headers: {
@@ -301,20 +301,6 @@ export default function PartnerApplication() {
           },
         }
       );
-
-      // If proxy fails, use Nominatim directly
-      if (!response.ok) {
-        logger.warn('Proxy failed, using direct Nominatim');
-        response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=ge`,
-          {
-            headers: {
-              'Accept': 'application/json',
-              'User-Agent': 'SmartPickApp/1.0',
-            },
-          }
-        );
-      }
 
       if (!response.ok) {
         logger.error('Address search failed:', response.statusText);
