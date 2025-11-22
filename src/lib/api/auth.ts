@@ -122,6 +122,7 @@ export const signUpWithEmail = async (email: string, password: string, name: str
       data: {
         name,
       },
+      emailRedirectTo: undefined, // Don't use Supabase's built-in email verification
     },
   });
 
@@ -135,6 +136,19 @@ export const signUpWithEmail = async (email: string, password: string, name: str
     if (userId) {
       try { await supabase.rpc('ensure_user_profile'); } catch {}
       await waitForUserProfile(userId, 1500);
+      
+      // Send verification email via Edge Function
+      try {
+        await supabase.functions.invoke('send-verification-email', {
+          body: {
+            email,
+            name,
+            userId,
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
     }
   } catch {}
   return { data, error };

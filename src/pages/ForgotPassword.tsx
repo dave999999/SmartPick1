@@ -25,12 +25,24 @@ export const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      // Use Supabase Auth's built-in password reset
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Call Edge Function to send password reset email
+      const { data, error } = await supabase.functions.invoke('send-password-reset-email', {
+        body: { email },
       });
 
       if (error) throw error;
+
+      // Check for specific error codes from Edge Function
+      if (data?.error) {
+        if (data.code === 'OAUTH_ACCOUNT') {
+          toast.error(data.error, { duration: 8000 });
+        } else if (data.code === 'EMAIL_RATE_LIMIT' || data.code === 'IP_RATE_LIMIT') {
+          toast.error(data.error, { duration: 6000 });
+        } else {
+          toast.error('Failed to send reset email. Please try again.');
+        }
+        return;
+      }
 
       setIsSuccess(true);
       toast.success('Password reset email sent! Check your inbox.');

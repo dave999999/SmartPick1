@@ -285,6 +285,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     }
 
     try {
+      // Step 1: Create user account WITHOUT sending verification email
       const { data, error } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
@@ -295,7 +296,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             terms_accepted_at: new Date().toISOString(), // LEGAL: Record terms acceptance timestamp
           },
           captchaToken: captchaToken,
-          emailRedirectTo: `${window.location.origin}/verify-email`, // Explicit redirect for confirmation
+          emailRedirectTo: undefined, // Don't use Supabase's email verification
         },
       });
 
@@ -322,6 +323,33 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             logger.warn('Failed to update terms acceptance in users table:', err);
           }
         }, 1000); // Wait 1 second for trigger to complete
+
+        // Step 2: Send verification email via Edge Function
+        try {
+          const { data: functionData, error: functionError } = await supabase.functions.invoke(
+            'send-verification-email',
+            {
+              body: {
+                email: signUpEmail,
+                name: signUpName,
+                userId: data.user.id,
+              },
+            }
+          );
+
+          if (functionError) {
+            logger.error('Failed to send verification email:', functionError);
+            toast.warning('Account created, but verification email failed. Please request a new one.', {
+              duration: 8000,
+            });
+          }
+        } catch (emailError) {
+          logger.error('Error calling send-verification-email function:', emailError);
+          toast.warning('Account created, but verification email failed. Please request a new one.', {
+            duration: 8000,
+          });
+        }
+        
         // Show email verification message prominently
         setConfirmationEmail(signUpEmail);
         setShowEmailConfirmation(true);
