@@ -293,172 +293,240 @@ export default function ReservationDetail() {
   const partnerLng = reservation.partner?.longitude || reservation.partner?.location?.longitude;
 
   return (
-    <div className="min-h-screen bg-gray-50 safe-area-top">
-      <div className="container mx-auto px-4 py-4 max-w-2xl">
-        <Card className="shadow-md relative">
-          {/* Back Button - Top Left Corner */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/my-picks')}
-            className="absolute -top-1 -left-1 z-10 hover:bg-gray-200/80 rounded-full bg-white/90 shadow-sm"
-          >
-            <ArrowLeft className="h-5 w-5 text-gray-700" />
-          </Button>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      {/* Header with Back Button */}
+      <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
+        <div className="container mx-auto px-4 py-3 max-w-2xl">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/my-picks')}
+              className="hover:bg-gray-100"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Your Reservation</h1>
+              <p className="text-xs text-gray-500 font-mono">#{reservation.id.slice(0, 8).toUpperCase()}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <CardContent className="pt-4 space-y-3">
-            {/* HERO: Status Badge + Countdown - Compact */}
-            {reservation.status === 'ACTIVE' && (
-              <div className="bg-gradient-to-br from-green-50 to-mint-50 rounded-lg p-3 border border-green-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                    <div>
-                      <h3 className="text-sm font-bold text-green-800">Ready to Pickup!</h3>
-                      <p className="text-xs text-green-600 font-mono">ID: {reservation.id.slice(0, 8).toUpperCase()}</p>
-                    </div>
-                  </div>
+      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
+        {/* Status Card */}
+        {reservation.status === 'ACTIVE' && (
+          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-green-500 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-white" />
                 </div>
-                <CountdownBar expiresAt={reservation.expires_at} />
-                <p className="text-xs text-green-700 text-center mt-1">
-                  Expires: {new Date(reservation.expires_at).toLocaleString('en-GB', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    day: '2-digit',
-                    month: 'short'
-                  })}
-                </p>
-              </div>
-            )}
-
-            {/* PICKED_UP Status - Compact */}
-            {reservation.status === 'PICKED_UP' && (
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-300">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle className="h-6 w-6 text-gray-600" />
-                  <h3 className="text-sm font-bold text-gray-800">Order Completed!</h3>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Picked up at: {reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleString('en-GB') : 'Just now'}
-                </p>
-              </div>
-            )}
-
-            {/* HERO: Large QR Code with Compact 3-Step Guide - QR FIRST! */}
-            {reservation.status === 'ACTIVE' && (
-              <div className="bg-gradient-to-br from-white to-mint-50/30 rounded-lg p-4 border border-mint-200">
-                <div className="flex flex-col items-center">
-                  {/* Large QR Code */}
-                  <div
-                    onClick={() => setQrModalOpen(true)}
-                    className="relative w-48 h-48 cursor-pointer group mb-4"
-                  >
-                    <div className="absolute inset-0 bg-mint-500/10 rounded-xl"></div>
-                    <div className="relative w-full h-full bg-white rounded-xl p-2 shadow-lg border-2 border-mint-300 group-hover:border-mint-500 transition-all">
-                      {qrCodeUrl ? (
-                        <img src={qrCodeUrl} className="w-full h-full object-contain" alt="QR Code" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">Loading...</div>
-                      )}
-                    </div>
-                    <div className="absolute -top-1 -right-1 bg-mint-500 text-white rounded-full p-1.5">
-                      <Eye className="h-3 w-3" />
-                    </div>
-                  </div>
-
-                  {/* Compact 3-Step Guide */}
-                  <h4 className="text-sm font-bold text-gray-800 mb-2">How to Claim Your Order</h4>
-
-                  <div className="w-full space-y-2">
-                    <div className="flex items-center gap-2 bg-blue-50 rounded-lg p-2 border border-blue-200">
-                      <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-xs">1</div>
-                      <MapPin className="h-3.5 w-3.5 text-blue-600" />
-                      <span className="text-xs font-medium text-gray-800">Arrive at partner location</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-purple-50 rounded-lg p-2 border border-purple-200">
-                      <div className="flex-shrink-0 w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-xs">2</div>
-                      <QrCode className="h-3.5 w-3.5 text-purple-600" />
-                      <span className="text-xs font-medium text-gray-800">Show this QR code to staff</span>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-green-50 rounded-lg p-2 border border-green-200">
-                      <div className="flex-shrink-0 w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-xs">3</div>
-                      <CreditCard className="h-3.5 w-3.5 text-green-600" />
-                      <div className="flex-1">
-                        <span className="text-xs font-medium text-gray-800 block">Pay {Number(reservation.total_price).toFixed(2)} GEL & collect</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-green-900">Ready to Pickup!</h3>
+                  <p className="text-sm text-green-700">Your order is waiting for you</p>
                 </div>
               </div>
-            )}
+              <CountdownBar expiresAt={reservation.expires_at} />
+              <p className="text-xs text-green-700 text-center mt-2">
+                Valid until {new Date(reservation.expires_at).toLocaleString('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric'
+                })}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Compact Map Preview */}
-            {reservation.partner?.latitude && reservation.partner?.longitude && (
-              <div className="rounded-lg overflow-hidden border border-gray-200">
+        {reservation.status === 'PICKED_UP' && (
+          <Card className="border-gray-200 bg-gradient-to-br from-gray-50 to-slate-50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-gray-500 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Order Completed!</h3>
+                  <p className="text-sm text-gray-600">
+                    Picked up {reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleString('en-GB') : 'recently'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* QR Code Card */}
+        {reservation.status === 'ACTIVE' && (
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-mint-600" />
+                Your QR Code
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* QR Code Display */}
+              <div className="flex justify-center">
                 <div
-                  className="h-40 w-full cursor-pointer relative"
+                  onClick={() => setQrModalOpen(true)}
+                  className="relative cursor-pointer group"
+                >
+                  <div className="w-64 h-64 bg-white rounded-2xl p-4 border-2 border-gray-200 group-hover:border-mint-500 transition-all shadow-lg group-hover:shadow-xl">
+                    {qrCodeUrl ? (
+                      <img src={qrCodeUrl} className="w-full h-full object-contain" alt="QR Code" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-500 mx-auto mb-2"></div>
+                          <p className="text-sm">Loading...</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute -top-2 -right-2 bg-mint-500 text-white rounded-full p-2 shadow-lg">
+                    <Eye className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-gray-900 text-center">How to Claim Your Order</h4>
+                
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-3 border border-blue-100">
+                    <div className="flex-shrink-0 w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">1</div>
+                    <div className="flex-1 pt-0.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-semibold text-gray-900">Go to partner</span>
+                      </div>
+                      <p className="text-xs text-gray-600">Navigate to {reservation.partner?.business_name}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-purple-50 rounded-xl p-3 border border-purple-100">
+                    <div className="flex-shrink-0 w-7 h-7 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">2</div>
+                    <div className="flex-1 pt-0.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <QrCode className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-semibold text-gray-900">Show QR code</span>
+                      </div>
+                      <p className="text-xs text-gray-600">Present this code to staff at checkout</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 bg-green-50 rounded-xl p-3 border border-green-100">
+                    <div className="flex-shrink-0 w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">3</div>
+                    <div className="flex-1 pt-0.5">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-semibold text-gray-900">Pay & collect</span>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        Pay <span className="font-bold text-green-700">{Number(reservation.total_price).toFixed(2)} GEL</span> and enjoy your order
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Location Map Card */}
+        {reservation.partner?.latitude && reservation.partner?.longitude && (
+          <Card className="shadow-sm overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-mint-600" />
+                  Location
+                </div>
+                {(distanceKm !== null || etaMinutes !== null) && (
+                  <div className="flex items-center gap-2 text-sm font-normal">
+                    <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    <span className="text-blue-600 font-semibold">
+                      {distanceKm !== null && <span>{distanceKm.toFixed(1)} km</span>}
+                      {distanceKm !== null && etaMinutes !== null && <span className="mx-1">•</span>}
+                      {etaMinutes !== null && <span>{etaMinutes} min</span>}
+                    </span>
+                  </div>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div
+                className="h-64 w-full cursor-pointer relative group"
+                onClick={() => {
+                  if (partnerLat && partnerLng) {
+                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`, '_blank');
+                  }
+                }}
+              >
+                <MapContainer
+                  center={[reservation.partner.latitude, reservation.partner.longitude]}
+                  zoom={15}
+                  scrollWheelZoom={false}
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
+                  {userLocation && <Marker position={userLocation} />}
+                  {routePoints.length > 1 && (
+                    <Polyline
+                      positions={routePoints}
+                      pathOptions={{
+                        color: '#2563eb',
+                        weight: 4,
+                        opacity: 0.8
+                      }}
+                    />
+                  )}
+                </MapContainer>
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors pointer-events-none"></div>
+              </div>
+              
+              {/* Partner Info */}
+              <div className="p-4 bg-gray-50 border-t">
+                <h4 className="font-semibold text-gray-900 mb-1">{reservation.partner?.business_name}</h4>
+                <p className="text-sm text-gray-600 mb-3">{partnerAddress}</p>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
                   onClick={() => {
                     if (partnerLat && partnerLng) {
                       window.open(`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`, '_blank');
                     }
                   }}
                 >
-                  <MapContainer
-                    center={[reservation.partner.latitude, reservation.partner.longitude]}
-                    zoom={15}
-                    scrollWheelZoom={false}
-                    className="h-full w-full"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <Marker position={[reservation.partner.latitude, reservation.partner.longitude]} />
-                    {userLocation && <Marker position={userLocation} />}
-                    {routePoints.length > 1 && (
-                      <Polyline
-                        positions={routePoints}
-                        pathOptions={{
-                          color: '#2563eb',
-                          weight: 3,
-                          opacity: 0.7,
-                          dashArray: '5, 3'
-                        }}
-                      />
-                    )}
-                  </MapContainer>
-                </div>
-                {(distanceKm !== null || etaMinutes !== null) && (
-                  <div className="px-3 py-1.5 text-xs bg-blue-50 flex items-center justify-between border-t">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
-                      <span className="text-gray-700 font-medium">Live tracking</span>
-                    </div>
-                    <div className="text-gray-700 font-semibold">
-                      {distanceKm !== null && <span>{distanceKm.toFixed(1)} km</span>}
-                      {distanceKm !== null && etaMinutes !== null && <span className="mx-1">•</span>}
-                      {etaMinutes !== null && <span>{etaMinutes} min</span>}
-                    </div>
-                  </div>
-                )}
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Get Directions
+                </Button>
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )}
 
-            {/* Cancel Button - Only for ACTIVE reservations */}
-            {reservation.status === 'ACTIVE' && (
-              <Button
-                variant="outline"
-                className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                onClick={handleCancel}
-              >
-                {t('button.cancelReservation')}
-              </Button>
-            )}
-
-          </CardContent>
-        </Card>
+        {/* Cancel Button - Only for ACTIVE reservations */}
+        {reservation.status === 'ACTIVE' && (
+          <Button
+            variant="outline"
+            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 h-12 font-medium"
+            onClick={handleCancel}
+          >
+            <X className="h-4 w-4 mr-2" />
+            {t('button.cancelReservation')}
+          </Button>
+        )}
       </div>
 
       {/* QR modal - outside main container for proper z-index */}
