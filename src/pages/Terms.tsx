@@ -142,8 +142,8 @@ export default function Terms() {
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">SmartPick – Terms and Conditions</h1>
             <div className="flex items-center gap-3 flex-wrap">
-              <Badge variant="outline" className="text-xs">Version {TERMS_VERSION}</Badge>
-              <span className="text-sm text-gray-600">Last updated: {LAST_UPDATED}</span>
+              <Badge variant="outline" className="text-xs text-gray-900 border-gray-300">Version {TERMS_VERSION}</Badge>
+              <span className="text-sm text-gray-900">Last updated: {LAST_UPDATED}</span>
             </div>
           </div>
 
