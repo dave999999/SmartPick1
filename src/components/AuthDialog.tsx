@@ -287,6 +287,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             terms_accepted_at: new Date().toISOString(), // LEGAL: Record terms acceptance timestamp
           },
           captchaToken: captchaToken,
+          emailRedirectTo: `${window.location.origin}/verify-email`, // Explicit redirect for confirmation
         },
       });
 
@@ -294,18 +295,31 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
       if (data.user) {
         // Store terms acceptance in users table (in addition to metadata)
-        try {
-          await supabase
-            .from('users')
-            .update({
-              terms_accepted_at: new Date().toISOString(),
-              terms_version: '1.0', // Track which version they agreed to
-            })
-            .eq('id', data.user.id);
-        } catch (updateError) {
-          // Non-critical - terms are already in user metadata
-          logger.warn('Failed to update terms acceptance in users table:', updateError);
-        }
+        // Wait for the trigger to create the user row first
+        setTimeout(async () => {
+          try {
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({
+                terms_accepted_at: new Date().toISOString(),
+                terms_version: '1.0', // Track which version they agreed to
+              })
+              .eq('id', data.user.id);
+            
+            if (updateError) {
+              logger.warn('Failed to update terms acceptance:', updateError);
+            }
+          } catch (err) {
+            // Non-critical - terms are already in user metadata
+            logger.warn('Failed to update terms acceptance in users table:', err);
+          }
+        }, 1000); // Wait 1 second for trigger to complete
+        // Show email verification message
+        toast.success(`📧 Account created! Please check ${signUpEmail} for a verification link.`, {
+          duration: 8000,
+          icon: <Mail className="w-5 h-5" />,
+        });
+
         // Apply referral code AFTER a short delay to let trigger complete
         if (referralCode.trim()) {
           // Wait for profile creation trigger to finish (up to 2s)
@@ -315,23 +329,21 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           if (result.success) {
             if (result.flagged) {
               // Referral succeeded but was flagged for review
-              toast.warning(`🎉 Account created! Welcome bonus: 100 points. Referral is being reviewed for security.`, {
+              toast.info(`Welcome bonus: 100 points. Referral is being reviewed for security.`, {
                 duration: 5000,
               });
             } else {
-              toast.success(`🎉 Account created! Welcome bonus: 100 points. Your friend received ${result.pointsAwarded} points!`);
+              toast.success(`Welcome bonus: 100 points. Your friend received ${result.pointsAwarded} points!`);
             }
           } else {
             // Show specific error message from fraud detection
             logger.warn('Referral code application failed:', result.error);
-            if (result.error?.includes('limit') || result.error?.includes('restricted') || result.error?.includes('flagged')) {
-              toast.error(result.error, { duration: 6000 });
-            } else {
-              toast.success('Account created successfully! Welcome bonus: 100 points');
+            if (!result.error?.includes('limit') && !result.error?.includes('restricted') && !result.error?.includes('flagged')) {
+              toast.info('Welcome bonus: 100 points', { duration: 4000 });
             }
           }
         } else {
-          toast.success('Account created successfully! Welcome bonus: 100 points');
+          toast.info('Welcome bonus: 100 points added to your account!', { duration: 4000 });
         }
 
         // Close auth dialog and show onboarding tutorial for new users
