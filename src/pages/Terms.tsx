@@ -165,7 +165,7 @@ export default function Terms() {
                   </h2>
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="refunds">
-                      <AccordionTrigger className="text-left hover:text-teal-700">
+                      <AccordionTrigger className="text-left text-gray-900 hover:text-teal-700">
                         Can I get a refund if I cancel my reservation?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
@@ -175,7 +175,7 @@ export default function Terms() {
                     </AccordionItem>
 
                     <AccordionItem value="pickup">
-                      <AccordionTrigger className="text-left hover:text-teal-700">
+                      <AccordionTrigger className="text-left text-gray-900 hover:text-teal-700">
                         What happens if I miss my pickup time?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
@@ -185,7 +185,7 @@ export default function Terms() {
                     </AccordionItem>
 
                     <AccordionItem value="smartpoints">
-                      <AccordionTrigger className="text-left hover:text-teal-700">
+                      <AccordionTrigger className="text-left text-gray-900 hover:text-teal-700">
                         What are SmartPoints and do they have cash value?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
@@ -195,7 +195,7 @@ export default function Terms() {
                     </AccordionItem>
 
                     <AccordionItem value="payment">
-                      <AccordionTrigger className="text-left hover:text-teal-700">
+                      <AccordionTrigger className="text-left text-gray-900 hover:text-teal-700">
                         Do I pay online or at the partner location?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
@@ -205,7 +205,7 @@ export default function Terms() {
                     </AccordionItem>
 
                     <AccordionItem value="age">
-                      <AccordionTrigger className="text-left hover:text-teal-700">
+                      <AccordionTrigger className="text-left text-gray-900 hover:text-teal-700">
                         Do I need to be 18+ to use SmartPick?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
