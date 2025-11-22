@@ -214,7 +214,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                       Read full Privacy Policy →
                     </Link>
                   </AlertDescription>
-                </div>
+                </Alert>
               </div>
             </div>
           </TabsContent>
