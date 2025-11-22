@@ -25,21 +25,47 @@ export interface QueuedRequest {
 class IndexedDBManager {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
+  private isClosing: boolean = false;
 
   async init(): Promise<void> {
-    if (this.db) return;
+    // If database exists and is open, return
+    if (this.db && !this.isClosing) return;
     if (this.initPromise) return this.initPromise;
+
+    // Reset state
+    this.isClosing = false;
+    this.db = null;
 
     this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
         console.error('[IndexedDB] Failed to open database:', request.error);
+        this.initPromise = null;
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
+        this.isClosing = false;
+
+        // Handle database close events
+        this.db.onclose = () => {
+          console.warn('[IndexedDB] Database connection closed');
+          this.isClosing = true;
+          this.db = null;
+          this.initPromise = null;
+        };
+
+        // Handle version change (another tab upgraded schema)
+        this.db.onversionchange = () => {
+          console.warn('[IndexedDB] Database version changed, closing connection');
+          this.db?.close();
+          this.isClosing = true;
+          this.db = null;
+          this.initPromise = null;
+        };
+
         console.log('[IndexedDB] Database opened successfully');
         resolve();
       };
@@ -79,52 +105,134 @@ class IndexedDBManager {
     return this.initPromise;
   }
 
-  async put(storeName: string, data: any): Promise<void> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([storeName], 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.put(data);
+  async put(storeName: string, data: any, retryCount = 0): Promise<void> {
+    try {
+      await this.init();
+      
+      if (!this.db || this.isClosing) {
+        throw new Error('Database connection is closed');
+      }
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+      return new Promise((resolve, reject) => {
+        try {
+          const transaction = this.db!.transaction([storeName], 'readwrite');
+          const store = transaction.objectStore(storeName);
+          const request = store.put(data);
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+          transaction.onerror = () => reject(transaction.error);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      if (retryCount < 1 && (error instanceof Error && 
+          (error.message.includes('closing') || error.message.includes('closed')))) {
+        this.initPromise = null;
+        return this.put(storeName, data, retryCount + 1);
+      }
+      throw error;
+    }
   }
 
-  async get<T>(storeName: string, key: string): Promise<T | undefined> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([storeName], 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(key);
+  async get<T>(storeName: string, key: string, retryCount = 0): Promise<T | undefined> {
+    try {
+      await this.init();
+      
+      if (!this.db || this.isClosing) {
+        throw new Error('Database connection is closed');
+      }
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+      return new Promise((resolve, reject) => {
+        try {
+          const transaction = this.db!.transaction([storeName], 'readonly');
+          const store = transaction.objectStore(storeName);
+          const request = store.get(key);
+
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+          transaction.onerror = () => reject(transaction.error);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      if (retryCount < 1 && (error instanceof Error && 
+          (error.message.includes('closing') || error.message.includes('closed')))) {
+        this.initPromise = null;
+        return this.get<T>(storeName, key, retryCount + 1);
+      }
+      throw error;
+    }
   }
 
-  async getAll<T>(storeName: string): Promise<T[]> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([storeName], 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.getAll();
+  async getAll<T>(storeName: string, retryCount = 0): Promise<T[]> {
+    try {
+      await this.init();
+      
+      // Check if database is still valid
+      if (!this.db || this.isClosing) {
+        throw new Error('Database connection is closed');
+      }
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+      return new Promise((resolve, reject) => {
+        try {
+          const transaction = this.db!.transaction([storeName], 'readonly');
+          const store = transaction.objectStore(storeName);
+          const request = store.getAll();
+
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+
+          // Handle transaction errors
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(new Error('Transaction aborted'));
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      // Retry once if connection was closed
+      if (retryCount < 1 && (error instanceof Error && 
+          (error.message.includes('closing') || error.message.includes('closed')))) {
+        console.warn('[IndexedDB] Connection closed, retrying...', { storeName, retryCount });
+        this.initPromise = null; // Force re-initialization
+        return this.getAll<T>(storeName, retryCount + 1);
+      }
+      throw error;
+    }
   }
 
-  async delete(storeName: string, key: string): Promise<void> {
-    await this.init();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction([storeName], 'readwrite');
-      const store = transaction.objectStore(storeName);
-      const request = store.delete(key);
+  async delete(storeName: string, key: string, retryCount = 0): Promise<void> {
+    try {
+      await this.init();
+      
+      if (!this.db || this.isClosing) {
+        throw new Error('Database connection is closed');
+      }
 
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+      return new Promise((resolve, reject) => {
+        try {
+          const transaction = this.db!.transaction([storeName], 'readwrite');
+          const store = transaction.objectStore(storeName);
+          const request = store.delete(key);
+
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+          transaction.onerror = () => reject(transaction.error);
+        } catch (error) {
+          reject(error);
+        }
+      });
+    } catch (error) {
+      if (retryCount < 1 && (error instanceof Error && 
+          (error.message.includes('closing') || error.message.includes('closed')))) {
+        this.initPromise = null;
+        return this.delete(storeName, key, retryCount + 1);
+      }
+      throw error;
+    }
   }
 
   async clear(storeName: string): Promise<void> {
