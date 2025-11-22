@@ -17,13 +17,22 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
 
   const handleConnect = () => {
     const botLink = getTelegramBotLink(userId);
+    console.log('🔗 Telegram bot link:', botLink);
+    console.log('👤 User ID:', userId);
+    
+    // Decode and verify the start parameter
+    const startParam = botLink.split('?start=')[1];
+    const decoded = atob(startParam.replace(/-/g, '+').replace(/_/g, '/'));
+    console.log('🔓 Decoded userId:', decoded);
+    console.log('✅ UUIDs match:', decoded === userId);
+    
     window.open(botLink, '_blank');
     toast.info('📱 Opening Telegram... Click START to connect', {
       description: 'This will enable instant notifications for your orders',
       duration: 5000,
     });
     
-    // Auto-refresh status after 3 seconds, then again after 8 seconds
+    // Auto-refresh status multiple times to catch the connection
     setTimeout(() => {
       refresh();
       toast.info('🔄 Checking connection status...');
@@ -31,7 +40,15 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
     
     setTimeout(() => {
       refresh();
-    }, 8000);
+    }, 6000);
+    
+    setTimeout(() => {
+      refresh();
+    }, 10000);
+    
+    setTimeout(() => {
+      refresh();
+    }, 15000);
   };
 
   const handleDisconnect = async () => {

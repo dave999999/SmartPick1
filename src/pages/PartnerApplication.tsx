@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useI18n } from '@/lib/i18n';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { logger } from '@/lib/logger';
+import { TelegramConnect } from '@/components/TelegramConnect';
 
 const BUSINESS_TYPES = [
   { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
@@ -545,24 +546,27 @@ export default function PartnerApplication() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!formData.email) {
-      errors.email = t('partner.error.required');
-    } else if (!validateEmail(formData.email)) {
-      errors.email = t('partner.error.invalidEmail');
-    } else if (emailError) {
-      errors.email = emailError;
-    }
+    // Only validate email and password for new users (not logged in)
+    if (!isUserLoggedIn) {
+      if (!formData.email) {
+        errors.email = t('partner.error.required');
+      } else if (!validateEmail(formData.email)) {
+        errors.email = t('partner.error.invalidEmail');
+      } else if (emailError) {
+        errors.email = emailError;
+      }
 
-    if (!formData.password) {
-      errors.password = t('partner.error.required');
-    } else if (!validatePassword(formData.password)) {
-      errors.password = t('partner.error.passwordWeak');
-    }
+      if (!formData.password) {
+        errors.password = t('partner.error.required');
+      } else if (!validatePassword(formData.password)) {
+        errors.password = t('partner.error.passwordWeak');
+      }
 
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = t('partner.error.required');
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match.';
+      if (!formData.confirmPassword) {
+        errors.confirmPassword = t('partner.error.required');
+      } else if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match.';
+      }
     }
 
     if (!formData.business_name) {
@@ -620,7 +624,9 @@ export default function PartnerApplication() {
     setFieldErrors(errors);
 
     if (Object.keys(errors).length > 0) {
-      toast.error('Please complete all required fields before applying.');
+      const errorFields = Object.keys(errors).join(', ');
+      toast.error(`Please complete all required fields: ${errorFields}`);
+      console.log('Validation errors:', errors);
       return false;
     }
 
@@ -853,8 +859,11 @@ export default function PartnerApplication() {
               </div>
             </div>
             <DialogTitle className="text-center text-2xl">{t('partner.dialog.submittedTitle')}</DialogTitle>
-            <DialogDescription className="text-center text-base pt-2">
-              ✅ {t('partner.dialog.submittedDescription')}
+            <DialogDescription className="text-center text-base pt-2 space-y-3">
+              <p>✅ {t('partner.dialog.submittedDescription')}</p>
+              <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                📱 <strong>Next Step:</strong> Set up Telegram notifications from your partner dashboard to receive instant alerts about new reservations!
+              </p>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
@@ -893,7 +902,7 @@ export default function PartnerApplication() {
       )}
 
       {/* Application Form */}
-      <div className="container mx-auto px-4 py-4 max-w-3xl">
+      <div className="container mx-auto px-4 py-4 pb-24 max-w-3xl">
         <Card className="shadow-xl border border-slate-700 overflow-hidden bg-slate-800">
           <CardContent className="pt-6">
 
@@ -1099,31 +1108,15 @@ export default function PartnerApplication() {
 
                 {/* Map Section */}
                 <div className="space-y-2 p-3 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700">
-                  <div className="flex items-center justify-between mb-1">
-                    <Label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                      Pin Location
-                    </Label>
+                  <div className="w-full h-[380px] md:h-[480px] rounded-lg overflow-hidden border border-slate-600 shadow-lg relative">
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
                       onClick={handleUseCurrentLocation}
-                      className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all"
+                      className="absolute top-3 right-3 z-10 h-9 px-3 bg-white hover:bg-gray-50 text-emerald-600 border-2 border-emerald-500 shadow-lg hover:shadow-xl transition-all font-semibold"
                     >
-                      <Navigation className="w-3 h-3 mr-1" />
+                      <Navigation className="w-4 h-4 mr-1.5" />
                       Use My Location
                     </Button>
-                  </div>
-
-                  <Alert className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border-emerald-500/50 py-2">
-                    <MapPin className="h-3.5 w-3.5 text-emerald-400" />
-                    <AlertDescription className="text-slate-200 text-[10px] leading-snug">
-                      <strong>Drag the pin</strong> to set your location. Click anywhere on the map.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="w-full h-[200px] md:h-[280px] rounded-lg overflow-hidden border border-slate-600 shadow-lg">
                     <MapContainer
                       center={markerPosition}
                       zoom={14}
@@ -1142,14 +1135,10 @@ export default function PartnerApplication() {
                       />
                     </MapContainer>
                   </div>
-
+                  
                   {/* Hidden lat/long fields */}
                   <input type="hidden" name="latitude" value={formData.latitude} />
                   <input type="hidden" name="longitude" value={formData.longitude} />
-
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3 text-emerald-600" /> Your coordinates update automatically when you move the pin.
-                  </p>
 
                   {fieldErrors.location && (
                     <p className="text-xs text-red-600 flex items-center gap-1">
@@ -1257,7 +1246,7 @@ export default function PartnerApplication() {
                       <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.opening_hours ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select opening time" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
+                      <SelectContent className="max-h-60 overflow-y-auto bg-slate-900 border-slate-600 text-white">
                         {[...Array(48)].map((_, i) => {
                           const hours = Math.floor(i / 2);
                           const minutes = i % 2 === 0 ? '00' : '30';
@@ -1293,7 +1282,7 @@ export default function PartnerApplication() {
                       <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.closing_hours ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select closing time" />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto">
+                      <SelectContent className="max-h-60 overflow-y-auto bg-slate-900 border-slate-600 text-white">
                         {[...Array(48)].map((_, i) => {
                           const hours = Math.floor(i / 2);
                           const minutes = i % 2 === 0 ? '00' : '30';
@@ -1385,16 +1374,26 @@ export default function PartnerApplication() {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="telegram" className="text-xs font-semibold text-slate-200">Telegram (optional)</Label>
-                  <Input
-                    id="telegram"
-                    value={formData.telegram}
-                    onChange={(e) => handleChange('telegram', e.target.value)}
-                    placeholder="@yourbusiness"
-                    className="mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
-                  />
-                </div>
+                {/* Telegram Notifications - Only show if user is logged in */}
+                {isUserLoggedIn && existingUserId && (
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-200 mb-2 block">Telegram Notifications (optional)</Label>
+                    {/* Debug: Show userId being used */}
+                    {import.meta.env.DEV && (
+                      <p className="text-[10px] text-slate-400 mb-1">Debug: userId = {existingUserId}</p>
+                    )}
+                    <TelegramConnect userId={existingUserId} userType="partner" />
+                  </div>
+                )}
+                
+                {/* Show info message for non-logged-in users */}
+                {!isUserLoggedIn && (
+                  <div className="p-3 bg-blue-900/30 border border-blue-500/50 rounded-lg">
+                    <p className="text-xs text-blue-200">
+                      💡 <strong>Telegram notifications</strong> can be set up after your account is created. You'll find this option in your partner dashboard.
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <Label htmlFor="whatsapp" className="text-xs font-semibold text-slate-200">WhatsApp (optional)</Label>
@@ -1436,49 +1435,53 @@ export default function PartnerApplication() {
               </div>
               )}
 
-              {/* Navigation Buttons */}
-              <div className="flex gap-2 pt-4 border-t border-slate-700">
-                {currentStep > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handlePrevStep}
-                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all"
-                  >
-                    ← Back
-                  </Button>
-                )}
-
-                {currentStep < totalSteps ? (
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-                  >
-                    Next →
-                  </Button>
-                ) : (
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting || isDemoMode}
-                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Creating Account...' : 'Submit Application'}
-                  </Button>
-                )}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => navigate('/')}
-                  className={`text-slate-600 hover:text-slate-800 hover:bg-slate-100 font-medium transition-colors ${currentStep === 1 ? 'flex-1' : ''}`}
-                >
-                  Cancel
-                </Button>
-              </div>
             </form>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Navigation Buttons - Sticky at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-50 border-t-2 border-slate-300 shadow-2xl p-4 z-[9999]" style={{backgroundColor: '#f9fafb'}}>
+        <div className="container mx-auto max-w-3xl">
+          <div className="flex gap-3">
+            {currentStep > 1 && (
+              <Button
+                type="button"
+                onClick={handlePrevStep}
+                className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-300 font-bold text-base shadow-md hover:shadow-lg transition-all rounded-xl"
+              >
+                ← Back
+              </Button>
+            )}
+
+            {currentStep < totalSteps ? (
+              <Button
+                type="button"
+                onClick={handleNextStep}
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all rounded-xl"
+              >
+                Next →
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={isSubmitting || isDemoMode}
+                onClick={handleSubmit}
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all rounded-xl disabled:opacity-50"
+              >
+                {isSubmitting ? 'Creating Account...' : 'Submit Application'}
+              </Button>
+            )}
+
+            <Button
+              type="button"
+              onClick={() => navigate('/')}
+              className={`h-12 bg-red-50 hover:bg-red-100 text-red-600 border-2 border-red-300 hover:border-red-400 font-bold text-base shadow-md hover:shadow-lg transition-all rounded-xl ${currentStep === 1 ? 'flex-1' : 'px-6'}`}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
