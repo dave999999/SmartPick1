@@ -48,7 +48,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           {/* Terms Content */}
           <TabsContent value="terms" className="mt-4">
             <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
-              <div className="space-y-4 text-sm text-gray-800">
+              <div className="space-y-4 text-sm text-gray-900">
                 <Alert className="border-teal-200 bg-teal-50">
                   <AlertCircle className="h-4 w-4 text-teal-600" />
                   <AlertDescription className="text-sm">
@@ -58,7 +58,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
                 <div>
                   <h3 className="font-semibold text-base mb-2 text-gray-900">How SmartPick Works:</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-800">
+                  <ul className="list-disc pl-5 space-y-2 text-gray-900">
                     <li>
                       <strong>🎯 SmartPoints:</strong> Think of these as your loyalty currency within SmartPick. They help you reserve great deals but can't be exchanged for cash or transferred to others. They're yours to enjoy on our platform!
                     </li>
@@ -88,19 +88,19 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                   <div className="space-y-3">
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">✨ Cancellation Flexibility</p>
-                      <p className="text-gray-700 text-xs">
+                      <p className="text-gray-900 text-xs">
                         Each offer has its own cancellation rules - some let you cancel before a deadline, others are final once reserved. We show this clearly on each offer so you know before you commit.
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">🎮 Fair Play</p>
-                      <p className="text-gray-700 text-xs">
+                      <p className="text-gray-900 text-xs">
                         Please use SmartPick honestly - no gaming the system, creating fake accounts, or anything illegal. We built this on trust, and we protect that for everyone's benefit.
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">⚖️ Our Responsibility</p>
-                      <p className="text-gray-700 text-xs">
+                      <p className="text-gray-900 text-xs">
                         We work hard to keep SmartPick running smoothly, but we're a platform connecting you with partners. We can't control everything that happens, so while we'll always try to help, we can't be held responsible for partner-related issues.
                       </p>
                     </div>
@@ -124,7 +124,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           {/* Privacy Content */}
           <TabsContent value="privacy" className="mt-4">
             <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
-              <div className="space-y-4 text-sm text-gray-800">
+              <div className="space-y-4 text-sm text-gray-900">
                 <Alert className="border-green-200 bg-green-50">
                   <Shield className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-sm">
@@ -134,7 +134,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
                 <div>
                   <h3 className="font-semibold text-base mb-2 text-gray-900">What We Collect (and Why):</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-800">
+                  <ul className="list-disc pl-5 space-y-2 text-gray-900">
                     <li>
                       <strong>👤 Your Profile:</strong> Name, email, phone, and password (encrypted!) so you can log in and partners know who you are at pickup.
                     </li>
@@ -163,7 +163,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                       'Legal compliance',
                       'Analytics (anonymized)',
                     ].map((purpose) => (
-                      <div key={purpose} className="flex items-center gap-2 text-xs text-gray-800">
+                      <div key={purpose} className="flex items-center gap-2 text-xs text-gray-900">
                         <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
                         <span>{purpose}</span>
                       </div>
@@ -191,7 +191,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
                 <div>
                   <h3 className="font-semibold text-base mb-2 text-gray-900">Who Sees Your Data:</h3>
-                  <ul className="list-disc pl-5 space-y-1 text-gray-800 text-xs">
+                  <ul className="list-disc pl-5 space-y-1 text-gray-900 text-xs">
                     <li><strong>Partners</strong> - Only your name and reservation details (they need to prepare your order!)</li>
                     <li><strong>Payment Processors</strong> - Secure services like Unipay that handle transactions</li>
                     <li><strong>Cloud Services</strong> - Where we safely store and process data (all encrypted)</li>
