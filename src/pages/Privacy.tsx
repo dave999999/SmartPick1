@@ -211,15 +211,15 @@ export default function Privacy() {
               <Shield className="h-6 w-6 text-teal-600" />
               1. Introduction
             </h2>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-900 mb-4">
               This Privacy Policy explains how SmartPick ("we", "us", "our") collects, uses and protects your personal data when you use our website, mobile experience and related services ("Platform").
             </p>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-900 mb-4">
               We process personal data in accordance with the legislation of Georgia and, where applicable, other data protection laws.
             </p>
             <div className="bg-teal-50 border-l-4 border-teal-600 p-4 my-4">
               <p className="text-gray-900 font-medium mb-2">Important Note</p>
-              <p className="text-gray-700 text-sm">
+              <p className="text-gray-900 text-sm">
                 By using SmartPick, you agree to the practices described in this Privacy Policy. If you do not agree, please do not use our services.
               </p>
             </div>
@@ -228,10 +228,10 @@ export default function Privacy() {
           {/* Section 2: Data Controller */}
           <section id="data-controller" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Data Controller</h2>
-            <p className="text-gray-700 mb-2">The data controller for SmartPick is:</p>
+            <p className="text-gray-900 mb-2">The data controller for SmartPick is:</p>
             <Card className="not-prose border-gray-200 bg-gray-50">
               <CardContent className="pt-6">
-                <ul className="list-none pl-0 text-gray-700 space-y-2">
+                <ul className="list-none pl-0 text-gray-900 space-y-2">
                   <li className="flex items-start gap-2">
                     <span className="font-semibold min-w-[80px]">Entity:</span>
                     <span>IE Davit Batumashvili</span>
@@ -256,10 +256,10 @@ export default function Privacy() {
           {/* Section 3: Data We Collect */}
           <section id="data-collect" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Data We Collect</h2>
-            <p className="text-gray-700 mb-4">We may collect the following categories of data:</p>
+            <p className="text-gray-900 mb-4">We may collect the following categories of data:</p>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">3.1. Account and Identification Data</h3>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Name and surname</li>
               <li>Email address</li>
               <li>Phone number</li>
@@ -268,14 +268,14 @@ export default function Privacy() {
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">3.2. Usage Data</h3>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Log data such as IP address, device information, browser type, date and time of access</li>
               <li>Pages visited, actions performed within the Platform</li>
               <li>Clicks on offers, reservations made, cancellations, etc.</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">3.3. Reservation and Transaction Data</h3>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Offers you reserve, Partner locations and pickup times</li>
               <li>SmartPoints balance and activity</li>
               <li>Payment-related metadata (e.g. transaction IDs, payment status) received from payment providers.</li>
@@ -288,15 +288,15 @@ export default function Privacy() {
             </Alert>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3 mt-6">3.4. Partner Data</h3>
-            <p className="text-gray-700 mb-4">For Partners and their staff, we may collect:</p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <p className="text-gray-900 mb-4">For Partners and their staff, we may collect:</p>
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Contact details (name, email, phone)</li>
               <li>Business details (trade name, address, banking details for payouts)</li>
               <li>Access credentials to the Partner dashboard.</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-800 mb-3">3.5. Communication Data</h3>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2">
+            <ul className="list-disc pl-6 text-gray-900 space-y-2">
               <li>Messages or emails you send to us</li>
               <li>Support requests, feedback, complaints</li>
             </ul>
@@ -305,7 +305,7 @@ export default function Privacy() {
           {/* Section 4: How We Use Your Data */}
           <section id="data-use" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. How We Use Your Data</h2>
-            <p className="text-gray-700 mb-4">We use personal data for the following purposes:</p>
+            <p className="text-gray-900 mb-4">We use personal data for the following purposes:</p>
             <div className="grid md:grid-cols-2 gap-4 not-prose mb-4">
               {[
                 'Create and manage your SmartPick account',
@@ -321,11 +321,11 @@ export default function Privacy() {
                   <div className="mt-0.5">
                     <div className="h-2 w-2 bg-teal-600 rounded-full"></div>
                   </div>
-                  <span className="text-sm text-gray-700">{purpose}</span>
+                  <span className="text-sm text-gray-900">{purpose}</span>
                 </div>
               ))}
             </div>
-            <p className="text-gray-700 text-sm italic">
+            <p className="text-gray-900 text-sm italic">
               We may also use aggregated or anonymized data for analytics, which no longer identifies you personally.
             </p>
           </section>
@@ -333,7 +333,7 @@ export default function Privacy() {
           {/* Section 5: Legal Bases */}
           <section id="legal-bases" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Legal Bases for Processing</h2>
-            <p className="text-gray-700 mb-4">We process personal data based on one or more of the following legal grounds:</p>
+            <p className="text-gray-900 mb-4">We process personal data based on one or more of the following legal grounds:</p>
             <div className="space-y-4 not-prose">
               {[
                 { title: 'Performance of a contract', desc: 'To provide the SmartPick service you signed up for' },
@@ -345,7 +345,7 @@ export default function Privacy() {
                   <FileText className="h-5 w-5 text-teal-700 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-gray-900">{basis.title}</p>
-                    <p className="text-sm text-gray-700">{basis.desc}</p>
+                    <p className="text-sm text-gray-900">{basis.desc}</p>
                   </div>
                 </div>
               ))}
@@ -355,8 +355,8 @@ export default function Privacy() {
           {/* Section 6: Cookies */}
           <section id="cookies" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Cookies and Similar Technologies</h2>
-            <p className="text-gray-700 mb-4">SmartPick may use cookies and similar technologies to:</p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <p className="text-gray-900 mb-4">SmartPick may use cookies and similar technologies to:</p>
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Keep you logged in</li>
               <li>Remember your preferences</li>
               <li>Analyze traffic and usage patterns</li>
@@ -373,8 +373,8 @@ export default function Privacy() {
           {/* Section 7: Sharing */}
           <section id="sharing" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Sharing of Personal Data</h2>
-            <p className="text-gray-700 mb-4">We may share your personal data with:</p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <p className="text-gray-900 mb-4">We may share your personal data with:</p>
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Partner businesses, to the extent necessary to fulfill your reservation (e.g. your name, reservation ID and pickup time)</li>
               <li>Payment service providers (such as Unipay or banks) that process card transactions on our behalf</li>
               <li>Cloud hosting, analytics and communication service providers that support the operation of the Platform</li>
@@ -391,7 +391,7 @@ export default function Privacy() {
           {/* Section 8: International Transfers */}
           <section id="transfers" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. International Transfers</h2>
-            <p className="text-gray-700">
+            <p className="text-gray-900">
               Some of our service providers may be located outside of Georgia. In such cases, we will take reasonable steps to ensure that your data is protected with appropriate safeguards and that transfers comply with applicable law.
             </p>
           </section>
@@ -399,14 +399,14 @@ export default function Privacy() {
           {/* Section 9: Data Retention */}
           <section id="retention" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Data Retention</h2>
-            <p className="text-gray-700 mb-4">We keep your personal data for as long as necessary to:</p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+            <p className="text-gray-900 mb-4">We keep your personal data for as long as necessary to:</p>
+            <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
               <li>Provide the SmartPick service</li>
               <li>Maintain your account</li>
               <li>Fulfill legal and accounting obligations (typically 7 years for financial records)</li>
               <li>Resolve disputes and enforce our agreements</li>
             </ul>
-            <p className="text-gray-700">
+            <p className="text-gray-900">
               When data is no longer needed, we will delete or anonymize it, unless we are legally required to keep it longer.
             </p>
           </section>
@@ -417,7 +417,7 @@ export default function Privacy() {
               <Shield className="h-6 w-6 text-teal-600" />
               10. Your Rights
             </h2>
-            <p className="text-gray-700 mb-4">Depending on applicable law, you may have the right to:</p>
+            <p className="text-gray-900 mb-4">Depending on applicable law, you may have the right to:</p>
             <div className="grid md:grid-cols-2 gap-4 not-prose mb-6">
               {[
                 { title: 'Access', desc: 'Request a copy of your personal data' },
@@ -479,7 +479,7 @@ export default function Privacy() {
           {/* Section 11: Security */}
           <section id="security" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Security</h2>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-900 mb-4">
               We take reasonable technical and organizational measures to protect your personal data against unauthorized access, loss, misuse or alteration. These measures include:
             </p>
             <div className="grid md:grid-cols-3 gap-4 not-prose mb-4">
@@ -495,7 +495,7 @@ export default function Privacy() {
                 return (
                   <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                     <Icon className="h-5 w-5 text-teal-600 flex-shrink-0" />
-                    <span className="text-sm text-gray-700">{item.text}</span>
+                    <span className="text-sm text-gray-900">{item.text}</span>
                   </div>
                 );
               })}
@@ -511,7 +511,7 @@ export default function Privacy() {
           {/* Section 12: Third-Party Links */}
           <section id="third-party" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Third-Party Links</h2>
-            <p className="text-gray-700">
+            <p className="text-gray-900">
               The Platform may contain links to third-party websites or services. This Privacy Policy applies only to SmartPick. We are not responsible for the privacy practices or content of third-party sites. Please review their privacy policies before providing any personal information.
             </p>
           </section>
@@ -519,10 +519,10 @@ export default function Privacy() {
           {/* Section 13: Changes */}
           <section id="changes" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">13. Changes to this Privacy Policy</h2>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-900 mb-4">
               We may update this Privacy Policy from time to time. The latest version will always be available on our website. Significant changes may be communicated via email or in-app notifications.
             </p>
-            <p className="text-gray-700">
+            <p className="text-gray-900">
               Your continued use of SmartPick after changes means you accept the updated Privacy Policy. We encourage you to review this policy periodically.
             </p>
           </section>
@@ -530,7 +530,7 @@ export default function Privacy() {
           {/* Section 14: Contact */}
           <section id="contact" className="mb-8 scroll-mt-20">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">14. Contact</h2>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-900 mb-4">
               If you have any questions about this Privacy Policy or how we handle your data, please contact us at:
             </p>
             <Card className="not-prose border-gray-200">
@@ -596,3 +596,4 @@ export default function Privacy() {
     </PageShell>
   );
 }
+
