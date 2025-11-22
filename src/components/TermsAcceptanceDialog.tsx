@@ -22,24 +22,24 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-gradient-to-br from-white via-slate-50 to-gray-50">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
+          <DialogTitle className="flex items-center gap-2 text-xl text-gray-900">
             <FileText className="h-5 w-5 text-teal-600" />
             Terms & Conditions and Privacy Policy
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600">
             Please read and accept our terms to create your account
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="terms" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="terms" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200">
+            <TabsTrigger value="terms" className="flex items-center gap-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
               <FileText className="h-4 w-4" />
               Terms & Conditions
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-2">
+            <TabsTrigger value="privacy" className="flex items-center gap-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
               <Shield className="h-4 w-4" />
               Privacy Policy
             </TabsTrigger>
@@ -47,8 +47,8 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
           {/* Terms Content */}
           <TabsContent value="terms" className="flex-1 mt-4 min-h-0">
-            <ScrollArea className="h-[50vh] pr-4">
-              <div className="space-y-4 text-sm">
+            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4">
+              <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-teal-200 bg-teal-50">
                   <AlertCircle className="h-4 w-4 text-teal-600" />
                   <AlertDescription>
@@ -57,8 +57,8 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">Key Points:</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Key Points:</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-gray-800">
                     <li>
                       <strong>SmartPoints:</strong> Virtual loyalty units with <strong className="text-red-600">no cash value</strong> outside SmartPick. Cannot be withdrawn or transferred.
                     </li>
@@ -84,23 +84,23 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">Important Policies:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Important Policies:</h3>
                   <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">Cancellations</p>
-                      <p className="text-gray-600 text-xs">
+                      <p className="text-gray-700 text-xs">
                         Some offers allow cancellation before a deadline, others are non-cancellable. Check each offer's specific rules before reserving.
                       </p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">Acceptable Use</p>
-                      <p className="text-gray-600 text-xs">
+                      <p className="text-gray-700 text-xs">
                         Do not use the Platform for illegal purposes, misuse promotions, or attempt to interfere with security.
                       </p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">Liability</p>
-                      <p className="text-gray-600 text-xs">
+                      <p className="text-gray-700 text-xs">
                         Platform provided "as is". SmartPick is not liable for indirect damages or issues caused by Partners/third parties.
                       </p>
                     </div>
@@ -123,8 +123,8 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
           {/* Privacy Content */}
           <TabsContent value="privacy" className="flex-1 mt-4 min-h-0">
-            <ScrollArea className="h-[50vh] pr-4">
-              <div className="space-y-4 text-sm">
+            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4">
+              <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-green-200 bg-green-50">
                   <Shield className="h-4 w-4 text-green-600" />
                   <AlertDescription>
@@ -133,8 +133,8 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">What We Collect:</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">What We Collect:</h3>
+                  <ul className="list-disc pl-5 space-y-2 text-gray-800">
                     <li>
                       <strong>Account Data:</strong> Name, email, phone, password (hashed), age confirmation
                     </li>
@@ -151,7 +151,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">How We Use Your Data:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">How We Use Your Data:</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       'Manage your account',
@@ -163,7 +163,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                       'Legal compliance',
                       'Analytics (anonymized)',
                     ].map((purpose) => (
-                      <div key={purpose} className="flex items-center gap-2 text-xs text-gray-700">
+                      <div key={purpose} className="flex items-center gap-2 text-xs text-gray-800">
                         <CheckCircle2 className="h-3 w-3 text-green-600 flex-shrink-0" />
                         <span>{purpose}</span>
                       </div>
@@ -172,26 +172,26 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">Your Rights:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Your Rights:</h3>
                   <div className="space-y-2">
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1 text-xs">Access & Portability</p>
-                      <p className="text-gray-600 text-xs">Request a copy of your data in machine-readable format</p>
+                      <p className="text-gray-700 text-xs">Request a copy of your data in machine-readable format</p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1 text-xs">Rectification & Erasure</p>
-                      <p className="text-gray-600 text-xs">Correct inaccurate data or request deletion where applicable</p>
+                      <p className="text-gray-700 text-xs">Correct inaccurate data or request deletion where applicable</p>
                     </div>
-                    <div className="p-3 bg-gray-50 rounded-lg">
+                    <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1 text-xs">Object & Restrict</p>
-                      <p className="text-gray-600 text-xs">Object to certain processing or request restriction</p>
+                      <p className="text-gray-700 text-xs">Object to certain processing or request restriction</p>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2">Data Sharing:</h3>
-                  <ul className="list-disc pl-5 space-y-1 text-gray-700 text-xs">
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Data Sharing:</h3>
+                  <ul className="list-disc pl-5 space-y-1 text-gray-800 text-xs">
                     <li>Partners (only what's needed for your reservation)</li>
                     <li>Payment providers (Unipay, banks)</li>
                     <li>Cloud hosting & analytics services</li>
@@ -217,10 +217,10 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="flex-col sm:flex-row gap-3 pt-4 border-t">
+        <DialogFooter className="flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 bg-white/60 backdrop-blur-sm rounded-b-lg px-6 py-4">
           {!alreadyAccepted ? (
             <>
-              <div className="flex-1 text-xs text-gray-600">
+              <div className="flex-1 text-xs text-gray-700">
                 By clicking "I Accept", you agree to our Terms & Conditions and Privacy Policy
               </div>
               <div className="flex gap-2">
