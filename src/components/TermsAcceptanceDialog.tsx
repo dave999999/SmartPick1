@@ -51,7 +51,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
               <div className="space-y-4 text-sm text-gray-900">
                 <Alert className="border-teal-200 bg-teal-50">
                   <AlertCircle className="h-4 w-4 text-teal-600" />
-                  <AlertDescription className="text-sm">
+                  <AlertDescription className="text-sm text-gray-900">
                     <strong>Welcome! 👋</strong> SmartPick connects you with local partners offering great deals. SmartPoints are our loyalty currency (no cash value), reservations work on a trust system, and alcohol purchases require age verification at pickup.
                   </AlertDescription>
                 </Alert>
@@ -109,7 +109,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
                 <Alert className="border-blue-200 bg-blue-50">
                   <AlertCircle className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-xs">
+                  <AlertDescription className="text-xs text-gray-900">
                     <strong>Version 1.0</strong> • Last updated: January 15, 2025
                     <br />
                     <Link to="/terms" target="_blank" className="text-teal-600 hover:underline font-medium">
@@ -127,7 +127,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
               <div className="space-y-4 text-sm text-gray-900">
                 <Alert className="border-green-200 bg-green-50">
                   <Shield className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-sm">
+                  <AlertDescription className="text-sm text-gray-900">
                     <strong>Your Privacy Matters 🔒</strong> We collect only what we need to make SmartPick work for you - your account details, reservation activity, and app usage. Your data is encrypted and safe with us. Most importantly: <strong>we'll never sell your personal information.</strong>
                   </AlertDescription>
                 </Alert>
@@ -207,7 +207,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
                 <Alert className="border-blue-200 bg-blue-50">
                   <Shield className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-xs">
+                  <AlertDescription className="text-xs text-gray-900">
                     <strong>Version 1.0</strong> • Last updated: January 21, 2025
                     <br />
                     <Link to="/privacy" target="_blank" className="text-teal-600 hover:underline font-medium">
