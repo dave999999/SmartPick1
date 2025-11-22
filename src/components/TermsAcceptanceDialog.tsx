@@ -46,62 +46,62 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           </TabsList>
 
           {/* Terms Content */}
-          <TabsContent value="terms" className="flex-1 mt-4 min-h-0">
-            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4">
+          <TabsContent value="terms" className="mt-4">
+            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4" style={{display: 'block'}}>
               <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-teal-200 bg-teal-50">
                   <AlertCircle className="h-4 w-4 text-teal-600" />
-                  <AlertDescription>
-                    <strong>Summary:</strong> By using SmartPick, you agree to our terms. SmartPoints have no cash value, reservations may be non-refundable, and you must be 18+ to use our service.
+                  <AlertDescription className="text-sm">
+                    <strong>Welcome! 👋</strong> SmartPick connects you with local partners offering great deals. SmartPoints are our loyalty currency (no cash value), reservations work on a trust system, and alcohol purchases require age verification at pickup.
                   </AlertDescription>
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">Key Points:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">How SmartPick Works:</h3>
                   <ul className="list-disc pl-5 space-y-2 text-gray-800">
                     <li>
-                      <strong>SmartPoints:</strong> Virtual loyalty units with <strong className="text-red-600">no cash value</strong> outside SmartPick. Cannot be withdrawn or transferred.
+                      <strong>🎯 SmartPoints:</strong> Think of these as your loyalty currency within SmartPick. They help you reserve great deals but can't be exchanged for cash or transferred to others. They're yours to enjoy on our platform!
                     </li>
                     <li>
-                      <strong>Reservations:</strong> Generally non-refundable once confirmed, except when Partner cancels or cannot provide the product.
+                      <strong>📦 Reservations:</strong> When you reserve an offer, you're committing to pick it up. We generally can't refund SmartPoints if you change your mind, but don't worry - if a Partner cancels or can't fulfill your order, you'll get your points back.
                     </li>
                     <li>
-                      <strong>Age Requirement:</strong> You must be <Badge variant="destructive" className="inline-flex mx-1">18+</Badge> to create an account. ID verification required for alcohol.
+                      <strong>🍺 Alcohol Purchases:</strong> You can use SmartPick at any age, but for alcohol orders, <strong>you must be <Badge variant="default" className="inline-flex mx-1 bg-amber-500">18+</Badge></strong> and show valid ID at pickup. Partners are required to verify your age - it's the law!
                     </li>
                     <li>
-                      <strong>Payment:</strong> Reserve with SmartPoints online, but final payment for products is made at Partner location.
+                      <strong>💳 How Payment Works:</strong> You reserve offers with SmartPoints online, but you'll pay the partner directly when you pick up your order. SmartPoints just lock in your spot!
                     </li>
                     <li>
-                      <strong>No-shows:</strong> If you miss pickup time, SmartPoints won't be refunded.
+                      <strong>⏰ Pickup Times:</strong> Please arrive during your reservation window. If you don't show up, we can't refund your SmartPoints - partners prepare your order expecting you!
                     </li>
                     <li>
-                      <strong>Account Security:</strong> You're responsible for keeping login credentials secure.
+                      <strong>🔐 Your Account:</strong> Keep your password safe! You're responsible for any activity on your account, so treat it like your wallet.
                     </li>
                     <li>
-                      <strong>Partner Products:</strong> SmartPick connects you with Partners but doesn't prepare food or assume liability for product quality.
+                      <strong>🤝 Partner Responsibilities:</strong> SmartPick connects you with local businesses, but we don't make the food or control product quality. If there's an issue, talk to the partner first - they want to make it right!
                     </li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">Important Policies:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Good to Know:</h3>
                   <div className="space-y-3">
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
-                      <p className="font-semibold text-gray-900 mb-1">Cancellations</p>
+                      <p className="font-semibold text-gray-900 mb-1">✨ Cancellation Flexibility</p>
                       <p className="text-gray-700 text-xs">
-                        Some offers allow cancellation before a deadline, others are non-cancellable. Check each offer's specific rules before reserving.
+                        Each offer has its own cancellation rules - some let you cancel before a deadline, others are final once reserved. We show this clearly on each offer so you know before you commit.
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
-                      <p className="font-semibold text-gray-900 mb-1">Acceptable Use</p>
+                      <p className="font-semibold text-gray-900 mb-1">🎮 Fair Play</p>
                       <p className="text-gray-700 text-xs">
-                        Do not use the Platform for illegal purposes, misuse promotions, or attempt to interfere with security.
+                        Please use SmartPick honestly - no gaming the system, creating fake accounts, or anything illegal. We built this on trust, and we protect that for everyone's benefit.
                       </p>
                     </div>
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
-                      <p className="font-semibold text-gray-900 mb-1">Liability</p>
+                      <p className="font-semibold text-gray-900 mb-1">⚖️ Our Responsibility</p>
                       <p className="text-gray-700 text-xs">
-                        Platform provided "as is". SmartPick is not liable for indirect damages or issues caused by Partners/third parties.
+                        We work hard to keep SmartPick running smoothly, but we're a platform connecting you with partners. We can't control everything that happens, so while we'll always try to help, we can't be held responsible for partner-related issues.
                       </p>
                     </div>
                   </div>
@@ -122,36 +122,36 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           </TabsContent>
 
           {/* Privacy Content */}
-          <TabsContent value="privacy" className="flex-1 mt-4 min-h-0">
-            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4">
+          <TabsContent value="privacy" className="mt-4">
+            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4" style={{display: 'block'}}>
               <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-green-200 bg-green-50">
                   <Shield className="h-4 w-4 text-green-600" />
-                  <AlertDescription>
-                    <strong>Summary:</strong> We collect your account info, usage data, and reservation details. We protect your data with encryption and don't sell it. You have rights to access, correct, and delete your data.
+                  <AlertDescription className="text-sm">
+                    <strong>Your Privacy Matters 🔒</strong> We collect only what we need to make SmartPick work for you - your account details, reservation activity, and app usage. Your data is encrypted and safe with us. Most importantly: <strong>we'll never sell your personal information.</strong>
                   </AlertDescription>
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">What We Collect:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">What We Collect (and Why):</h3>
                   <ul className="list-disc pl-5 space-y-2 text-gray-800">
                     <li>
-                      <strong>Account Data:</strong> Name, email, phone, password (hashed), age confirmation
+                      <strong>👤 Your Profile:</strong> Name, email, phone, and password (encrypted!) so you can log in and partners know who you are at pickup.
                     </li>
                     <li>
-                      <strong>Usage Data:</strong> IP address, device info, pages visited, actions performed
+                      <strong>📱 App Usage:</strong> Your IP address, device type, and what pages you visit - this helps us fix bugs, improve the app, and keep things secure.
                     </li>
                     <li>
-                      <strong>Reservation Data:</strong> Offers reserved, pickup times, SmartPoints activity
+                      <strong>🎫 Reservation History:</strong> Which offers you reserve, when you pick them up, and your SmartPoints activity - so we can show your history and prevent misuse.
                     </li>
                     <li>
-                      <strong>Payment Metadata:</strong> Transaction IDs from providers (we DON'T store card numbers)
+                      <strong>💳 Payment Info:</strong> Just transaction IDs from payment providers. <strong className="text-green-600">We never see or store your card numbers!</strong> That's handled by secure payment partners.
                     </li>
                   </ul>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">How We Use Your Data:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">What We Do With It:</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       'Manage your account',
@@ -190,16 +190,19 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">Data Sharing:</h3>
+                  <h3 className="font-semibold text-base mb-2 text-gray-900">Who Sees Your Data:</h3>
                   <ul className="list-disc pl-5 space-y-1 text-gray-800 text-xs">
-                    <li>Partners (only what's needed for your reservation)</li>
-                    <li>Payment providers (Unipay, banks)</li>
-                    <li>Cloud hosting & analytics services</li>
-                    <li>Authorities (if required by law)</li>
+                    <li><strong>Partners</strong> - Only your name and reservation details (they need to prepare your order!)</li>
+                    <li><strong>Payment Processors</strong> - Secure services like Unipay that handle transactions</li>
+                    <li><strong>Cloud Services</strong> - Where we safely store and process data (all encrypted)</li>
+                    <li><strong>Authorities</strong> - Only if legally required (like a court order)</li>
                   </ul>
-                  <p className="mt-2 text-green-700 font-semibold text-sm">
-                    ✓ We do NOT sell your personal data
-                  </p>
+                  <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-green-800 font-semibold text-sm flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      We will NEVER sell your data to advertisers or third parties. Period.
+                    </p>
+                  </div>
                 </div>
 
                 <Alert className="border-blue-200 bg-blue-50">
