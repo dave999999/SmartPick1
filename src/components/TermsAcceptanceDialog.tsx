@@ -47,7 +47,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
           {/* Terms Content */}
           <TabsContent value="terms" className="mt-4">
-            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4" style={{display: 'block'}}>
+            <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
               <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-teal-200 bg-teal-50">
                   <AlertCircle className="h-4 w-4 text-teal-600" />
@@ -118,12 +118,12 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                   </AlertDescription>
                 </Alert>
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
 
           {/* Privacy Content */}
           <TabsContent value="privacy" className="mt-4">
-            <ScrollArea className="h-[50vh] pr-4 bg-white rounded-lg border border-gray-200 p-4" style={{display: 'block'}}>
+            <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
               <div className="space-y-4 text-sm text-gray-800">
                 <Alert className="border-green-200 bg-green-50">
                   <Shield className="h-4 w-4 text-green-600" />
@@ -214,9 +214,9 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                       Read full Privacy Policy →
                     </Link>
                   </AlertDescription>
-                </Alert>
+                </div>
               </div>
-            </ScrollArea>
+            </div>
           </TabsContent>
         </Tabs>
 
