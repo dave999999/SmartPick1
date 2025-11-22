@@ -93,10 +93,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
-          // Cache the new version
+          // Clone BEFORE caching or returning (Response body can only be read once)
+          const responseToCache = networkResponse.clone();
+          
+          // Cache the new version (non-blocking)
           caches.open(DYNAMIC_CACHE).then((cache) => {
-            cache.put(request, networkResponse.clone());
+            cache.put(request, responseToCache);
           });
+          
           return networkResponse;
         })
         .catch(() => {
