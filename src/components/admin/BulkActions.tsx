@@ -348,8 +348,8 @@ export function BulkActions({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-blue-900">Bulk Actions</CardTitle>
-            <CardDescription className="text-blue-700">
+            <CardTitle className="text-gray-900">Bulk Actions</CardTitle>
+            <CardDescription className="text-gray-900">
               {selectedIds.size} of {totalCount} {entityType} selected
             </CardDescription>
           </div>
@@ -357,7 +357,7 @@ export function BulkActions({
             variant="ghost"
             size="sm"
             onClick={onClearSelection}
-            className="text-blue-700 hover:text-blue-900"
+            className="text-gray-900 hover:text-gray-700"
           >
             Clear Selection
           </Button>
@@ -401,7 +401,7 @@ export function BulkActions({
         </div>
 
         {action && (
-          <div className="text-sm text-blue-700 bg-white p-3 rounded border border-blue-200">
+          <div className="text-sm text-gray-900 bg-white p-3 rounded border border-blue-200">
             <strong>Preview:</strong> This will {action} {selectedIds.size} {entityType}.
             {action === 'delete' && ' This action cannot be undone!'}
           </div>
