@@ -209,7 +209,7 @@ export default function Terms() {
                         Do I need to be 18+ to use SmartPick?
                       </AccordionTrigger>
                       <AccordionContent className="text-gray-900">
-                        Yes, you must be at least <strong>18 years old</strong> to create an account. Some offers (alcoholic beverages) require ID verification at pickup. 
+                        No, SmartPick is available to all ages. However, if you want to claim offers containing <strong>alcoholic beverages</strong>, you must be at least <Badge variant="destructive" className="inline-flex mx-1">18 years old</Badge> and will need to show ID at pickup. 
                         See <button onClick={() => scrollToSection('eligibility')} className="text-teal-600 hover:underline font-semibold">Section 5</button>.
                       </AccordionContent>
                     </AccordionItem>
@@ -232,7 +232,7 @@ export default function Terms() {
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Service Description</h2>
               <h3 className="text-xl font-semibold text-gray-800 mb-3">2.1. SmartPick provides:</h3>
               <ul className="list-disc pl-6 text-gray-900 space-y-2 mb-4">
-                <li>A digital marketplace where Partners can publish limited-quantity offers for food, desserts, drinks (including coffee) and, in some cases, alcoholic beverages (available only to users who are <Badge variant="destructive" className="inline-flex ml-1">18+</Badge> and only where permitted by law).</li>
+                <li>A digital marketplace where Partners can publish limited-quantity offers for food, desserts, drinks (including coffee), and other products. <strong>Note:</strong> Alcoholic beverages require you to be <Badge variant="destructive" className="inline-flex ml-1">18+</Badge> and ID verification at pickup.</li>
                 <li>A reservation mechanism where users can reserve these offers using{' '}
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -337,10 +337,13 @@ export default function Terms() {
 
             <section id="eligibility" className="mb-8 scroll-mt-4 print-break-inside-avoid">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Eligibility and Alcohol-related Offers</h2>
-              <Alert className="mb-4 border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
+              <p className="text-gray-900 mb-4">
+                <strong>5.1.</strong> SmartPick is available to users of all ages for general offers. However, special restrictions apply to alcoholic beverages:
+              </p>
+              <Alert className="mb-4 border-amber-200 bg-amber-50">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-sm text-gray-900">
-                  <strong>Age Requirement:</strong> You must be at least <Badge variant="destructive" className="inline-flex mx-1">18 years old</Badge> to create an account and use SmartPick.
+                  <strong>Alcohol Age Requirement:</strong> You must be at least <Badge variant="destructive" className="inline-flex mx-1">18 years old</Badge> to claim offers containing alcoholic beverages.
                 </AlertDescription>
               </Alert>
               <p className="text-gray-900 mb-4">
