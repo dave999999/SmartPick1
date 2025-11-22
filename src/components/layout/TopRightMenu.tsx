@@ -104,6 +104,12 @@ export function TopRightMenu() {
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
+              {!isPartnerApproved && (
+                <DropdownMenuItem onClick={() => { navigate('/partner/apply'); setIsOpen(false); }}>
+                  <PanelsTopLeft className="mr-2 h-4 w-4" /> {t('header.becomePartner')}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <Languages className="mr-2 h-4 w-4" /> Language

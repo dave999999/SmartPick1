@@ -15,7 +15,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { address } = req.query;
+  const { address, limit = '5' } = req.query;
 
   if (!address) {
     return res.status(400).json({ error: 'Missing address parameter' });
@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Call Nominatim API for forward geocoding (address -> coordinates)
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address as string)}&format=json&limit=1&countrycodes=ge`,
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address as string)}&format=json&limit=${limit}&addressdetails=1&countrycodes=ge`,
       {
         headers: {
           'User-Agent': 'SmartPick-Admin/1.0',
@@ -42,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ error: 'Address not found' });
     }
 
-    return res.status(200).json(data[0]);
+    return res.status(200).json(data);
   } catch (error: any) {
     console.error('Forward geocoding error:', error);
     return res.status(500).json({ error: error?.message || 'Geocoding failed' });

@@ -64,12 +64,18 @@ interface LocationMarkerProps {
 
 function LocationMarker({ position, setPosition }: LocationMarkerProps) {
   const markerRef = useRef<L.Marker>(null);
-
-  useMapEvents({
+  const map = useMapEvents({
     click(e) {
       setPosition([e.latlng.lat, e.latlng.lng]);
     },
   });
+
+  // Pan map to marker position when it changes
+  useEffect(() => {
+    if (map && position) {
+      map.setView(position, map.getZoom(), { animate: true });
+    }
+  }, [position, map]);
 
   return (
     <Marker
@@ -116,6 +122,11 @@ export default function PartnerApplication() {
   const [emailError, setEmailError] = useState<string>('');
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [open24h, setOpen24h] = useState(false);
+  
+  // Track if user is already logged in
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [existingUserId, setExistingUserId] = useState<string | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // Form validation errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -134,6 +145,38 @@ export default function PartnerApplication() {
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [addressAutoDetected, setAddressAutoDetected] = useState(false);
   const addressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check if user is already logged in on mount
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          logger.log('User already logged in:', session.user.id);
+          setIsUserLoggedIn(true);
+          setExistingUserId(session.user.id);
+          
+          // Pre-fill email from authenticated user
+          setFormData(prev => ({
+            ...prev,
+            email: session.user.email || '',
+          }));
+          
+          // Skip to Step 2 (Location) for logged-in users
+          setCurrentStep(2);
+          
+          toast.success('Welcome! Since you\'re already logged in, we\'ve skipped the account creation step.');
+        }
+      } catch (error) {
+        logger.error('Error checking authentication:', error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkExistingAuth();
+  }, []);
 
   const [formData, setFormData] = useState({
     // Account fields
@@ -161,9 +204,9 @@ export default function PartnerApplication() {
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     try {
-      // Use Nominatim reverse geocoding (free service)
+      // Use backend proxy to avoid CORS issues
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`,
+        `/api/geocode/reverse?lat=${lat}&lon=${lon}`,
         {
           headers: {
             'Accept': 'application/json',
@@ -249,15 +292,29 @@ export default function PartnerApplication() {
     setIsLoadingAddress(true);
 
     try {
-      // Using geocode.maps.co (free alternative to Nominatim with better CORS support)
-      const response = await fetch(
-        `https://geocode.maps.co/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
+      // Try backend proxy first, fallback to direct Nominatim if it fails
+      let response = await fetch(
+        `/api/geocode/forward?address=${encodeURIComponent(query)}&limit=5`,
         {
           headers: {
             'Accept': 'application/json',
           },
         }
       );
+
+      // If proxy fails, use Nominatim directly
+      if (!response.ok) {
+        logger.warn('Proxy failed, using direct Nominatim');
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&countrycodes=ge`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'SmartPickApp/1.0',
+            },
+          }
+        );
+      }
 
       if (!response.ok) {
         logger.error('Address search failed:', response.statusText);
@@ -303,6 +360,9 @@ export default function PartnerApplication() {
 
     const addressText = suggestion.address?.road || suggestion.display_name;
     const cityText = suggestion.address?.city || suggestion.address?.town || suggestion.address?.village || formData.city;
+
+    // Update marker position on map
+    setMarkerPosition([lat, lon]);
 
     setFormData(prev => ({
       ...prev,
@@ -396,8 +456,8 @@ export default function PartnerApplication() {
   const validateStep = (step: number): boolean => {
     const errors: Record<string, string> = {};
 
-    if (step === 1) {
-      // Account Creation
+    if (step === 1 && !isUserLoggedIn) {
+      // Account Creation (skip if user is already logged in)
       if (!formData.email) {
         errors.email = t('partner.error.required');
       } else if (!validateEmail(formData.email)) {
@@ -604,7 +664,11 @@ export default function PartnerApplication() {
         return;
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      let userId = existingUserId;
+      
+      // Only create account if user is NOT already logged in
+      if (!isUserLoggedIn) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
@@ -644,16 +708,17 @@ export default function PartnerApplication() {
         }
       }
 
-      if (!authData.user) {
-        logger.error('No user data returned from auth.signUp');
-        toast.error('Failed to create account. Please try again.');
-        return;
-      }
+        if (!authData.user) {
+          logger.error('No user data returned from auth.signUp');
+          toast.error('Failed to create account. Please try again.');
+          return;
+        }
 
-      logger.log('User account created successfully:', authData.user.id);
+        userId = authData.user.id;
+        logger.log('User account created successfully:', authData.user.id);
 
-      // Verify session is established after signup
-      if (!authData.session) {
+        // Verify session is established after signup
+        if (!authData.session) {
         logger.error('No session after signup - signing in manually');
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
           email: formData.email,
@@ -666,14 +731,18 @@ export default function PartnerApplication() {
           return;
         }
 
-        logger.log('Successfully signed in after signup');
+          logger.log('Successfully signed in after signup');
+        }
+      } else {
+        // User is already logged in, use their existing ID
+        logger.log('Using existing user ID for partner application:', userId);
       }
 
       // Small delay to ensure session is fully propagated
       await new Promise(resolve => setTimeout(resolve, 500));
 
       const partnerData = {
-        user_id: authData.user.id,
+        user_id: userId,
         business_name: formData.business_name || '',
         business_type: formData.business_type || 'RESTAURANT',
         description: formData.description || '',
@@ -805,22 +874,32 @@ export default function PartnerApplication() {
         </DialogContent>
       </Dialog>
 
-      {/* Header */}
-      <header className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/')} className="mb-2">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('mypicks.backToHome')}
-          </Button>
+      {/* Header with Progress */}
+      <header className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-lg">
+        <div className="container mx-auto px-4 py-4 max-w-3xl">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-white">
+              Partner Registration
+            </span>
+            <span className="text-xs font-medium text-white/90">
+              Step {isUserLoggedIn ? currentStep - 1 : currentStep} of {isUserLoggedIn ? 3 : totalSteps}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-white transition-all duration-500 ease-out rounded-full shadow-lg"
+              style={{ width: `${((isUserLoggedIn ? currentStep - 1 : currentStep) / (isUserLoggedIn ? 3 : totalSteps)) * 100}%` }}
+            />
+          </div>
         </div>
       </header>
 
       {/* Demo Mode Alert */}
       {isDemoMode && (
-        <div className="container mx-auto px-4 pt-4">
-          <Alert className="bg-blue-50 border-blue-200">
+        <div className="container mx-auto px-4 pt-6">
+          <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm">
             <AlertCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-900">
+            <AlertDescription className="text-blue-900 font-medium">
               <strong>Demo Mode:</strong> Partner applications require Supabase configuration.
             </AlertDescription>
           </Alert>
@@ -828,83 +907,23 @@ export default function PartnerApplication() {
       )}
 
       {/* Application Form */}
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <Store className="w-8 h-8 text-[#4CC9A8]" />
-              <div>
-                <CardTitle className="text-3xl">{t('partner.becomeTitle')}</CardTitle>
-                <CardDescription className="text-base mt-1">
-                  Join our platform to reach more customers with smart-time offers
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Progress Indicator */}
-            <div className="mb-8">
-              {/* Mobile: Simple step counter */}
-              <div className="block md:hidden text-center mb-6">
-                <div className="flex justify-center items-center gap-2 mb-2">
-                  <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30">
-                    {steps[currentStep - 1].icon}
-                  </div>
-                </div>
-                <h3 className="text-lg font-semibold text-[#4CC9A8] mb-1">{steps[currentStep - 1].title}</h3>
-                <p className="text-sm text-gray-600">
-                  {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
-                </p>
-              </div>
+      <div className="container mx-auto px-4 py-4 max-w-3xl">
+        <Card className="shadow-xl border border-slate-700 overflow-hidden bg-slate-800">
+          <CardContent className="pt-6">
 
-              {/* Desktop: Full horizontal stepper */}
-              <div className="hidden md:block">
-                <div className="flex items-center justify-between mb-4">
-                  {steps.map((step, index) => (
-                    <div key={step.number} className="flex items-center flex-1">
-                      <div className="flex flex-col items-center flex-1">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition-all ${
-                            currentStep > step.number
-                              ? 'bg-green-500 text-white'
-                              : currentStep === step.number
-                              ? 'bg-[#4CC9A8] text-white ring-4 ring-[#4CC9A8]/30'
-                              : 'bg-gray-200 text-gray-500'
-                          }`}
-                        >
-                          {currentStep > step.number ? '✓' : step.icon}
-                        </div>
-                        <span className={`text-xs mt-2 font-medium text-center ${
-                          currentStep === step.number ? 'text-[#4CC9A8]' : 'text-gray-500'
-                        }`}>
-                          {step.title}
-                        </span>
-                      </div>
-                      {index < steps.length - 1 && (
-                        <div className={`h-1 flex-1 mx-2 transition-all ${
-                          currentStep > step.number ? 'bg-green-500' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-center text-sm text-gray-600">
-                  {t('partner.progress.step')} {currentStep} {t('partner.progress.of')} {totalSteps}
-                </div>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {/* Step 1: Account Creation Section */}
               {currentStep === 1 && (
-              <div className="space-y-4 p-6 bg-[#E8F9F4] rounded-lg border-2 border-[#4CC9A8]/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-5 h-5 text-[#4CC9A8]" />
-                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.account')}</h3>
+              <div className="space-y-3 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700 shadow-sm">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
+                  <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                    <Shield className="w-4 h-4 text-white" />
+                  </div>
+                  <h3 className="text-xs font-bold text-white">{t('partner.section.account')}</h3>
                 </div>
 
                 <div>
-                  <Label htmlFor="email">{t('partner.form.email')} *</Label>
+                  <Label htmlFor="email" className="text-xs font-semibold text-slate-200">{t('partner.form.email')} *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -916,7 +935,7 @@ export default function PartnerApplication() {
                     onBlur={handleEmailBlur}
                     placeholder="partner@example.com"
                     required
-                    className={`bg-white ${fieldErrors.email ? 'border-red-500' : ''}`}
+                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.email ? 'border-red-500' : ''}`}
                   />
                   {isCheckingEmail && (
                     <p className="text-xs text-gray-500 mt-1">{t('partner.emailChecking')}</p>
@@ -937,8 +956,8 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
+                  <Label htmlFor="password" className="text-xs font-semibold text-slate-200">Password *</Label>
+                  <div className="relative mt-1.5">
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
@@ -947,12 +966,12 @@ export default function PartnerApplication() {
                       placeholder="Min 8 chars, 1 number, 1 uppercase"
                       required
                       minLength={8}
-                      className={`bg-white pr-10 ${fieldErrors.password ? 'border-red-500' : ''}`}
+                      className={`bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 pr-10 ${fieldErrors.password ? 'border-red-500' : ''}`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -981,8 +1000,8 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                  <div className="relative">
+                  <Label htmlFor="confirmPassword" className="text-xs font-semibold text-slate-700">Confirm Password *</Label>
+                  <div className="relative mt-1.5">
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -991,12 +1010,12 @@ export default function PartnerApplication() {
                       placeholder="Re-enter your password"
                       required
                       minLength={8}
-                      className={`bg-white pr-10 ${fieldErrors.confirmPassword ? 'border-red-500' : ''}`}
+                      className={`bg-white border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 pr-10 ${fieldErrors.confirmPassword ? 'border-red-500' : ''}`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1019,18 +1038,20 @@ export default function PartnerApplication() {
 
               {/* Step 2: Location Section */}
               {currentStep === 2 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">📍</span>
-                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.location')}</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
+                  <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
+                    <MapPin className="w-4 h-4 text-white" />
+                  </div>
+                  <h3 className="text-xs font-bold text-white">{t('partner.section.location')}</h3>
                 </div>
 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-1">
-                    <Label htmlFor="address">Street Address *</Label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Label htmlFor="address" className="text-xs font-semibold text-slate-200">Street Address *</Label>
                     {addressAutoDetected && (
-                      <span className="text-xs text-[#4CC9A8] flex items-center gap-1">
-                        📍 Auto-detected from map
+                      <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
+                        <MapPin className="w-3 h-3" /> Auto-detected
                       </span>
                     )}
                   </div>
@@ -1041,7 +1062,7 @@ export default function PartnerApplication() {
                     onClick={(e) => e.stopPropagation()}
                     placeholder="e.g., 123 Rustaveli Avenue"
                     required
-                    className={fieldErrors.address ? 'border-red-500' : ''}
+                    className={`bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.address ? 'border-red-500' : ''}`}
                   />
                   {fieldErrors.address && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1052,16 +1073,16 @@ export default function PartnerApplication() {
 
                   {showAddressSuggestions && addressSuggestions.length > 0 && (
                     <div
-                      className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      className="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-600 rounded-xl shadow-xl max-h-60 overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {addressSuggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="px-4 py-3 hover:bg-[#E8F9F4] cursor-pointer border-b border-gray-100 last:border-b-0"
+                          className="px-4 py-3 hover:bg-gradient-to-r hover:from-emerald-900/30 hover:to-teal-900/30 cursor-pointer border-b border-slate-700 last:border-b-0 transition-colors"
                           onClick={() => handleSelectAddressSuggestion(suggestion)}
                         >
-                          <p className="text-sm text-gray-900">{suggestion.display_name}</p>
+                          <p className="text-sm text-slate-100">{suggestion.display_name}</p>
                         </div>
                       ))}
                     </div>
@@ -1073,14 +1094,14 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="city">City *</Label>
+                  <Label htmlFor="city" className="text-xs font-semibold text-slate-200">City *</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleChange('city', e.target.value)}
                     placeholder="e.g., Tbilisi"
                     required
-                    className={fieldErrors.city ? 'border-red-500' : ''}
+                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.city ? 'border-red-500' : ''}`}
                   />
                   {fieldErrors.city && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1091,31 +1112,32 @@ export default function PartnerApplication() {
                 </div>
 
                 {/* Map Section */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-base">
-                      <MapPin className="w-4 h-4 inline mr-2" />
-                      Pin Your Location on Map
+                <div className="space-y-2 p-3 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700">
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                      Pin Location
                     </Label>
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={handleUseCurrentLocation}
+                      className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 transition-all"
                     >
-                      <Navigation className="w-4 h-4 mr-2" />
+                      <Navigation className="w-3 h-3 mr-1" />
                       Use My Location
                     </Button>
                   </div>
 
-                  <Alert className="bg-[#E8F9F4] border-[#4CC9A8]/30">
-                    <MapPin className="h-4 w-4 text-[#4CC9A8]" />
-                    <AlertDescription className="text-gray-800">
-                      <strong>Drag the pin to set your location precisely.</strong> Click anywhere on the map or drag the green marker.
+                  <Alert className="bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border-emerald-500/50 py-2">
+                    <MapPin className="h-3.5 w-3.5 text-emerald-400" />
+                    <AlertDescription className="text-slate-200 text-[10px] leading-snug">
+                      <strong>Drag the pin</strong> to set your location. Click anywhere on the map.
                     </AlertDescription>
                   </Alert>
 
-                  <div className="w-full h-[300px] md:h-[450px] rounded-lg overflow-hidden border-2 border-gray-300 shadow-md">
+                  <div className="w-full h-[200px] md:h-[280px] rounded-lg overflow-hidden border border-slate-600 shadow-lg">
                     <MapContainer
                       center={markerPosition}
                       zoom={14}
@@ -1139,8 +1161,8 @@ export default function PartnerApplication() {
                   <input type="hidden" name="latitude" value={formData.latitude} />
                   <input type="hidden" name="longitude" value={formData.longitude} />
 
-                  <p className="text-xs text-gray-500">
-                    📍 Your coordinates update automatically when you move the pin.
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-emerald-600" /> Your coordinates update automatically when you move the pin.
                   </p>
 
                   {fieldErrors.location && (
@@ -1155,21 +1177,23 @@ export default function PartnerApplication() {
 
               {/* Step 3: Business Information */}
               {currentStep === 3 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">🏪</span>
-                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.business')}</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
+                  <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
+                    <Store className="w-4 h-4 text-white" />
+                  </div>
+                  <h3 className="text-sm font-bold text-white">{t('partner.section.business')}</h3>
                 </div>
 
                 <div>
-                  <Label htmlFor="business_name">Business Name *</Label>
+                  <Label htmlFor="business_name" className="text-xs font-semibold text-slate-200">Business Name *</Label>
                   <Input
                     id="business_name"
                     value={formData.business_name}
                     onChange={(e) => handleChange('business_name', e.target.value)}
                     placeholder="e.g., Fresh Bakery"
                     required
-                    className={fieldErrors.business_name ? 'border-red-500' : ''}
+                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.business_name ? 'border-red-500' : ''}`}
                   />
                   {fieldErrors.business_name && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1181,8 +1205,8 @@ export default function PartnerApplication() {
 
                 {/* Business Type - Icon Buttons */}
                 <div>
-                  <Label>Business Type *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                  <Label className="text-xs font-semibold text-slate-200">Business Type *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
                     {BUSINESS_TYPES.map((type) => (
                       <button
                         key={type.value}
@@ -1193,14 +1217,14 @@ export default function PartnerApplication() {
                             setFieldErrors(prev => ({ ...prev, business_type: '' }));
                           }
                         }}
-                        className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center gap-2 ${
+                        className={`p-2 rounded-lg border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
                           formData.business_type === type.value
-                            ? 'border-[#4CC9A8] bg-[#E8F9F4] text-[#4CC9A8] font-semibold shadow-md'
-                            : 'border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                            ? 'border-emerald-500 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 text-emerald-300 font-semibold shadow-lg scale-105'
+                            : 'border-slate-600 bg-slate-800 hover:bg-slate-700 hover:border-slate-500 hover:shadow-md text-slate-300'
                         }`}
                       >
-                        <span className="text-3xl">{type.emoji}</span>
-                        <span className="text-sm">{type.label}</span>
+                        <span className="text-xl">{type.emoji}</span>
+                        <span className="text-[10px] font-medium">{type.label}</span>
                       </button>
                     ))}
                   </div>
@@ -1213,15 +1237,15 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Business Description *</Label>
+                  <Label htmlFor="description" className="text-xs font-semibold text-slate-200">Business Description *</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     placeholder="Tell us about your business..."
-                    rows={4}
+                    rows={3}
                     required
-                    className={fieldErrors.description ? 'border-red-500' : ''}
+                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.description ? 'border-red-500' : ''}`}
                   />
                   {fieldErrors.description && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1234,8 +1258,8 @@ export default function PartnerApplication() {
                 {/* Business Hours */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="opening_hours" className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+                    <Label htmlFor="opening_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                      <Clock className="w-4 h-4 text-emerald-600" />
                       Opening Hours {!open24h && '*'}
                     </Label>
 
@@ -1244,7 +1268,7 @@ export default function PartnerApplication() {
                       onValueChange={(value) => handleChange('opening_hours', value)}
                       disabled={open24h}
                     >
-                      <SelectTrigger className={fieldErrors.opening_hours ? 'border-red-500' : ''}>
+                      <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.opening_hours ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select opening time" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
@@ -1270,8 +1294,8 @@ export default function PartnerApplication() {
                   </div>
 
                   <div>
-                    <Label htmlFor="closing_hours" className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#4CC9A8]" />
+                    <Label htmlFor="closing_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+                      <Clock className="w-4 h-4 text-emerald-600" />
                       Closing Hours {!open24h && '*'}
                     </Label>
 
@@ -1280,7 +1304,7 @@ export default function PartnerApplication() {
                       onValueChange={(value) => handleChange('closing_hours', value)}
                       disabled={open24h}
                     >
-                      <SelectTrigger className={fieldErrors.closing_hours ? 'border-red-500' : ''}>
+                      <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.closing_hours ? 'border-red-500' : ''}`}>
                         <SelectValue placeholder="Select closing time" />
                       </SelectTrigger>
                       <SelectContent className="max-h-60 overflow-y-auto">
@@ -1307,7 +1331,7 @@ export default function PartnerApplication() {
                 </div>
 
                 {/* 24-Hour Checkbox */}
-                <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center space-x-2.5 p-3.5 bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700">
                   <Checkbox
                     id="open_24h"
                     checked={open24h}
@@ -1323,22 +1347,23 @@ export default function PartnerApplication() {
                       }
                     }}
                   />
-                  <Label htmlFor="open_24h" className="text-sm cursor-pointer">
+                  <Label htmlFor="open_24h" className="text-sm font-medium text-slate-200 cursor-pointer">
                     My business operates 24 hours
                   </Label>
                 </div>
 
                 {/* Pickup Instructions */}
                 <div>
-                  <Label htmlFor="pickup_notes">Pickup Instructions (Optional)</Label>
+                  <Label htmlFor="pickup_notes" className="text-xs font-semibold text-slate-200">Pickup Instructions (Optional)</Label>
                   <Textarea
                     id="pickup_notes"
                     value={formData.pickup_notes}
                     onChange={(e) => handleChange('pickup_notes', e.target.value)}
                     placeholder="e.g., Enter through the side door, ring the bell twice..."
-                    rows={3}
+                    rows={2}
+                    className="mt-1 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-slate-400 mt-1.5">
                     Help customers find your pickup location easily
                   </p>
                 </div>
@@ -1347,14 +1372,16 @@ export default function PartnerApplication() {
 
               {/* Step 4: Contact Information */}
               {currentStep === 4 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">📞</span>
-                  <h3 className="text-lg font-semibold text-gray-900">{t('partner.section.contact')}</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
+                  <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+                    <span className="text-base">📞</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white">{t('partner.section.contact')}</h3>
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-xs font-semibold text-slate-200">Phone Number *</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -1362,7 +1389,7 @@ export default function PartnerApplication() {
                     onChange={(e) => handleChange('phone', e.target.value)}
                     placeholder="+995 XXX XXX XXX"
                     required
-                    className={fieldErrors.phone ? 'border-red-500' : ''}
+                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.phone ? 'border-red-500' : ''}`}
                   />
                   {fieldErrors.phone && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
@@ -1373,28 +1400,30 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="telegram">Telegram (optional)</Label>
+                  <Label htmlFor="telegram" className="text-xs font-semibold text-slate-200">Telegram (optional)</Label>
                   <Input
                     id="telegram"
                     value={formData.telegram}
                     onChange={(e) => handleChange('telegram', e.target.value)}
                     placeholder="@yourbusiness"
+                    className="mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="whatsapp">WhatsApp (optional)</Label>
+                  <Label htmlFor="whatsapp" className="text-xs font-semibold text-slate-200">WhatsApp (optional)</Label>
                   <Input
                     id="whatsapp"
                     type="tel"
                     value={formData.whatsapp}
                     onChange={(e) => handleChange('whatsapp', e.target.value)}
                     placeholder="+995 XXX XXX XXX"
+                    className="mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
                   />
                 </div>
 
                 {/* Terms and Conditions */}
-                <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-start space-x-2 p-3 bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-lg border border-slate-700">
                 <Checkbox
                   id="terms"
                   checked={acceptedTerms}
@@ -1407,7 +1436,7 @@ export default function PartnerApplication() {
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <Label htmlFor="terms" className="text-sm font-normal cursor-pointer">
+                  <Label htmlFor="terms" className="text-xs font-medium text-slate-200 cursor-pointer leading-snug">
                     I agree to the SmartPick Terms of Service and Privacy Policy. I understand that my application will be reviewed by the admin team before approval. *
                   </Label>
                   {fieldErrors.terms && (
@@ -1422,13 +1451,13 @@ export default function PartnerApplication() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex gap-2 pt-4 border-t border-slate-700">
                 {currentStep > 1 && (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handlePrevStep}
-                    className="flex-1"
+                    className="flex-1 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-semibold transition-all"
                   >
                     ← Back
                   </Button>
@@ -1438,7 +1467,7 @@ export default function PartnerApplication() {
                   <Button
                     type="button"
                     onClick={handleNextStep}
-                    className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
                   >
                     Next →
                   </Button>
@@ -1446,7 +1475,7 @@ export default function PartnerApplication() {
                   <Button
                     type="submit"
                     disabled={isSubmitting || isDemoMode}
-                    className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891]"
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
                   >
                     {isSubmitting ? 'Creating Account...' : 'Submit Application'}
                   </Button>
@@ -1456,7 +1485,7 @@ export default function PartnerApplication() {
                   type="button"
                   variant="ghost"
                   onClick={() => navigate('/')}
-                  className={currentStep === 1 ? 'flex-1' : ''}
+                  className={`text-slate-600 hover:text-slate-800 hover:bg-slate-100 font-medium transition-colors ${currentStep === 1 ? 'flex-1' : ''}`}
                 >
                   Cancel
                 </Button>

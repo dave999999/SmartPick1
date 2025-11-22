@@ -70,6 +70,15 @@ export default defineConfig({
   },
   // Explicitly specify public directory (default is 'public', but being explicit helps)
   publicDir: 'public',
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://smartpick.ge',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
+  },
   build: {
     // Ensure clean builds - remove old chunks
     emptyOutDir: true,
