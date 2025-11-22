@@ -164,10 +164,12 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           // Handle partner login based on status
           if (partner.status === 'APPROVED') {
             toast.success('Welcome back! Redirecting to Partner Dashboard...');
-            onOpenChange(false);
             setTimeout(() => {
-              navigate('/partner');
-            }, 500);
+              onOpenChange(false);
+              setTimeout(() => {
+                navigate('/partner');
+              }, 100);
+            }, 0);
             return;
           } else if (partner.status === 'PENDING') {
             setPartnerStatus('pending');
@@ -186,8 +188,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         
         // Regular customer login
         toast.success('Successfully signed in!');
-        onOpenChange(false);
-        if (onSuccess) onSuccess();
+        setTimeout(() => {
+          onOpenChange(false);
+          if (onSuccess) onSuccess();
+        }, 0);
       }
     } catch (err) {
       logger.error('Sign in error:', err);
@@ -510,7 +514,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     <Link 
                       to="/forgot-password" 
                       className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline decoration-2 underline-offset-2 transition-all"
-                      onClick={() => onOpenChange(false)}
+                      onClick={() => setTimeout(() => onOpenChange(false), 0)}
                     >
                       Forgot password?
                     </Link>
@@ -603,8 +607,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <div className="pt-4">
                     <Button
                       onClick={() => {
-                        setShowEmailConfirmation(false);
-                        onOpenChange(false);
+                        setTimeout(() => {
+                          setShowEmailConfirmation(false);
+                          onOpenChange(false);
+                        }, 0);
                       }}
                       variant="outline"
                       className="w-full h-11 border-2 border-gray-200 hover:border-teal-400 hover:bg-teal-50 rounded-xl font-semibold transition-all"
