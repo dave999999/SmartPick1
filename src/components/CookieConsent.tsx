@@ -102,69 +102,78 @@ export function CookieConsent() {
 
   return (
     <>
-      {/* Cookie Banner */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-in slide-in-from-bottom-5 duration-500">
-        <Card className="max-w-4xl mx-auto shadow-2xl border-2 border-teal-100">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              {/* Icon */}
-              <div className="hidden sm:block p-3 bg-teal-100 rounded-lg flex-shrink-0">
-                <Cookie className="h-6 w-6 text-teal-700" />
-              </div>
+      {/* Cookie Banner - Elegant Modern Design */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6 animate-in slide-in-from-bottom-5 duration-700">
+        <div className="max-w-5xl mx-auto">
+          <Card className="backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 border border-teal-200/50 dark:border-teal-800/50 shadow-[0_20px_70px_-15px_rgba(0,0,0,0.3)] dark:shadow-[0_20px_70px_-15px_rgba(0,0,0,0.6)] rounded-2xl overflow-hidden">
+            {/* Decorative gradient line */}
+            <div className="h-1 bg-gradient-to-r from-teal-400 via-emerald-400 to-green-400" />
 
-              {/* Content */}
-              <div className="flex-1 space-y-3">
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    We value your privacy
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                    onClick={() => setIsVisible(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-start gap-6">
+                {/* Icon with gradient background */}
+                <div className="hidden sm:flex p-4 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50 rounded-2xl flex-shrink-0 shadow-inner">
+                  <Cookie className="h-8 w-8 text-teal-600 dark:text-teal-400" strokeWidth={1.5} />
                 </div>
 
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  We use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
-                  By clicking "Accept All", you consent to our use of cookies. You can manage your preferences or learn more in our{' '}
-                  <Link to="/privacy#cookies" className="text-teal-600 hover:text-teal-700 underline font-medium">
-                    Privacy Policy
-                  </Link>
-                  .
-                </p>
+                {/* Content */}
+                <div className="flex-1 space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                        🍪 We value your privacy
+                      </h3>
+                      <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl">
+                        We use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
+                        By clicking <span className="font-semibold text-teal-600 dark:text-teal-400">"Accept All"</span>, you consent to our use of cookies.{' '}
+                        <Link
+                          to="/privacy#cookies"
+                          className="inline-flex items-center text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium underline decoration-teal-300 underline-offset-4 transition-colors"
+                        >
+                          Learn more
+                        </Link>
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 flex-shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      onClick={() => setIsVisible(false)}
+                    >
+                      <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </Button>
+                  </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-3 pt-2">
-                  <Button
-                    onClick={handleAcceptAll}
-                    className="bg-teal-600 hover:bg-teal-700 text-white"
-                  >
-                    Accept All
-                  </Button>
-                  <Button
-                    onClick={handleRejectAll}
-                    variant="outline"
-                    className="border-gray-300"
-                  >
-                    Reject All
-                  </Button>
-                  <Button
-                    onClick={() => setShowSettings(true)}
-                    variant="outline"
-                    className="border-gray-300"
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
-                    Customize
-                  </Button>
+                  {/* Action Buttons - Modern gradient design */}
+                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                    <Button
+                      onClick={handleAcceptAll}
+                      className="relative overflow-hidden bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 transition-all duration-300 rounded-xl font-semibold px-6"
+                    >
+                      <span className="relative z-10">Accept All</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+                    </Button>
+                    <Button
+                      onClick={handleRejectAll}
+                      variant="outline"
+                      className="border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl font-semibold px-6 transition-all duration-300"
+                    >
+                      Reject All
+                    </Button>
+                    <Button
+                      onClick={() => setShowSettings(true)}
+                      variant="outline"
+                      className="border-2 border-teal-200 dark:border-teal-800 hover:border-teal-300 dark:hover:border-teal-700 hover:bg-teal-50 dark:hover:bg-teal-950/30 text-teal-600 dark:text-teal-400 rounded-xl font-semibold px-6 transition-all duration-300 group"
+                    >
+                      <Settings className="mr-2 h-4 w-4 group-hover:rotate-45 transition-transform duration-300" />
+                      Customize
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Settings Dialog */}
