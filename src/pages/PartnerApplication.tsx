@@ -612,6 +612,7 @@ export default function PartnerApplication() {
             role: 'PARTNER',
             name: formData.business_name,
           },
+          emailRedirectTo: undefined, // Don't use Supabase's built-in email verification
         },
       });
 
@@ -626,6 +627,21 @@ export default function PartnerApplication() {
         }
         toast.error(`Account creation failed: ${authError.message}`);
         return;
+      }
+
+      // Send verification email via Edge Function for partner signups
+      if (authData?.user) {
+        try {
+          await supabase.functions.invoke('send-verification-email', {
+            body: {
+              email: formData.email,
+              name: formData.business_name,
+              userId: authData.user.id,
+            },
+          });
+        } catch (emailError) {
+          logger.warn('Failed to send partner verification email:', emailError);
+        }
       }
 
       if (!authData.user) {

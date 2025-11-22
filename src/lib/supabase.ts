@@ -87,8 +87,25 @@ export const signUpWithEmail = async (
       data: {
         name,
       },
+      emailRedirectTo: undefined, // Don't use Supabase's built-in email verification
     },
   });
+
+  // Send verification email via Edge Function
+  if (data.user && !error) {
+    try {
+      await supabase.functions.invoke('send-verification-email', {
+        body: {
+          email,
+          name,
+          userId: data.user.id,
+        },
+      });
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+    }
+  }
+
   return { data, error };
 };
 

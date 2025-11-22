@@ -176,62 +176,76 @@ export function CookieConsent() {
         </div>
       </div>
 
-      {/* Settings Dialog */}
+      {/* Settings Dialog - Elegant Design */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Cookie className="h-5 w-5 text-teal-600" />
-              Cookie Preferences
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-teal-200/50 dark:border-teal-800/50">
+          {/* Decorative gradient header */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-400 via-emerald-400 to-green-400" />
+
+          <DialogHeader className="space-y-4 pt-2">
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="p-2 bg-gradient-to-br from-teal-50 to-emerald-50 dark:from-teal-950/50 dark:to-emerald-950/50 rounded-xl">
+                <Cookie className="h-6 w-6 text-teal-600 dark:text-teal-400" strokeWidth={2} />
+              </div>
+              <span className="bg-gradient-to-r from-teal-600 to-emerald-600 dark:from-teal-400 dark:to-emerald-400 bg-clip-text text-transparent font-bold">
+                Cookie Preferences
+              </span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-base text-gray-600 dark:text-gray-300">
               Choose which cookies you want to allow. You can change these settings at any time.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-6">
             {/* Necessary Cookies */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1 flex-1">
-                  <Label className="text-base font-semibold text-gray-900">
-                    Necessary Cookies
+            <div className="p-6 rounded-2xl border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-950/20 dark:to-emerald-950/20">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="px-2 py-1 bg-green-100 dark:bg-green-900 rounded-lg">
+                      <span className="text-xs font-bold text-green-700 dark:text-green-300">ALWAYS ACTIVE</span>
+                    </div>
+                  </div>
+                  <Label className="text-lg font-bold text-gray-900 dark:text-white">
+                    ✅ Necessary Cookies
                   </Label>
-                  <p className="text-sm text-gray-600">
-                    These cookies are essential for the website to function properly. They enable basic features like page navigation and access to secure areas. The website cannot function properly without these cookies.
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    These cookies are essential for the website to function properly. They enable basic features like page navigation and access to secure areas.
                   </p>
-                  <div className="pt-2 space-y-1">
-                    <p className="text-xs text-gray-500"><strong>Examples:</strong></p>
-                    <p className="text-xs text-gray-500">• Authentication tokens</p>
-                    <p className="text-xs text-gray-500">• Session management</p>
-                    <p className="text-xs text-gray-500">• Security features</p>
+                  <div className="pt-2 space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold">Examples:</p>
+                    <p>• Authentication & session management</p>
+                    <p>• Security features & CSRF protection</p>
+                    <p>• User preferences & settings</p>
                   </div>
                 </div>
                 <Switch
                   checked={preferences.necessary}
                   disabled
-                  className="ml-4"
+                  className="ml-4 data-[state=checked]:bg-green-500"
                 />
               </div>
             </div>
 
-            <Separator />
-
             {/* Analytics Cookies */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1 flex-1">
-                  <Label htmlFor="analytics" className="text-base font-semibold text-gray-900">
-                    Analytics Cookies
+            <div className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
+              preferences.analytics
+                ? 'border-teal-300 dark:border-teal-700 bg-gradient-to-br from-teal-50/50 to-cyan-50/50 dark:from-teal-950/20 dark:to-cyan-950/20 shadow-lg'
+                : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20'
+            }`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <Label htmlFor="analytics" className="text-lg font-bold text-gray-900 dark:text-white cursor-pointer">
+                    📊 Analytics Cookies
                   </Label>
-                  <p className="text-sm text-gray-600">
-                    These cookies help us understand how visitors interact with our website by collecting and reporting information anonymously. This helps us improve the user experience.
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    These cookies help us understand how visitors interact with our website by collecting anonymous data. This helps us improve the user experience.
                   </p>
-                  <div className="pt-2 space-y-1">
-                    <p className="text-xs text-gray-500"><strong>Examples:</strong></p>
-                    <p className="text-xs text-gray-500">• Page views and traffic sources</p>
-                    <p className="text-xs text-gray-500">• User behavior patterns</p>
-                    <p className="text-xs text-gray-500">• Performance monitoring</p>
+                  <div className="pt-2 space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold">Examples:</p>
+                    <p>• Page views & traffic analysis</p>
+                    <p>• User behavior patterns</p>
+                    <p>• Performance metrics (Core Web Vitals)</p>
                   </div>
                 </div>
                 <Switch
@@ -245,23 +259,25 @@ export function CookieConsent() {
               </div>
             </div>
 
-            <Separator />
-
             {/* Marketing Cookies */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1 flex-1">
-                  <Label htmlFor="marketing" className="text-base font-semibold text-gray-900">
-                    Marketing Cookies
+            <div className={`p-6 rounded-2xl border-2 transition-all duration-300 ${
+              preferences.marketing
+                ? 'border-purple-300 dark:border-purple-700 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/20 shadow-lg'
+                : 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/20'
+            }`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <Label htmlFor="marketing" className="text-lg font-bold text-gray-900 dark:text-white cursor-pointer">
+                    🎯 Marketing Cookies
                   </Label>
-                  <p className="text-sm text-gray-600">
-                    These cookies are used to track visitors across websites to display relevant advertisements and promotional content that may be of interest to you.
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    These cookies track visitors across websites to display relevant advertisements and promotional content.
                   </p>
-                  <div className="pt-2 space-y-1">
-                    <p className="text-xs text-gray-500"><strong>Examples:</strong></p>
-                    <p className="text-xs text-gray-500">• Targeted advertising</p>
-                    <p className="text-xs text-gray-500">• Social media integration</p>
-                    <p className="text-xs text-gray-500">• Campaign tracking</p>
+                  <div className="pt-2 space-y-1.5 text-xs text-gray-600 dark:text-gray-400">
+                    <p className="font-semibold">Examples:</p>
+                    <p>• Personalized advertising</p>
+                    <p>• Social media integration</p>
+                    <p>• Campaign performance tracking</p>
                   </div>
                 </div>
                 <Switch
@@ -276,28 +292,28 @@ export function CookieConsent() {
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-4" />
 
           {/* Footer Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Button
               onClick={handleSaveCustom}
-              className="flex-1 bg-teal-600 hover:bg-teal-700"
+              className="flex-1 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white shadow-lg shadow-teal-500/30 rounded-xl font-semibold text-base h-12"
             >
-              Save Preferences
+              💾 Save Preferences
             </Button>
             <Button
               onClick={handleAcceptAll}
               variant="outline"
-              className="flex-1"
+              className="flex-1 border-2 border-teal-200 dark:border-teal-800 hover:bg-teal-50 dark:hover:bg-teal-950/30 rounded-xl font-semibold text-base h-12"
             >
               Accept All
             </Button>
           </div>
 
-          <p className="text-xs text-gray-500 text-center pt-2">
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400 pt-4 pb-2">
             For more information, please read our{' '}
-            <Link to="/privacy" className="text-teal-600 hover:underline">
+            <Link to="/privacy" className="text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 font-medium underline decoration-teal-300 underline-offset-4">
               Privacy Policy
             </Link>
           </p>
