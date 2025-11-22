@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { verifyEmailWithToken } from '../lib/api/email-verification';
+import { supabase } from '../lib/supabase';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -12,28 +12,33 @@ export const VerifyEmail = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
-    if (!token) {
-      setStatus('error');
-      setMessage('Invalid verification link. No token provided.');
-      return;
-    }
-
-    // Verify the token
-    const verify = async () => {
+    // Supabase Auth automatically handles email verification
+    // This page is shown after user clicks the confirmation link in their email
+    // The verification happens automatically via the URL hash
+    
+    const checkVerification = async () => {
       try {
-        const result = await verifyEmailWithToken(token);
-        setStatus('success');
-        setMessage(result.message);
+        // Check if user is authenticated after email confirmation
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) throw error;
+        
+        if (user && user.email_confirmed_at) {
+          setStatus('success');
+          setMessage('Your email has been verified successfully! Redirecting...');
+          setTimeout(() => navigate('/'), 2000);
+        } else {
+          setStatus('loading');
+          setMessage('Verifying your email...');
+        }
       } catch (error) {
         setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'Verification failed. The link may have expired.');
+        setMessage(error instanceof Error ? error.message : 'Verification failed. Please try again.');
       }
     };
 
-    verify();
-  }, [searchParams]);
+    checkVerification();
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50 flex items-center justify-center p-4">

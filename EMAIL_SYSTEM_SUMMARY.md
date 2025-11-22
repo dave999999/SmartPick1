@@ -65,7 +65,7 @@ supabase functions deploy password-reset
 ### 3. Configure Environment Variables
 ```env
 # Add to .env.local
-VITE_RESEND_API_KEY=***REMOVED_API_KEY***
+# SECURITY: API key was exposed - Use Supabase SMTP instead
 RESEND_FROM_EMAIL=no-reply@smartpick.ge
 VITE_PUBLIC_BASE_URL=https://www.smartpick.ge
 ```
