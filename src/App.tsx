@@ -115,7 +115,8 @@ const AppContent = () => {
                 .eq('id', (user as any).id)
                 .single();
               if (!cancelled) {
-                setIsAdmin((profile?.role || '').toUpperCase() === 'ADMIN');
+                const role = (profile?.role || '').toUpperCase();
+                setIsAdmin(role === 'ADMIN' || role === 'SUPER_ADMIN');
               }
             } catch (e) {
               console.warn('Failed to load profile for maintenance bypass', e);
