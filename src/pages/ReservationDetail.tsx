@@ -285,6 +285,37 @@ export default function ReservationDetail() {
     );
   }
 
+  // Check if reservation data is complete (offer and partner must exist)
+  if (!reservation.offer || !reservation.partner) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-red-600">Incomplete Reservation Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 mb-4">
+              {!reservation.offer && !reservation.partner && "Offer and partner information is missing."}
+              {!reservation.offer && reservation.partner && "Offer information is missing."}
+              {reservation.offer && !reservation.partner && "Partner information is missing."}
+            </p>
+            <p className="text-sm text-gray-600 mb-4">
+              This is a temporary issue. Please try refreshing the page in a few seconds.
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={() => loadReservation()} className="flex-1">
+                Retry
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/my-picks')} className="flex-1">
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   // Get partner address and contact - support both flat and nested structures
   const partnerAddress = reservation.partner?.address || reservation.partner?.location?.address || '';
 
