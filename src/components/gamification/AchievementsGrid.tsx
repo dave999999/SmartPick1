@@ -200,29 +200,29 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
   }
 
   return (
-    <Card className="shadow-lg border-[#4CC9A8]/30">
+    <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-[#4CC9A8]" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Award className="w-5 h-5 text-teal-400" />
               Achievements
             </CardTitle>
-            <CardDescription>Unlock badges and earn rewards!</CardDescription>
+            <CardDescription className="text-gray-400">Unlock badges and earn rewards!</CardDescription>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-black text-[#4CC9A8]">
+            <div className="text-3xl font-black text-teal-400">
               {unlockedCount}/{totalCount}
             </div>
-            <div className="text-xs text-gray-500">{completionPercentage}% Complete</div>
+            <div className="text-xs text-gray-400">{completionPercentage}% Complete</div>
           </div>
         </div>
 
         {/* Progress Bar */}
         <div className="mt-4">
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#4CC9A8] to-[#3db891] transition-all duration-500"
+              className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -240,7 +240,7 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
 
           <TabsContent value="all" className="mt-6">
             {allAchievements.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12 text-gray-400">
                 <Lock className="w-12 h-12 mx-auto mb-3 opacity-50" />
                 <p>No achievements available yet</p>
               </div>

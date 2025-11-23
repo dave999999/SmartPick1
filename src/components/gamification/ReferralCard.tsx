@@ -74,59 +74,59 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
   }
 
   return (
-    <Card className="shadow-lg border-purple-200 bg-gradient-to-br from-white to-purple-50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-purple-600">
-          <Users className="w-5 h-5" />
+    <Card className="bg-transparent border-none shadow-none">
+      <CardHeader className="px-4 pb-3">
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Users className="w-5 h-5 text-purple-400" />
           Invite Friends
         </CardTitle>
-        <CardDescription>Share SmartPick and earn rewards together!</CardDescription>
+        <CardDescription className="text-gray-400">Share SmartPick and earn rewards together!</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Rewards Info */}
-        <div className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl border-2 border-purple-300">
+        <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border-2 border-purple-500/30">
           <div className="flex items-center gap-3 mb-3">
-            <Gift className="w-8 h-8 text-purple-600" />
+            <Gift className="w-8 h-8 text-purple-400" />
             <div>
-              <h4 className="font-bold text-purple-900">Referral Rewards</h4>
-              <p className="text-xs text-purple-700">Both you and your friend get bonuses!</p>
+              <h4 className="font-bold text-white">Referral Rewards</h4>
+              <p className="text-xs text-gray-300">Both you and your friend get bonuses!</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-white rounded-lg border border-purple-200">
-              <div className="text-2xl font-black text-purple-600 mb-1">+50</div>
-              <div className="text-xs text-gray-600">Points for you</div>
+            <div className="p-3 bg-black/20 rounded-lg border border-purple-400/30">
+              <div className="text-2xl font-black text-purple-400 mb-1">+50</div>
+              <div className="text-xs text-gray-400">Points for you</div>
             </div>
-            <div className="p-3 bg-white rounded-lg border border-purple-200">
-              <div className="text-2xl font-black text-pink-600 mb-1">+50</div>
-              <div className="text-xs text-gray-600">Points for friend</div>
+            <div className="p-3 bg-black/20 rounded-lg border border-purple-400/30">
+              <div className="text-2xl font-black text-pink-400 mb-1">+50</div>
+              <div className="text-xs text-gray-400">Points for friend</div>
             </div>
           </div>
         </div>
 
         {/* Your Referral Code */}
         <div>
-          <label className="text-sm font-semibold text-gray-700 mb-2 block">Your Referral Code</label>
+          <label className="text-sm font-semibold text-gray-300 mb-2 block">Your Referral Code</label>
           <div className="flex gap-2">
             <Input
               value={referralCode}
               readOnly
-              className="font-mono text-lg font-bold text-center bg-gradient-to-r from-[#EFFFF8] to-[#C9F9E9] border-[#4CC9A8]"
+              className="font-mono text-lg font-bold text-center bg-teal-500/20 border-teal-500/50 text-teal-300"
             />
             <Button
               onClick={handleCopy}
               variant="outline"
               size="icon"
-              className={`w-12 ${copied ? 'bg-green-50 border-green-500' : ''}`}
+              className={`w-12 border-purple-400/50 hover:bg-purple-500/20 ${copied ? 'bg-purple-500/20 border-purple-500' : ''}`}
             >
               {copied ? (
-                <Check className="w-5 h-5 text-green-600" />
+                <Check className="w-5 h-5 text-purple-400" />
               ) : (
-                <Copy className="w-5 h-5" />
+                <Copy className="w-5 h-5 text-purple-400" />
               )}
             </Button>
           </div>
-          <p className="text-xs text-gray-500 mt-2 text-center">
+          <p className="text-xs text-gray-400 mt-2 text-center">
             Share this code with friends or use the link below
           </p>
         </div>
@@ -141,13 +141,13 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
         </Button>
 
         {/* Stats */}
-        <div className="flex items-center justify-between p-4 bg-white rounded-lg border-2 border-purple-200">
+        <div className="flex items-center justify-between p-4 bg-black/20 rounded-lg border-2 border-purple-400/30">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
+              <Users className="w-6 h-6 text-purple-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Friends Referred</p>
+              <p className="text-sm font-medium text-gray-400">Friends Referred</p>
               <p className="text-xs text-gray-500">Lifetime total</p>
             </div>
           </div>
@@ -155,7 +155,7 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="text-4xl font-black text-purple-600"
+            className="text-4xl font-black text-purple-400"
           >
             {totalReferrals}
           </motion.div>
@@ -163,7 +163,7 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
 
         {/* How it Works */}
         <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-600">How it works:</p>
+          <p className="text-xs font-semibold text-gray-400">How it works:</p>
           <div className="space-y-2">
             {[
               { step: '1', text: 'Share your referral code with friends' },
@@ -171,10 +171,10 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
               { step: '3', text: 'Both get +50 SmartPoints instantly!' }
             ].map((item) => (
               <div key={item.step} className="flex items-start gap-3 text-sm">
-                <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0 font-bold text-purple-600 text-xs">
+                <div className="w-6 h-6 rounded-full bg-purple-500/30 flex items-center justify-center flex-shrink-0 font-bold text-purple-300 text-xs">
                   {item.step}
                 </div>
-                <span className="text-gray-700">{item.text}</span>
+                <span className="text-gray-300">{item.text}</span>
               </div>
             ))}
           </div>

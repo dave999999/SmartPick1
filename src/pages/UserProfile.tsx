@@ -586,7 +586,7 @@ export default function UserProfile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white safe-area-top pb-20 safe-area-bottom">
+    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] safe-area-top pb-20 safe-area-bottom">
       {/* Compact Header with Profile */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
@@ -781,12 +781,12 @@ export default function UserProfile() {
           {/* WALLET TAB */}
           <TabsContent value="wallet" className="space-y-4">
             {/* Buy Points Button */}
-            <Card className="border border-teal-200 shadow-sm bg-gradient-to-br from-teal-50 to-white">
+            <Card className="bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border-2 border-teal-500/30 shadow-xl">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900">Buy SmartPoints</h3>
-                    <p className="text-xs text-gray-600 mt-1">Get more points to enjoy our services</p>
+                    <h3 className="text-sm font-semibold text-white">Buy SmartPoints</h3>
+                    <p className="text-xs text-gray-300 mt-1">Get more points to enjoy our services</p>
                   </div>
                   <Button
                     onClick={() => setIsBuyPointsModalOpen(true)}
