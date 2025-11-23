@@ -652,57 +652,57 @@ export default function UserProfile() {
 
             {/* Quick Info Cards - Mobile Optimized */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-teal-100 rounded-lg p-2.5">
-                      <Mail className="w-5 h-5 text-teal-600" />
+                    <div className="bg-teal-500/20 rounded-lg p-2.5 border border-teal-500/30">
+                      <Mail className="w-5 h-5 text-teal-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Email</p>
-                      <p className="text-sm font-semibold text-gray-900 truncate">{user.email}</p>
+                      <p className="text-xs font-medium text-gray-400 mb-0.5">Email</p>
+                      <p className="text-sm font-semibold text-white truncate">{user.email}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 rounded-lg p-2.5">
-                      <Phone className="w-5 h-5 text-blue-600" />
+                    <div className="bg-blue-500/20 rounded-lg p-2.5 border border-blue-500/30">
+                      <Phone className="w-5 h-5 text-blue-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Phone</p>
-                      <p className="text-sm font-semibold text-gray-900">{user.phone || 'Not set'}</p>
+                      <p className="text-xs font-medium text-gray-400 mb-0.5">Phone</p>
+                      <p className="text-sm font-semibold text-white">{user.phone || 'Not set'}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-purple-100 rounded-lg p-2.5">
-                      <Calendar className="w-5 h-5 text-purple-600" />
+                    <div className="bg-purple-500/20 rounded-lg p-2.5 border border-purple-500/30">
+                      <Calendar className="w-5 h-5 text-purple-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Member Since</p>
-                      <p className="text-sm font-semibold text-gray-900">{formatDate(user.created_at)}</p>
+                      <p className="text-xs font-medium text-gray-400 mb-0.5">Member Since</p>
+                      <p className="text-sm font-semibold text-white">{formatDate(user.created_at)}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`${user.penalty_count && user.penalty_count > 0 ? 'bg-orange-100' : 'bg-green-100'} rounded-lg p-2.5`}>
-                      <Shield className={`w-5 h-5 ${user.penalty_count && user.penalty_count > 0 ? 'text-orange-600' : 'text-green-600'}`} />
+                    <div className={`${user.penalty_count && user.penalty_count > 0 ? 'bg-orange-500/20 border-orange-500/30' : 'bg-green-500/20 border-green-500/30'} rounded-lg p-2.5 border`}>
+                      <Shield className={`w-5 h-5 ${user.penalty_count && user.penalty_count > 0 ? 'text-orange-400' : 'text-green-400'}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-500 mb-0.5">Account Status</p>
-                      <p className="text-sm font-semibold text-gray-900">{user.penalty_count && user.penalty_count > 0 ? 'Penalized' : 'Good Standing'}</p>
+                      <p className="text-xs font-medium text-gray-400 mb-0.5">Account Status</p>
+                      <p className="text-sm font-semibold text-white">{user.penalty_count && user.penalty_count > 0 ? 'Penalized' : 'Good Standing'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -711,9 +711,9 @@ export default function UserProfile() {
 
             {/* Gamification Section - Tabbed Layout */}
             {userStats ? (
-              <Card className="bg-white border-gray-200 shadow-sm">
+              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
                 <Tabs defaultValue="stats" className="w-full">
-                  <div className="border-b border-gray-200 px-4">
+                  <div className="border-b border-white/10 px-4">
                     <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent">
                       <TabsTrigger 
                         value="stats" 
@@ -813,10 +813,10 @@ export default function UserProfile() {
           {/* SETTINGS TAB */}
           <TabsContent value="settings" className="space-y-2">
             {/* ACCOUNT INFORMATION */}
-            <Card className="border border-gray-200 shadow-sm bg-white">
+            <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-gray-900 text-sm font-semibold">
-                  <UserIcon className="w-4 h-4 text-teal-600" />
+                <CardTitle className="flex items-center gap-2 text-white text-sm font-semibold">
+                  <UserIcon className="w-4 h-4 text-teal-400" />
                   Account
                 </CardTitle>
               </CardHeader>
@@ -824,7 +824,7 @@ export default function UserProfile() {
                 {isEditing ? (
                   <div className="space-y-2">
                     <div className="space-y-1">
-                      <Label htmlFor="name" className="text-gray-700 text-xs font-medium">Name</Label>
+                      <Label htmlFor="name" className="text-gray-300 text-xs font-medium">Name</Label>
                       <Input
                         id="name"
                         value={formData.name}
@@ -834,7 +834,7 @@ export default function UserProfile() {
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-gray-700 text-xs font-medium">Phone</Label>
+                      <Label htmlFor="phone" className="text-gray-300 text-xs font-medium">Phone</Label>
                       <Input
                         id="phone"
                         value={formData.phone}
@@ -866,12 +866,12 @@ export default function UserProfile() {
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <p className="text-gray-500 mb-0.5">Email</p>
-                        <p className="text-gray-900 font-medium truncate">{user.email}</p>
+                        <p className="text-gray-400 mb-0.5">Email</p>
+                        <p className="text-white font-medium truncate">{user.email}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500 mb-0.5">Phone</p>
-                        <p className="text-gray-900 font-medium">{user.phone || 'Not set'}</p>
+                        <p className="text-gray-400 mb-0.5">Phone</p>
+                        <p className="text-white font-medium">{user.phone || 'Not set'}</p>
                       </div>
                     </div>
 
@@ -896,10 +896,10 @@ export default function UserProfile() {
             />
 
             {/* NOTIFICATIONS */}
-            <Card className="border border-gray-200 shadow-sm bg-white">
+            <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-gray-900 text-sm font-semibold">
-                  <Bell className="w-4 h-4 text-blue-600" />
+                <CardTitle className="flex items-center gap-2 text-white text-sm font-semibold">
+                  <Bell className="w-4 h-4 text-blue-400" />
                   Notifications
                 </CardTitle>
               </CardHeader>
@@ -909,10 +909,10 @@ export default function UserProfile() {
 
                 {/* Compact Notification Toggles */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <div className="flex items-center justify-between py-2 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-gray-500" />
-                      <span className="text-xs text-gray-700">Email</span>
+                      <Mail className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-300">Email</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.email}
@@ -921,10 +921,10 @@ export default function UserProfile() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                  <div className="flex items-center justify-between py-2 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                      <Bell className="w-3.5 h-3.5 text-gray-500" />
-                      <span className="text-xs text-gray-700">Push</span>
+                      <Bell className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-300">Push</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.push}
@@ -935,8 +935,8 @@ export default function UserProfile() {
 
                   <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-gray-500" />
-                      <span className="text-xs text-gray-700">SMS</span>
+                      <Phone className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-300">SMS</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.sms}
@@ -951,19 +951,19 @@ export default function UserProfile() {
             {/* SECURITY & MORE - Accordion Style */}
             <Accordion type="single" collapsible className="space-y-2">
               {/* Security */}
-              <AccordionItem value="security" className="border border-gray-200 rounded-lg bg-white px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline">
+              <AccordionItem value="security" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-purple-600" />
-                    <span className="text-sm font-semibold text-gray-900">Security</span>
+                    <Lock className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm font-semibold text-white">Security</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3 space-y-3">
                   {/* Set/Change Password */}
-                  <div className="p-3 bg-purple-50 rounded-lg space-y-3">
+                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg space-y-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Key className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-medium text-gray-900">
+                      <Key className="w-4 h-4 text-purple-400" />
+                      <span className="text-sm font-medium text-white">
                         {user?.email?.includes('@') && !user?.app_metadata?.provider ? 'Change Password' : 'Set Password'}
                       </span>
                     </div>
@@ -1010,21 +1010,21 @@ export default function UserProfile() {
               </AccordionItem>
 
               {/* Preferences */}
-              <AccordionItem value="preferences" className="border border-gray-200 rounded-lg bg-white px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline">
+              <AccordionItem value="preferences" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
                   <div className="flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-orange-600" />
-                    <span className="text-sm font-semibold text-gray-900">Preferences</span>
+                    <Settings className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm font-semibold text-white">Preferences</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3 space-y-1.5">
                   <button
                     onClick={() => toast.info('🌍 Check the top-right menu to change language', { duration: 3000 })}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-gray-50 text-left transition-colors"
+                    className="w-full flex items-center justify-between p-2 rounded hover:bg-white/5 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-teal-500" />
-                      <span className="text-xs text-gray-700 font-medium">Language</span>
+                      <Globe className="w-3.5 h-3.5 text-teal-400" />
+                      <span className="text-xs text-gray-300 font-medium">Language</span>
                     </div>
                     <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                   </button>
@@ -1033,11 +1033,11 @@ export default function UserProfile() {
               </AccordionItem>
 
               {/* Notifications */}
-              <AccordionItem value="notifications" className="border border-gray-200 rounded-lg bg-white px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline">
+              <AccordionItem value="notifications" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
                   <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-blue-600" />
-                    <span className="text-sm font-semibold text-gray-900">Notifications</span>
+                    <Bell className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-semibold text-white">Notifications</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3 space-y-3">
