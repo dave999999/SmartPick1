@@ -34,6 +34,7 @@ DROP POLICY IF EXISTS "Service role manages transactions" ON public.partner_poin
 -- ----------------------
 
 -- 1. Partners can view their own points
+DROP POLICY IF EXISTS "partners_view_own_points" ON public.partner_points;
 CREATE POLICY "partners_view_own_points"
 ON public.partner_points
 FOR SELECT
@@ -41,6 +42,7 @@ TO authenticated
 USING (user_id = auth.uid());
 
 -- 2. Service role has full access (for backend functions)
+DROP POLICY IF EXISTS "service_role_full_access_points" ON public.partner_points;
 CREATE POLICY "service_role_full_access_points"
 ON public.partner_points
 FOR ALL
@@ -57,6 +59,7 @@ WITH CHECK (true);
 
 -- 1. Partners can view their own transactions
 -- NOTE: Column is named 'partner_id' in this table, not 'user_id'
+DROP POLICY IF EXISTS "partners_view_own_transactions" ON public.partner_point_transactions;
 CREATE POLICY "partners_view_own_transactions"
 ON public.partner_point_transactions
 FOR SELECT
@@ -64,6 +67,7 @@ TO authenticated
 USING (partner_id = auth.uid());
 
 -- 2. Service role has full access
+DROP POLICY IF EXISTS "service_role_full_access_transactions" ON public.partner_point_transactions;
 CREATE POLICY "service_role_full_access_transactions"
 ON public.partner_point_transactions
 FOR ALL
