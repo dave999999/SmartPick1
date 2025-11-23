@@ -70,7 +70,34 @@ serve(async (req) => {
 
       if (params.length > 1) {
         // User clicked link from app
-        const encodedUserId = params[1]
+        let encodedUserId = params[1]
+        let linkTimestamp: number | null = null;
+        
+        // Extract and validate timestamp (format: base64_timestamp)
+        const lastUnderscore = encodedUserId.lastIndexOf('_');
+        if (lastUnderscore > 0 && /^\d+$/.test(encodedUserId.substring(lastUnderscore + 1))) {
+          linkTimestamp = parseInt(encodedUserId.substring(lastUnderscore + 1), 10);
+          encodedUserId = encodedUserId.substring(0, lastUnderscore);
+          
+          // Check if link is expired (24 hours = 86400000 ms)
+          const now = Date.now();
+          const linkAge = now - linkTimestamp;
+          if (linkAge > 86400000) {
+            console.warn(`[telegram-webhook] Link expired (age: ${Math.round(linkAge / 3600000)}h)`);
+            await sendTelegramMessage(chatId, 
+              `⏰ <b>This connection link has expired.</b>\n\n` +
+              `📱 Please get a new link from SmartPick:\n` +
+              `1. Open SmartPick app\n` +
+              `2. Go to your Dashboard\n` +
+              `3. Click "Connect Telegram"\n\n` +
+              `Links expire after 24 hours for security.`
+            );
+            return new Response(JSON.stringify({ ok: true }), {
+              headers: { 'Content-Type': 'application/json' },
+              status: 200
+            });
+          }
+        }
 
         try {
           // Decode user ID (support base64url without padding)
@@ -85,11 +112,19 @@ serve(async (req) => {
           // SECURITY: Validate UUID format to prevent injection attacks
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (!uuidRegex.test(userId)) {
-            console.error('[telegram-webhook] Invalid user ID format:', userId);
-            await sendTelegramMessage(chatId, `❌ Invalid connection link. Please get a new link from the SmartPick app.`);
-            return new Response(JSON.stringify({ error: 'Invalid user ID format' }), {
+            console.error('[telegram-webhook] Invalid user ID format (old link detected):', userId);
+            await sendTelegramMessage(chatId, 
+              `❌ <b>This connection link has expired.</b>\n\n` +
+              `📱 Please get a new connection link:\n` +
+              `1. Open SmartPick app\n` +
+              `2. Go to your Dashboard\n` +
+              `3. Click "Connect Telegram" button\n` +
+              `4. Click the new link that opens\n\n` +
+              `This ensures your account is connected securely.`
+            );
+            return new Response(JSON.stringify({ ok: true }), {
               headers: { 'Content-Type': 'application/json' },
-              status: 400
+              status: 200
             });
           }
 

@@ -41,7 +41,11 @@ export function getTelegramBotLink(userId: string): string {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
-  const startParam = b64;
+  
+  // Add timestamp to make link unique and prevent caching
+  const timestamp = Date.now();
+  const startParam = `${b64}_${timestamp}`;
+  
   return `https://t.me/${botUsername}?start=${startParam}`;
 }
 
