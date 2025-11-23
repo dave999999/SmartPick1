@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { emitPointsChange } from './pointsEventBus';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { sanitizeMetadata } from './utils/metadata-sanitizer';
 
 export interface UserPoints {
   id: string;
@@ -157,11 +158,14 @@ export async function deductPoints(
   metadata?: any
 ): Promise<DeductPointsResult> {
   try {
+    // Sanitize metadata before sending to database
+    const sanitizedMetadata = sanitizeMetadata(metadata || {});
+    
     const { data, error } = await supabase.rpc('deduct_user_points', {
       p_user_id: userId,
       p_amount: amount,
       p_reason: reason,
-      p_metadata: metadata || {}
+      p_metadata: sanitizedMetadata
     });
 
     if (error) {
@@ -200,11 +204,14 @@ export async function addPoints(
   metadata?: any
 ): Promise<AddPointsResult> {
   try {
+    // Sanitize metadata before sending to database
+    const sanitizedMetadata = sanitizeMetadata(metadata || {});
+    
     const { data, error } = await supabase.rpc('add_user_points', {
       p_user_id: userId,
       p_amount: amount,
       p_reason: reason,
-      p_metadata: metadata || {}
+      p_metadata: sanitizedMetadata
     });
 
     if (error) {
