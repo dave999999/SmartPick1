@@ -4,7 +4,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createBOGClient } from "../../../src/lib/payments/bog.ts";
 import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts';
-import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { getSecureHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import { bogWebhookSchema, validateData, getValidationErrorMessage } from '../_shared/validation.ts';
 import { createLogger } from '../_shared/logger.ts';
 
@@ -16,7 +16,7 @@ serve(async (req) => {
     return handleCorsPreflightRequest(req);
   }
 
-  const corsHeaders = getCorsHeaders(req);
+  const secureHeaders = getSecureHeaders(req);
 
   try {
     logger.debug('Webhook received');
@@ -55,7 +55,7 @@ serve(async (req) => {
         error: "Webhook disabled for security - BOG_AUTH_KEY not configured" 
       }), { 
         status: 503, // Service Unavailable
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       });
     }
 
@@ -63,7 +63,7 @@ serve(async (req) => {
       logger.error('Invalid Auth-Key');
       return new Response(JSON.stringify({ error: "Unauthorized" }), { 
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       });
     }
 
@@ -90,7 +90,7 @@ serve(async (req) => {
       logger.error('Webhook validation failed', undefined, { error: errorMsg });
       return new Response(JSON.stringify({ error: "Invalid webhook data", details: errorMsg }), { 
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       });
     }
 
@@ -116,7 +116,7 @@ serve(async (req) => {
       logger.error('Order not found', orderErr);
       return new Response(JSON.stringify({ error: "Order not found" }), { 
         status: 200, // Return 200 to prevent BOG from retrying
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       });
     }
 
@@ -127,7 +127,7 @@ serve(async (req) => {
       logger.info('Order already processed', { status: order.status });
       return new Response(JSON.stringify({ message: "Already processed" }), { 
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       });
     }
 
@@ -219,7 +219,7 @@ serve(async (req) => {
         }), 
         { 
           status: 200,
-          headers: { 'Content-Type': 'application/json' }
+          headers: secureHeaders
         }
       );
     }
@@ -247,7 +247,7 @@ serve(async (req) => {
       JSON.stringify({ success: true, message: "Payment failed/cancelled" }), 
       { 
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       }
     );
 
@@ -257,7 +257,7 @@ serve(async (req) => {
       JSON.stringify({ error: err.message || "Internal server error" }),
       { 
         status: 200, // Return 200 to prevent BOG from retrying on unrecoverable errors
-        headers: { 'Content-Type': 'application/json' }
+        headers: secureHeaders
       }
     );
   }
