@@ -12,6 +12,8 @@ lerna-debug.log*
 .env.*
 .env.local
 .env.example
+.env.production
+.env.example
 .env.development
 .env.captcha
 .env.example
