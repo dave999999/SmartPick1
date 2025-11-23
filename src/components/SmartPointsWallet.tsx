@@ -139,27 +139,27 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
 
   return (
     <>
-      <Card className="shadow-lg bg-gradient-to-br from-white to-[#F9FFFB] border-[#4CC9A8]/20">
+      <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-[#4CC9A8] to-[#3db891] rounded-xl">
+            <div className="p-3 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl">
               <Coins className="w-6 h-6 text-white" />
             </div>
             <div>
-              <CardTitle className="text-2xl">SmartPoints Wallet</CardTitle>
-              <CardDescription>Your reward points balance</CardDescription>
+              <CardTitle className="text-2xl text-white">SmartPoints Wallet</CardTitle>
+              <CardDescription className="text-gray-400">Manage your points balance</CardDescription>
             </div>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
           {/* Balance Display */}
-          <div className="relative p-6 bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9] rounded-xl border-2 border-[#4CC9A8]/30">
+          <div className="relative p-6 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 rounded-xl border-2 border-teal-500/30">
             <div className="flex items-baseline justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Current Balance</p>
-                <p className="text-5xl font-bold text-gray-900">{balance}</p>
-                <p className="text-sm text-gray-500 mt-1">SmartPoints</p>
+                <p className="text-sm text-gray-400 mb-1">Current Balance</p>
+                <p className="text-5xl font-bold text-white">{balance}</p>
+                <p className="text-sm text-gray-400 mt-1">SmartPoints</p>
               </div>
               {isLowBalance && (
                 <Badge variant="destructive" className="animate-pulse">
@@ -177,37 +177,37 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-white rounded-lg border">
-              <p className="text-xs text-gray-600">Per Unit</p>
-              <p className="text-lg font-bold text-gray-900">5 Points</p>
+            <div className="p-3 bg-black/20 rounded-lg border border-white/10">
+              <p className="text-xs text-gray-400">Per Unit</p>
+              <p className="text-lg font-bold text-white">5 Points</p>
             </div>
-            <div className="p-3 bg-white rounded-lg border">
-              <p className="text-xs text-gray-600">Units Available</p>
-              <p className="text-lg font-bold text-[#4CC9A8]">{Math.floor(balance / 5)}</p>
+            <div className="p-3 bg-black/20 rounded-lg border border-white/10">
+              <p className="text-xs text-gray-400">Units Available</p>
+              <p className="text-lg font-bold text-teal-400">{Math.floor(balance / 5)}</p>
             </div>
           </div>
 
           {/* Recent Transactions */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+            <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" />
               Recent Activity
             </h3>
 
             {transactions.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">No transactions yet</p>
+              <p className="text-sm text-gray-400 text-center py-4">No transactions yet</p>
             ) : (
               <div className="space-y-2">
                 {transactions.map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-3 bg-white rounded-lg border hover:border-[#4CC9A8]/30 transition-colors"
+                    className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/10 hover:border-teal-500/30 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
                         transaction.change > 0
-                          ? 'bg-green-50 text-green-600'
-                          : 'bg-gray-50 text-gray-600'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-500/20 text-gray-400'
                       }`}>
                         {transaction.change > 0 ? (
                           <TrendingUp className="w-4 h-4" />
@@ -216,21 +216,21 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-white">
                           {formatTransactionReason(transaction.reason)}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                           {new Date(transaction.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className={`text-lg font-bold ${
-                        transaction.change > 0 ? 'text-green-600' : 'text-gray-900'
+                        transaction.change > 0 ? 'text-green-400' : 'text-white'
                       }`}>
                         {formatPointsChange(transaction.change)}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-400">
                         {transaction.balance_after} total
                       </p>
                     </div>

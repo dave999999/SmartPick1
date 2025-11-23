@@ -41,15 +41,15 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
   };
 
   return (
-    <Card className="shadow-lg border-orange-200 bg-gradient-to-br from-white to-orange-50">
-      <CardHeader>
+    <Card className="bg-transparent border-none shadow-none">
+      <CardHeader className="px-4 pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="flex items-center gap-2 text-orange-600">
-              <Flame className="w-5 h-5" />
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Flame className="w-5 h-5 text-orange-400" />
               Activity Streak
             </CardTitle>
-            <CardDescription>Keep the momentum going!</CardDescription>
+            <CardDescription className="text-gray-400">Keep the momentum going!</CardDescription>
           </div>
           <motion.div
             animate={{
@@ -69,20 +69,20 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Current Streak */}
-        <div className="text-center p-6 bg-gradient-to-br from-orange-100 to-yellow-100 rounded-xl border-2 border-orange-300">
+        <div className="text-center p-6 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-xl border-2 border-orange-500/30">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200 }}
-            className="text-6xl font-black text-orange-600"
+            className="text-6xl font-black text-orange-400"
           >
             {streakDays}
           </motion.div>
-          <div className="text-lg font-semibold text-orange-700 mt-2">
+          <div className="text-lg font-semibold text-orange-300 mt-2">
             {streakDays === 1 ? 'Day' : 'Days'} Streak
           </div>
           {streakDays === 0 && (
-            <p className="text-sm text-orange-600 mt-2">
+            <p className="text-sm text-orange-300 mt-2">
               Make a reservation today to start your streak! 🔥
             </p>
           )}
@@ -91,8 +91,8 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
         {/* Calendar View */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <Calendar className="w-4 h-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-700">Last 7 Days</span>
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-sm font-medium text-gray-300">Last 7 Days</span>
           </div>
           <div className="grid grid-cols-7 gap-2">
             {last7Days.map((date, index) => {
@@ -108,8 +108,8 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
                   className={`relative aspect-square rounded-lg flex flex-col items-center justify-center border-2 ${
                     isActive
                       ? 'bg-gradient-to-br from-orange-400 to-yellow-400 border-orange-500'
-                      : 'bg-gray-100 border-gray-300'
-                  } ${isToday ? 'ring-2 ring-[#4CC9A8] ring-offset-2' : ''}`}
+                      : 'bg-gray-800 border-gray-600'
+                  } ${isToday ? 'ring-2 ring-teal-400 ring-offset-2 ring-offset-[#2a2a2a]' : ''}`}
                 >
                   <div className={`text-xs font-semibold ${isActive ? 'text-white' : 'text-gray-500'}`}>
                     {date.toLocaleDateString('en-US', { weekday: 'short' })[0]}
@@ -134,18 +134,18 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
 
         {/* Personal Best */}
         {longestStreak > 0 && (
-          <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-orange-200">
+          <div className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-orange-400/30">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-orange-500" />
-              <span className="text-sm font-medium text-gray-700">Personal Best</span>
+              <TrendingUp className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-medium text-gray-300">Personal Best</span>
             </div>
-            <span className="text-lg font-bold text-orange-600">{longestStreak} days</span>
+            <span className="text-lg font-bold text-orange-400">{longestStreak} days</span>
           </div>
         )}
 
         {/* Streak Milestones */}
         <div className="space-y-2">
-          <p className="text-xs font-semibold text-gray-600 mb-2">Next Milestones:</p>
+          <p className="text-xs font-semibold text-gray-400 mb-2">Next Milestones:</p>
           {[
             { days: 3, reward: '+20 points', emoji: '🔥' },
             { days: 7, reward: '+50 points', emoji: '⚡' },
@@ -156,13 +156,13 @@ export function StreakTracker({ stats }: StreakTrackerProps) {
             .map((milestone) => (
               <div
                 key={milestone.days}
-                className="flex items-center justify-between p-2 bg-white rounded border border-gray-200"
+                className="flex items-center justify-between p-2 bg-black/20 rounded border border-orange-400/30"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{milestone.emoji}</span>
-                  <span className="text-sm text-gray-700">{milestone.days} days</span>
+                  <span className="text-sm text-gray-300">{milestone.days} days</span>
                 </div>
-                <span className="text-xs font-semibold text-[#4CC9A8]">{milestone.reward}</span>
+                <span className="text-xs font-semibold text-teal-400">{milestone.reward}</span>
               </div>
             ))}
         </div>

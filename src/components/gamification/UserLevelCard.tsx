@@ -49,8 +49,8 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
               </motion.div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-medium text-gray-600">Level {currentLevel.level}</span>
-                  <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                  <span className="text-sm font-medium text-gray-300">Level {currentLevel.level}</span>
+                  <Star className="w-4 h-4 text-yellow-400" fill="currentColor" />
                 </div>
                 <h3 className="text-3xl font-black" style={{ color: currentLevel.color }}>
                   {currentLevel.name}
