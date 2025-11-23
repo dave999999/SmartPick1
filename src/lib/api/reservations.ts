@@ -275,12 +275,10 @@ export const getReservationById = async (reservationId: string, retryCount = 0):
   }
 
   if (!basicData) {
-    // For new reservations, RLS might take a moment to propagate
-    // Retry up to 5 times with increasing delays
-    if (retryCount < 5) {
-      const delay = Math.min(500 * (retryCount + 1), 2000); // 500ms, 1000ms, 1500ms, 2000ms, 2000ms
-      logger.info(`Reservation ${reservationId} not found, retrying in ${delay}ms...`);
-      await new Promise(r => setTimeout(r, delay));
+    // Retry a few times in case of brief RLS propagation delay
+    if (retryCount < 2) {
+      logger.info(`Reservation ${reservationId} not found, retrying...`);
+      await new Promise(r => setTimeout(r, 300));
       return getReservationById(reservationId, retryCount + 1);
     }
     logger.warn(`Reservation ${reservationId} not found after ${retryCount + 1} attempts`);
