@@ -263,31 +263,41 @@ export const getReservationById = async (reservationId: string): Promise<Reserva
 
   logger.info(`Fetching reservation ${reservationId}`);
 
-  const { data, error } = await supabase
+  // First try to get the basic reservation data
+  const { data: basicData, error: basicError } = await supabase
     .from('reservations')
-    .select(`
-      *,
-      offer:offers(*),
-      partner:partners(*)
-    `)
+    .select('*')
     .eq('id', reservationId)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    logger.error(`Error fetching reservation ${reservationId}:`, error);
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      logger.warn(`Reservation ${reservationId} not found (PGRST116)`);
-      return null;
-    }
-    throw error;
+  if (basicError) {
+    logger.error(`Error fetching reservation ${reservationId}:`, basicError);
+    throw basicError;
   }
-  
-  logger.info(`Successfully fetched reservation ${reservationId}`, data);
 
+  if (!basicData) {
+    logger.warn(`Reservation ${reservationId} not found`);
+    return null;
+  }
 
+  // Then fetch the related data separately to avoid RLS issues
+  const [offerResult, partnerResult] = await Promise.allSettled([
+    supabase.from('offers').select('*').eq('id', basicData.offer_id).maybeSingle(),
+    supabase.from('partners').select('*').eq('id', basicData.partner_id).maybeSingle()
+  ]);
 
-  return data as Reservation;
+  const offer = offerResult.status === 'fulfilled' ? offerResult.value.data : null;
+  const partner = partnerResult.status === 'fulfilled' ? partnerResult.value.data : null;
+
+  const reservation = {
+    ...basicData,
+    offer: offer || undefined,
+    partner: partner || undefined
+  } as Reservation;
+
+  logger.info(`Successfully fetched reservation ${reservationId}`, reservation);
+
+  return reservation;
 };
 
 export const getCustomerReservations = async (customerId: string): Promise<Reservation[]> => {
