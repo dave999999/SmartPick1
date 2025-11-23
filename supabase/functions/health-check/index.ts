@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
       {
         status: isHealthy ? 200 : 503,
         headers: {
-          ...corsHeaders,
+          ...secureHeaders,
           'Content-Type': 'application/json',
         },
       }
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
       {
         status: 503,
         headers: {
-          ...corsHeaders,
+          ...secureHeaders,
           'Content-Type': 'application/json',
         },
       }
