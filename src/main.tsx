@@ -62,27 +62,50 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // ============================================
-// PWA Service Worker - DISABLED (causing cache issues)
+// Simple Update Check Service Worker
 // ============================================
-// Unregister any existing service workers and clear caches
-if ('serviceWorker' in navigator) {
+// Registers a lightweight service worker that checks for updates
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
 	window.addEventListener('load', async () => {
 		try {
-			// Unregister all service workers
+			// First, clean up any old service workers
 			const registrations = await navigator.serviceWorker.getRegistrations();
 			for (const registration of registrations) {
-				await registration.unregister();
-				logger.log('[PWA] Unregistered service worker:', registration.scope);
+				if (registration.active && !registration.active.scriptURL.includes('sw-update-checker')) {
+					await registration.unregister();
+					logger.log('[SW] Unregistered old service worker:', registration.scope);
+				}
 			}
 			
-			// Clear all caches to prevent stale content
-			if ('caches' in window) {
-				const cacheNames = await caches.keys();
-				await Promise.all(cacheNames.map(name => caches.delete(name)));
-				logger.log('[PWA] Cleared all caches');
-			}
+			// Register the new update checker service worker
+			const registration = await navigator.serviceWorker.register('/sw-update-checker.js');
+			logger.log('[SW] Update checker registered:', registration.scope);
+			
+			// Listen for update notifications from service worker
+			navigator.serviceWorker.addEventListener('message', (event) => {
+				if (event.data.type === 'NEW_VERSION_AVAILABLE') {
+					logger.log('[SW] New version available:', event.data.version);
+					
+					// Show notification and reload
+					const shouldReload = confirm(
+						'A new version of SmartPick is available! Click OK to refresh and get the latest updates.'
+					);
+					
+					if (shouldReload) {
+						window.location.reload();
+					}
+				}
+			});
+			
+			// Check for updates when the page becomes visible
+			document.addEventListener('visibilitychange', () => {
+				if (!document.hidden && navigator.serviceWorker.controller) {
+					navigator.serviceWorker.controller.postMessage({ type: 'CHECK_UPDATE' });
+				}
+			});
+			
 		} catch (error) {
-			logger.error('[PWA] Error during cleanup:', error);
+			logger.error('[SW] Error with service worker:', error);
 		}
 	});
 }
