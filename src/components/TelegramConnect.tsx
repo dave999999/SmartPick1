@@ -17,7 +17,8 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
 
   const handleConnect = () => {
     const botLink = getTelegramBotLink(userId);
-    console.log('🔗 Telegram bot link:', botLink);
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`🔗 [${timestamp}] Fresh Telegram bot link generated:`, botLink);
     console.log('👤 User ID:', userId);
     
     // Decode and verify the start parameter
@@ -27,9 +28,9 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
     console.log('✅ UUIDs match:', decoded === userId);
     
     window.open(botLink, '_blank');
-    toast.info('📱 Opening Telegram... Click START to connect', {
-      description: 'This will enable instant notifications for your orders',
-      duration: 5000,
+    toast.success(`🔗 Fresh link opened at ${timestamp}`, {
+      description: '📱 Click START in Telegram to connect. This link expires in 24 hours.',
+      duration: 8000,
     });
     
     // Auto-refresh status multiple times to catch the connection
