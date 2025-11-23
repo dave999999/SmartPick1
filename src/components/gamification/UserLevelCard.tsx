@@ -12,13 +12,13 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
   const { currentLevel, nextLevel, progress, reservationsToNext } = getLevelProgress(stats.total_reservations);
 
   return (
-    <Card className="shadow-lg border-[#4CC9A8]/30 bg-gradient-to-br from-white to-purple-50">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-purple-600" />
+    <Card className="bg-transparent border-none shadow-none">
+      <CardHeader className="px-4 pb-3">
+        <CardTitle className="flex items-center gap-2 text-white">
+          <Trophy className="w-5 h-5 text-purple-400" />
           Your Level
         </CardTitle>
-        <CardDescription>Unlock exclusive benefits as you level up!</CardDescription>
+        <CardDescription className="text-gray-400">Unlock exclusive benefits as you level up!</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Current Level Display */}
@@ -60,16 +60,16 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
 
             {/* Benefits */}
             <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-600 mb-2">Your Benefits:</p>
+              <p className="text-xs font-semibold text-gray-400 mb-2">Your Benefits:</p>
               {currentLevel.benefits.map((benefit, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-2 text-sm text-gray-700"
+                  className="flex items-center gap-2 text-sm text-gray-300"
                 >
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#4CC9A8]"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-teal-400"></div>
                   {benefit}
                 </motion.div>
               ))}
@@ -96,10 +96,10 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
             {/* Progress Bar */}
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="font-medium text-gray-600">
+                <span className="font-medium text-gray-400">
                   Progress
                 </span>
-                <span className="font-bold text-[#4CC9A8]">
+                <span className="font-bold text-teal-400">
                   {Math.round(progress)}%
                 </span>
               </div>
@@ -110,23 +110,23 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
                   background: `linear-gradient(to right, ${currentLevel.color}30, ${nextLevel.color}30)`
                 }}
               />
-              <p className="text-xs text-gray-500 text-center">
+              <p className="text-xs text-gray-400 text-center">
                 {reservationsToNext} more {reservationsToNext === 1 ? 'reservation' : 'reservations'} to reach {nextLevel.name}
               </p>
             </div>
 
             {/* Next Level Preview */}
-            <div className="p-4 bg-white rounded-lg border-2 border-dashed" style={{ borderColor: nextLevel.color }}>
+            <div className="p-4 bg-black/20 rounded-lg border-2 border-dashed" style={{ borderColor: nextLevel.color }}>
               <div className="flex items-center gap-3 mb-2">
                 <span className="text-2xl">{nextLevel.icon}</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-700">Next: {nextLevel.name}</p>
-                  <p className="text-xs text-gray-500">New benefits to unlock:</p>
+                  <p className="text-sm font-semibold text-white">Next: {nextLevel.name}</p>
+                  <p className="text-xs text-gray-400">New benefits to unlock:</p>
                 </div>
               </div>
               <div className="space-y-1">
                 {nextLevel.benefits.slice(0, 2).map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs text-gray-600">
+                  <div key={index} className="flex items-center gap-2 text-xs text-gray-300">
                     <div className="w-1 h-1 rounded-full" style={{ backgroundColor: nextLevel.color }}></div>
                     {benefit}
                   </div>
@@ -135,10 +135,10 @@ export function UserLevelCard({ stats }: UserLevelCardProps) {
             </div>
           </div>
         ) : (
-          <div className="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl border-2 border-yellow-300">
+          <div className="text-center p-6 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl border-2 border-yellow-500/30">
             <div className="text-4xl mb-2">🏆</div>
-            <h4 className="text-xl font-bold text-gray-900 mb-1">Maximum Level Reached!</h4>
-            <p className="text-sm text-gray-600">You've unlocked all benefits. You're a SmartPick Legend!</p>
+            <h4 className="text-xl font-bold text-white mb-1">Maximum Level Reached!</h4>
+            <p className="text-sm text-gray-300">You've unlocked all benefits. You're a SmartPick Legend!</p>
           </div>
         )}
       </CardContent>
