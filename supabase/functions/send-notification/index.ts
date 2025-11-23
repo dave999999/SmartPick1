@@ -65,7 +65,7 @@ serve(async (req) => {
     if (!userId || !message) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...secureHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -74,7 +74,7 @@ serve(async (req) => {
       .from('notification_preferences')
       .select('telegram_chat_id, enable_telegram')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     if (connectionError || !connection) {
       console.log(`No Telegram connection found for user ${userId}`)
@@ -83,7 +83,7 @@ serve(async (req) => {
         message: 'User has not connected Telegram'
       }), {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...secureHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -94,7 +94,7 @@ serve(async (req) => {
         message: 'Telegram notifications disabled'
       }), {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...secureHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -109,7 +109,7 @@ serve(async (req) => {
         details: result
       }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...secureHeaders, 'Content-Type': 'application/json' }
       })
     }
 
@@ -118,7 +118,7 @@ serve(async (req) => {
       message: 'Notification sent successfully'
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...secureHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
@@ -127,7 +127,7 @@ serve(async (req) => {
       error: error.message
     }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      headers: { ...secureHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
