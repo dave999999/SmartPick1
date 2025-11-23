@@ -230,38 +230,37 @@ export const createReservation = async (
 
     // Notify partner about new reservation
     // Note: notification_preferences uses user_id, not partner_id
-    // TODO: Deploy send-notification Edge Function to enable notifications
-    // const partnerUserId = reservation.partner?.user_id;
-    // if (partnerUserId) {
-    //   notifyPartnerNewReservation(
-    //     partnerUserId,
-    //     customerName,
-    //     offerTitle,
-    //     quantity,
-    //     pickupBy
-    //   ).catch(err => console.warn('Notification service unavailable'));
-    // }
+    const partnerUserId = reservation.partner?.user_id;
+    if (partnerUserId) {
+      notifyPartnerNewReservation(
+        partnerUserId,
+        customerName,
+        offerTitle,
+        quantity,
+        pickupBy
+      ).catch(err => console.warn('Notification service unavailable'));
+    }
 
     // Notify customer about reservation confirmation
-    // notifyCustomerReservationConfirmed(
-    //   customerId,
-    //   offerTitle,
-    //   quantity,
-    //   partnerName,
-    //   partnerAddress,
-    //   pickupBy
-    // ).catch(err => console.warn('Notification service unavailable'));
+    notifyCustomerReservationConfirmed(
+      customerId,
+      offerTitle,
+      quantity,
+      partnerName,
+      partnerAddress,
+      pickupBy
+    ).catch(err => console.warn('Notification service unavailable'));
   }
 
   return reservation as Reservation;
 };
 
-export const getReservationById = async (reservationId: string): Promise<Reservation | null> => {
+export const getReservationById = async (reservationId: string, retryCount = 0): Promise<Reservation | null> => {
   if (isDemoMode) {
     return null;
   }
 
-  logger.info(`Fetching reservation ${reservationId}`);
+  logger.info(`Fetching reservation ${reservationId} (attempt ${retryCount + 1})`);
 
   // First try to get the basic reservation data
   const { data: basicData, error: basicError } = await supabase
@@ -276,7 +275,14 @@ export const getReservationById = async (reservationId: string): Promise<Reserva
   }
 
   if (!basicData) {
-    logger.warn(`Reservation ${reservationId} not found`);
+    // For new users, data might take a moment to propagate
+    // Retry up to 2 times with small delay
+    if (retryCount < 2) {
+      logger.info(`Reservation ${reservationId} not found, retrying...`);
+      await new Promise(r => setTimeout(r, 300)); // 300ms delay
+      return getReservationById(reservationId, retryCount + 1);
+    }
+    logger.warn(`Reservation ${reservationId} not found after ${retryCount + 1} attempts`);
     return null;
   }
 

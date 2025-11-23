@@ -82,8 +82,16 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 			logger.log('[SW] Update checker registered:', registration.scope);
 			
 			// Listen for update notifications from service worker
+			let lastNotificationTime = 0;
 			navigator.serviceWorker.addEventListener('message', (event) => {
 				if (event.data.type === 'NEW_VERSION_AVAILABLE') {
+					// Prevent notification spam (60 second cooldown)
+					const now = Date.now();
+					if (now - lastNotificationTime < 60000) {
+						return;
+					}
+					lastNotificationTime = now;
+					
 					logger.log('[SW] New version available:', event.data.version);
 					
 					// Show notification and reload
