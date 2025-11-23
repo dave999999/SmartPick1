@@ -1432,6 +1432,15 @@ export default function PartnerDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6">
+                  {/* Debug: Show what userId is being passed */}
+                  {import.meta.env.DEV && (
+                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <p className="text-xs font-bold text-yellow-900 mb-2">🔍 Dashboard Debug:</p>
+                      <p className="text-xs text-yellow-800">partner.user_id = {partner.user_id}</p>
+                      <p className="text-xs text-yellow-800">isUUID = {/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.user_id).toString()}</p>
+                      <p className="text-xs text-yellow-800">typeof = {typeof partner.user_id}</p>
+                    </div>
+                  )}
                   <TelegramConnect userId={partner.user_id} userType="partner" />
                 </CardContent>
               </Card>

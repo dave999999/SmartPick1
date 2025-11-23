@@ -1380,7 +1380,12 @@ export default function PartnerApplication() {
                     <Label className="text-xs font-semibold text-slate-200 mb-2 block">Telegram Notifications (optional)</Label>
                     {/* Debug: Show userId being used */}
                     {import.meta.env.DEV && (
-                      <p className="text-[10px] text-slate-400 mb-1">Debug: userId = {existingUserId}</p>
+                      <div className="text-[10px] text-slate-400 mb-1 p-2 bg-slate-800 rounded">
+                        <p>🔍 Debug Info:</p>
+                        <p>userId = {existingUserId}</p>
+                        <p>isUUID = {/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existingUserId)}</p>
+                        <p>type = {typeof existingUserId}</p>
+                      </div>
                     )}
                     <TelegramConnect userId={existingUserId} userType="partner" />
                   </div>
