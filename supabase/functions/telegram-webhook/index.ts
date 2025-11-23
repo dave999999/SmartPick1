@@ -1,6 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { createLogger } from '../_shared/logger.ts'
+
+const logger = createLogger('telegram-webhook')
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -33,12 +36,15 @@ serve(async (req) => {
     // Verify Telegram secret token
     const secretToken = req.headers.get('X-Telegram-Bot-Api-Secret-Token')
     if (secretToken !== TELEGRAM_WEBHOOK_SECRET) {
-      console.error('❌ Invalid secret token')
+      logger.error('Invalid secret token')
       return new Response('Unauthorized', { status: 401 })
     }
 
     const update = await req.json()
-    console.log('Received update:', JSON.stringify(update))
+    logger.debug('Telegram update received', { 
+      hasMessage: !!update.message,
+      hasCallbackQuery: !!update.callback_query 
+    })
 
     if (!update.message) {
       return new Response(JSON.stringify({ ok: true }), {
@@ -56,7 +62,7 @@ serve(async (req) => {
     const rateLimit = await checkRateLimit(supabase, rateLimitId, 'telegram-message', 20, 60);
     
     if (!rateLimit.allowed) {
-      console.log(`[telegram-webhook] Rate limit exceeded for chat ${chatId}`);
+      logger.warn('Rate limit exceeded', { chatId });
       await sendTelegramMessage(chatId, '⚠️ Too many commands. Please wait a moment and try again.');
       return new Response(JSON.stringify({ ok: true }), {
         headers: { 'Content-Type': 'application/json' },
@@ -83,7 +89,7 @@ serve(async (req) => {
           const now = Date.now();
           const linkAge = now - linkTimestamp;
           if (linkAge > 86400000) {
-            console.warn(`[telegram-webhook] Link expired (age: ${Math.round(linkAge / 3600000)}h)`);
+            logger.warn('Connection link expired', { ageHours: Math.round(linkAge / 3600000) });
             await sendTelegramMessage(chatId, 
               `⏰ <b>This connection link has expired.</b>\n\n` +
               `📱 Please get a new link from SmartPick:\n` +
@@ -112,7 +118,7 @@ serve(async (req) => {
           // SECURITY: Validate UUID format to prevent injection attacks
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           if (!uuidRegex.test(userId)) {
-            console.error('[telegram-webhook] Invalid user ID format (old link detected):', userId);
+            logger.error('Invalid user ID format detected', undefined, { userId });
             await sendTelegramMessage(chatId, 
               `❌ <b>This connection link has expired.</b>\n\n` +
               `📱 Please get a new connection link:\n` +
@@ -129,7 +135,7 @@ serve(async (req) => {
           }
 
           // Save chat ID to database
-          console.log(`📝 Attempting to save connection for user ${userId}, chat ${chatId}`)
+          logger.info('Saving Telegram connection')
           const { data: upsertData, error: upsertError } = await supabase
             .from('notification_preferences')
             .upsert({
@@ -144,7 +150,7 @@ serve(async (req) => {
             .select()
 
           if (upsertError) {
-            console.error('❌ Database error:', upsertError)
+            logger.error('Database error saving connection', upsertError)
             await sendTelegramMessage(chatId, `❌ Error connecting your account. Please try again or contact support.`)
             return new Response(JSON.stringify({ error: upsertError.message }), {
               headers: { 'Content-Type': 'application/json' },
@@ -152,7 +158,7 @@ serve(async (req) => {
             })
           }
           
-          console.log('✅ Database save successful:', upsertData)
+          logger.info('Telegram connection saved successfully')
 
           // Send success message
           await sendTelegramMessage(
@@ -171,7 +177,7 @@ Type /status to check your connection.
 Type /help for more information.`
           )
         } catch (error) {
-          console.error('Error decoding user ID:', error)
+          logger.error('Error decoding user ID', error)
           await sendTelegramMessage(
             chatId,
             `❌ Invalid connection link. Please try again from the SmartPick app.`
@@ -287,7 +293,7 @@ You can disconnect anytime from your dashboard.`
     })
 
   } catch (error) {
-    console.error('Error processing update:', error)
+    logger.error('Error processing update', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { 'Content-Type': 'application/json' },
       status: 500

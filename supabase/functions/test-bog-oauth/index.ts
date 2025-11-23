@@ -4,6 +4,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('test-bog-oauth');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,11 +20,9 @@ serve(async (req) => {
     const clientSecret = Deno.env.get("BOG_CLIENT_SECRET");
     const authUrl = Deno.env.get("BOG_AUTH_URL") || "https://oauth2.bog.ge/auth/realms/bog/protocol/openid-connect/token";
 
-    console.log("Environment check:", {
+    logger.info('Environment check', {
       hasClientId: !!clientId,
-      hasClientSecret: !!clientSecret,
-      clientIdValue: clientId,
-      authUrl
+      hasClientSecret: !!clientSecret
     });
 
     if (!clientId || !clientSecret) {
@@ -43,8 +44,7 @@ serve(async (req) => {
 
     // Try to fetch OAuth token
     const credentials = btoa(`${clientId}:${clientSecret}`);
-    console.log("Fetching token from:", authUrl);
-    console.log("Credentials (base64):", credentials);
+    logger.info('Fetching OAuth token');
 
     const tokenResponse = await fetch(authUrl, {
       method: "POST",
@@ -56,8 +56,7 @@ serve(async (req) => {
     });
 
     const tokenData = await tokenResponse.json();
-    console.log("Token response status:", tokenResponse.status);
-    console.log("Token response:", tokenData);
+    logger.info('Token response received', { status: tokenResponse.status, hasAccessToken: !!tokenData.access_token });
 
     if (!tokenResponse.ok) {
       return new Response(JSON.stringify({
@@ -91,7 +90,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error("Test failed:", error);
+    logger.error('OAuth test failed', error);
     return new Response(JSON.stringify({
       error: "Test failed",
       message: error.message,
