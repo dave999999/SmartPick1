@@ -55,6 +55,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   // For other resources, use network-first strategy with short cache
+  // ONLY cache GET requests (POST/PUT/DELETE cannot be cached)
+  if (event.request.method !== 'GET') {
+    return; // Let browser handle non-GET requests normally
+  }
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
