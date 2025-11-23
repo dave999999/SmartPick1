@@ -3,15 +3,19 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/:path((?!assets|api|sw-update-checker\\.js|manifest\\.json).*)",
+      "destination": "/index.html" 
+    }
   ],
   "headers": [
     {
-      "source": "/service-worker.js",
+      "source": "/sw-update-checker.js",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, proxy-revalidate" },
         { "key": "CDN-Cache-Control", "value": "no-store" },
-        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" },
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     },
     {
