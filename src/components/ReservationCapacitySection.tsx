@@ -9,6 +9,7 @@ import { MAX_RESERVATION_SLOTS, DEFAULT_RESERVATION_SLOTS } from '@/lib/constant
 import { SlotUnlockModal } from './SlotUnlockModal';
 import { logger } from '@/lib/logger';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 interface ReservationCapacitySectionProps {
   userId: string;
@@ -22,6 +23,7 @@ export function ReservationCapacitySection({
   onBalanceChange 
 }: ReservationCapacitySectionProps) {
   const [slotInfo, setSlotInfo] = useState<UserSlotInfo | null>(null);
+  const [actualBalance, setActualBalance] = useState(currentBalance);
   const [loading, setLoading] = useState(true);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
 
@@ -29,12 +31,28 @@ export function ReservationCapacitySection({
     loadSlotInfo();
   }, [userId]);
 
+  useEffect(() => {
+    setActualBalance(currentBalance);
+  }, [currentBalance]);
+
   const loadSlotInfo = async () => {
     setLoading(true);
     try {
       const info = await getUserSlotInfo(userId);
       setSlotInfo(info);
-      logger.log('Slot info loaded:', info);
+      
+      // Also fetch actual balance from users table
+      const { data, error } = await supabase
+        .from('users')
+        .select('balance')
+        .eq('id', userId)
+        .single();
+      
+      if (!error && data) {
+        setActualBalance(data.balance);
+      }
+      
+      logger.log('Slot info loaded:', info, 'Balance:', data?.balance);
     } catch (error) {
       logger.error('Error loading slot info:', error);
     } finally {
@@ -134,8 +152,8 @@ export function ReservationCapacitySection({
 
               <Button
                 onClick={() => {
-                  if (currentBalance < slotInfo.next_slot_cost) {
-                    const needed = slotInfo.next_slot_cost - currentBalance;
+                  if (actualBalance < slotInfo.next_slot_cost) {
+                    const needed = slotInfo.next_slot_cost - actualBalance;
                     toast.error(`Need ${needed} more points to unlock`, {
                       description: 'Buy more points or earn them through activities',
                       duration: 4000,
@@ -147,8 +165,8 @@ export function ReservationCapacitySection({
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-[1.02] transition-transform"
               >
                 <Unlock className="w-4 h-4 mr-2" />
-                {currentBalance < slotInfo.next_slot_cost 
-                  ? `Need ${(slotInfo.next_slot_cost - currentBalance).toLocaleString()} more points`
+                {actualBalance < slotInfo.next_slot_cost 
+                  ? `Need ${(slotInfo.next_slot_cost - actualBalance).toLocaleString()} more points`
                   : `Unlock ${slotInfo.current_max + 1}th Slot`}
               </Button>
             </div>
@@ -204,7 +222,7 @@ export function ReservationCapacitySection({
         onOpenChange={setShowUnlockModal}
         userId={userId}
         currentMax={slotInfo.current_max}
-        currentBalance={currentBalance}
+        currentBalance={actualBalance}
         onSuccess={handleUnlockSuccess}
       />
     </>
