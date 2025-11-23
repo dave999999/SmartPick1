@@ -3,7 +3,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { createBOGClient } from "../../../src/lib/payments/bog.ts";
-import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
+import { getSecureHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts';
 import { createLogger } from '../_shared/logger.ts';
 
@@ -15,7 +15,7 @@ serve(async (req) => {
     return handleCorsPreflightRequest(req);
   }
 
-  const corsHeaders = getCorsHeaders(req);
+  const secureHeaders = getSecureHeaders(req);
 
   try {
     logger.debug('Request received');
@@ -26,7 +26,7 @@ serve(async (req) => {
       logger.error('No Authorization header');
       return new Response(JSON.stringify({ error: "Unauthorized" }), { 
         status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { '...secureHeaders }
       });
     }
 
@@ -49,7 +49,7 @@ serve(async (req) => {
       logger.error('Authentication failed', authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), { 
         status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { '...secureHeaders }
       });
     }
 
@@ -70,7 +70,7 @@ serve(async (req) => {
       logger.error('Invalid input parameters');
       return new Response(
         JSON.stringify({ error: "Invalid gel_amount or points" }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        { status: 400, headers: { '...secureHeaders } }
       );
     }
 
@@ -80,7 +80,7 @@ serve(async (req) => {
       logger.error('Invalid points/GEL ratio');
       return new Response(
         JSON.stringify({ error: "Invalid points to GEL ratio" }),
-        { status: 400, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        { status: 400, headers: { '...secureHeaders } }
       );
     }
 
@@ -103,7 +103,7 @@ serve(async (req) => {
       logger.error('Failed to create order', orderErr);
       return new Response(
         JSON.stringify({ error: "Failed to create order" }),
-        { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        { status: 500, headers: { '...secureHeaders } }
       );
     }
 
@@ -148,7 +148,7 @@ serve(async (req) => {
           error: "Payment service temporarily unavailable. Your account has not been charged. Please contact support if your BOG merchant account is not yet approved.",
           details: bogError.message 
         }),
-        { status: 503, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+        { status: 503, headers: { '...secureHeaders } }
       );
     }
 
@@ -165,7 +165,7 @@ serve(async (req) => {
       JSON.stringify({ redirectUrl: result.redirectUrl }),
       { 
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { '...secureHeaders }
       }
     );
 
@@ -173,7 +173,7 @@ serve(async (req) => {
     logger.error('Fatal error', err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal server error" }),
-      { status: 500, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      { status: 500, headers: { '...secureHeaders } }
     );
   }
 });
