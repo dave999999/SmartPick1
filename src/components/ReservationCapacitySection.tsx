@@ -8,6 +8,7 @@ import { getUserSlotInfo, getUpgradeableSlotsPreview, type UserSlotInfo } from '
 import { MAX_RESERVATION_SLOTS, DEFAULT_RESERVATION_SLOTS } from '@/lib/constants';
 import { SlotUnlockModal } from './SlotUnlockModal';
 import { logger } from '@/lib/logger';
+import { toast } from 'sonner';
 
 interface ReservationCapacitySectionProps {
   userId: string;
@@ -132,19 +133,24 @@ export function ReservationCapacitySection({
               </div>
 
               <Button
-                onClick={() => setShowUnlockModal(true)}
-                disabled={currentBalance < slotInfo.next_slot_cost}
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 disabled:opacity-50"
+                onClick={() => {
+                  if (currentBalance < slotInfo.next_slot_cost) {
+                    const needed = slotInfo.next_slot_cost - currentBalance;
+                    toast.error(`Need ${needed} more points to unlock`, {
+                      description: 'Buy more points or earn them through activities',
+                      duration: 4000,
+                    });
+                  } else {
+                    setShowUnlockModal(true);
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-[1.02] transition-transform"
               >
                 <Unlock className="w-4 h-4 mr-2" />
-                Unlock {slotInfo.current_max + 1}th Slot
+                {currentBalance < slotInfo.next_slot_cost 
+                  ? `Need ${(slotInfo.next_slot_cost - currentBalance).toLocaleString()} more points`
+                  : `Unlock ${slotInfo.current_max + 1}th Slot`}
               </Button>
-
-              {currentBalance < slotInfo.next_slot_cost && (
-                <p className="text-xs text-center text-orange-400">
-                  Need {(slotInfo.next_slot_cost - currentBalance).toLocaleString()} more points
-                </p>
-              )}
             </div>
           )}
 

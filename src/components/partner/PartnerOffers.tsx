@@ -288,12 +288,37 @@ export default function PartnerOffers({
 
   if (offers.length === 0) {
     return (
-      <div className="text-center py-20 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-200 mb-4">
-          <Package className="w-10 h-10 text-gray-400" />
+      <div className="text-center py-16 px-6 bg-gradient-to-br from-emerald-50/50 via-teal-50/30 to-white rounded-2xl border border-emerald-100 shadow-sm">
+        <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 mb-6 animate-pulse">
+          <Package className="w-12 h-12 text-emerald-600" strokeWidth={2} />
         </div>
-        <p className="text-gray-700 text-lg font-semibold mb-2">No offers yet</p>
-        <p className="text-sm text-gray-600">Create your first offer to get started</p>
+        <h3 className="text-gray-900 text-xl font-bold mb-2">No offers yet</h3>
+        <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">Create your first offer to start attracting customers and growing your business</p>
+        
+        {/* Tips */}
+        <div className="mt-8 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-left">
+          <div className="p-4 bg-white rounded-xl border border-emerald-100 shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mb-3">
+              <span className="text-xl">📸</span>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Use Great Photos</p>
+            <p className="text-xs text-gray-600">High-quality images attract more customers</p>
+          </div>
+          <div className="p-4 bg-white rounded-xl border border-emerald-100 shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mb-3">
+              <span className="text-xl">💰</span>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Price Competitively</p>
+            <p className="text-xs text-gray-600">Offer 30-50% discount for best results</p>
+          </div>
+          <div className="p-4 bg-white rounded-xl border border-emerald-100 shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center mb-3">
+              <span className="text-xl">⏰</span>
+            </div>
+            <p className="text-sm font-semibold text-gray-900 mb-1">Post Regularly</p>
+            <p className="text-xs text-gray-600">Daily offers increase your visibility</p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -95,8 +95,8 @@ export default function CreateOfferWizard({
     if (step === 1) {
       if (!draft.title.trim()) newErrors.title = 'Title is required';
       if (draft.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
-      if (!draft.description.trim()) newErrors.description = 'Description is required';
-      if (draft.description.trim().length < 10) newErrors.description = 'Description must be at least 10 characters';
+      if (draft.title.trim().length > 100) newErrors.title = 'Title must not exceed 100 characters';
+      // Description is optional - no validation needed
     } else if (step === 2) {
       const quantity = Number(draft.quantity);
       const originalPrice = Number(draft.original_price);
@@ -208,7 +208,8 @@ export default function CreateOfferWizard({
         modal={true}
       >
         <DialogContent 
-          className="max-w-lg max-h-[90vh] overflow-hidden rounded-3xl p-0"
+          className="max-w-lg max-h-[90vh] overflow-hidden rounded-3xl p-0 bg-white shadow-2xl"
+          style={{ backgroundColor: '#ffffff' }}
           onPointerDownOutside={(e) => {
             // Prevent closing when clicking outside during submission or when image modal is open
             if (isSubmitting || showImageModal) {
@@ -228,7 +229,7 @@ export default function CreateOfferWizard({
           }}
         >
           {/* Progress Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6">
+          <div className="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6" style={{ backgroundColor: '#ffffff' }}>
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
                 Create New Offer
@@ -243,20 +244,20 @@ export default function CreateOfferWizard({
                     <div
                       className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold transition-all ${
                         currentStep > step.id
-                          ? 'bg-teal-500 text-white'
+                          ? 'bg-emerald-500 text-white'
                           : currentStep === step.id
-                          ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg scale-110'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200 scale-110'
                           : 'bg-gray-200 text-gray-500'
                       }`}
                     >
                       {currentStep > step.id ? <Check className="w-4 h-4" /> : step.icon}
                     </div>
-                    <span className={`text-[10px] sm:text-xs mt-1 font-medium ${currentStep >= step.id ? 'text-teal-600' : 'text-gray-500'}`}>
+                    <span className={`text-[10px] sm:text-xs mt-1 font-medium ${currentStep >= step.id ? 'text-emerald-600' : 'text-gray-500'}`}>
                       {step.name}
                     </span>
                   </div>
                   {index < STEPS.length - 1 && (
-                    <div className={`h-0.5 flex-1 mx-2 ${currentStep > step.id ? 'bg-teal-500' : 'bg-gray-200'}`} />
+                    <div className={`h-0.5 flex-1 mx-2 ${currentStep > step.id ? 'bg-emerald-500' : 'bg-gray-200'}`} />
                   )}
                 </div>
               ))}
@@ -264,7 +265,7 @@ export default function CreateOfferWizard({
           </div>
 
           {/* Content Area */}
-          <div className="overflow-y-auto max-h-[calc(90vh-220px)] px-4 sm:px-6 py-4">
+          <div className="overflow-y-auto max-h-[calc(90vh-220px)] px-4 sm:px-6 py-4 bg-white" style={{ backgroundColor: '#ffffff' }}>
             {/* Step 1: Basic Info */}
             {currentStep === 1 && (
               <div className="space-y-4">
@@ -277,30 +278,32 @@ export default function CreateOfferWizard({
                     value={draft.title}
                     onChange={(e) => updateDraft('title', e.target.value)}
                     placeholder="e.g., Fresh Croissants (min 3 characters)"
-                    className="mt-2 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                    className="mt-2 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
                     autoFocus
                     maxLength={100}
                   />
                   {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
-                  {!errors.title && draft.title && draft.title.length < 3 && (
-                    <p className="text-amber-600 text-xs mt-1 font-medium">{draft.title.length}/3 characters (minimum)</p>
+                  {!errors.title && (
+                    <p className={`text-xs mt-1 ${draft.title.length < 3 ? 'text-amber-600 font-medium' : draft.title.length > 100 ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
+                      {draft.title.length}/100 characters {draft.title.length < 3 && '(minimum 3)'}
+                    </p>
                   )}
                 </div>
 
                 <div>
                   <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
-                    Description <span className="text-red-500">*</span>
+                    Description <span className="text-gray-400 text-xs">(optional)</span>
                   </Label>
                   <Textarea
                     id="description"
                     value={draft.description}
                     onChange={(e) => updateDraft('description', e.target.value)}
-                    placeholder="Describe your offer in detail... (minimum 10 characters)"
-                    className="mt-2 min-h-[120px] rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 resize-none"
+                    placeholder="Describe your offer in detail... (optional)"
+                    className="mt-2 min-h-[120px] rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white text-gray-900 placeholder:text-gray-400 resize-none"
                   />
                   {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
-                  <p className={`text-xs mt-1 ${draft.description.length < 10 ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
-                    {draft.description.length}/10 characters {draft.description.length < 10 && '(minimum)'}
+                  <p className="text-xs mt-1 text-gray-500">
+                    {draft.description.length} characters
                   </p>
                 </div>
               </div>
@@ -321,7 +324,7 @@ export default function CreateOfferWizard({
                     value={draft.quantity}
                     onChange={(e) => updateDraft('quantity', e.target.value)}
                     placeholder="10"
-                    className="mt-2 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+                    className="mt-2 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
                     autoFocus
                   />
                   {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
@@ -343,7 +346,7 @@ export default function CreateOfferWizard({
                         value={draft.original_price}
                         onChange={(e) => updateDraft('original_price', e.target.value)}
                         placeholder="10.00"
-                        className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 pr-8"
+                        className="rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white pr-8"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₾</span>
                     </div>
@@ -352,7 +355,7 @@ export default function CreateOfferWizard({
                   </div>
 
                   <div>
-                    <Label htmlFor="smart_price" className="text-sm font-semibold text-gray-700">
+                    <Label htmlFor="smart_price" className="text-sm font-semibold text-slate-700">
                       Smart Price <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative mt-2">
@@ -365,7 +368,7 @@ export default function CreateOfferWizard({
                         value={draft.smart_price}
                         onChange={(e) => updateDraft('smart_price', e.target.value)}
                         placeholder="6.00"
-                        className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 pr-8"
+                        className="rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white pr-8"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">₾</span>
                     </div>
@@ -408,13 +411,13 @@ export default function CreateOfferWizard({
                   
                   {draft.image ? (
                     <div className="space-y-3">
-                      <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-teal-500 shadow-lg">
+                      <div className="relative w-full h-48 rounded-2xl overflow-hidden border-2 border-emerald-500 shadow-lg">
                         <img
                           src={draft.image}
                           alt="Selected"
                           className="w-full h-full object-cover"
                         />
-                        <div className="absolute top-3 left-3 bg-teal-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 shadow-md">
+                        <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 shadow-md">
                           <Check className="w-3 h-3" /> Selected
                         </div>
                       </div>
@@ -425,7 +428,7 @@ export default function CreateOfferWizard({
                           e.stopPropagation();
                           setShowImageModal(true);
                         }}
-                        className="w-full rounded-xl border-gray-300"
+                        className="w-full rounded-xl border-gray-300 hover:bg-gray-50"
                       >
                         Change Image
                       </Button>
@@ -437,13 +440,13 @@ export default function CreateOfferWizard({
                         e.stopPropagation();
                         setShowImageModal(true);
                       }}
-                      className="w-full h-48 rounded-2xl border-2 border-dashed border-gray-300 hover:border-teal-500 bg-gray-50 hover:bg-teal-50 transition-all duration-200 flex flex-col items-center justify-center gap-3 group"
+                      className="w-full h-48 rounded-2xl border-2 border-dashed border-gray-300 hover:border-emerald-500 bg-gray-50 hover:bg-emerald-50 transition-all duration-200 flex flex-col items-center justify-center gap-3 group"
                     >
-                      <div className="w-16 h-16 rounded-full bg-teal-100 group-hover:bg-teal-200 flex items-center justify-center transition-colors">
+                      <div className="w-16 h-16 rounded-full bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
                         <span className="text-3xl">📷</span>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-gray-700 group-hover:text-teal-600">Click to Choose Image</p>
+                        <p className="font-semibold text-gray-700 group-hover:text-emerald-600">Click to Choose Image</p>
                         <p className="text-xs text-gray-500 mt-1">Select from our curated library</p>
                       </div>
                     </button>
@@ -458,7 +461,7 @@ export default function CreateOfferWizard({
             {/* Step 4: Review */}
             {currentStep === 4 && (
               <div className="space-y-4">
-                <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-4 border border-teal-200">
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                     <span className="text-lg">✓</span> Review Your Offer
                   </h3>
@@ -472,25 +475,25 @@ export default function CreateOfferWizard({
 
                   {/* Details */}
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between py-2 border-b border-teal-200">
+                    <div className="flex justify-between py-2 border-b border-emerald-100">
                       <span className="text-gray-600 font-medium">Title:</span>
                       <span className="text-gray-900 font-semibold text-right flex-1 ml-3">{draft.title}</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-teal-200">
+                    <div className="flex justify-between py-2 border-b border-gray-100">
                       <span className="text-gray-600 font-medium">Quantity:</span>
                       <span className="text-gray-900 font-semibold">{draft.quantity} items</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-teal-200">
+                    <div className="flex justify-between py-2 border-b border-gray-100">
                       <span className="text-gray-600 font-medium">Original Price:</span>
                       <span className="text-gray-900 font-semibold">₾{draft.original_price}</span>
                     </div>
-                    <div className="flex justify-between py-2 border-b border-teal-200">
+                    <div className="flex justify-between py-2 border-b border-gray-100">
                       <span className="text-gray-600 font-medium">Smart Price:</span>
-                      <span className="text-teal-600 font-bold">₾{draft.smart_price}</span>
+                      <span className="text-emerald-600 font-bold">₾{draft.smart_price}</span>
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="text-gray-600 font-medium">Discount:</span>
-                      <span className="text-emerald-600 font-bold">{calculateDiscount()}% OFF</span>
+                      <span className="text-teal-600 font-bold">{calculateDiscount()}% OFF</span>
                     </div>
                   </div>
 
@@ -505,14 +508,14 @@ export default function CreateOfferWizard({
           </div>
 
           {/* Footer Actions */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 sm:p-6" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
+          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4 sm:p-6" style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))', backgroundColor: '#ffffff' }}>
             <div className="flex gap-3">
               {currentStep > 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleBack}
-                  className="rounded-xl border-gray-300"
+                  className="rounded-xl border-gray-300 hover:bg-gray-50"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Back
@@ -523,7 +526,7 @@ export default function CreateOfferWizard({
                 type="button"
                 onClick={currentStep === 4 ? handleSubmit : handleNext}
                 disabled={isSubmitting}
-                className="flex-1 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white font-semibold shadow-md hover:shadow-lg transition-all"
+                className="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg hover:shadow-emerald-200 transition-all"
               >
                 {isSubmitting ? (
                   <>

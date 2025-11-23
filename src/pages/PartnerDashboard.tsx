@@ -978,22 +978,22 @@ export default function PartnerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-[#EFFFF8] to-[#C9F9E9] safe-area-top" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
+    <div className="min-h-screen bg-white safe-area-top" style={{ fontFamily: 'Inter, Poppins, sans-serif' }}>
       {/* Announcement Popup */}
       <AnnouncementPopup />
       
       {/* Header - Clean Modern Design */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+      <header className="bg-white/98 backdrop-blur-sm border-b border-emerald-100/50 sticky top-0 z-50 shadow-md">
         <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div className="flex flex-col min-w-0">
-                    <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text truncate">
+                    <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-transparent bg-clip-text truncate" style={{ fontWeight: 700 }}>
                       {partner?.business_name}
                     </h1>
-                    <p className="text-xs text-gray-500 font-medium">{t('partner.dashboard.title')}</p>
+                    <p className="text-xs text-gray-600 font-normal" style={{ fontWeight: 400 }}>{t('partner.dashboard.title')}</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="max-w-xs">
@@ -1007,11 +1007,11 @@ export default function PartnerDashboard() {
             {partnerPoints && (
               <button
                 onClick={() => setIsPurchaseSlotDialogOpen(true)}
-                className="group shrink-0 relative px-4 py-2.5 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200/50 hover:border-teal-300 hover:shadow-md active:scale-[0.98] transition-all duration-200"
+                className="group shrink-0 relative px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 shadow-sm hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-100/50 active:scale-[0.98] transition-all duration-300"
               >
                 <div className="flex items-center gap-3">
                   {/* Icon */}
-                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-[#00C896] to-[#009B77] shadow-sm">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm">
                     <Wallet className="w-5 h-5 text-white" strokeWidth={2} />
                   </div>
                   
@@ -1021,7 +1021,7 @@ export default function PartnerDashboard() {
                       <span className="text-lg font-bold text-gray-900">
                         {partnerPoints.balance}
                       </span>
-                      <span className="text-xs font-semibold text-teal-600">SP</span>
+                      <span className="text-xs font-semibold text-emerald-600">SP</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-600 font-medium">
@@ -1039,7 +1039,7 @@ export default function PartnerDashboard() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="shrink-0 h-10 w-10 rounded-xl bg-white border border-gray-200 hover:border-teal-400 hover:bg-teal-50 transition-all"
+                  className="shrink-0 h-10 w-10 rounded-xl bg-white border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all"
                 >
                   <User className="w-5 h-5 text-gray-700" />
                 </Button>
@@ -1095,12 +1095,12 @@ export default function PartnerDashboard() {
                 <DropdownMenuItem onClick={() => setLanguage('en')} className="cursor-pointer py-2.5 focus:bg-gray-50">
                   <Languages className="w-4 h-4 mr-3 text-gray-600" />
                   <span className="text-sm font-medium">🇬🇧 English</span>
-                  {language === 'en' && <DropdownMenuShortcut className="text-teal-600 font-bold">✓</DropdownMenuShortcut>}
+                  {language === 'en' && <DropdownMenuShortcut className="text-emerald-600 font-bold">✓</DropdownMenuShortcut>}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLanguage('ka')} className="cursor-pointer py-2.5 focus:bg-gray-50">
                   <Languages className="w-4 h-4 mr-3 text-gray-600" />
                   <span className="text-sm font-medium">🇬🇪 ქართული</span>
-                  {language === 'ka' && <DropdownMenuShortcut className="text-teal-600 font-bold">✓</DropdownMenuShortcut>}
+                  {language === 'ka' && <DropdownMenuShortcut className="text-emerald-600 font-bold">✓</DropdownMenuShortcut>}
                 </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />
@@ -1165,7 +1165,7 @@ export default function PartnerDashboard() {
           <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
             <DialogContent className="rounded-2xl max-w-lg">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-[#00C896] to-[#009B77] text-transparent bg-clip-text">
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-transparent bg-clip-text">
                   📱 {t('partner.dashboard.qr.validateTitle')}
                 </DialogTitle>
                 <DialogDescription className="text-base">{t('partner.dashboard.qr.descriptionPartner')}</DialogDescription>
@@ -1260,7 +1260,7 @@ export default function PartnerDashboard() {
                     <Button
                       aria-label={t('partner.dashboard.qr.validateAction')}
                       onClick={handleValidateQR}
-                      className="w-full bg-gradient-to-r from-[#00C896] to-[#009B77] hover:from-[#00B588] hover:to-[#008866] text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     >
                       <CheckCircle className="w-5 h-5 mr-2" />
                       {t('partner.dashboard.qr.validateAction')}
@@ -1413,38 +1413,12 @@ export default function PartnerDashboard() {
             </div>
           )}
 
-            {/* Notification Settings - Telegram */}
-            {partner && (
-              <Card className="mb-6 rounded-xl border border-gray-200 shadow-sm bg-white">
-                <CardHeader className="border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-blue-100">
-                      <span className="text-2xl">📲</span>
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900">
-                        {t('partner.dashboard.notifications.title')}
-                      </CardTitle>
-                      <CardDescription className="text-sm text-gray-600 mt-1">
-                        {t('partner.dashboard.notifications.subtitle')}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  {/* Debug: Show what userId is being passed */}
-                  {import.meta.env.DEV && (
-                    <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs font-bold text-yellow-900 mb-2">🔍 Dashboard Debug:</p>
-                      <p className="text-xs text-yellow-800">partner.user_id = {partner.user_id}</p>
-                      <p className="text-xs text-yellow-800">isUUID = {/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(partner.user_id).toString()}</p>
-                      <p className="text-xs text-yellow-800">typeof = {typeof partner.user_id}</p>
-                    </div>
-                  )}
-                  <TelegramConnect userId={partner.user_id} userType="partner" />
-                </CardContent>
-              </Card>
-            )}
+          {/* Telegram Notifications Toggle */}
+          {partner && (
+            <div className="mb-6">
+              <TelegramConnect userId={partner.user_id} userType="partner" />
+            </div>
+          )}
           </>
         )}
       </div>

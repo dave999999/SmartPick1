@@ -51,8 +51,8 @@ export default function EnhancedStatsCards({ stats, className = '', activeView =
       value: stats.reservationsToday,
       icon: Clock,
       bgColor: 'bg-white',
-      iconBg: 'bg-blue-100',
-      iconColor: 'text-blue-600',
+      iconBg: 'bg-teal-100',
+      iconColor: 'text-teal-600',
       view: 'reservations',
       trend: stats.reservationsTrend,
     },
@@ -73,8 +73,8 @@ export default function EnhancedStatsCards({ stats, className = '', activeView =
       value: `₾${stats.revenue.toFixed(0)}`,
       icon: Banknote,
       bgColor: 'bg-white',
-      iconBg: 'bg-purple-100',
-      iconColor: 'text-purple-600',
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
       view: 'analytics',
       trend: stats.revenueTrend,
     },
@@ -93,26 +93,26 @@ export default function EnhancedStatsCards({ stats, className = '', activeView =
             key={index}
             onClick={() => onCardClick?.(stat.view)}
             className={`
-              ${stat.bgColor} transition-all duration-200 overflow-hidden group cursor-pointer
+              ${stat.bgColor} transition-all duration-300 overflow-hidden group cursor-pointer
               ${isActive 
-                ? 'border-2 border-teal-500 shadow-lg ring-2 ring-teal-100' 
-                : 'border border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300'
+                ? 'border-2 border-emerald-500 shadow-xl shadow-emerald-100/50 ring-2 ring-emerald-100 scale-[1.02]' 
+                : 'border border-gray-200 shadow-md hover:shadow-xl hover:border-emerald-300 hover:scale-[1.02]'
               }
             `}
           >
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-center gap-4">
                 {/* Icon */}
-                <div className={`${stat.iconBg} p-3 rounded-xl transition-transform ${isActive ? 'scale-105' : 'group-hover:scale-105'}`}>
+                <div className={`${stat.iconBg} p-3 rounded-xl transition-all duration-300 ${isActive ? 'scale-105 shadow-sm' : 'group-hover:scale-110 group-hover:shadow-md'}`}>
                   <Icon className={`w-6 h-6 ${stat.iconColor}`} strokeWidth={2} />
                 </div>
                 
                 {/* Content */}
                 <div className="flex flex-col min-w-0 flex-1">
-                  <p className="text-xs font-medium text-gray-500 mb-0.5">
+                  <p className="text-xs font-semibold text-gray-600 mb-1">
                     {stat.title}
                   </p>
-                  <p className={`text-2xl font-bold ${isActive ? 'text-teal-600' : 'text-gray-900'}`}>
+                  <p className={`text-2xl sm:text-3xl font-bold transition-colors ${isActive ? 'text-emerald-600' : 'text-gray-900'}`}>
                     {stat.value}
                   </p>
                   
