@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
 // Using lightweight API module to defer heavy supabase & full api bundle
 import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
-import { isDemoMode } from '@/lib/supabase';
+import { isDemoMode, supabase } from '@/lib/supabase';
 import { indexedDBManager, STORES } from '@/lib/indexedDB';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import SplashScreen from '@/components/SplashScreen';
@@ -124,6 +124,21 @@ export default function Index() {
 
     return () => {
       window.removeEventListener('reservation-synced', handleReservationSynced);
+    };
+  }, []);
+
+  // Listen for auth changes (login/logout from any component)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        checkUser(); // Update user state when logged in
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null); // Clear user state when logged out
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
   }, []);
 
