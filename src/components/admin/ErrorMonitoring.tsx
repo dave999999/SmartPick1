@@ -13,10 +13,26 @@ import {
   Users,
   TrendingUp
 } from 'lucide-react';
+import * as Sentry from '@sentry/react';
 
 export default function ErrorMonitoring() {
-  const sentryDSN = import.meta.env.VITE_SENTRY_DSN;
-  const sentryConfigured = !!sentryDSN;
+  // Check if Sentry is actually initialized by checking the client
+  const sentryClient = Sentry.getClient();
+  const sentryOptions = sentryClient?.getOptions();
+  
+  // Get DSN from active client or environment
+  let sentryDSN = '';
+  if (sentryOptions?.dsn) {
+    if (typeof sentryOptions.dsn === 'string') {
+      sentryDSN = sentryOptions.dsn;
+    } else {
+      sentryDSN = sentryOptions.dsn.toString();
+    }
+  } else {
+    sentryDSN = import.meta.env.VITE_SENTRY_DSN || '';
+  }
+  
+  const sentryConfigured = !!sentryDSN && !!sentryClient;
 
   // Extract project info from DSN
   const projectInfo = sentryDSN ? extractProjectInfo(sentryDSN) : null;
