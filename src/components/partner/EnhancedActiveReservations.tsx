@@ -103,7 +103,7 @@ export default function EnhancedActiveReservations({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {reservation.customer?.name || 'Customer'}
+                      {reservation.customer?.name || reservation.customer?.email || 'Customer'}
                     </p>
                     <p className="text-xs text-gray-600 truncate">
                       {reservation.offer?.title}
