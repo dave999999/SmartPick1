@@ -186,6 +186,86 @@ export default function PartnerDashboard() {
     loadPartnerData();
   }, []);
 
+  // Real-time subscription for new reservations
+  useEffect(() => {
+    if (!partner?.id) return;
+
+    const channel = supabase
+      .channel('partner-reservations')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'reservations',
+          filter: `partner_id=eq.${partner.id}`,
+        },
+        (payload) => {
+          logger.log('🔴 New reservation created:', payload.new);
+          
+          // Add new reservation to the list if it's active
+          const newReservation = payload.new as Reservation;
+          if (newReservation.status === 'ACTIVE') {
+            setReservations(prev => [newReservation, ...prev]);
+            setAllReservations(prev => [newReservation, ...prev]);
+            
+            // Update stats - increment reservationsToday
+            setStats(prev => ({
+              ...prev,
+              reservationsToday: prev.reservationsToday + 1,
+            }));
+            
+            // Show toast notification
+            toast.success('New reservation received!', {
+              description: `${newReservation.quantity}x items reserved`,
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reservations',
+          filter: `partner_id=eq.${partner.id}`,
+        },
+        (payload) => {
+          logger.log('🟡 Reservation updated:', payload.new);
+          
+          const updatedReservation = payload.new as Reservation;
+          
+          // Update in active reservations list
+          setReservations(prev => {
+            // If status changed from ACTIVE, remove from active list
+            if (updatedReservation.status !== 'ACTIVE') {
+              return prev.filter(r => r.id !== updatedReservation.id);
+            }
+            // Otherwise update the reservation
+            return prev.map(r => r.id === updatedReservation.id ? updatedReservation : r);
+          });
+          
+          // Update in all reservations list
+          setAllReservations(prev => 
+            prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+          );
+          
+          // Update stats if picked up
+          if (updatedReservation.status === 'PICKED_UP') {
+            setStats(prev => ({
+              ...prev,
+              itemsPickedUp: prev.itemsPickedUp + updatedReservation.quantity,
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [partner?.id]);
+
   // Pickup times are set automatically on submit; no UI auto-fill needed
   useEffect(() => {}, [isCreateDialogOpen, partner]);
 
