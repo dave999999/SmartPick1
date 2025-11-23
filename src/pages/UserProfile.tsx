@@ -717,25 +717,25 @@ export default function UserProfile() {
                     <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent">
                       <TabsTrigger 
                         value="stats" 
-                        className="text-xs py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-500 data-[state=active]:text-teal-700 rounded-none"
+                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-400 data-[state=active]:text-teal-400 rounded-none"
                       >
                         Your Stats
                       </TabsTrigger>
                       <TabsTrigger 
                         value="level" 
-                        className="text-xs py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-purple-500 data-[state=active]:text-purple-700 rounded-none"
+                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-400 rounded-none"
                       >
                         Your Level
                       </TabsTrigger>
                       <TabsTrigger 
                         value="streak" 
-                        className="text-xs py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-orange-500 data-[state=active]:text-orange-700 rounded-none"
+                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-orange-400 data-[state=active]:text-orange-400 rounded-none"
                       >
                         Streak
                       </TabsTrigger>
                       <TabsTrigger 
                         value="referral" 
-                        className="text-xs py-3 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:text-blue-700 rounded-none"
+                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-400 data-[state=active]:text-blue-400 rounded-none"
                       >
                         Invite
                       </TabsTrigger>
