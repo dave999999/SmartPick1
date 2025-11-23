@@ -4,7 +4,6 @@ import { Offer, User } from '@/lib/types';
 // Using lightweight API module to defer heavy supabase & full api bundle
 import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
 import { isDemoMode } from '@/lib/supabase';
-import { useServiceWorker } from '@/hooks/useServiceWorker';
 import { indexedDBManager, STORES } from '@/lib/indexedDB';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import SplashScreen from '@/components/SplashScreen';
@@ -58,7 +57,6 @@ export default function Index() {
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
-  const { cacheOffers } = useServiceWorker();
   const isOnline = useOnlineStatus();
 
   async function loadOffers() {
@@ -72,7 +70,6 @@ export default function Index() {
         
         // Cache offers for offline use
         await indexedDBManager.cacheOffers(data);
-        cacheOffers(data);
         
         logger.info('[Index] Offers loaded and cached', { count: data.length });
       } else {
