@@ -6,6 +6,9 @@ import { createBOGClient } from "../../../src/lib/payments/bog.ts";
 import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts';
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts';
 import { bogWebhookSchema, validateData, getValidationErrorMessage } from '../_shared/validation.ts';
+import { createLogger } from '../_shared/logger.ts';
+
+const logger = createLogger('bog-webhook');
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -16,7 +19,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
   try {
-    console.log('[bog-webhook] Webhook received');
+    logger.debug('Webhook received');
 
     // 1. Create Supabase client with service role and connection pooling
     const supabase = createClient(
@@ -37,7 +40,7 @@ serve(async (req) => {
     const rateLimit = await checkRateLimit(supabase, rateLimitId, 'bog-webhook', 100, 60);
     
     if (!rateLimit.allowed) {
-      console.error(`[bog-webhook] Rate limit exceeded for ${rateLimitId}`);
+      logger.warn('Rate limit exceeded');
       return rateLimitResponse(rateLimit);
     }
 
@@ -47,7 +50,7 @@ serve(async (req) => {
 
     // CRITICAL: Webhook MUST have Auth-Key configured
     if (!expectedKey) {
-      console.error('[bog-webhook] SECURITY ERROR: BOG_AUTH_KEY not configured!');
+      logger.error('SECURITY ERROR: BOG_AUTH_KEY not configured');
       return new Response(JSON.stringify({ 
         error: "Webhook disabled for security - BOG_AUTH_KEY not configured" 
       }), { 
@@ -57,7 +60,7 @@ serve(async (req) => {
     }
 
     if (authKey !== expectedKey) {
-      console.error('[bog-webhook] Invalid Auth-Key');
+      logger.error('Invalid Auth-Key');
       return new Response(JSON.stringify({ error: "Unauthorized" }), { 
         status: 401,
         headers: { 'Content-Type': 'application/json' }
@@ -66,7 +69,7 @@ serve(async (req) => {
 
     // 3. Parse and validate webhook body with Zod schema
     const body = await req.json();
-    console.log('[bog-webhook] Webhook body:', JSON.stringify(body, null, 2));
+    logger.debug('Webhook data received');
 
     const bog = createBOGClient();
     const rawData = bog.parseWebhookData(body);
@@ -84,7 +87,7 @@ serve(async (req) => {
 
     if (!validationResult.success) {
       const errorMsg = getValidationErrorMessage(validationResult.errors);
-      console.error('[bog-webhook] Validation failed:', errorMsg);
+      logger.error('Webhook validation failed', undefined, { error: errorMsg });
       return new Response(JSON.stringify({ error: "Invalid webhook data", details: errorMsg }), { 
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -100,11 +103,7 @@ serve(async (req) => {
       cardMask: validationResult.data.card_mask,
     };
 
-    console.log('[bog-webhook] Parsed data:', { 
-      orderId: data.orderId, 
-      status: data.status,
-      transactionId: data.transactionId 
-    });
+    logger.info('Webhook data validated', { status: data.status });
 
     // 4. Load order from database
     const { data: order, error: orderErr } = await supabase
@@ -114,23 +113,18 @@ serve(async (req) => {
       .single();
 
     if (orderErr || !order) {
-      console.error('[bog-webhook] Order not found:', data.orderId, orderErr);
+      logger.error('Order not found', orderErr);
       return new Response(JSON.stringify({ error: "Order not found" }), { 
         status: 200, // Return 200 to prevent BOG from retrying
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    console.log('[bog-webhook] Order found:', { 
-      id: order.id, 
-      currentStatus: order.status,
-      userId: order.user_id,
-      points: order.points
-    });
+    logger.info('Order found', { currentStatus: order.status });
 
     // 5. Idempotent check - if already processed, return success
     if (order.status === "PAID" || order.status === "FAILED") {
-      console.log('[bog-webhook] Order already processed with status:', order.status);
+      logger.info('Order already processed', { status: order.status });
       return new Response(JSON.stringify({ message: "Already processed" }), { 
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -139,11 +133,11 @@ serve(async (req) => {
 
     // 6. Map BOG status to internal status
     const mapped = bog.mapBOGStatus(data.status);
-    console.log('[bog-webhook] Status mapped:', { raw: data.status, mapped: mapped.status });
+    logger.debug('Status mapped', { rawStatus: data.status, mappedStatus: mapped.status });
 
     // 7. Handle SUCCESS status
     if (mapped.status === "SUCCESS") {
-      console.log('[bog-webhook] Processing successful payment');
+      logger.info('Processing successful payment');
 
       // Update order status to PAID
       const { error: updateErr } = await supabase
@@ -161,7 +155,7 @@ serve(async (req) => {
         .eq("status", "PENDING"); // Only update if still pending
 
       if (updateErr) {
-        console.error('[bog-webhook] Failed to update order:', updateErr);
+        logger.error('Failed to update order', updateErr);
         throw new Error('Failed to update order status');
       }
 
@@ -173,18 +167,14 @@ serve(async (req) => {
         .single();
 
       if (userErr) {
-        console.error('[bog-webhook] Failed to get user:', userErr);
+        logger.error('Failed to get user', userErr);
         throw new Error('Failed to get user data');
       }
 
       const currentPoints = userData?.user_points || 0;
       const newPoints = currentPoints + order.points;
 
-      console.log('[bog-webhook] Crediting points:', { 
-        currentPoints, 
-        pointsToAdd: order.points, 
-        newPoints 
-      });
+      logger.info('Crediting points');
 
       // Update user points
       const { error: pointsErr } = await supabase
@@ -193,7 +183,7 @@ serve(async (req) => {
         .eq("id", order.user_id);
 
       if (pointsErr) {
-        console.error('[bog-webhook] Failed to update user points:', pointsErr);
+        logger.error('Failed to update user points', pointsErr);
         throw new Error('Failed to credit points');
       }
 
@@ -214,11 +204,11 @@ serve(async (req) => {
         });
 
       if (historyErr) {
-        console.error('[bog-webhook] Failed to insert points history:', historyErr);
+        logger.error('Failed to insert points history', historyErr);
         // Don't throw - points are already credited
       }
 
-      console.log('[bog-webhook] Payment processed successfully');
+      logger.info('Payment processed successfully');
 
       return new Response(
         JSON.stringify({ 
@@ -235,7 +225,7 @@ serve(async (req) => {
     }
 
     // 8. Handle FAILED or CANCELLED status
-    console.log('[bog-webhook] Processing failed/cancelled payment');
+    logger.info('Processing failed/cancelled payment');
 
     await supabase
       .from("point_purchase_orders")
@@ -251,7 +241,7 @@ serve(async (req) => {
       .eq("id", order.id)
       .eq("status", "PENDING");
 
-    console.log('[bog-webhook] Order marked as failed');
+    logger.info('Order marked as failed');
 
     return new Response(
       JSON.stringify({ success: true, message: "Payment failed/cancelled" }), 
@@ -262,7 +252,7 @@ serve(async (req) => {
     );
 
   } catch (err) {
-    console.error('[bog-webhook] Fatal error:', err);
+    logger.error('Fatal error', err);
     return new Response(
       JSON.stringify({ error: err.message || "Internal server error" }),
       { 
