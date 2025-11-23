@@ -588,7 +588,7 @@ export default function UserProfile() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] safe-area-top pb-20 safe-area-bottom">
       {/* Compact Header with Profile */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-emerald-500/20 sticky top-0 z-50 shadow-lg">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -596,24 +596,24 @@ export default function UserProfile() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate('/')}
-                className="h-8 w-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full"
+                className="h-8 w-8 text-gray-300 hover:text-white hover:bg-emerald-500/20 rounded-full"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <Avatar className="h-9 w-9 border-2 border-teal-500">
-                <AvatarFallback className="bg-gradient-to-br from-teal-600 to-teal-700 text-white text-sm font-bold">
+              <Avatar className="h-9 w-9 border-2 border-emerald-500">
+                <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white text-sm font-bold">
                   {getInitials(user.name)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-base font-bold text-gray-900 leading-none">{user.name}</h1>
-                <p className="text-xs text-gray-500">{user.role}</p>
+                <h1 className="text-base font-bold text-white leading-none">{user.name}</h1>
+                <p className="text-xs text-emerald-400">{user.role}</p>
               </div>
             </div>
             {user.penalty_count && user.penalty_count > 0 && (
-              <div className="flex items-center gap-1.5 bg-orange-100 px-2.5 py-1 rounded-full">
+              <div className="flex items-center gap-1.5 bg-orange-500/20 px-2.5 py-1 rounded-full border border-orange-500/30">
                 <span className="text-sm">⚠️</span>
-                <span className="text-xs font-semibold text-orange-700">{user.penalty_count}</span>
+                <span className="text-xs font-semibold text-orange-300">{user.penalty_count}</span>
               </div>
             )}
           </div>
@@ -623,20 +623,20 @@ export default function UserProfile() {
       {/* Content */}
       <div className="container mx-auto px-4 py-3 max-w-5xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-md mx-auto h-9 bg-white shadow-sm`}>
-            <TabsTrigger value="overview" className="text-xs data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">Overview</TabsTrigger>
+          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-md mx-auto h-9 bg-slate-800/90 backdrop-blur-sm shadow-lg border border-emerald-500/20`}>
+            <TabsTrigger value="overview" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Overview</TabsTrigger>
             {userStats && (
-              <TabsTrigger value="achievements" className="relative text-xs data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+              <TabsTrigger value="achievements" className="relative text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">
                 Achievements
                 {unclaimedCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-lg">
                     {unclaimedCount}
                   </span>
                 )}
               </TabsTrigger>
             )}
-            {userStats && <TabsTrigger value="wallet" className="text-xs data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">Wallet</TabsTrigger>}
-            <TabsTrigger value="settings" className="text-xs data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">Settings</TabsTrigger>
+            {userStats && <TabsTrigger value="wallet" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Wallet</TabsTrigger>}
+            <TabsTrigger value="settings" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Settings</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
