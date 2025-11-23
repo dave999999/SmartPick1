@@ -324,22 +324,22 @@ export default function ReservationDetail() {
   const partnerLng = reservation.partner?.longitude || reservation.partner?.location?.longitude;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header with Back Button */}
-      <div className="bg-white border-b sticky top-0 z-40 shadow-sm">
-        <div className="container mx-auto px-4 py-3 max-w-2xl">
+      <div className="bg-slate-900/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40">
+        <div className="container mx-auto px-4 py-4 max-w-2xl">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/my-picks')}
-              className="hover:bg-gray-100"
+              className="hover:bg-white/10 text-white"
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Your Reservation</h1>
-              <p className="text-xs text-gray-500 font-mono">#{reservation.id.slice(0, 8).toUpperCase()}</p>
+              <h1 className="text-lg font-bold text-white">Your Reservation</h1>
+              <p className="text-xs text-gray-400 font-mono">#{reservation.id.slice(0, 8).toUpperCase()}</p>
             </div>
           </div>
         </div>
@@ -348,19 +348,19 @@ export default function ReservationDetail() {
       <div className="container mx-auto px-4 py-6 max-w-2xl space-y-4">
         {/* Status Card */}
         {reservation.status === 'ACTIVE' && (
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="p-2 bg-green-500 rounded-full">
+          <Card className="border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-green-500/10 shadow-xl backdrop-blur-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl shadow-lg shadow-emerald-500/30">
                   <CheckCircle className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-green-900">Ready to Pickup!</h3>
-                  <p className="text-sm text-green-700">Your order is waiting for you</p>
+                  <h3 className="text-xl font-bold text-white">Ready to Pickup!</h3>
+                  <p className="text-sm text-emerald-200">Your order is waiting for you</p>
                 </div>
               </div>
               <CountdownBar expiresAt={reservation.expires_at} />
-              <p className="text-xs text-green-700 text-center mt-2">
+              <p className="text-xs text-emerald-300 text-center mt-3 font-medium">
                 Valid until {new Date(reservation.expires_at).toLocaleString('en-GB', {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -374,15 +374,15 @@ export default function ReservationDetail() {
         )}
 
         {reservation.status === 'PICKED_UP' && (
-          <Card className="border-gray-200 bg-gradient-to-br from-gray-50 to-slate-50 shadow-sm">
-            <CardContent className="p-4">
+          <Card className="border-slate-700 bg-gradient-to-br from-slate-800/50 to-slate-700/50 shadow-xl backdrop-blur-sm">
+            <CardContent className="p-5">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-gray-500 rounded-full">
+                <div className="p-3 bg-gradient-to-br from-slate-600 to-slate-700 rounded-2xl shadow-lg">
                   <CheckCircle className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Order Completed!</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="text-xl font-bold text-white">Order Completed!</h3>
+                  <p className="text-sm text-slate-300">
                     Picked up {reservation.picked_up_at ? new Date(reservation.picked_up_at).toLocaleString('en-GB') : 'recently'}
                   </p>
                 </div>
@@ -393,10 +393,10 @@ export default function ReservationDetail() {
 
         {/* QR Code Card */}
         {reservation.status === 'ACTIVE' && (
-          <Card className="shadow-sm">
+          <Card className="border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80 shadow-2xl backdrop-blur-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-mint-600" />
+              <CardTitle className="text-base font-semibold flex items-center gap-2 text-white">
+                <QrCode className="h-5 w-5 text-emerald-400" />
                 Your QR Code
               </CardTitle>
             </CardHeader>
@@ -407,60 +407,60 @@ export default function ReservationDetail() {
                   onClick={() => setQrModalOpen(true)}
                   className="relative cursor-pointer group"
                 >
-                  <div className="w-64 h-64 bg-white rounded-2xl p-4 border-2 border-gray-200 group-hover:border-mint-500 transition-all shadow-lg group-hover:shadow-xl">
+                  <div className="w-64 h-64 bg-white rounded-3xl p-5 border-2 border-slate-600 group-hover:border-emerald-500 transition-all shadow-2xl group-hover:shadow-emerald-500/50 group-hover:scale-105 duration-300">
                     {qrCodeUrl ? (
                       <img src={qrCodeUrl} className="w-full h-full object-contain" alt="QR Code" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-gray-400">
                         <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-mint-500 mx-auto mb-2"></div>
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500 mx-auto mb-2"></div>
                           <p className="text-sm">Loading...</p>
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="absolute -top-2 -right-2 bg-mint-500 text-white rounded-full p-2 shadow-lg">
-                    <Eye className="h-4 w-4" />
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-emerald-500 to-green-500 text-white rounded-full p-2.5 shadow-lg shadow-emerald-500/50">
+                    <Eye className="h-5 w-5" />
                   </div>
                 </div>
               </div>
 
               {/* Instructions */}
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-gray-900 text-center">How to Claim Your Order</h4>
+                <h4 className="text-sm font-semibold text-white text-center">How to Claim Your Order</h4>
                 
                 <div className="space-y-2">
-                  <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-3 border border-blue-100">
-                    <div className="flex-shrink-0 w-7 h-7 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">1</div>
+                  <div className="flex items-start gap-3 bg-blue-500/10 rounded-xl p-3.5 border border-blue-500/30">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-lg">1</div>
                     <div className="flex-1 pt-0.5">
                       <div className="flex items-center gap-2 mb-1">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-semibold text-gray-900">Go to partner</span>
+                        <MapPin className="h-4 w-4 text-blue-400" />
+                        <span className="text-sm font-semibold text-white">Go to partner</span>
                       </div>
-                      <p className="text-xs text-gray-600">Navigate to {reservation.partner?.business_name}</p>
+                      <p className="text-xs text-slate-300">Navigate to {reservation.partner?.business_name}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 bg-purple-50 rounded-xl p-3 border border-purple-100">
-                    <div className="flex-shrink-0 w-7 h-7 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">2</div>
+                  <div className="flex items-start gap-3 bg-purple-500/10 rounded-xl p-3.5 border border-purple-500/30">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-lg">2</div>
                     <div className="flex-1 pt-0.5">
                       <div className="flex items-center gap-2 mb-1">
-                        <QrCode className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm font-semibold text-gray-900">Show QR code</span>
+                        <QrCode className="h-4 w-4 text-purple-400" />
+                        <span className="text-sm font-semibold text-white">Show QR code</span>
                       </div>
-                      <p className="text-xs text-gray-600">Present this code to staff at checkout</p>
+                      <p className="text-xs text-slate-300">Present this code to staff at checkout</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 bg-green-50 rounded-xl p-3 border border-green-100">
-                    <div className="flex-shrink-0 w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center font-bold text-sm mt-0.5">3</div>
+                  <div className="flex items-start gap-3 bg-emerald-500/10 rounded-xl p-3.5 border border-emerald-500/30">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-emerald-500 to-green-500 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-lg">3</div>
                     <div className="flex-1 pt-0.5">
                       <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-semibold text-gray-900">Pay & collect</span>
+                        <CreditCard className="h-4 w-4 text-emerald-400" />
+                        <span className="text-sm font-semibold text-white">Pay & collect</span>
                       </div>
-                      <p className="text-xs text-gray-600">
-                        Pay <span className="font-bold text-green-700">{Number(reservation.total_price).toFixed(2)} GEL</span> and enjoy your order
+                      <p className="text-xs text-slate-300">
+                        Pay <span className="font-bold text-emerald-400">{Number(reservation.total_price).toFixed(2)} GEL</span> and enjoy your order
                       </p>
                     </div>
                   </div>
@@ -472,17 +472,17 @@ export default function ReservationDetail() {
 
         {/* Location Map Card */}
         {reservation.partner?.latitude && reservation.partner?.longitude && (
-          <Card className="shadow-sm overflow-hidden">
+          <Card className="border-slate-700 bg-gradient-to-br from-slate-800/80 to-slate-900/80 shadow-2xl backdrop-blur-sm overflow-hidden">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-mint-600" />
-                  Location
+                  <MapPin className="h-5 w-5 text-emerald-400" />
+                  <span className="text-white">Location</span>
                 </div>
                 {(distanceKm !== null || etaMinutes !== null) && (
                   <div className="flex items-center gap-2 text-sm font-normal">
-                    <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                    <span className="text-blue-600 font-semibold">
+                    <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span className="text-emerald-400 font-semibold">
                       {distanceKm !== null && <span>{distanceKm.toFixed(1)} km</span>}
                       {distanceKm !== null && etaMinutes !== null && <span className="mx-1">•</span>}
                       {etaMinutes !== null && <span>{etaMinutes} min</span>}
@@ -527,12 +527,11 @@ export default function ReservationDetail() {
               </div>
               
               {/* Partner Info */}
-              <div className="p-4 bg-gray-50 border-t">
-                <h4 className="font-semibold text-gray-900 mb-1">{reservation.partner?.business_name}</h4>
-                <p className="text-sm text-gray-600 mb-3">{partnerAddress}</p>
+              <div className="p-4 bg-slate-900/50 border-t border-slate-700">
+                <h4 className="font-semibold text-white mb-1">{reservation.partner?.business_name}</h4>
+                <p className="text-sm text-slate-300 mb-3">{partnerAddress}</p>
                 <Button 
-                  variant="outline" 
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 text-white shadow-lg shadow-emerald-500/30"
                   onClick={() => {
                     if (partnerLat && partnerLng) {
                       window.open(`https://www.google.com/maps/dir/?api=1&destination=${partnerLat},${partnerLng}`, '_blank');
@@ -551,7 +550,7 @@ export default function ReservationDetail() {
         {reservation.status === 'ACTIVE' && (
           <Button
             variant="outline"
-            className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 h-12 font-medium"
+            className="w-full text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/30 h-12 font-medium backdrop-blur-sm"
             onClick={handleCancel}
           >
             <X className="h-4 w-4 mr-2" />
@@ -562,19 +561,21 @@ export default function ReservationDetail() {
 
       {/* QR modal - outside main container for proper z-index */}
       {qrModalOpen && (
-        <div className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setQrModalOpen(false)}>
-          <div className="relative bg-white rounded-xl p-3 sm:p-4 max-w-xs sm:max-w-sm w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setQrModalOpen(false)}>
+          <div className="relative bg-white rounded-3xl p-6 max-w-xs sm:max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setQrModalOpen(false)}
-              className="absolute top-2 right-2 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition"
+              className="absolute -top-3 -right-3 p-2.5 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-full hover:scale-110 transition shadow-lg"
               aria-label="Close"
             >
               <X size={20} />
             </button>
             {qrCodeUrl ? (
-              <img src={qrCodeUrl} className="w-full h-full object-contain rounded" alt="QR Code" />
+              <img src={qrCodeUrl} className="w-full h-full object-contain rounded-2xl" alt="QR Code" />
             ) : (
-              <div className="w-full h-64 flex items-center justify-center text-gray-400">Loading QR Code...</div>
+              <div className="w-full h-64 flex items-center justify-center text-gray-400">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+              </div>
             )}
           </div>
         </div>
