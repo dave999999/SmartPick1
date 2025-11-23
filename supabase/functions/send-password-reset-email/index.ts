@@ -76,9 +76,18 @@ serve(async (req) => {
     }
 
     // Get user by email
+    const startTime = Date.now();
     const { data: users } = await supabase.rpc('get_user_by_email', { p_email: email });
 
     if (!users || users.length === 0) {
+      // Security: Add constant-time delay to prevent timing attacks
+      // Simulate the time it would take to process a real request (200-400ms)
+      const elapsedTime = Date.now() - startTime;
+      const targetTime = 300; // Target 300ms total response time
+      const remainingTime = Math.max(0, targetTime - elapsedTime);
+      
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+      
       // Security: Don't reveal if email exists
       return new Response(
         JSON.stringify({ success: true, message: 'If the email exists, a reset link will be sent.' }),
