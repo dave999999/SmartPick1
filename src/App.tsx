@@ -14,6 +14,7 @@ initSentry();
 
 // Eager load: Only Index page (main landing) and essential components
 import Index from './pages/Index';
+import IndexRedesigned from './pages/IndexRedesigned';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import { OfflineBanner } from './components/OfflineBanner';
@@ -194,7 +195,8 @@ const AppContent = () => {
       <TopRightMenu />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<IndexRedesigned />} />
+          <Route path="/old" element={<Index />} />
           <Route
             path="/partner"
             element={

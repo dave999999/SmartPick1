@@ -29,69 +29,73 @@ interface GroupedLocation {
   category: string;
 }
 
-// Create pulsing marker animation for MapLibre
+// Create sticky marker - FIXED for no movement during zoom/pan
 function createPulsingMarker(
   _map: maplibregl.Map,
   color: string = '#FF8A00',
-  size: number = 40
+  size: number = 48,
+  category?: string
 ): HTMLElement {
+  // Container with precise sizing and no transforms
   const markerEl = document.createElement('div');
   markerEl.className = 'smartpick-pulsing-marker';
-  markerEl.style.width = `${size}px`;
-  markerEl.style.height = `${size}px`;
-  markerEl.style.position = 'relative';
-  
-  // Inner circle
-  const circle = document.createElement('div');
-  circle.className = 'marker-circle';
-  circle.style.cssText = `
-    width: 100%;
-    height: 100%;
-    background: ${color};
-    border-radius: 50%;
-    border: 3px solid white;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    position: absolute;
-    top: 0;
-    left: 0;
-    transition: transform 0.2s ease;
-    z-index: 2;
+  markerEl.style.cssText = `
+    width: ${size}px;
+    height: ${size}px;
+    cursor: pointer;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    line-height: 0;
   `;
   
-  // Outer pulsing ring
-  const pulse = document.createElement('div');
-  pulse.className = 'marker-pulse';
-  pulse.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: ${color};
-    opacity: 0.5;
-    transform: translate(-50%, -50%);
-    animation: smartpick-pulse 2s ease-out infinite;
+  // Image element with no transforms or animations
+  const pinImage = document.createElement('img');
+  pinImage.className = 'marker-pin-image';
+  pinImage.style.cssText = `
+    width: ${size}px;
+    height: ${size}px;
+    display: block;
+    margin: 0;
+    padding: 0;
+    object-fit: contain;
+    filter: brightness(1.15) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.75));
+    image-rendering: crisp-edges;
+    pointer-events: none;
+    user-select: none;
   `;
+  pinImage.draggable = false;
   
-  markerEl.appendChild(pulse);
-  markerEl.appendChild(circle);
+  // Set icon image source if category provided
+  if (category) {
+    pinImage.src = `/icons/map-pins/${category}.png`;
+    pinImage.onerror = () => {
+      console.error('Failed to load pin image:', category);
+      // Fallback: create simple colored pin if image doesn't load
+      pinImage.style.display = 'none';
+      const fallback = document.createElement('div');
+      fallback.style.cssText = `
+        width: ${size}px;
+        height: ${size}px;
+        background: ${color};
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+        margin: 0;
+        padding: 0;
+      `;
+      markerEl.appendChild(fallback);
+    };
+  }
   
-  // Hover effect
-  markerEl.addEventListener('mouseenter', () => {
-    circle.style.transform = 'scale(1.1)';
-  });
-  
-  markerEl.addEventListener('mouseleave', () => {
-    circle.style.transform = 'scale(1)';
-  });
+  markerEl.appendChild(pinImage);
   
   return markerEl;
 }
 
 // Create expiring soon marker (mint glow)
-function createExpiringMarker(map: maplibregl.Map): HTMLElement {
-  return createPulsingMarker(map, '#37E5AE', 40);
+function createExpiringMarker(map: maplibregl.Map, category?: string): HTMLElement {
+  return createPulsingMarker(map, '#37E5AE', 48, category);
 }
 
 const SmartPickMap = memo(({
@@ -133,7 +137,7 @@ const SmartPickMap = memo(({
         container: mapContainerRef.current,
         style: styleWithKey,
         center: [44.793, 41.72], // Tbilisi center
-        zoom: 12,
+        zoom: 11.5, // Reduced initial zoom by ~10%
       });
 
       // Listen to geolocation events for "Near Me" button
@@ -195,12 +199,15 @@ const SmartPickMap = memo(({
     const map = mapRef.current;
     if (!map) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+    const updateMarkers = () => {
+      console.log('Creating markers for', groupedLocations.length, 'locations');
 
-    // Add new markers
-    groupedLocations.forEach(location => {
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+
+      // Add new markers
+      groupedLocations.forEach(location => {
       // Check if any offer is expiring soon (within 2 hours)
       const now = new Date();
       const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
@@ -209,10 +216,10 @@ const SmartPickMap = memo(({
         return expiresAt <= twoHoursFromNow;
       });
 
-      // Create marker element
+      // Create marker element with category icon
       const markerEl = hasExpiringSoon
-        ? createExpiringMarker(map)
-        : createPulsingMarker(map, '#FF8A00', 40);
+        ? createExpiringMarker(map, location.category)
+        : createPulsingMarker(map, '#FF8A00', 48, location.category);
 
       // Create popup content
       const popupContent = document.createElement('div');
@@ -261,8 +268,13 @@ const SmartPickMap = memo(({
         className: 'smartpick-map-popup'
       }).setDOMContent(popupContent);
 
-      // Create marker
-      const marker = new maplibregl.Marker({ element: markerEl })
+      // Create marker with BOTTOM anchor - pins stay perfectly locked
+      const marker = new maplibregl.Marker({ 
+        element: markerEl,
+        anchor: 'bottom', // Bottom center of pin points to exact coordinate
+        pitchAlignment: 'viewport', // Keeps pin upright
+        rotationAlignment: 'viewport' // No rotation
+      })
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
         .addTo(map);
@@ -275,7 +287,21 @@ const SmartPickMap = memo(({
       });
 
       markersRef.current.push(marker);
-    });
+      });
+    };
+
+    // If map is already loaded, update markers immediately
+    if (map.loaded()) {
+      updateMarkers();
+    } else {
+      // Otherwise wait for the map to load
+      map.once('load', updateMarkers);
+    }
+
+    return () => {
+      // Cleanup: remove the load listener if it hasn't fired yet
+      map.off('load', updateMarkers);
+    };
   }, [groupedLocations, onMarkerClick]);
 
   // Handle "Near Me" button

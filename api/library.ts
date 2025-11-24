@@ -35,8 +35,21 @@ export default async function handler(
     // Sanitize category to prevent directory traversal attacks
     const sanitizedCategory = category.replace(/[^a-zA-Z0-9_-]/g, '');
 
-    // Valid categories based on SmartPick business types
-    const validCategories = ['BAKERY', 'RESTAURANT', 'CAFE', 'GROCERY', 'ALCOHOL', 'FAST_FOOD'];
+    // Valid categories based on SmartPick 12-category system
+    const validCategories = [
+      'RESTAURANT',
+      'FAST_FOOD',
+      'BAKERY',
+      'DESSERTS_SWEETS',
+      'CAFE',
+      'DRINKS_JUICE',
+      'GROCERY',
+      'MINI_MARKET',
+      'MEAT_BUTCHER',
+      'FISH_SEAFOOD',
+      'ALCOHOL',
+      'GEORGIAN_TRADITIONAL',
+    ];
 
     if (!validCategories.includes(sanitizedCategory.toUpperCase())) {
       return res.status(400).json({

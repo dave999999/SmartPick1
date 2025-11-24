@@ -173,13 +173,20 @@ export const MAX_PASSWORD_LENGTH = 128;
 // BUSINESS TYPES
 // ============================================================================
 
+// Updated to use the new 12-category system
 export const BUSINESS_TYPES = [
-  'BAKERY',
   'RESTAURANT',
-  'CAFE',
-  'GROCERY',
   'FAST_FOOD',
+  'BAKERY',
+  'DESSERTS_SWEETS',
+  'CAFE',
+  'DRINKS_JUICE',
+  'GROCERY',
+  'MINI_MARKET',
+  'MEAT_BUTCHER',
+  'FISH_SEAFOOD',
   'ALCOHOL',
+  'GEORGIAN_TRADITIONAL',
 ] as const;
 
 export type BusinessType = (typeof BUSINESS_TYPES)[number];

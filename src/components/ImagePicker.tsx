@@ -18,7 +18,20 @@ interface LibraryResponse {
 
 // Simple in-module cache to avoid refetching the same category repeatedly
 const imageCache = new Map<string, string[]>();
-const KNOWN_CATEGORIES = ['BAKERY','RESTAURANT','CAFE','GROCERY','ALCOHOL','FAST_FOOD'];
+const KNOWN_CATEGORIES = [
+  'RESTAURANT',
+  'FAST_FOOD',
+  'BAKERY',
+  'DESSERTS_SWEETS',
+  'CAFE',
+  'DRINKS_JUICE',
+  'GROCERY',
+  'MINI_MARKET',
+  'MEAT_BUTCHER',
+  'FISH_SEAFOOD',
+  'ALCOHOL',
+  'GEORGIAN_TRADITIONAL',
+];
 
 export default function ImagePicker({
   category,

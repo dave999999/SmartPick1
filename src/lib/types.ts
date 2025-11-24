@@ -1,5 +1,10 @@
+import { MainCategory } from './categories';
+
 export type UserRole = 'CUSTOMER' | 'PARTNER' | 'ADMIN';
-export type BusinessType = 'BAKERY' | 'RESTAURANT' | 'CAFE' | 'GROCERY' | 'FAST_FOOD' | 'ALCOHOL';
+
+// Updated to use the new 12-category system
+export type BusinessType = MainCategory;
+
 export type OfferStatus = 'ACTIVE' | 'EXPIRED' | 'PAUSED' | 'SOLD_OUT' | 'SCHEDULED';
 export type ReservationStatus = 'ACTIVE' | 'PICKED_UP' | 'CANCELLED' | 'EXPIRED' | 'FAILED_PICKUP';
 export type PartnerStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'BLOCKED' | 'PAUSED';

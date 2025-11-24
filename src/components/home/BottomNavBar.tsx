@@ -3,21 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { getCurrentUser, getPartnerByUserId } from '@/lib/api';
 
-// Compact auto-hide bottom navigation
+// Redesigned Bottom Navigation Bar
 export function BottomNavBar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isPartner, setIsPartner] = useState(false);
-  const [isVisible, setIsVisible] = useState(true); // Always visible for debugging
+  const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
     checkUserType();
   }, []);
 
-  // Show when scrolling down offers list
   useEffect(() => {
-    // Find the scrollable container (the offers list)
     const scrollContainer = document.querySelector('.overflow-y-auto');
     
     if (!scrollContainer) return;
@@ -25,16 +23,11 @@ export function BottomNavBar() {
     const handleScroll = () => {
       const currentScrollY = scrollContainer.scrollTop;
       
-      // At top - hide
       if (currentScrollY < 50) {
         setIsVisible(false);
-      }
-      // Scrolling down - show
-      else if (currentScrollY > lastScrollY.current) {
+      } else if (currentScrollY > lastScrollY.current) {
         setIsVisible(true);
-      }
-      // Scrolling up - hide
-      else if (currentScrollY < lastScrollY.current) {
+      } else if (currentScrollY < lastScrollY.current) {
         setIsVisible(false);
       }
       
@@ -75,29 +68,40 @@ export function BottomNavBar() {
       className={`fixed bottom-0 left-0 right-0 z-[9999] transition-all duration-500 ease-out ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12 pointer-events-none'
       }`}
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 6px)' }}
+      style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
-      {/* Floating Navigation Icons - unified color/size */}
-      <div className="flex items-center justify-center gap-4 px-4">
-        {navItems.map((item, index) => {
-          const Icon = item.icon;
-          const active = isActive(item.path);
+      <div className="mx-4 mb-3 px-4 py-3 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/40">
+        <div className="flex items-center justify-around gap-2">
+          {navItems.map((item, index) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
 
-          return (
-            <button
-              key={index}
-              onClick={item.onClick}
-              style={{ transitionDelay: isVisible ? `${index * 50}ms` : '0ms' }}
-              className={`flex items-center justify-center transition-all duration-200 pointer-events-auto rounded-full w-12 h-12 backdrop-blur-md hover:scale-105 active:scale-95 ${
-                active 
-                  ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-2xl shadow-orange-500/50' 
-                  : 'bg-black/70 text-gray-300 hover:bg-black/80 shadow-xl border border-white/10'
-              }`}
-            >
-              <Icon className="w-5 h-5" strokeWidth={2.5} />
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={index}
+                onClick={item.onClick}
+                className="relative flex flex-col items-center gap-1 transition-all duration-300 hover:scale-105 active:scale-95 min-w-[60px]"
+              >
+                <div className={`flex items-center justify-center transition-all duration-300 ${active ? 'scale-110' : ''}`}>
+                  <Icon 
+                    className={`w-[26px] h-[26px] ${active ? 'text-orange-500' : 'text-gray-400'}`}
+                    strokeWidth={2}
+                  />
+                </div>
+
+                {active && (
+                  <div className="absolute -bottom-1 w-10 h-1 bg-gradient-to-r from-orange-500 to-orange-600 rounded-full shadow-lg shadow-orange-500/50 animate-in slide-in-from-bottom-2" />
+                )}
+
+                {active && (
+                  <span className="text-xs font-medium text-white animate-in fade-in-0 slide-in-from-bottom-1">
+                    {item.label}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

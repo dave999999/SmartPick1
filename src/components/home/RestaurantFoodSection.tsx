@@ -3,20 +3,18 @@ import { useState } from 'react';
 import type { Offer } from '@/lib/types';
 import { useFavorites } from '@/hooks/useFavorites';
 import { toast } from 'sonner';
+import { getAllCategories } from '@/lib/categories';
 
 interface RestaurantFoodSectionProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
 }
 
-const CATEGORIES = [
-  { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
-  { value: 'CAFE', label: 'Cafe', emoji: '☕' },
-  { value: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
-  { value: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
-  { value: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
-  { value: 'GROCERY', label: 'Grocery', emoji: '🛒' },
-];
+const CATEGORIES = getAllCategories().map(cat => ({
+  value: cat.value,
+  label: cat.label,
+  emoji: cat.emoji,
+}));
 
 export function RestaurantFoodSection({ offers, onOfferClick }: RestaurantFoodSectionProps) {
   const { isFavorite, toggleFavorite } = useFavorites();

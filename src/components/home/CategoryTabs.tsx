@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react';
+import { getAllCategories } from '@/lib/categories';
 
 interface CategoryTabsProps {
   selectedCategory: string;
@@ -7,12 +8,11 @@ interface CategoryTabsProps {
 
 const categories = [
   { id: '', label: 'All', emoji: '🌍' },
-  { id: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
-  { id: 'CAFE', label: 'Café', emoji: '☕' },
-  { id: 'BAKERY', label: 'Bakery', emoji: '🥐' },
-  { id: 'GROCERY', label: 'Grocery', emoji: '�' },
-  { id: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
-  { id: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
+  ...getAllCategories().map(cat => ({
+    id: cat.value,
+    label: cat.label,
+    emoji: cat.emoji,
+  })),
 ];
 
 export function CategoryTabs({ selectedCategory, onCategorySelect }: CategoryTabsProps) {

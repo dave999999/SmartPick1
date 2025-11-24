@@ -54,14 +54,20 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.discoverDeals': 'Discover Amazing Deals',
     'browse.clickReserve': 'Click to reserve',
     'browse.visitLocation': 'Visit location',
-  // Categories
+  // Categories - Updated 12-Category System
   'category.All': 'All',
-  'category.BAKERY': 'Bakery',
   'category.RESTAURANT': 'Restaurant',
-  'category.CAFE': 'Café',
-  'category.GROCERY': 'Grocery',
   'category.FAST_FOOD': 'Fast Food',
-  'category.ALCOHOL': 'Alcohol & Wine',
+  'category.BAKERY': 'Bakery',
+  'category.DESSERTS_SWEETS': 'Desserts & Sweets',
+  'category.CAFE': 'Café',
+  'category.DRINKS_JUICE': 'Drinks & Juice',
+  'category.GROCERY': 'Grocery',
+  'category.MINI_MARKET': 'Mini Market',
+  'category.MEAT_BUTCHER': 'Meat & Butcher',
+  'category.FISH_SEAFOOD': 'Fish & Seafood',
+  'category.ALCOHOL': 'Alcohol',
+  'category.GEORGIAN_TRADITIONAL': 'Georgian Traditional',
 
     // Map View
     'map.mapView': 'Map View',
@@ -564,14 +570,20 @@ const translations: Record<Language, Record<string, string>> = {
     'browse.discoverDeals': 'აღმოაჩინე საუკეთესო შეთავაზებები',
     'browse.clickReserve': 'აირჩიე შეთავაზება',
     'browse.visitLocation': 'გაანაღდე',
-  // Categories
+  // Categories - Updated 12-Category System
   'category.All': 'ყველა',
-  'category.BAKERY': 'ფუნთუშეული',
   'category.RESTAURANT': 'რესტორანი',
+  'category.FAST_FOOD': 'ფასტ ფუდი',
+  'category.BAKERY': 'ფუნთუშეული',
+  'category.DESSERTS_SWEETS': 'დესერტები და საკონდიტრო',
   'category.CAFE': 'კაფე',
+  'category.DRINKS_JUICE': 'სასმელები და წვენები',
   'category.GROCERY': 'სურსათის მაღაზია',
-  'category.FAST_FOOD': 'ფასთ ფუდი',
-  'category.ALCOHOL': 'ალკოჰოლი და ღვინო',
+  'category.MINI_MARKET': 'მინი მარკეტი',
+  'category.MEAT_BUTCHER': 'ხორცი და ჩარქი',
+  'category.FISH_SEAFOOD': 'თევზი და ზღვის პროდუქტები',
+  'category.ALCOHOL': 'ალკოჰოლი',
+  'category.GEORGIAN_TRADITIONAL': 'ქართული ტრადიციული',
 
     // Map View
     'map.mapView': 'რუკის ხედი',

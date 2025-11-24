@@ -439,3 +439,97 @@
     transform: translateY(0);
   }
 }
+
+/* SmartPick Redesign Animations & Microinteractions */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+@keyframes bounce-soft {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 138, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 10px rgba(255, 138, 0, 0.1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-ripple {
+  animation: ripple 0.6s ease-out;
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 0.8s ease-in-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Smooth spring animation for bottom sheet */
+.spring-animation {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Glassmorphism utilities */
+.glass-effect {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Category icon hover scale */
+.category-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.category-icon:hover {
+  transform: scale(1.1);
+}
+
+.category-icon:active {
+  transform: scale(0.95);
+}
+
+/* Card hover effects */
+.offer-card {
+  transition: all 0.3s ease;
+}
+
+.offer-card:hover {
+  transform: translateY(-4px) scale(1.02);
+}
+
+.offer-card:active {
+  transform: translateY(0) scale(0.98);
+}

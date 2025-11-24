@@ -1,6 +1,7 @@
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { BusinessType } from '@/lib/types';
+import { getAllCategories } from '@/lib/categories';
 
 interface CategoryBarProps {
   selectedCategory: string;
@@ -15,12 +16,11 @@ interface Category {
 
 const CATEGORIES: Category[] = [
   { value: '', emoji: '🌍', labelKey: 'category.All' },
-  { value: 'BAKERY', emoji: '🥐', labelKey: 'category.BAKERY' },
-  { value: 'CAFE', emoji: '☕', labelKey: 'category.CAFE' },
-  { value: 'RESTAURANT', emoji: '🍽️', labelKey: 'category.RESTAURANT' },
-  { value: 'FAST_FOOD', emoji: '🍔', labelKey: 'category.FAST_FOOD' },
-  { value: 'ALCOHOL', emoji: '🍷', labelKey: 'category.ALCOHOL' },
-  { value: 'GROCERY', emoji: '🛒', labelKey: 'category.GROCERY' },
+  ...getAllCategories().map(cat => ({
+    value: cat.value,
+    emoji: cat.emoji,
+    labelKey: cat.labelKey,
+  })),
 ];
 
 export default function CategoryBar({ selectedCategory, onCategorySelect }: CategoryBarProps) {

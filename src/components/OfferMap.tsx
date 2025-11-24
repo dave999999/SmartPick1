@@ -152,14 +152,20 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
     const size = isHighlighted ? 60 : 50; // Smaller partner icons
     const height = size * 1.3;
 
-    // Map category to image filename
+    // Map category to image filename - Updated for 12-category system
     const imageMap: Record<string, string> = {
-      GROCERY: 'grocery.png',
       RESTAURANT: 'restaurant.png',
       FAST_FOOD: 'fast-food.png',
       BAKERY: 'bakery.png',
+      DESSERTS_SWEETS: 'dessert.png',
+      CAFE: 'cafe.png',
+      DRINKS_JUICE: 'juice.png',
+      GROCERY: 'grocery.png',
+      MINI_MARKET: 'minimarket.png',
+      MEAT_BUTCHER: 'meat.png',
+      FISH_SEAFOOD: 'fish.png',
       ALCOHOL: 'alcohol.png',
-      CAFE: 'cafe.png'
+      GEORGIAN_TRADITIONAL: 'georgian.png',
     };
 
     const imagePath = `/images/pins/${imageMap[category] || 'restaurant.png'}`;
