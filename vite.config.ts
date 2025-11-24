@@ -64,10 +64,6 @@ export default defineConfig({
     exclude: ['@marsidev/react-turnstile'],
     include: ['maplibre-gl'],
   },
-  define: {
-    // Fix for MapLibre GL __publicField error
-    '__publicField': (value: any) => value,
-  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
