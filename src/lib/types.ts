@@ -17,7 +17,7 @@ export interface User {
   penalty_warning_shown?: boolean; // Track if user has seen first-time warning
   onboarding_completed?: boolean; // Track if user has completed onboarding tutorial
   max_reservation_quantity?: number; // Progressive slot unlocking
-  purchased_slots?: any[]; // JSONB array of slot purchase history
+  purchased_slots?: Array<{ date: string; slots: number; price: number }>; // JSONB array of slot purchase history
   created_at: string;
   updated_at: string;
   last_login?: string;

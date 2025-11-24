@@ -151,8 +151,8 @@ export const createReservation = async (
     throw new Error('Security token required. Please refresh the page and try again.');
   }
   
-  let data: any = null;
-  let error: any = null;
+  let data: Reservation | null = null;
+  let error: Error | null = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     const qrCode = generateQrCode();
     ({ data, error } = await supabase.rpc('create_reservation_atomic', {
@@ -183,8 +183,8 @@ export const createReservation = async (
     }
 
     // On unique violation (23505) retry with a fresh QR
-    const code = (error as any)?.code || '';
-    const msg = (error as any)?.message || '';
+    const code = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : '';
+    const msg = error?.message || '';
     if (code === '23505' || /unique|duplicate key value|qr_code/i.test(msg)) {
       // brief jitter to avoid same-ms repetition in rare cases
       await new Promise(r => setTimeout(r, 10 + Math.floor(Math.random() * 20)));
@@ -212,7 +212,7 @@ export const createReservation = async (
   }
 
   // Function now returns full reservation with relations (no N+1 query)
-  const reservation = data as any;
+  const reservation = data;
 
   // Send Telegram notifications (don't block on these)
   if (reservation) {
@@ -416,9 +416,10 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
       }
 
       return { valid: true, reservation: fetched as Reservation };
-    } catch (e: any) {
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Failed to validate/pickup';
       logger.error('QR validation exception', { error: e, qrCode });
-      return { valid: false, error: e.message || 'Failed to validate/pickup' };
+      return { valid: false, error: errorMessage };
     }
   }
 

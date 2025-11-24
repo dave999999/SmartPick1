@@ -61,7 +61,12 @@ export default defineConfig({
     injectBuildVersion()
   ],
   optimizeDeps: {
-    exclude: ['@marsidev/react-turnstile']
+    exclude: ['@marsidev/react-turnstile'],
+    include: ['maplibre-gl'],
+  },
+  define: {
+    // Fix for MapLibre GL __publicField error
+    '__publicField': (value: any) => value,
   },
   resolve: {
     alias: {
@@ -84,6 +89,10 @@ export default defineConfig({
     emptyOutDir: true,
     // Increase chunk size warning limit (we're splitting properly)
     chunkSizeWarningLimit: 600,
+    // Fix for MapLibre GL mixed ES modules
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
     // Generate unique hashes for all assets
     rollupOptions: {
       output: {
@@ -110,8 +119,8 @@ export default defineConfig({
             '@radix-ui/react-separator',
           ],
           
-          // Map vendor chunk - loaded only when needed (~140 KB)
-          'map-vendor': ['leaflet', 'react-leaflet'],
+          // Map vendor chunk - MapLibre for vector maps (~180 KB)
+          'map-vendor': ['maplibre-gl'],
           
           // Charts vendor chunk - loaded only when needed (~150 KB)
           'chart-vendor': ['chart.js', 'react-chartjs-2'],

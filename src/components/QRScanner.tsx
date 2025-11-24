@@ -3,6 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Camera, CameraOff, AlertCircle } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import type { Html5Qrcode } from 'html5-qrcode';
+
+interface CameraDevice {
+  id: string;
+  label: string;
+}
 
 interface QRScannerProps {
   onScan: (decodedText: string) => void;
@@ -12,8 +18,8 @@ interface QRScannerProps {
 export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const scannerRef = useRef<any | null>(null);
-  const [cameras, setCameras] = useState<any[]>([]);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const hasScannedRef = useRef(false); // Prevent multiple scans
 
   useEffect(() => {
@@ -120,10 +126,11 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       setIsScanning(true);
       setError(null);
       logger.log('📷 Camera started successfully');
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to start camera';
       logger.error('❌ Error starting scanner:', err);
-      setError(err.message || 'Failed to start camera');
-      onError?.(err.message || 'Failed to start camera');
+      setError(errorMessage);
+      onError?.(errorMessage);
     }
   };
 

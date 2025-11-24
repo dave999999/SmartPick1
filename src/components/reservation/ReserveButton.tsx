@@ -4,7 +4,7 @@ interface ReserveButtonProps {
   onClick: () => void;
   disabled: boolean;
   isLoading: boolean;
-  totalPrice?: number; // Optional now since we don't display it
+  totalPrice?: number; // Total points to be deducted at pickup
   className?: string;
 }
 
@@ -12,6 +12,7 @@ export default function ReserveButton({
   onClick,
   disabled,
   isLoading,
+  totalPrice,
   className = ''
 }: ReserveButtonProps) {
   return (
@@ -46,13 +47,13 @@ export default function ReserveButton({
             Creating Reservation...
           </span>
         ) : (
-          'Reserve Price'
+          '🎫 Reserve for Free'
         )}
       </Button>
       
       {/* Footer hint */}
       <p className="text-xs text-center text-gray-400">
-        Price will be held for you for 1 hour
+        Reservation held for 1 hour
       </p>
     </div>
   );

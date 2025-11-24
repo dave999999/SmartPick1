@@ -23,6 +23,13 @@ import type {
   TopPartner,
   CategoryStats,
   AdminDashboardStats,
+  UserBan,
+  FlaggedContent,
+  AnomalyDetection,
+  BuyerPurchaseDetail,
+  BuyerSummary,
+  ClaimedPointsDetail,
+  UserPointsSummary,
 } from '../types/admin';
 
 // =====================================================
@@ -682,7 +689,7 @@ export const unbanUser = async (userId: string): Promise<void> => {
   await logAdminAction('USER_UNBANNED', 'USER', userId);
 };
 
-export const getBannedUsers = async (): Promise<any[]> => {
+export const getBannedUsers = async (): Promise<UserBan[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase
@@ -734,7 +741,7 @@ export const flagContentReport = async (
 
 export const getFlaggedContent = async (
   statusFilter?: 'PENDING' | 'UNDER_REVIEW' | 'RESOLVED' | 'DISMISSED'
-): Promise<any[]> => {
+): Promise<FlaggedContent[]> => {
   await checkAdminAccess();
 
   let query = supabase
@@ -785,20 +792,20 @@ export const updateFlagStatus = async (
   });
 };
 
-export const autoFlagSuspiciousContent = async (): Promise<any> => {
+export const autoFlagSuspiciousContent = async (): Promise<{ flagged_count: number }> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase.rpc('auto_flag_suspicious_content');
 
   if (error) throw error;
-  return data;
+  return data as { flagged_count: number };
 };
 
 // =====================================================
 // NEW: ANOMALY DETECTION
 // =====================================================
 
-export const detectAnomalousActivity = async (): Promise<any[]> => {
+export const detectAnomalousActivity = async (): Promise<AnomalyDetection[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase.rpc('detect_anomalous_activity');
@@ -849,7 +856,7 @@ export const grantPointsToUser = async (
 
 export const getBuyerPurchaseDetails = async (
   userId?: string
-): Promise<any[]> => {
+): Promise<BuyerPurchaseDetail[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase.rpc('get_buyer_purchase_details', {
@@ -864,7 +871,7 @@ export const getTopPointBuyers = async (
   limit: number = 10,
   startDate?: string,
   endDate?: string
-): Promise<any[]> => {
+): Promise<BuyerSummary[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase.rpc('get_top_point_buyers', {
@@ -883,7 +890,7 @@ export const getTopPointBuyers = async (
 
 export const getUserClaimedPointsDetails = async (
   userId: string
-): Promise<any[]> => {
+): Promise<ClaimedPointsDetail[]> => {
   const { data, error } = await supabase.rpc('get_user_claimed_points_details', {
     p_user_id: userId,
   });
@@ -898,7 +905,7 @@ export const getUserClaimedPointsDetails = async (
 
 export const getUserPointsSummary = async (
   userId: string
-): Promise<any> => {
+): Promise<UserPointsSummary | null> => {
   const { data, error } = await supabase.rpc('get_user_points_summary', {
     p_user_id: userId,
   });
@@ -911,7 +918,7 @@ export const getUsersWithPointsSummary = async (
   role?: string,
   limit: number = 100,
   offset: number = 0
-): Promise<any[]> => {
+): Promise<UserPointsSummary[]> => {
   await checkAdminAccess();
 
   const { data, error } = await supabase.rpc('get_users_with_points_summary', {

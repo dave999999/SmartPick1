@@ -65,7 +65,7 @@ export default function UnifiedPriceCard({
       role="group"
       aria-labelledby={priceGroupId}
     >
-      {/* Simplified Points Bar */}
+      {/* Top Bar: Balance & Current Price */}
       <div
         className={`px-4 py-2.5 ${hasEnoughPoints ? 'bg-[#00cc66]/10' : 'bg-orange-500/10'} flex items-center justify-between`}
         aria-live="polite"
@@ -81,37 +81,44 @@ export default function UnifiedPriceCard({
             </p>
           </div>
         </div>
-        
-        <div className="text-center px-3">
-          <span className="text-white text-xl">→</span>
-        </div>
-
         <div className="text-right">
-          <p className="text-xs text-gray-400">Need</p>
-          <p className="text-lg font-bold text-white">{totalCost.toLocaleString()}</p>
+          <p className="text-xs text-gray-400">Current Price</p>
+          <div className="flex items-baseline gap-1 justify-end">
+            <span className={`text-xl font-bold ${hasEnoughPoints ? 'text-[#00cc66]' : 'text-orange-500'}`} aria-label={`Total price ${totalPrice.toFixed(2)} GEL`}>
+              {totalPrice.toFixed(2)}
+            </span>
+            <span className="text-xs font-medium text-gray-400">GEL</span>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="p-3 space-y-2">
+      <div className="p-3">
         {/* Price Section */}
-        <div id={priceGroupId} className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-[#00cc66]" aria-label={`Total price ${totalPrice.toFixed(2)} GEL`}>
-                {totalPrice.toFixed(2)}
-              </span>
-              <span className="text-base font-medium text-white">GEL</span>
+        <div id={priceGroupId}>
+          <div className="flex items-start justify-between gap-6">
+            {/* Left: Points Cost */}
+            <div className="flex-1">
+              <p className="text-xs text-gray-400 mb-1">Cost</p>
+              <p className="text-2xl font-bold text-orange-400">{quantity * 5} points</p>
             </div>
+            
+            {/* Right: Original Price */}
             {showSavings && (
-              <div className="text-right">
-                <span className="text-lg text-gray-400 line-through font-medium" aria-label={`Original price ${originalPrice.toFixed(2)} GEL`}>
-                  {originalPrice.toFixed(2)} GEL
-                </span>
+              <div className="flex-1 text-right">
+                <p className="text-xs text-gray-400 mb-1">Original Price</p>
+                <div className="flex items-baseline gap-2 justify-end">
+                  <span className="text-lg font-bold text-gray-400 line-through" aria-label={`Original price ${originalPrice.toFixed(2)} GEL`}>
+                    {originalPrice.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-400">GEL</span>
+                </div>
               </div>
             )}
           </div>
-          <p className="text-xs text-[#00cc66]">💳 Pay at pickup</p>
+          <div className="text-center bg-blue-500/10 text-blue-400 text-xs px-3 py-2 rounded-lg mt-3">
+            💳 Pay at pickup
+          </div>
         </div>
 
         {/* Quantity Selector */}

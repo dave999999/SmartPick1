@@ -311,31 +311,42 @@ export default function ReserveOffer() {
 
           {/* Pricing Card */}
           <div className="bg-[#2a2a2a] p-5 rounded-2xl mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Your Balance</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">₾</span>
-                  </div>
-                  <span className="text-white font-bold">4,386</span>
+            {/* Top Bar: Balance & Current Price */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-700">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">₾</span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400">Your Balance</p>
+                  <p className="text-xl font-bold text-white">4,386</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-400 mb-1">Need</p>
-                <span className="text-white font-bold text-xl">{Math.ceil(offer.smart_price * quantity)}</span>
+                <p className="text-xs text-gray-400 mb-1">Current Price</p>
+                <div className="flex items-baseline gap-2 justify-end">
+                  <span className="text-2xl font-bold text-mint-400">{offer.smart_price.toFixed(2)}</span>
+                  <span className="text-sm text-gray-400">GEL</span>
+                </div>
               </div>
             </div>
-            <div className="flex items-baseline justify-between pt-3 border-t border-gray-700">
-              <div>
-                <span className="text-3xl font-bold text-mint-400">{offer.smart_price}</span>
-                <span className="text-sm text-gray-400 ml-2">GEL</span>
+            
+            {/* Bottom: Cost & Original Price */}
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex-1">
+                <p className="text-xs text-gray-400 mb-1">Cost</p>
+                <p className="text-2xl font-bold text-orange-400">{quantity * 5} points</p>
               </div>
-              <span className="text-sm text-gray-500 line-through">
-                {offer.original_price} GEL
-              </span>
+              
+              <div className="flex-1 text-right">
+                <p className="text-xs text-gray-400 mb-1">Original Price</p>
+                <div className="flex items-baseline gap-2 justify-end">
+                  <span className="text-xl font-bold text-gray-500 line-through">{offer.original_price.toFixed(2)}</span>
+                  <span className="text-sm text-gray-500">GEL</span>
+                </div>
+              </div>
             </div>
-            <div className="mt-2 inline-block bg-blue-500/20 text-blue-400 text-xs px-3 py-1 rounded-lg">
+            <div className="text-center bg-blue-500/10 text-blue-400 text-xs px-3 py-2 rounded-lg mt-4">
               💳 Pay at pickup
             </div>
           </div>
@@ -441,7 +452,7 @@ export default function ReserveOffer() {
               ? t('reservation.creating') 
               : penaltyInfo?.isUnderPenalty 
               ? `${t('reservation.blocked')} ${countdown}` 
-              : 'Reserve Price'}
+              : '🎫 Reserve for Free'}
           </Button>
 
           <p className="text-xs text-gray-500 text-center">

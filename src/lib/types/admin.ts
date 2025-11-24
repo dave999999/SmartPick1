@@ -128,6 +128,17 @@ export interface UserBan {
   };
 }
 
+export interface BannedUserDetails extends UserBan {
+  user: {
+    name: string;
+    email: string;
+  };
+  admin: {
+    name: string;
+    email: string;
+  };
+}
+
 // =====================================================
 // NEW: FLAGGED CONTENT TYPES
 // =====================================================

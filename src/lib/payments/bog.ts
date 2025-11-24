@@ -21,9 +21,9 @@ declare const Deno: {
 
 // Simple logger for Deno compatibility
 const log = {
-  log: (...args: any[]) => console.log('[BOG]', ...args),
-  error: (...args: any[]) => console.error('[BOG ERROR]', ...args),
-  warn: (...args: any[]) => console.warn('[BOG WARN]', ...args),
+  log: (...args: unknown[]) => console.log('[BOG]', ...args),
+  error: (...args: unknown[]) => console.error('[BOG ERROR]', ...args),
+  warn: (...args: unknown[]) => console.warn('[BOG WARN]', ...args),
 };
 
 export interface BOGConfig {
@@ -52,6 +52,15 @@ export interface PaymentSession {
   expiresAt?: string;
 }
 
+export interface BOGPaymentStatusResponse {
+  payment_id: string;
+  status: string;
+  amount?: number;
+  currency?: string;
+  order_id?: string;
+  transaction_id?: string;
+}
+
 export interface PaymentSessionRequest {
   amount: number; // in GEL
   currency: "GEL";
@@ -60,7 +69,17 @@ export interface PaymentSessionRequest {
   returnUrl: string;
   callbackUrl: string; // webhook URL
   description?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface BOGWebhookBody {
+  order_id?: string;
+  orderId?: string;
+  transaction_id?: string;
+  transactionId?: string;
+  amount?: number;
+  currency?: string;
+  status?: string;
 }
 
 export interface ParsedWebhookData {
@@ -204,13 +223,7 @@ export class BOGPaymentClient {
   /**
    * Parse and validate webhook data from BOG
    */
-  parseWebhookData(body: any): {
-    orderId: string;
-    transactionId: string | null;
-    amount: number | null;
-    currency: string | null;
-    status: string;
-  } {
+  parseWebhookData(body: BOGWebhookBody): ParsedWebhookData & { status: string } {
     // Parse BOG webhook payload structure
     return {
       orderId: body.order_id || body.orderId || '',
@@ -248,7 +261,7 @@ export class BOGPaymentClient {
   /**
    * Get payment status by payment ID (optional - for polling if needed)
    */
-  async getPaymentStatus(paymentId: string): Promise<any> {
+  async getPaymentStatus(paymentId: string): Promise<BOGPaymentStatusResponse> {
     try {
       const payload = {
         merchant_id: this.config.publicKey,

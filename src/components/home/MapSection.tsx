@@ -1,6 +1,6 @@
 import { Offer } from '@/lib/types';
 import { Suspense, lazy } from 'react';
-const OfferMap = lazy(() => import('@/components/OfferMap'));
+const SmartPickMap = lazy(() => import('@/components/SmartPickMap'));
 import { Crosshair } from 'lucide-react';
 
 interface MapSectionProps {
@@ -24,8 +24,12 @@ export function MapSection({
     <div className="relative w-full m-0 p-0 h-[58vh] min-h-[420px] md:h-[56vh] lg:h-[52vh] xl:h-[48vh]">
       {/* Responsive-height Map */}
       <div className="w-full h-full m-0 p-0">
-        <Suspense fallback={<div className="w-full h-full" aria-busy="true" aria-label="Loading map..." /> }>
-          <OfferMap
+        <Suspense fallback={
+          <div className="w-full h-full bg-[#050814] flex items-center justify-center rounded-2xl" aria-busy="true" aria-label="Loading map...">
+            <div className="text-white/60 text-sm">Loading map...</div>
+          </div>
+        }>
+          <SmartPickMap
             offers={offers}
             onOfferClick={onOfferClick}
             onMarkerClick={onMarkerClick}
