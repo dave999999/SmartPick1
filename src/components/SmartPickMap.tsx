@@ -7,6 +7,7 @@ import { Navigation } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { toast } from 'sonner';
 import smartpickStyle from '@/map/styles/smartpick-cosmic-dark.json';
+import { supabase } from '@/lib/supabase';
 
 interface SmartPickMapProps {
   offers: Offer[];
@@ -78,23 +79,50 @@ const SmartPickMap = memo(({
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   const [, setUserLocation] = useState<[number, number] | null>(null);
+  const [mapTilerKey, setMapTilerKey] = useState<string | null>(null);
 
-  // Get MapTiler API key from environment
-  const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY || import.meta.env.NEXT_PUBLIC_MAPTILER_KEY;
+  // Fetch MapTiler API key from Supabase
+  useEffect(() => {
+    const fetchMapConfig = async () => {
+      try {
+        // Try environment variable first (for local dev)
+        const envKey = import.meta.env.VITE_MAPTILER_KEY || import.meta.env.NEXT_PUBLIC_MAPTILER_KEY;
+        if (envKey) {
+          setMapTilerKey(envKey);
+          return;
+        }
+
+        // Fetch from Supabase app_config table
+        const { data, error } = await supabase
+          .from('app_config')
+          .select('config_value')
+          .eq('config_key', 'maptiler_api_key')
+          .single();
+
+        if (error) {
+          console.warn('Failed to fetch MapTiler key from Supabase:', error);
+          logger.error('Map configuration not found');
+          toast.error('Map configuration missing. Please contact support.');
+          return;
+        }
+
+        if (data?.config_value) {
+          setMapTilerKey(data.config_value);
+        }
+      } catch (err) {
+        console.error('Error fetching map config:', err);
+        logger.error('Map configuration error');
+      }
+    };
+
+    fetchMapConfig();
+  }, []);
 
   // Initialize map
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+    if (!mapContainerRef.current || mapRef.current || !mapTilerKey) return;
 
     try {
-      // Check if API key is available
-      if (!mapTilerKey) {
-        console.warn('MapTiler API key not found. Please add VITE_MAPTILER_KEY to your .env file.');
-        logger.error('Map cannot load without MapTiler API key');
-        toast.error('Map configuration missing. Please contact support.');
-        return;
-      }
-
       // Inject API key into style JSON
       const styleWithKey = JSON.parse(JSON.stringify(smartpickStyle));
       styleWithKey.sprite = `https://api.maptiler.com/maps/streets/sprite?key=${mapTilerKey}`;
