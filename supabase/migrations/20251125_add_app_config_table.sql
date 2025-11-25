@@ -33,7 +33,7 @@ CREATE POLICY "Only admins can modify app config"
 INSERT INTO app_config (config_key, config_value, description)
 VALUES (
   'maptiler_api_key',
-  'your_maptiler_api_key_here',
+  'lbc0oIt12XmRGOSqhQUx',
   'MapTiler API key for vector map rendering'
 )
 ON CONFLICT (config_key) DO NOTHING;
