@@ -1,7 +1,7 @@
 /**
  * Draggable Bottom Sheet Component
  * Apple Maps / Google Maps style bottom sheet with 3 states:
- * - Collapsed: 20% (show category icons preview)
+ * - Collapsed: 12% (show category icons only - minimal)
  * - Mid: 45% (default on load)
  * - Expanded: 85-90% (full list)
  */
@@ -15,7 +15,7 @@ interface DraggableBottomSheetProps {
 type SheetState = 'collapsed' | 'mid' | 'expanded';
 
 const SHEET_HEIGHTS = {
-  collapsed: 20,
+  collapsed: 12,
   mid: 45,
   expanded: 88,
 } as const;
