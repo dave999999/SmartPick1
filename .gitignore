@@ -11,15 +11,10 @@ lerna-debug.log*
 .env
 .env.*
 .env.local
-.env.example
-.env.production
-.env.example
 .env.development
 .env.captcha
+.env.production
 .env.example
-# DO commit these files (they have no real secrets, only feature flags)
-!.env.example
-!.env.production
 
 # SECURITY: Files with hardcoded credentials (NEVER commit!)
 create-admin.js
