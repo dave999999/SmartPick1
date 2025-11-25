@@ -11,10 +11,9 @@ import { useState } from 'react';
 interface RestaurantFoodSectionNewProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
-  isExpanded?: boolean;
 }
 
-export function RestaurantFoodSectionNew({ offers, onOfferClick, isExpanded = false }: RestaurantFoodSectionNewProps) {
+export function RestaurantFoodSectionNew({ offers, onOfferClick }: RestaurantFoodSectionNewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const filteredOffers = selectedCategory 
@@ -64,12 +63,10 @@ export function RestaurantFoodSectionNew({ offers, onOfferClick, isExpanded = fa
 
         {/* All Offers Section */}
         <div>
-          {isExpanded && (
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[17px] font-semibold text-sp-text-primary">All Offers</h2>
-              <span className="text-[13px] text-sp-text-secondary">{filteredOffers.length} total</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[17px] font-semibold text-sp-text-primary">All Offers</h2>
+            <span className="text-[13px] text-sp-text-secondary">{filteredOffers.length} total</span>
+          </div>
           <div className="grid grid-cols-3 gap-3">
             {filteredOffers.map((offer) => (
               <OfferCard key={offer.id} offer={offer} onClick={onOfferClick} variant="grid" />

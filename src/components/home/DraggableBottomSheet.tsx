@@ -6,7 +6,7 @@
  * - Expanded: 85-90% (full list)
  */
 
-import { useState, useRef, useEffect, ReactNode, cloneElement, isValidElement } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 
 interface DraggableBottomSheetProps {
   children: ReactNode;
@@ -172,10 +172,7 @@ export function DraggableBottomSheet({
           paddingBottom: '20px',
         }}
       >
-        {isValidElement(children) 
-          ? cloneElement(children, { isExpanded: sheetState === 'expanded' } as any)
-          : children
-        }
+        {children}
       </div>
     </div>
   );
