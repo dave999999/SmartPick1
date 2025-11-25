@@ -22,6 +22,7 @@ import { MapSectionNew } from '@/components/home/MapSectionNew';
 import { RestaurantFoodSectionNew } from '@/components/home/RestaurantFoodSectionNew';
 import { BottomNavBarNew } from '@/components/home/BottomNavBarNew';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
+import { DraggableBottomSheet } from '@/components/home/DraggableBottomSheet';
 import PartnerOffersModal from '@/components/PartnerOffersModal';
 
 export default function IndexRedesigned() {
@@ -46,9 +47,6 @@ export default function IndexRedesigned() {
     maxPrice: 100,
   });
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-
-  // Bottom sheet states - 3-stage system: 20%, 55%, 90%
-  const [sheetHeight, setSheetHeight] = useState(20);
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
@@ -318,41 +316,30 @@ export default function IndexRedesigned() {
                 />
               </div>
 
-              {/* Swipeable Bottom Sheet - Premium Glass Design */}
+              {/* Draggable Bottom Sheet - Apple Maps Style */}
               {filteredOffers.length > 0 && (
-                <div 
-                  className="absolute bottom-0 left-0 right-0 bg-sp-surface1 backdrop-blur-2xl rounded-t-[28px] shadow-[0_-18px_40px_rgba(0,0,0,0.85)] overflow-hidden z-20 transition-all duration-300 border-t border-sp-border-soft"
-                  style={{ 
-                    height: `${sheetHeight}%`,
-                    maxHeight: 'calc(100% - max(80px, env(safe-area-inset-top) + 80px))',
-                    paddingBottom: 'max(16px, env(safe-area-inset-bottom))'
-                  }}
-                >
-                  {/* Drag Handle */}
-                  <div 
-                    className="flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing"
-                    onClick={() => {
-                      if (sheetHeight === 20) setSheetHeight(55);
-                      else if (sheetHeight === 55) setSheetHeight(90);
-                      else setSheetHeight(20);
-                    }}
-                  >
-                    <div className="w-16 h-1 bg-sp-border-soft rounded-full shadow-inner" />
-                  </div>
-                  
-                  {/* Scrollable Content */}
-                  <div className="h-[calc(100%-32px)] overflow-y-auto">
-                    <RestaurantFoodSectionNew
-                      offers={filteredOffers}
-                      onOfferClick={handleOfferClick}
-                    />
-                  </div>
-                </div>
+                <DraggableBottomSheet>
+                  <RestaurantFoodSectionNew
+                    offers={filteredOffers}
+                    onOfferClick={handleOfferClick}
+                  />
+                </DraggableBottomSheet>
               )}
 
               {/* Empty State */}
               {filteredOffers.length === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 backdrop-blur-2xl rounded-t-[28px] shadow-[0_-18px_40px_rgba(0,0,0,0.85)] z-20 flex flex-col items-center justify-center p-8 border-t border-sp-border-soft">
+                <div 
+                  className="fixed left-0 right-0 rounded-t-3xl flex flex-col items-center justify-center p-8"
+                  style={{
+                    bottom: 0,
+                    height: '35vh',
+                    zIndex: 30,
+                    background: 'linear-gradient(to bottom, #050A12 0%, #0C1623 100%)',
+                    boxShadow: '0 -8px 32px rgba(0, 246, 255, 0.15), 0 -4px 16px rgba(0, 0, 0, 0.7)',
+                    borderTop: '1px solid rgba(0, 246, 255, 0.2)',
+                    paddingBottom: 'max(80px, env(safe-area-inset-bottom) + 80px)',
+                  }}
+                >
                   <div className="text-6xl mb-4">🔍</div>
                   <h3 className="text-xl font-bold text-sp-text-primary mb-2">No offers found</h3>
                   <p className="text-sp-text-secondary text-center mb-6">Try adjusting your filters or search query</p>

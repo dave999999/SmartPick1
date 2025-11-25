@@ -44,18 +44,26 @@ export function BottomNavBarNew() {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-[9999] pointer-events-none"
-      style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      className="fixed left-0 right-0 z-[9999]"
+      style={{ 
+        bottom: 'env(safe-area-inset-bottom)',
+        height: '60px',
+      }}
     >
-      <div className="mx-4 mb-3 pointer-events-auto">
+      <div className="h-full flex items-center justify-center px-3">
         <div className="
-          px-6 py-3 
-          bg-sp-surface-glass backdrop-blur-2xl
-          rounded-full
+          px-8 py-2.5
+          backdrop-blur-[16px]
+          rounded-3xl
           border border-sp-border-soft
-          shadow-[0_18px_40px_rgba(0,0,0,0.85)]
-        ">
-          <div className="flex items-center justify-around gap-2">
+          w-full max-w-md
+        "
+          style={{
+            background: 'rgba(5, 10, 18, 0.85)',
+            boxShadow: '0 -2px 16px rgba(0, 246, 255, 0.15), 0 4px 24px rgba(0, 0, 0, 0.7)',
+          }}
+        >
+          <div className="flex items-center justify-around gap-4">
             {navItems.map((item, index) => {
               const Icon = item.icon;
               const active = isActive(item.path);
@@ -65,10 +73,10 @@ export function BottomNavBarNew() {
                   key={index}
                   onClick={item.onClick}
                   className="
-                    relative flex flex-col items-center gap-1.5 
+                    relative flex flex-col items-center gap-1
                     transition-all duration-200 
-                    hover:scale-105 active:scale-95 
-                    min-w-[60px] py-1
+                    hover:scale-110 active:scale-95 
+                    min-w-[56px] py-0.5
                   "
                 >
                   <div className={`
@@ -78,7 +86,7 @@ export function BottomNavBarNew() {
                   `}>
                     <Icon 
                       className={`
-                        w-[24px] h-[24px] 
+                        w-[26px] h-[26px] 
                         ${active ? 'text-sp-accent-orange' : 'text-sp-text-muted'}
                         transition-colors duration-200
                       `}
@@ -102,7 +110,7 @@ export function BottomNavBarNew() {
                   {/* Label - only show on active */}
                   {active && (
                     <span className="
-                      text-[10px] font-semibold 
+                      text-[9px] font-semibold 
                       text-sp-text-primary 
                       tracking-wide uppercase
                       animate-in fade-in-0 slide-in-from-bottom-1
