@@ -45,11 +45,10 @@ export function VerticalNav() {
 
   return (
     <div 
-      className="fixed z-[9999] flex flex-col gap-4"
+      className="fixed z-[9999] flex flex-col gap-2"
       style={{
-        left: '16px',
-        top: '50%',
-        transform: 'translateY(-50%)',
+        left: '12px',
+        top: '80px',
       }}
     >
       {navItems.map((item, index) => {
@@ -62,8 +61,8 @@ export function VerticalNav() {
             onClick={item.onClick}
             className="relative transition-all duration-300 group"
             style={{
-              width: '52px',
-              height: '52px',
+              width: '26px',
+              height: '26px',
             }}
             aria-label={item.label}
           >
@@ -75,8 +74,8 @@ export function VerticalNav() {
                   ? 'radial-gradient(circle, rgba(255, 138, 0, 0.25) 0%, transparent 70%)'
                   : 'radial-gradient(circle, rgba(0, 246, 255, 0.15) 0%, transparent 70%)',
                 filter: active 
-                  ? 'blur(12px) brightness(1.6)'
-                  : 'blur(8px)',
+                  ? 'blur(6px) brightness(1.6)'
+                  : 'blur(4px)',
                 transform: active ? 'scale(1.3)' : 'scale(1.1)',
               }}
             />
@@ -86,11 +85,11 @@ export function VerticalNav() {
               className="absolute inset-0 rounded-full transition-all duration-300"
               style={{
                 border: active 
-                  ? '2px solid #FF8A00'
-                  : '1.5px solid #00F6FF',
+                  ? '1.5px solid #FF8A00'
+                  : '1px solid #00F6FF',
                 boxShadow: active
-                  ? '0 0 16px rgba(255, 138, 0, 0.6), 0 0 32px rgba(255, 138, 0, 0.3), inset 0 0 12px rgba(255, 138, 0, 0.2)'
-                  : '0 0 10px rgba(0, 246, 255, 0.4), 0 0 20px rgba(0, 246, 255, 0.2), inset 0 0 8px rgba(0, 246, 255, 0.15)',
+                  ? '0 0 8px rgba(255, 138, 0, 0.6), 0 0 16px rgba(255, 138, 0, 0.3), inset 0 0 6px rgba(255, 138, 0, 0.2)'
+                  : '0 0 5px rgba(0, 246, 255, 0.4), 0 0 10px rgba(0, 246, 255, 0.2), inset 0 0 4px rgba(0, 246, 255, 0.15)',
                 transform: active ? 'scale(1.06)' : 'scale(1)',
               }}
             />
@@ -105,13 +104,13 @@ export function VerticalNav() {
               <Icon 
                 className="transition-all duration-300"
                 style={{
-                  width: '24px',
-                  height: '24px',
+                  width: '12px',
+                  height: '12px',
                   color: active ? '#FF8A00' : '#00F6FF',
                   filter: active 
-                    ? 'drop-shadow(0 0 6px rgba(255, 138, 0, 0.8))'
-                    : 'drop-shadow(0 0 4px rgba(0, 246, 255, 0.6))',
-                  strokeWidth: 2,
+                    ? 'drop-shadow(0 0 3px rgba(255, 138, 0, 0.8))'
+                    : 'drop-shadow(0 0 2px rgba(0, 246, 255, 0.6))',
+                  strokeWidth: 2.5,
                 }}
               />
             </div>

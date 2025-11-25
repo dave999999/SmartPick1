@@ -358,7 +358,7 @@ export default function IndexRedesigned() {
               )}
 
               {/* Search Bar Overlay */}
-              <div className="absolute top-3 left-20 right-20 md:right-24 z-50">
+              <div className="absolute top-3 left-12 right-20 md:right-24 z-50">
                 <TopSearchBarRedesigned 
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
