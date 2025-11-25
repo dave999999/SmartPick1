@@ -16,11 +16,11 @@ import { logger } from '@/lib/logger';
 import { FilterState, SortOption } from '@/components/SearchAndFilters';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
 
-// New redesigned components
+// Premium Dark Design Components
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
-import { MapSection } from '@/components/home/MapSection';
-import { BottomSheetRedesigned } from '@/components/home/BottomSheetRedesigned';
-import { BottomNavBar } from '@/components/home/BottomNavBar';
+import { MapSectionNew } from '@/components/home/MapSectionNew';
+import { RestaurantFoodSectionNew } from '@/components/home/RestaurantFoodSectionNew';
+import { BottomNavBarNew } from '@/components/home/BottomNavBarNew';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import PartnerOffersModal from '@/components/PartnerOffersModal';
 
@@ -284,38 +284,27 @@ export default function IndexRedesigned() {
       <SplashScreen />
       <Suspense fallback={null}><AnnouncementPopup /></Suspense>
 
-      <div className="min-h-screen bg-[#0a0a0a] overflow-hidden fixed inset-0 safe-area">
-        {/* Map Section - Full Screen */}
+      <div className="min-h-screen bg-sp-bg overflow-hidden fixed inset-0 safe-area">
         <div className="absolute inset-0 w-full h-full">
           {isLoading ? (
-            <div className="w-full h-full bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] relative">
-              {/* Skeleton Loading */}
+            <div className="w-full h-full bg-gradient-to-b from-sp-bg to-sp-surface1 relative">
               <div className="absolute inset-0 flex items-center justify-center gap-8">
                 <div className="space-y-2">
-                  <div className="w-12 h-12 bg-slate-800 rounded-full animate-pulse"></div>
-                  <div className="w-12 h-12 bg-slate-800 rounded-full animate-pulse delay-100"></div>
-                  <div className="w-12 h-12 bg-slate-800 rounded-full animate-pulse delay-200"></div>
-                </div>
-                <div className="space-y-2">
-                  <div className="w-12 h-12 bg-slate-800 rounded-full animate-pulse delay-150"></div>
-                  <div className="w-12 h-12 bg-slate-800 rounded-full animate-pulse delay-300"></div>
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse"></div>
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-100"></div>
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-200"></div>
                 </div>
               </div>
-              {/* Loading Sheet at Bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-[30%] bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-t-[24px] shadow-lg p-4 space-y-3">
-                <div className="h-24 bg-slate-800 rounded-xl animate-pulse"></div>
-                <div className="h-24 bg-slate-800 rounded-xl animate-pulse delay-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 rounded-t-[28px] shadow-lg p-4 space-y-3 border-t border-sp-border-soft">
+                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse"></div>
+                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse delay-100"></div>
               </div>
             </div>
           ) : (
             <>
-              {/* Full Screen Map - Base layer */}
-              <div 
-                className={`absolute inset-0 w-full h-full z-10 transition-opacity duration-300 ${
-                  sheetHeight > 55 ? 'opacity-80' : 'opacity-100'
-                }`}
-              >
-                <MapSection
+              {/* Full Screen Map */}
+              <div className="absolute inset-0 w-full h-full z-10">
+                <MapSectionNew
                   offers={filteredOffers}
                   onOfferClick={handleOfferClick}
                   onMarkerClick={handleMarkerClick}
@@ -325,25 +314,44 @@ export default function IndexRedesigned() {
                 />
               </div>
 
-              {/* Redesigned 3-Stage Bottom Sheet */}
+              {/* Swipeable Bottom Sheet - Premium Glass Design */}
               {filteredOffers.length > 0 && (
-                <BottomSheetRedesigned
-                  offers={filteredOffers}
-                  selectedCategory={selectedCategory}
-                  onCategorySelect={setSelectedCategory}
-                  onOfferClick={handleOfferClick}
-                  sheetHeight={sheetHeight}
-                  onHeightChange={setSheetHeight}
-                  userLocation={userLocation}
-                />
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-sp-surface1 backdrop-blur-2xl rounded-t-[28px] shadow-[0_-18px_40px_rgba(0,0,0,0.85)] overflow-hidden z-20 transition-all duration-300 border-t border-sp-border-soft"
+                  style={{ 
+                    height: `${sheetHeight}%`,
+                    maxHeight: 'calc(100% - max(80px, env(safe-area-inset-top) + 80px))',
+                    paddingBottom: 'max(16px, env(safe-area-inset-bottom))'
+                  }}
+                >
+                  {/* Drag Handle */}
+                  <div 
+                    className="flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing"
+                    onClick={() => {
+                      if (sheetHeight === 20) setSheetHeight(55);
+                      else if (sheetHeight === 55) setSheetHeight(90);
+                      else setSheetHeight(20);
+                    }}
+                  >
+                    <div className="w-16 h-1 bg-sp-border-soft rounded-full shadow-inner" />
+                  </div>
+                  
+                  {/* Scrollable Content */}
+                  <div className="h-[calc(100%-32px)] overflow-y-auto">
+                    <RestaurantFoodSectionNew
+                      offers={filteredOffers}
+                      onOfferClick={handleOfferClick}
+                    />
+                  </div>
+                </div>
               )}
 
               {/* Empty State */}
               {filteredOffers.length === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.3)] z-20 flex flex-col items-center justify-center p-8">
+                <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 backdrop-blur-2xl rounded-t-[28px] shadow-[0_-18px_40px_rgba(0,0,0,0.85)] z-20 flex flex-col items-center justify-center p-8 border-t border-sp-border-soft">
                   <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-white mb-2">No offers match your filters</h3>
-                  <p className="text-gray-400 text-center mb-6">Try expanding your search area or adjusting your filters to discover more deals!</p>
+                  <h3 className="text-xl font-bold text-sp-text-primary mb-2">No offers found</h3>
+                  <p className="text-sp-text-secondary text-center mb-6">Try adjusting your filters or search query</p>
                   <button
                     onClick={() => {
                       setFilters({ maxDistance: 10, minPrice: 0, maxPrice: 100 });
@@ -351,15 +359,15 @@ export default function IndexRedesigned() {
                       setSelectedCategory('');
                       setSortBy('newest');
                     }}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="bg-gradient-to-r from-sp-accent-orange to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     Clear All Filters
                   </button>
                 </div>
               )}
 
-              {/* Redesigned Search Bar Overlay */}
-              <div className="absolute top-4 left-4 right-4 z-50">
+              {/* Search Bar Overlay */}
+              <div className="absolute top-3 left-4 right-20 md:right-24 z-50">
                 <TopSearchBarRedesigned 
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
@@ -371,7 +379,7 @@ export default function IndexRedesigned() {
         </div>
 
         {/* Bottom Navigation */}
-        <BottomNavBar />
+        <BottomNavBarNew />
 
         {/* Filter Drawer */}
         <FilterDrawer

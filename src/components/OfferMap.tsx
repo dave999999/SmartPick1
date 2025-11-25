@@ -165,7 +165,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
       MEAT_BUTCHER: 'meat.png',
       FISH_SEAFOOD: 'fish.png',
       ALCOHOL: 'alcohol.png',
-      GEORGIAN_TRADITIONAL: 'georgian.png',
+      DRIVE: 'drive.png',
     };
 
     const imagePath = `/images/pins/${imageMap[category] || 'restaurant.png'}`;

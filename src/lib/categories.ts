@@ -26,7 +26,7 @@ export const MAIN_CATEGORIES = [
   'MEAT_BUTCHER',
   'FISH_SEAFOOD',
   'ALCOHOL',
-  'GEORGIAN_TRADITIONAL',
+  'DRIVE',
 ] as const;
 
 export type MainCategory = (typeof MAIN_CATEGORIES)[number];
@@ -141,14 +141,11 @@ export const SUBCATEGORIES: Record<MainCategory, readonly string[]> = {
     'Craft Beverages',
   ],
   
-  GEORGIAN_TRADITIONAL: [
-    'Imeruli Khachapuri',
-    'Megruli Khachapuri',
-    'Adjaruli Khachapuri',
-    'Khinkali',
-    'Mtsvadi',
-    'Ojakhuri',
-    'Pkhali / Marinated food',
+  DRIVE: [
+    'Drive-Through',
+    'Curbside Pickup',
+    'Quick Service',
+    'On-the-Go',
   ],
 } as const;
 
@@ -265,13 +262,13 @@ export const CATEGORY_CONFIG: Record<MainCategory, CategoryConfig> = {
     description: 'Wine, beer, and spirits',
   },
   
-  GEORGIAN_TRADITIONAL: {
-    value: 'GEORGIAN_TRADITIONAL',
-    label: 'Georgian Traditional',
-    emoji: '🇬🇪',
-    iconName: 'georgian',
-    labelKey: 'category.GEORGIAN_TRADITIONAL',
-    description: 'Traditional Georgian cuisine',
+  DRIVE: {
+    value: 'DRIVE',
+    label: 'Drive',
+    emoji: '🚗',
+    iconName: 'drive',
+    labelKey: 'category.DRIVE',
+    description: 'Drive-through and quick pickup',
   },
 };
 
@@ -360,8 +357,8 @@ export function mapLegacyCategory(oldCategory: string): MainCategory {
     'BUTCHER': 'MEAT_BUTCHER',
     'FISH': 'FISH_SEAFOOD',
     'SEAFOOD': 'FISH_SEAFOOD',
-    'GEORGIAN': 'GEORGIAN_TRADITIONAL',
-    'TRADITIONAL': 'GEORGIAN_TRADITIONAL',
+    'DRIVE_THROUGH': 'DRIVE',
+    'DRIVE THROUGH': 'DRIVE',
   };
   
   return legacyMap[normalized] || 'RESTAURANT';

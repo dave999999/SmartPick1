@@ -186,7 +186,7 @@ export const BUSINESS_TYPES = [
   'MEAT_BUTCHER',
   'FISH_SEAFOOD',
   'ALCOHOL',
-  'GEORGIAN_TRADITIONAL',
+  'DRIVE',
 ] as const;
 
 export type BusinessType = (typeof BUSINESS_TYPES)[number];

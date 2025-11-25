@@ -29,73 +29,41 @@ interface GroupedLocation {
   category: string;
 }
 
-// Create sticky marker - FIXED for no movement during zoom/pan
+// Create marker element - Stable positioning (no transforms)
 function createPulsingMarker(
   _map: maplibregl.Map,
   color: string = '#FF8A00',
-  size: number = 48,
   category?: string
 ): HTMLElement {
-  // Container with precise sizing and no transforms
-  const markerEl = document.createElement('div');
-  markerEl.className = 'smartpick-pulsing-marker';
-  markerEl.style.cssText = `
-    width: ${size}px;
-    height: ${size}px;
-    cursor: pointer;
-    position: relative;
-    margin: 0;
-    padding: 0;
-    line-height: 0;
-  `;
+  const el = document.createElement('div');
+  el.className = 'sp-marker';
   
-  // Image element with no transforms or animations
-  const pinImage = document.createElement('img');
-  pinImage.className = 'marker-pin-image';
-  pinImage.style.cssText = `
-    width: ${size}px;
-    height: ${size}px;
-    display: block;
-    margin: 0;
-    padding: 0;
-    object-fit: contain;
-    filter: brightness(1.15) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.75));
-    image-rendering: crisp-edges;
-    pointer-events: none;
-    user-select: none;
-  `;
-  pinImage.draggable = false;
-  
-  // Set icon image source if category provided
+  // Add category attribute for CSS targeting
   if (category) {
-    pinImage.src = `/icons/map-pins/${category}.png`;
-    pinImage.onerror = () => {
-      console.error('Failed to load pin image:', category);
-      // Fallback: create simple colored pin if image doesn't load
-      pinImage.style.display = 'none';
-      const fallback = document.createElement('div');
-      fallback.style.cssText = `
-        width: ${size}px;
-        height: ${size}px;
-        background: ${color};
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-        margin: 0;
-        padding: 0;
-      `;
-      markerEl.appendChild(fallback);
-    };
+    el.setAttribute('data-category', category);
   }
   
-  markerEl.appendChild(pinImage);
+  // Create icon element
+  const iconEl = document.createElement('img');
+  iconEl.className = 'sp-marker-icon';
   
-  return markerEl;
+  if (category) {
+    iconEl.src = `/icons/map-pins/${category}.png`;
+    iconEl.alt = category;
+  } else {
+    // Fallback: simple colored circle
+    el.style.background = color;
+  }
+  
+  el.appendChild(iconEl);
+  return el;
 }
 
 // Create expiring soon marker (mint glow)
 function createExpiringMarker(map: maplibregl.Map, category?: string): HTMLElement {
-  return createPulsingMarker(map, '#37E5AE', 48, category);
+  const el = createPulsingMarker(map, '#37E5AE', category);
+  el.classList.add('sp-marker--active');
+  return el;
 }
 
 const SmartPickMap = memo(({
@@ -200,8 +168,6 @@ const SmartPickMap = memo(({
     if (!map) return;
 
     const updateMarkers = () => {
-      console.log('Creating markers for', groupedLocations.length, 'locations');
-
       // Clear existing markers
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
@@ -219,7 +185,7 @@ const SmartPickMap = memo(({
       // Create marker element with category icon
       const markerEl = hasExpiringSoon
         ? createExpiringMarker(map, location.category)
-        : createPulsingMarker(map, '#FF8A00', 48, location.category);
+        : createPulsingMarker(map, '#FF8A00', location.category);
 
       // Create popup content
       const popupContent = document.createElement('div');
@@ -268,12 +234,10 @@ const SmartPickMap = memo(({
         className: 'smartpick-map-popup'
       }).setDOMContent(popupContent);
 
-      // Create marker with BOTTOM anchor - pins stay perfectly locked
+      // Create marker - Fixed positioning with center anchor (no drift)
       const marker = new maplibregl.Marker({ 
         element: markerEl,
-        anchor: 'bottom', // Bottom center of pin points to exact coordinate
-        pitchAlignment: 'viewport', // Keeps pin upright
-        rotationAlignment: 'viewport' // No rotation
+        anchor: 'center'
       })
         .setLngLat([location.lng, location.lat])
         .setPopup(popup)
@@ -360,28 +324,18 @@ const SmartPickMap = memo(({
 
       {/* Custom CSS for animations */}
       <style>{`
-        @keyframes smartpick-pulse {
-          0% {
-            transform: translate(-50%, -50%) scale(1);
-            opacity: 0.5;
-          }
-          100% {
-            transform: translate(-50%, -50%) scale(2.5);
-            opacity: 0;
-          }
+        /* Marker styling - NO transforms or animations */
+        .sp-marker {
+          /* No animation - it breaks MapLibre positioning */
         }
 
-        .smartpick-pulsing-marker {
-          cursor: pointer;
-          transition: transform 0.2s ease;
+        .sp-marker:hover {
+          opacity: 0.9;
+          transition: opacity 0.2s ease;
         }
 
-        .smartpick-pulsing-marker:hover {
-          transform: scale(1.05);
-        }
-
-        .smartpick-pulsing-marker:active {
-          transform: scale(0.95);
+        .sp-marker:active {
+          opacity: 0.8;
         }
 
         .maplibregl-popup-content {

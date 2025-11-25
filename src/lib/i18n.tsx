@@ -67,7 +67,7 @@ const translations: Record<Language, Record<string, string>> = {
   'category.MEAT_BUTCHER': 'Meat & Butcher',
   'category.FISH_SEAFOOD': 'Fish & Seafood',
   'category.ALCOHOL': 'Alcohol',
-  'category.GEORGIAN_TRADITIONAL': 'Georgian Traditional',
+  'category.DRIVE': 'Drive',
 
     // Map View
     'map.mapView': 'Map View',
@@ -583,7 +583,7 @@ const translations: Record<Language, Record<string, string>> = {
   'category.MEAT_BUTCHER': 'ხორცი და ჩარქი',
   'category.FISH_SEAFOOD': 'თევზი და ზღვის პროდუქტები',
   'category.ALCOHOL': 'ალკოჰოლი',
-  'category.GEORGIAN_TRADITIONAL': 'ქართული ტრადიციული',
+  'category.DRIVE': 'დრაივი',
 
     // Map View
     'map.mapView': 'რუკის ხედი',

@@ -30,7 +30,7 @@ const KNOWN_CATEGORIES = [
   'MEAT_BUTCHER',
   'FISH_SEAFOOD',
   'ALCOHOL',
-  'GEORGIAN_TRADITIONAL',
+  'DRIVE',
 ];
 
 export default function ImagePicker({
