@@ -59,7 +59,7 @@ export function CategoryBar({ selectedCategory, onCategorySelect }: CategoryBarP
           <img 
             src={`/icons/categories/${category.value}.png`}
             alt={category.label}
-            className="w-[32px] h-[32px] object-contain"
+            className="w-[44px] h-[44px] object-contain"
             style={{ 
               filter: isActive 
                 ? 'brightness(1.2) drop-shadow(0 2px 8px rgba(255,138,48,0.4))' 
