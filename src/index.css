@@ -533,3 +533,17 @@
 .offer-card:active {
   transform: translateY(0) scale(0.98);
 }
+
+/* Subtle neon pulse animation for modal image */
+@keyframes subtle-pulse {
+  0%, 100% {
+    filter: brightness(1) drop-shadow(0 0 12px rgba(0, 246, 255, 0.5));
+  }
+  50% {
+    filter: brightness(1.05) drop-shadow(0 0 16px rgba(0, 246, 255, 0.7));
+  }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 3s ease-in-out infinite;
+}

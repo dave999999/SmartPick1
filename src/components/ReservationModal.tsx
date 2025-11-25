@@ -396,8 +396,12 @@ export default function ReservationModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         ref={modalRef}
-        className="max-w-lg max-h-[95vh] overflow-y-auto p-0 bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-white/10 shadow-2xl rounded-3xl"
+        className="max-w-lg max-h-[95vh] overflow-y-auto p-0 rounded-3xl"
         style={{
+          background: 'linear-gradient(to bottom, #03060B 0%, #0A1420 100%)',
+          border: '1.5px solid rgba(0, 246, 255, 0.3)',
+          boxShadow: '0 0 30px rgba(0, 246, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 2px 8px rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(20px)',
           transform: `translate(-50%, calc(-50% + ${dragY}px))`,
           transition: isDragging ? 'none' : 'transform 0.3s ease-out',
           opacity: isDragging ? Math.max(0.5, 1 - dragY / 400) : 1,
@@ -421,8 +425,13 @@ export default function ReservationModal({
           />
         )}
 
-        {/* Content Area with padding - dark glossy background */}
-  <div className="px-5 pb-6 pt-24 space-y-4 bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] rounded-b-3xl shadow-2xl">
+        {/* Content Area with padding - COSMIC NEON GRADIENT BACKGROUND */}
+        <div className="px-5 pb-6 pt-24 space-y-4 rounded-b-3xl"
+          style={{
+            background: 'linear-gradient(to bottom, #03060B 0%, #0A1420 100%)',
+            boxShadow: 'inset 0 4px 12px rgba(0, 0, 0, 0.5)'
+          }}
+        >
           {/* Title Section Component */}
           <TitleSection
             title={offer.title}

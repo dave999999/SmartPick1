@@ -61,30 +61,62 @@ export default function UnifiedPriceCard({
 
   return (
     <section
-  className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] rounded-xl border border-white/10 shadow-xl overflow-hidden"
+      className="rounded-xl overflow-hidden relative"
       role="group"
       aria-labelledby={priceGroupId}
+      style={{
+        background: 'linear-gradient(135deg, #050A12 0%, #0C1622 100%)',
+        border: '1.5px solid #00F6FF',
+        boxShadow: '0 0 8px rgba(0, 246, 255, 0.4), 0 4px 16px rgba(0, 246, 255, 0.2)'
+      }}
     >
-      {/* Top Bar: Balance & Current Price */}
+      {/* Top Bar: Balance & Current Price - NEON ORANGE & TEAL */}
       <div
-        className={`px-4 py-2.5 ${hasEnoughPoints ? 'bg-[#00cc66]/10' : 'bg-orange-500/10'} flex items-center justify-between`}
+        className="px-4 py-3 flex items-center justify-between relative"
         aria-live="polite"
+        style={{
+          background: 'rgba(0, 246, 255, 0.05)',
+          borderBottom: '1px solid rgba(0, 246, 255, 0.2)'
+        }}
       >
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
+          <div className="w-9 h-9 rounded-full flex items-center justify-center relative"
+            style={{
+              background: 'linear-gradient(135deg, #FF8A00 0%, #FFBD42 100%)',
+              boxShadow: '0 0 12px rgba(255, 138, 0, 0.5)'
+            }}
+          >
             <span className="text-white text-lg">💰</span>
           </div>
           <div>
-            <p className="text-xs text-gray-400">Your Balance</p>
-            <p className={`text-lg font-bold ${hasEnoughPoints ? 'text-[#00cc66]' : 'text-orange-500'}`}>
+            <p className="text-xs text-gray-400"
+              style={{ textShadow: '0 0 4px rgba(0, 246, 255, 0.2)' }}
+            >
+              Your Balance
+            </p>
+            <p className="text-lg font-bold"
+              style={{
+                color: '#FFB443',
+                textShadow: '0 0 8px rgba(255, 180, 67, 0.4)'
+              }}
+            >
               {balance.toLocaleString()}
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-400">Current Price</p>
+          <p className="text-xs text-gray-400"
+            style={{ textShadow: '0 0 4px rgba(0, 246, 255, 0.2)' }}
+          >
+            Current Price
+          </p>
           <div className="flex items-baseline gap-1 justify-end">
-            <span className={`text-xl font-bold ${hasEnoughPoints ? 'text-[#00cc66]' : 'text-orange-500'}`} aria-label={`Total price ${totalPrice.toFixed(2)} GEL`}>
+            <span className="text-xl font-bold" aria-label={`Total price ${totalPrice.toFixed(2)} GEL`}
+              style={{
+                color: '#00F6FF',
+                textShadow: '0 0 10px rgba(0, 246, 255, 0.5)'
+              }}
+            >
               {totalPrice.toFixed(2)}
             </span>
             <span className="text-xs font-medium text-gray-400">GEL</span>
@@ -93,22 +125,40 @@ export default function UnifiedPriceCard({
       </div>
 
       {/* Main Content */}
-      <div className="p-3">
+      <div className="p-4">
         {/* Price Section */}
         <div id={priceGroupId}>
-          <div className="flex items-start justify-between gap-6">
-            {/* Left: Points Cost */}
+          <div className="flex items-start justify-between gap-6 mb-3">
+            {/* Left: Points Cost - NEON ORANGE */}
             <div className="flex-1">
-              <p className="text-xs text-gray-400 mb-1">Cost</p>
-              <p className="text-2xl font-bold text-orange-400">{quantity * 5} points</p>
+              <p className="text-xs text-gray-400 mb-1"
+                style={{ textShadow: '0 0 4px rgba(0, 246, 255, 0.2)' }}
+              >
+                Cost
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">✨</span>
+                <p className="text-2xl font-bold"
+                  style={{
+                    color: '#FFB443',
+                    textShadow: '0 0 10px rgba(255, 180, 67, 0.5)'
+                  }}
+                >
+                  {quantity * 5} points
+                </p>
+              </div>
             </div>
             
             {/* Right: Original Price */}
             {showSavings && (
               <div className="flex-1 text-right">
-                <p className="text-xs text-gray-400 mb-1">Original Price</p>
+                <p className="text-xs text-gray-400 mb-1"
+                  style={{ textShadow: '0 0 4px rgba(0, 246, 255, 0.2)' }}
+                >
+                  Original Price
+                </p>
                 <div className="flex items-baseline gap-2 justify-end">
-                  <span className="text-lg font-bold text-gray-400 line-through" aria-label={`Original price ${originalPrice.toFixed(2)} GEL`}>
+                  <span className="text-lg font-bold text-gray-500 line-through" aria-label={`Original price ${originalPrice.toFixed(2)} GEL`}>
                     {originalPrice.toFixed(2)}
                   </span>
                   <span className="text-sm text-gray-400">GEL</span>
@@ -116,27 +166,67 @@ export default function UnifiedPriceCard({
               </div>
             )}
           </div>
-          <div className="text-center bg-blue-500/10 text-blue-400 text-xs px-3 py-2 rounded-lg mt-3">
-            💳 Pay at pickup
+          
+          {/* Neon Teal Divider */}
+          <div className="w-full h-[1px] mb-3"
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, #00F6FF 50%, transparent 100%)',
+              boxShadow: '0 0 6px rgba(0, 246, 255, 0.4)'
+            }}
+          />
+          
+          <div className="text-center px-3 py-2 rounded-lg"
+            style={{
+              background: 'rgba(0, 246, 255, 0.08)',
+              border: '1px solid rgba(0, 246, 255, 0.2)',
+              boxShadow: '0 0 8px rgba(0, 246, 255, 0.15)'
+            }}
+          >
+            <span className="text-xs font-medium"
+              style={{
+                color: '#00F6FF',
+                textShadow: '0 0 6px rgba(0, 246, 255, 0.4)'
+              }}
+            >
+              💳 Pay at pickup
+            </span>
           </div>
         </div>
 
-        {/* Quantity Selector */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
-          <div className="flex items-center gap-2" aria-describedby={quantityLabelId}>
+        {/* Quantity Selector - NEON GLOWING CIRCLES */}
+        <div className="flex items-center justify-between pt-4"
+          style={{
+            borderTop: '1px solid rgba(0, 246, 255, 0.15)'
+          }}
+        >
+          <div className="flex items-center gap-3" aria-describedby={quantityLabelId}>
             <Button
               variant="outline"
               size="icon"
               onClick={handleDecrease}
               disabled={!canDecrease}
               aria-label={decreaseLabel}
-              className="h-8 w-8 rounded-full border-2 border-gray-300 hover:bg-mint-50 hover:border-mint-400 disabled:opacity-40 active:scale-95 transition-transform"
+              className="h-10 w-10 rounded-full transition-all duration-200"
+              style={{
+                background: canDecrease ? 'rgba(0, 246, 255, 0.08)' : 'rgba(0, 0, 0, 0.3)',
+                border: canDecrease ? '1.5px solid #00F6FF' : '1.5px solid rgba(100, 100, 100, 0.3)',
+                boxShadow: canDecrease ? '0 0 10px rgba(0, 246, 255, 0.3)' : 'none',
+              }}
             >
-              <Minus className="h-3 w-3" aria-hidden />
+              <Minus className="h-4 w-4" aria-hidden 
+                style={{ color: canDecrease ? '#00F6FF' : '#555' }}
+              />
             </Button>
 
-            <div className="text-center min-w-[50px]" aria-live="polite">
-              <p id={quantityLabelId} className="text-2xl font-bold text-gray-900" aria-label={`Quantity ${quantity}`}>{quantity}</p>
+            <div className="text-center min-w-[60px]" aria-live="polite">
+              <p id={quantityLabelId} className="text-3xl font-bold" aria-label={`Quantity ${quantity}`}
+                style={{
+                  color: '#00F6FF',
+                  textShadow: '0 0 12px rgba(0, 246, 255, 0.6)'
+                }}
+              >
+                {quantity}
+              </p>
             </div>
 
             <Button
@@ -145,20 +235,38 @@ export default function UnifiedPriceCard({
               onClick={handleIncrease}
               disabled={!canIncrease}
               aria-label={increaseLabel}
-              className="h-8 w-8 rounded-full border-2 border-gray-300 hover:bg-mint-50 hover:border-mint-400 disabled:opacity-40 active:scale-95 transition-transform"
+              className="h-10 w-10 rounded-full transition-all duration-200"
+              style={{
+                background: canIncrease ? 'rgba(0, 246, 255, 0.08)' : 'rgba(0, 0, 0, 0.3)',
+                border: canIncrease ? '1.5px solid #00F6FF' : '1.5px solid rgba(100, 100, 100, 0.3)',
+                boxShadow: canIncrease ? '0 0 10px rgba(0, 246, 255, 0.3)' : 'none',
+              }}
             >
-              <Plus className="h-3 w-3" aria-hidden />
+              <Plus className="h-4 w-4" aria-hidden 
+                style={{ color: canIncrease ? '#00F6FF' : '#555' }}
+              />
             </Button>
           </div>
 
           <div className="flex items-center gap-2">
-            <p className="text-base font-bold text-orange-500">MAX {maxQuantity}</p>
+            <p className="text-base font-bold"
+              style={{
+                color: '#FFB443',
+                textShadow: '0 0 8px rgba(255, 180, 67, 0.4)'
+              }}
+            >
+              MAX {maxQuantity}
+            </p>
             {onUnlockClick && maxQuantity < 10 && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onUnlockClick}
-                className="h-7 px-3 text-xs font-semibold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-0 shadow-md"
+                className="h-7 px-3 text-xs font-semibold text-white border-0 transition-all duration-200"
+                style={{
+                  background: 'linear-gradient(135deg, #FF8A00 0%, #FFBD42 100%)',
+                  boxShadow: '0 0 10px rgba(255, 138, 0, 0.4)'
+                }}
               >
                 <Unlock className="w-3 h-3 mr-1" />
                 Unlock
