@@ -85,13 +85,17 @@ const SmartPickMap = memo(({
   useEffect(() => {
     const fetchMapConfig = async () => {
       try {
-        // Try environment variable first (for local dev)
-        const envKey = import.meta.env.VITE_MAPTILER_KEY || import.meta.env.NEXT_PUBLIC_MAPTILER_KEY;
-        if (envKey) {
+        // Try environment variable first (for local dev and production)
+        const envKey = import.meta.env.VITE_MAPTILER_KEY || 
+                       import.meta.env.NEXT_PUBLIC_MAPTILER_KEY ||
+                       import.meta.env.MAPTILER_KEY;
+        if (envKey && envKey !== 'your_maptiler_api_key_here') {
+          console.log('✅ Using MapTiler key from environment');
           setMapTilerKey(envKey);
           return;
         }
 
+        console.log('⏳ Fetching MapTiler key from Supabase...');
         // Fetch from Supabase app_config table
         const { data, error } = await supabase
           .from('app_config')
@@ -106,8 +110,11 @@ const SmartPickMap = memo(({
           return;
         }
 
-        if (data?.config_value) {
+        if (data?.config_value && data.config_value !== 'your_maptiler_api_key_here') {
+          console.log('✅ Using MapTiler key from Supabase');
           setMapTilerKey(data.config_value);
+        } else {
+          console.error('❌ No valid MapTiler key found');
         }
       } catch (err) {
         console.error('Error fetching map config:', err);
@@ -155,6 +162,12 @@ const SmartPickMap = memo(({
 
   // Use offers directly - they are already filtered by parent component
   useEffect(() => {
+    console.log('📍 Map received offers:', offers.length);
+    console.log('📦 Sample offers:', offers.slice(0, 3).map(o => ({ 
+      title: o.title, 
+      category: o.category,
+      hasLocation: !!(o.partner?.latitude && o.partner?.longitude)
+    })));
     setFilteredOffers(offers);
   }, [offers]);
 
@@ -163,7 +176,10 @@ const SmartPickMap = memo(({
     const locationMap: Record<string, GroupedLocation> = {};
     
     filteredOffers.forEach(offer => {
-      if (!offer.partner?.latitude || !offer.partner?.longitude) return;
+      if (!offer.partner?.latitude || !offer.partner?.longitude) {
+        console.log('⚠️ Offer missing location:', offer.title);
+        return;
+      }
       
       const key = `${offer.partner.latitude.toFixed(6)},${offer.partner.longitude.toFixed(6)}`;
       
@@ -182,7 +198,9 @@ const SmartPickMap = memo(({
       }
     });
     
-    return Object.values(locationMap);
+    const locations = Object.values(locationMap);
+    console.log('📍 Grouped locations for markers:', locations.length);
+    return locations;
   }, [filteredOffers]);
 
   // Update markers
