@@ -4,19 +4,51 @@
  */
 
 .sp-marker {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  position: relative;
   /* NO transitions or transforms - these cause drift */
 }
 
+/* Cosmic orange pulse effect */
+.sp-marker::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 138, 48, 0.3);
+  transform: translate(-50%, -50%);
+  animation: cosmic-pulse 2s ease-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes cosmic-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.8);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}
+
 .sp-marker-icon {
-  width: 60px;
-  height: 60px;
+  width: 50px;
+  height: 50px;
   filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
   /* Image itself can have effects, but no transforms */
 }
@@ -31,13 +63,13 @@
 
 /* BAKERY category - smaller size */
 .sp-marker[data-category="BAKERY"] {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 .sp-marker[data-category="BAKERY"] .sp-marker-icon {
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 /* Map overlay gradient for better contrast */

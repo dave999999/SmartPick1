@@ -182,7 +182,11 @@ export default function IndexRedesigned() {
     let filtered = [...offers];
 
     if (selectedCategory && selectedCategory !== '') {
+      console.log('🔍 Filtering by category:', selectedCategory);
+      console.log('📊 Total offers before filter:', filtered.length);
       filtered = filtered.filter(o => o.category === selectedCategory);
+      console.log('✅ Offers after filter:', filtered.length);
+      console.log('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
     }
 
     if (searchQuery.trim()) {

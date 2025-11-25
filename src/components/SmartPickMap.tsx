@@ -153,15 +153,10 @@ const SmartPickMap = memo(({
     }
   }, [mapTilerKey, showUserLocation, onLocationChange]);
 
-  // Filter offers based on selected category
+  // Use offers directly - they are already filtered by parent component
   useEffect(() => {
-    if (selectedCategory && selectedCategory !== '') {
-      const filtered = offers.filter(o => o.category === selectedCategory);
-      setFilteredOffers(filtered);
-    } else {
-      setFilteredOffers(offers);
-    }
-  }, [offers, selectedCategory]);
+    setFilteredOffers(offers);
+  }, [offers]);
 
   // Group offers by location
   const groupedLocations = useMemo((): GroupedLocation[] => {
