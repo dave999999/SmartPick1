@@ -20,7 +20,7 @@ const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').th
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
 import { MapSectionNew } from '@/components/home/MapSectionNew';
 import { RestaurantFoodSectionNew } from '@/components/home/RestaurantFoodSectionNew';
-import { BottomNavBarNew } from '@/components/home/BottomNavBarNew';
+import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import { DraggableBottomSheet } from '@/components/home/DraggableBottomSheet';
 import PartnerOffersModal from '@/components/PartnerOffersModal';
@@ -337,7 +337,7 @@ export default function IndexRedesigned() {
                     background: 'linear-gradient(to bottom, #050A12 0%, #0C1623 100%)',
                     boxShadow: '0 -8px 32px rgba(0, 246, 255, 0.15), 0 -4px 16px rgba(0, 0, 0, 0.7)',
                     borderTop: '1px solid rgba(0, 246, 255, 0.2)',
-                    paddingBottom: 'max(80px, env(safe-area-inset-bottom) + 80px)',
+                    paddingBottom: 'max(20px, env(safe-area-inset-bottom) + 20px)',
                   }}
                 >
                   <div className="text-6xl mb-4">🔍</div>
@@ -358,19 +358,19 @@ export default function IndexRedesigned() {
               )}
 
               {/* Search Bar Overlay */}
-              <div className="absolute top-3 left-4 right-20 md:right-24 z-50">
+              <div className="absolute top-3 left-20 right-20 md:right-24 z-50">
                 <TopSearchBarRedesigned 
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onFilterClick={() => setShowFilterDrawer(true)} 
                 />
               </div>
+
+              {/* Floating Vertical Navigation */}
+              <VerticalNav />
             </>
           )}
         </div>
-
-        {/* Bottom Navigation */}
-        <BottomNavBarNew />
 
         {/* Filter Drawer */}
         <FilterDrawer

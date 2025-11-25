@@ -142,7 +142,7 @@ export function DraggableBottomSheet({
         boxShadow: '0 -8px 32px rgba(0, 246, 255, 0.15), 0 -4px 16px rgba(0, 0, 0, 0.7)',
         borderTop: '1px solid rgba(0, 246, 255, 0.2)',
         transform: isDragging ? 'none' : undefined,
-        paddingBottom: 'max(80px, env(safe-area-inset-bottom) + 80px)',
+        paddingBottom: 'max(20px, env(safe-area-inset-bottom) + 20px)',
       }}
     >
       {/* Swipe Handle */}
