@@ -168,14 +168,14 @@ const AppContent = () => {
         if (!user || cancelled) return;
 
         const { supabase } = await import('./lib/supabase');
-        const { data: userProfile } = await supabase
-          .from('users')
-          .select('points')
-          .eq('id', (user as any).id)
+        const { data: userPoints } = await supabase
+          .from('user_points')
+          .select('balance')
+          .eq('user_id', (user as any).id)
           .single();
 
         if (cancelled) return;
-        setUserPoints(userProfile?.points || 0);
+        setUserPoints(userPoints?.balance || 0);
 
         const activePenalty = await getActivePenalty((user as any).id);
         if (cancelled) return;
@@ -313,12 +313,12 @@ const AppContent = () => {
             const { user } = await getCurrentUser();
             if (user) {
               const { supabase } = await import('./lib/supabase');
-              const { data: userProfile } = await supabase
-                .from('users')
-                .select('points')
-                .eq('id', (user as any).id)
+              const { data: userPoints } = await supabase
+                .from('user_points')
+                .select('balance')
+                .eq('user_id', (user as any).id)
                 .single();
-              setUserPoints(userProfile?.points || 0);
+              setUserPoints(userPoints?.balance || 0);
             }
           }}
         />
