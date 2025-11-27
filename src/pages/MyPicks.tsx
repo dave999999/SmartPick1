@@ -345,6 +345,8 @@ export default function MyPicks() {
         return <Badge className="bg-gray-100 text-gray-800">{t('status.EXPIRED')}</Badge>;
       case 'CANCELLED':
         return <Badge className="bg-red-100 text-red-800">{t('status.CANCELLED')}</Badge>;
+      case 'FAILED_PICKUP':
+        return <Badge className="bg-orange-100 text-orange-800 border border-orange-300">❌ Missed Pickup</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -368,7 +370,7 @@ export default function MyPicks() {
   };
 
   const activeReservations = reservations.filter(r => r.status === 'ACTIVE');
-  const historyReservations = reservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED'].includes(r.status));
+  const historyReservations = reservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED', 'FAILED_PICKUP'].includes(r.status));
 
   if (loading) {
     return (
