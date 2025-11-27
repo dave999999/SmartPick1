@@ -29,17 +29,17 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isLifting, setIsLifting] = useState(false);
   const [showForgivenessModal, setShowForgivenessModal] = useState(false);
-  const [acknowledged, setAcknowledged] = useState(penalty.acknowledged);
+  const [acknowledged, setAcknowledged] = useState(penalty?.acknowledged || false);
 
-  const hasEnoughPoints = userPoints >= penalty.points_required;
+  const hasEnoughPoints = userPoints >= (penalty?.points_required || 0);
 
   // Live countdown timer
   useEffect(() => {
-    if (!penalty.suspended_until) return;
+    if (!penalty?.suspended_until) return;
 
     const interval = setInterval(() => {
       const now = new Date();
-      const end = new Date(penalty.suspended_until);
+      const end = new Date(penalty.suspended_until!);
       const diff = end.getTime() - now.getTime();
 
       if (diff <= 0) {
@@ -62,6 +62,8 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   }, [penalty.suspended_until, onPenaltyLifted]);
 
   const handleLiftWithPoints = async () => {
+    if (!penalty?.id || !penalty?.user_id) return;
+    
     if (!hasEnoughPoints) {
       toast.error('Not enough SmartPoints to lift this ban');
       return;
@@ -87,6 +89,8 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   };
 
   const handleAcknowledge = async () => {
+    if (!penalty?.id || !penalty?.user_id) return;
+    
     const success = await acknowledgePenalty(penalty.id, penalty.user_id);
     if (success) {
       setAcknowledged(true);
@@ -95,7 +99,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   };
 
   const getPenaltyDescription = () => {
-    switch (penalty.offense_number) {
+    switch (penalty?.offense_number) {
       case 1:
         return 'First warning - No suspension';
       case 2:
@@ -110,7 +114,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   };
 
   const getNextOffenseWarning = () => {
-    switch (penalty.offense_number) {
+    switch (penalty?.offense_number) {
       case 1:
         return '⚠️ Next offense: 1 hour ban (100 pts to lift)';
       case 2:
@@ -125,7 +129,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   };
 
   // Warning screen (1st offense)
-  if (penalty.offense_number === 1) {
+  if (penalty?.offense_number === 1) {
     return (
       <Dialog open={true} onOpenChange={() => {}}>
         <DialogContent className="max-w-lg">
@@ -185,7 +189,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
             </div>
 
             {/* Live Countdown */}
-            {penalty.suspended_until && penalty.offense_number < 4 && (
+            {penalty?.suspended_until && penalty.offense_number < 4 && (
               <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-6">
                 <Clock className="w-12 h-12 text-orange-500 mx-auto mb-2" />
                 <p className="text-sm text-gray-600 mb-1">Suspension ends in:</p>
@@ -199,7 +203,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
             )}
 
             {/* Permanent ban message */}
-            {penalty.offense_number === 4 && (
+            {penalty?.offense_number === 4 && (
               <div className="bg-gray-900 text-white rounded-lg p-6">
                 <h3 className="text-xl font-bold mb-2">🔒 Permanent Ban</h3>
                 <p>Your account has been permanently banned due to repeated missed reservations.</p>
@@ -210,12 +214,12 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
             <Separator />
 
             {/* Lift ban options (2nd & 3rd offense only) */}
-            {penalty.offense_number < 4 && (
+            {penalty?.offense_number && penalty.offense_number < 4 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">🔓 Lift Ban Options:</h3>
 
                 {/* Option 1: Pay with points */}
-                {penalty.can_lift_with_points && (
+                {penalty?.can_lift_with_points && (
                   <Card className={hasEnoughPoints ? 'border-green-500 bg-green-50' : 'border-gray-300'}>
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
@@ -225,7 +229,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
                         <div className="flex-1 text-left">
                           <h4 className="font-semibold text-lg">1️⃣ Pay with SmartPoints</h4>
                           <p className="text-sm text-gray-600 mt-1">
-                            💎 {penalty.points_required} SmartPoints → Instant unban
+                            💎 {penalty?.points_required || 0} SmartPoints → Instant unban
                           </p>
                           <p className="text-sm mt-2">
                             Your balance: <span className="font-bold">{userPoints} points</span>
@@ -233,7 +237,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
                               <span className="text-green-600 ml-2">✅ Sufficient</span>
                             ) : (
                               <span className="text-red-600 ml-2">
-                                ❌ Need {penalty.points_required - userPoints} more
+                                ❌ Need {(penalty?.points_required || 0) - userPoints} more
                               </span>
                             )}
                           </p>
@@ -246,7 +250,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
                             {isLifting
                               ? 'Processing...'
                               : hasEnoughPoints
-                              ? `Pay ${penalty.points_required} Points to Lift Ban`
+                              ? `Pay ${penalty?.points_required || 0} Points to Lift Ban`
                               : 'Not Enough Points'}
                           </Button>
                         </div>
@@ -256,8 +260,8 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
                 )}
 
                 {/* Option 2: Request forgiveness */}
-                {!penalty.forgiveness_requested &&
-                  penalty.forgiveness_expires_at &&
+                {!penalty?.forgiveness_requested &&
+                  penalty?.forgiveness_expires_at &&
                   new Date(penalty.forgiveness_expires_at) > new Date() && (
                     <Card className="border-blue-500 bg-blue-50">
                       <CardContent className="p-6">
@@ -287,7 +291,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
                   )}
 
                 {/* Forgiveness pending */}
-                {penalty.forgiveness_requested && penalty.forgiveness_status === 'pending' && (
+                {penalty?.forgiveness_requested && penalty?.forgiveness_status === 'pending' && (
                   <Card className="border-yellow-500 bg-yellow-50">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-3">
