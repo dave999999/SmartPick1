@@ -17,6 +17,7 @@ interface SmartPickMapProps {
   onCategorySelect?: (category: string) => void;
   highlightedOfferId?: string;
   onLocationChange?: (location: [number, number] | null) => void;
+  userLocation?: [number, number] | null;
   showUserLocation?: boolean;
 }
 
@@ -79,14 +80,23 @@ const SmartPickMap = memo(({
   onMarkerClick,
   selectedCategory,
   onLocationChange,
+  userLocation: externalUserLocation,
   showUserLocation = false
 }: SmartPickMapProps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
-  const [, setUserLocation] = useState<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(externalUserLocation || null);
   const [mapTilerKey, setMapTilerKey] = useState<string | null>(null);
+
+  // Sync external userLocation with internal state
+  useEffect(() => {
+    if (externalUserLocation) {
+      setUserLocation(externalUserLocation);
+    }
+  }, [externalUserLocation]);
 
   // Fetch MapTiler API key from Supabase
   useEffect(() => {
@@ -296,6 +306,66 @@ const SmartPickMap = memo(({
     };
   }, [groupedLocations, onMarkerClick]);
 
+  // Show user location marker
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !userLocation) return;
+
+    // Remove existing user marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+    }
+
+    // Create user location marker element
+    const el = document.createElement('div');
+    el.className = 'user-location-marker';
+    el.style.cssText = `
+      width: 20px;
+      height: 20px;
+      background: #4285F4;
+      border: 3px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      cursor: pointer;
+    `;
+
+    // Add pulsing ring
+    const ring = document.createElement('div');
+    ring.style.cssText = `
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: rgba(66, 133, 244, 0.3);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      animation: pulse 2s infinite;
+    `;
+    el.appendChild(ring);
+
+    // Add marker
+    const marker = new maplibregl.Marker({ element: el })
+      .setLngLat([userLocation[1], userLocation[0]])
+      .addTo(map);
+
+    userMarkerRef.current = marker;
+
+    // Center map on user location with appropriate zoom for 4-5km radius
+    map.flyTo({
+      center: [userLocation[1], userLocation[0]],
+      zoom: 13, // This shows approximately 4-5km radius
+      duration: 1500
+    });
+
+    return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+    };
+  }, [userLocation]);
+
   // Handle "Near Me" button
   const handleNearMe = () => {
     if (!('geolocation' in navigator)) {
@@ -364,6 +434,22 @@ const SmartPickMap = memo(({
 
         .sp-marker:active {
           opacity: 0.8;
+        }
+
+        /* User location marker pulse animation */
+        @keyframes pulse {
+          0% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% {
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(1.5);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(2);
+          }
         }
 
         .maplibregl-popup-content {

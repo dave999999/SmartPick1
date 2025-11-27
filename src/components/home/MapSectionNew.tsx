@@ -15,6 +15,7 @@ interface MapSectionNewProps {
   selectedCategory: string;
   onCategorySelect: (category: string) => void;
   onLocationChange: (location: [number, number] | null) => void;
+  userLocation?: [number, number] | null;
 }
 
 export function MapSectionNew({
@@ -24,6 +25,7 @@ export function MapSectionNew({
   selectedCategory,
   onCategorySelect,
   onLocationChange,
+  userLocation,
 }: MapSectionNewProps) {
   return (
     <div className="relative w-full h-full">
@@ -44,6 +46,7 @@ export function MapSectionNew({
             selectedCategory={selectedCategory}
             onCategorySelect={onCategorySelect}
             onLocationChange={onLocationChange}
+            userLocation={userLocation}
             showUserLocation
           />
         </Suspense>

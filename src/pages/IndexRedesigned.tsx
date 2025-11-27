@@ -349,6 +349,7 @@ export default function IndexRedesigned() {
                   selectedCategory={selectedCategory}
                   onCategorySelect={setSelectedCategory}
                   onLocationChange={setUserLocation}
+                  userLocation={userLocation}
                 />
               </div>
 
