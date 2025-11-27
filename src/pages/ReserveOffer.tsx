@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Offer, PenaltyInfo } from '@/lib/types';
 import { getOfferById, createReservation, getCurrentUser, checkUserPenalty } from '@/lib/api';
+import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty'; // NEW: Import new penalty system
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { requestQueue } from '@/lib/requestQueue';
@@ -17,6 +18,8 @@ import { ArrowLeft, Clock, MapPin, AlertCircle, Minus, Plus } from 'lucide-react
 import { useI18n } from '@/lib/i18n';
 import { updateMetaTags } from '@/lib/social-share';
 import { logger } from '@/lib/logger';
+import { PenaltyModal } from '@/components/PenaltyModal'; // NEW: Import penalty modal
+import { supabase } from '@/lib/supabase'; // NEW: For getting user points
 
 export default function ReserveOffer() {
   const { offerId } = useParams<{ offerId: string }>();
@@ -30,10 +33,16 @@ export default function ReserveOffer() {
   const { t } = useI18n();
   const isOnline = useOnlineStatus();
   const { subscribeToPush, isSupported: pushSupported } = usePushNotifications();
+  
+  // NEW: Penalty modal state
+  const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+  const [penaltyData, setPenaltyData] = useState<any>(null);
+  const [userPoints, setUserPoints] = useState(0);
 
   useEffect(() => {
     loadOffer();
     loadPenaltyInfo();
+    checkPenaltyStatus(); // NEW: Check new penalty system on mount
   }, [offerId]);
 
   useEffect(() => {
@@ -90,6 +99,33 @@ export default function ReserveOffer() {
       setPenaltyInfo(info);
     } catch (error) {
       logger.error('Error loading penalty info:', error);
+    }
+  };
+  
+  // NEW: Check new penalty system
+  const checkPenaltyStatus = async () => {
+    try {
+      const { user } = await getCurrentUser();
+      if (!user) return;
+      
+      const result = await canUserReserve(user.id);
+      
+      if (!result.can_reserve && result.penalty_id) {
+        const penalty = await getPenaltyDetails(result.penalty_id);
+        
+        // Get user points
+        const { data: points } = await supabase
+          .from('user_points')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single();
+        
+        setPenaltyData(penalty);
+        setUserPoints(points?.balance || 0);
+        setShowPenaltyModal(true);
+      }
+    } catch (error) {
+      logger.error('Error checking penalty status:', error);
     }
   };
 
@@ -190,6 +226,32 @@ export default function ReserveOffer() {
       navigate(`/reservation/${reservation.id}`);
     } catch (error) {
       logger.error('Error creating reservation:', error);
+      
+      // NEW: Check if it's a penalty error
+      try {
+        const errorMessage = error instanceof Error ? error.message : '';
+        const errorData = JSON.parse(errorMessage);
+        if (errorData.type === 'PENALTY_BLOCKED') {
+          setPenaltyData(errorData.penalty);
+          
+          // Get user points
+          const { user } = await getCurrentUser();
+          if (user) {
+            const { data: points } = await supabase
+              .from('user_points')
+              .select('balance')
+              .eq('user_id', user.id)
+              .single();
+            setUserPoints(points?.balance || 0);
+          }
+          
+          setShowPenaltyModal(true);
+          return;
+        }
+      } catch {
+        // Not a penalty error, continue with regular error handling
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
     } finally {
@@ -465,6 +527,20 @@ export default function ReserveOffer() {
           </p>
         </div>
       </div>
+      
+      {/* NEW: Penalty Modal */}
+      {showPenaltyModal && penaltyData && (
+        <PenaltyModal
+          penalty={penaltyData}
+          userPoints={userPoints}
+          onClose={() => setShowPenaltyModal(false)}
+          onPenaltyLifted={() => {
+            setShowPenaltyModal(false);
+            checkPenaltyStatus(); // Refresh penalty status
+            loadPenaltyInfo(); // Refresh old penalty info too
+          }}
+        />
+      )}
     </div>
   );
 }

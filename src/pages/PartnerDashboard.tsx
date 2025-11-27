@@ -67,6 +67,7 @@ import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
 import ForgivenessRequests from '@/components/partner/ForgivenessRequests';
+import PenaltyForgivenessTab from '@/components/partner/PenaltyForgivenessTab';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { useI18n } from '@/lib/i18n';
@@ -1384,6 +1385,9 @@ export default function PartnerDashboard() {
               onDeny={handleDenyForgivenessRequest}
               processingIds={processingIds}
             />
+
+            {/* NEW: Penalty-based Forgiveness Requests */}
+            {partner?.id && <PenaltyForgivenessTab partnerId={partner.id} />}
           </div>
         )}
             </div>
