@@ -320,10 +320,10 @@ const SmartPickMap = memo(({
     const el = document.createElement('div');
     el.className = 'user-location-marker';
     el.style.cssText = `
-      width: 20px;
-      height: 20px;
-      background: #4285F4;
-      border: 3px solid white;
+      width: 14px;
+      height: 14px;
+      background: #FF8A00;
+      border: 2px solid white;
       border-radius: 50%;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
       cursor: pointer;
@@ -333,9 +333,9 @@ const SmartPickMap = memo(({
     const ring = document.createElement('div');
     ring.style.cssText = `
       position: absolute;
-      width: 40px;
-      height: 40px;
-      background: rgba(66, 133, 244, 0.3);
+      width: 32px;
+      height: 32px;
+      background: rgba(255, 138, 0, 0.3);
       border-radius: 50%;
       top: 50%;
       left: 50%;
@@ -351,10 +351,10 @@ const SmartPickMap = memo(({
 
     userMarkerRef.current = marker;
 
-    // Center map on user location with appropriate zoom for 4-5km radius
+    // Center map on user location with appropriate zoom for 10km radius
     map.flyTo({
       center: [userLocation[1], userLocation[0]],
-      zoom: 13, // This shows approximately 4-5km radius
+      zoom: 12, // This shows approximately 10km radius
       duration: 1500
     });
 

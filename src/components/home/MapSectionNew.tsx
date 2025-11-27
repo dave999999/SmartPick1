@@ -55,7 +55,7 @@ export function MapSectionNew({
       {/* Center Location Button - Premium Dark Style */}
       <button
         className="
-          absolute top-[40%] right-4 -translate-y-1/2 z-30
+          absolute top-[25%] right-4 -translate-y-1/2 z-30
           bg-sp-surface-glass backdrop-blur-xl
           rounded-full p-3
           border border-sp-border-soft
