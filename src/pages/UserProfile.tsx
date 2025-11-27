@@ -805,7 +805,7 @@ export default function UserProfile() {
             <BuyPointsModal
               isOpen={isBuyPointsModalOpen}
               onClose={() => setIsBuyPointsModalOpen(false)}
-              currentBalance={user.user_points || 0}
+              currentBalance={0}
               userId={user.id}
             />
           </TabsContent>
@@ -891,7 +891,7 @@ export default function UserProfile() {
             {/* RESERVATION CAPACITY */}
             <ReservationCapacitySection
               userId={user.id}
-              currentBalance={userStats?.currentBalance || 0}
+              currentBalance={0}
               onBalanceChange={loadUser}
             />
 
@@ -964,7 +964,7 @@ export default function UserProfile() {
                     <div className="flex items-center gap-2 mb-2">
                       <Key className="w-4 h-4 text-purple-400" />
                       <span className="text-sm font-medium text-white">
-                        {user?.email?.includes('@') && !user?.app_metadata?.provider ? 'Change Password' : 'Set Password'}
+                        {user?.email?.includes('@') && !(user as any)?.app_metadata?.provider ? 'Change Password' : 'Set Password'}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -1214,7 +1214,7 @@ export default function UserProfile() {
       <OnboardingDialog
         open={showTutorial}
         onComplete={() => setShowTutorial(false)}
-        userName={user?.full_name || 'there'}
+        userName={(user as any)?.full_name || (user as any)?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there'}
       />
     </div>
   );

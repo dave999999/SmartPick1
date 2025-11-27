@@ -20,7 +20,7 @@ export function NavBar({ user, isPartner, onSignOut, onAuthClick, onFilterClick 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-slate-900/85 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 shadow-lg">
+    <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-gray-200 dark:border-white/10 sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between">
         {/* Logo */}
         <button

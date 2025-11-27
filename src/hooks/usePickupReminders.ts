@@ -86,8 +86,14 @@ export function usePickupReminders() {
       badge: '/icon1.png',
       tag: `pickup-${reservation.id}`, // Prevents duplicate notifications
       requireInteraction: true, // Stays visible until user interacts
-      vibrate: [200, 100, 200], // Vibration pattern
     });
+
+    // Trigger vibration separately where supported
+    // @ts-ignore - some environments support navigator.vibrate
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      // @ts-ignore
+      navigator.vibrate?.([200, 100, 200]);
+    }
 
     notification.onclick = () => {
       window.focus();

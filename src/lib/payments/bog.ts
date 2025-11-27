@@ -263,19 +263,13 @@ export class BOGPaymentClient {
    */
   async getPaymentStatus(paymentId: string): Promise<BOGPaymentStatusResponse> {
     try {
-      const payload = {
-        merchant_id: this.config.publicKey,
-        secret_key: this.config.secretKey,
-        payment_id: paymentId,
-      };
-
+      // Use OAuth 2.0 Bearer token like other endpoints
+      const accessToken = await this.getAccessToken();
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
       };
-
-      if (this.config.authKey) {
-        headers['Auth-Key'] = this.config.authKey;
-      }
 
       const response = await fetch(`${this.config.paymentsApiUrl}/${paymentId}`, {
         method: 'GET',

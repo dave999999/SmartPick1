@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Partner, Offer, Reservation, PartnerPoints } from '@/lib/types';
+import { Partner, Offer, Reservation } from '@/lib/types';
+import type { PartnerPoints } from '@/lib/api';
 import {
   getPartnerByUserId,
   getPartnerOffers,

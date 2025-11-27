@@ -58,16 +58,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import Plus from 'lucide-react/dist/esm/icons/plus';
-import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
-import QrCode from 'lucide-react/dist/esm/icons/qr-code';
-import LogOut from 'lucide-react/dist/esm/icons/log-out';
-import Lock from 'lucide-react/dist/esm/icons/lock';
-import User from 'lucide-react/dist/esm/icons/user';
-import Home from 'lucide-react/dist/esm/icons/home';
-import Wallet from 'lucide-react/dist/esm/icons/wallet';
-import Camera from 'lucide-react/dist/esm/icons/camera';
-import { Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
+import { Plus, CheckCircle, QrCode, LogOut, Lock, User, Home, Wallet, Camera, Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import QRScanner from '@/components/QRScanner';
@@ -307,7 +298,7 @@ export default function PartnerDashboard() {
           getPartnerOffers(partnerData.id),
           getPartnerReservations(partnerData.id),
           getPartnerStats(partnerData.id),
-          getPartnerPoints(user.id),
+          getPartnerPoints(partnerData.user_id),
         ]);
 
         setOffers(offersData);

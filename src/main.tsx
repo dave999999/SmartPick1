@@ -43,7 +43,7 @@ const isMaintenance = import.meta.env.PROD && String(import.meta.env.VITE_MAINTE
 createRoot(document.getElementById('root')!).render(
   isMaintenance ? (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark" storageKey="smartpick-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="smartpick-ui-theme">
         <I18nProvider>
           <Maintenance />
         </I18nProvider>
@@ -51,7 +51,7 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   ) : (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark" storageKey="smartpick-ui-theme">
+      <ThemeProvider defaultTheme="light" storageKey="smartpick-ui-theme">
         <I18nProvider>
           <App />
           {/* 👇 Speed Insights runs on every page */}

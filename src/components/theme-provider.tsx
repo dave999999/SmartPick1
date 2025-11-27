@@ -26,32 +26,41 @@ export function ThemeProvider({
   storageKey = 'smartpick-ui-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+  const [theme, setThemeState] = useState<Theme>(
+    () => {
+      // Always use light theme
+      console.log('[ThemeProvider init] Forcing light theme');
+      return 'light';
+    }
   );
 
   useEffect(() => {
     const root = window.document.documentElement;
-
+    
+    // Always apply light theme
     root.classList.remove('light', 'dark');
-
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light';
-
-      root.classList.add(systemTheme);
-      return;
-    }
-
-    root.classList.add(theme);
+    root.classList.add('light');
+    console.log('[ThemeProvider] Light theme applied');
   }, [theme]);
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme);
-      setTheme(theme);
+    setTheme: (newTheme: Theme) => {
+      console.log('[ThemeProvider] setTheme called:', { old: theme, new: newTheme });
+      localStorage.setItem(storageKey, newTheme);
+      setThemeState(newTheme);
+      
+      // Force immediate DOM update as backup
+      setTimeout(() => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        if (newTheme !== 'system') {
+          root.classList.add(newTheme);
+          console.log('[ThemeProvider] Force applied class:', newTheme, 'Classes:', root.className);
+        }
+      }, 0);
+      
+      console.log('[ThemeProvider] Theme updated, localStorage:', localStorage.getItem(storageKey));
     },
   };
 

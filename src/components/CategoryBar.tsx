@@ -1,6 +1,5 @@
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
-import { BusinessType } from '@/lib/types';
 import { getAllCategories } from '@/lib/categories';
 
 interface CategoryBarProps {
@@ -58,7 +57,7 @@ export default function CategoryBar({ selectedCategory, onCategorySelect }: Cate
       </div>
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

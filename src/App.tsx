@@ -46,15 +46,7 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => 
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const VerifyRequested = lazy(() => import('./pages/VerifyRequested').then(module => ({ default: module.VerifyRequested })));
 
-// Lazy load leaflet CSS only when map is needed
-const loadLeafletCSS = () => {
-  if (!document.querySelector('link[href*="leaflet.css"]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-  }
-};
+// (Removed unused loadLeafletCSS helper)
 
 // Loading fallback component
 const PageLoader = () => (
@@ -222,7 +214,7 @@ const AppContent = () => {
             path="/reserve/:offerId" 
             element={
               <Suspense fallback={<PageLoader />}>
-                <ReserveOffer onMount={loadLeafletCSS} />
+                <ReserveOffer />
               </Suspense>
             } 
           />

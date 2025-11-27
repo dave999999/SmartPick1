@@ -87,7 +87,7 @@ export default function SplashScreen() {
       </div>
 
       {/* Global styles for animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes fade-in {
           from {
             opacity: 0;

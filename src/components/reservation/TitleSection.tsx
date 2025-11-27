@@ -25,73 +25,28 @@ export default function TitleSection({
   onShareInstagram
 }: TitleSectionProps) {
   return (
-    <div className="space-y-2">
-      {/* How To Flow - NEON GLOWING CAPSULE BUTTONS */}
-      <div className="flex items-center justify-center gap-2 py-1">
-        {/* Reserve Button - Orange Gradient with Glow */}
-        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full transition-all duration-200"
-          style={{
-            background: 'linear-gradient(135deg, #FF8A00 0%, #FFBD42 100%)',
-            boxShadow: '0 0 12px rgba(255, 138, 0, 0.5), 0 4px 12px rgba(255, 138, 0, 0.3)',
-          }}
-        >
-          <div className="rounded-full p-1">
-            <span className="text-base">💰</span>
-          </div>
-          <span className="text-xs font-bold text-white">Reserve</span>
-        </div>
-
-        <ArrowRight className="h-4 w-4 text-[#00F6FF]" strokeWidth={3} />
-
-        {/* Pickup Button - Neon Teal Border */}
-        <div className="flex items-center gap-1.5 px-4 py-2 rounded-full transition-all duration-200"
-          style={{
-            background: 'rgba(0, 246, 255, 0.05)',
-            border: '1.5px solid #00F6FF',
-            boxShadow: '0 0 10px rgba(0, 246, 255, 0.4)',
-          }}
-        >
-          <div className="rounded-full p-1">
-            <MapPin className="h-4 w-4" style={{ color: '#00F6FF' }} />
-          </div>
-          <span className="text-xs font-bold" style={{ color: '#00F6FF' }}>Pickup</span>
-        </div>
-      </div>
-
+    <div className="space-y-2.5 px-5 pt-5 pb-3">
       {/* Product name with time badge */}
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-bold text-white flex-1"
-          style={{
-            textShadow: '0 0 8px rgba(0, 246, 255, 0.3)'
-          }}
-        >
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-[17px] font-semibold text-[#111] flex-1 leading-tight">
           {title}
         </h3>
         {timeRemaining && (
-          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-            isExpiringSoon
-              ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
-              : 'bg-[#00F6FF]/20 border border-[#00F6FF]/30'
-          }`}
-            style={{
-              color: isExpiringSoon ? '#FFB443' : '#00F6FF',
-              boxShadow: isExpiringSoon ? '0 0 8px rgba(255, 138, 0, 0.3)' : '0 0 8px rgba(0, 246, 255, 0.3)'
-            }}
-          >
+          <div className="bg-green-100 text-green-700 rounded-full text-xs font-medium px-2 py-0.5 whitespace-nowrap flex items-center gap-1 flex-shrink-0">
             <Clock className="h-3 w-3" />
-            <span>{timeRemaining} left</span>
+            <span>{timeRemaining}</span>
           </div>
         )}
       </div>
 
-      {/* Product description with neon teal shadow */}
-      {description && (
-        <p className="text-xs text-gray-400 leading-relaxed"
-          style={{
-            textShadow: '0 0 4px rgba(0, 246, 255, 0.15)'
-          }}
-        >
+      {/* Product description or fallback */}
+      {description ? (
+        <p className="text-sm text-gray-600 leading-relaxed">
           {description}
+        </p>
+      ) : (
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Ready for pickup. Limited stock.
         </p>
       )}
     </div>

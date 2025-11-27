@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Package, Clock, CheckCircle, Banknote, TrendingUp, TrendingDown } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface StatsData {
   activeOffers: number;
@@ -83,7 +84,7 @@ export default function EnhancedStatsCards({ stats, className = '', activeView =
   return (
     <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 ${className}`}>
       {statsCards.map((stat, index) => {
-        const Icon = stat.icon as React.ComponentType<{ className?: string }>;
+        const Icon = stat.icon as LucideIcon;
         const isActive = activeView === stat.view;
         const hasTrend = stat.trend !== undefined && stat.trend !== 0;
         const isPositiveTrend = stat.trend && stat.trend > 0;

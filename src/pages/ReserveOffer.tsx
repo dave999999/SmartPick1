@@ -164,7 +164,7 @@ export default function ReserveOffer() {
       if (pushSupported) {
         try {
           // Check if this is user's first reservation
-          const allReservations = await indexedDBManager.getAll(STORES.RESERVATIONS);
+          const allReservations = await indexedDBManager.getAll(STORES.RESERVATIONS) as unknown as import('@/lib/types').Reservation[];
           const userReservations = allReservations.filter(r => r.customer_id === user.id);
           
           if (userReservations.length === 1) { // First reservation
@@ -246,14 +246,14 @@ export default function ReserveOffer() {
     new Date(offer.expires_at).getTime() - new Date().getTime() < 60 * 60 * 1000;
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] safe-area">
+    <div className="min-h-screen bg-white safe-area">
       {/* Header */}
-      <header className="bg-[#2a2a2a] border-b border-gray-800">
+      <header className="bg-white border-b border-gray-200">
         <div className="container mx-auto px-4 py-4">
           <Button 
             variant="ghost" 
             onClick={() => navigate('/')} 
-            className="text-white hover:bg-gray-800"
+            className="text-gray-900 hover:bg-gray-100"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             {t('header.backToOffers')}
@@ -279,8 +279,8 @@ export default function ReserveOffer() {
         {/* Content Card */}
         <div className="space-y-4">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">{offer.title}</h1>
-            <p className="text-gray-400">{offer.partner?.business_name}</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">{offer.title}</h1>
+            <p className="text-gray-600">{offer.partner?.business_name}</p>
           </div>
 
           {/* Penalty Warning */}
@@ -307,26 +307,26 @@ export default function ReserveOffer() {
             </Alert>
           )}
 
-          <p className="text-gray-300 mb-6">{offer.description}</p>
+          <p className="text-gray-700 mb-6">{offer.description}</p>
 
           {/* Pricing Card */}
-          <div className="bg-[#2a2a2a] p-5 rounded-2xl mb-4">
+          <div className="bg-gray-50 p-5 rounded-2xl mb-4 border border-gray-200">
             {/* Top Bar: Balance & Current Price */}
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-700">
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center">
                   <span className="text-white text-sm font-bold">₾</span>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400">Your Balance</p>
-                  <p className="text-xl font-bold text-white">4,386</p>
+                  <p className="text-xs text-gray-500">Your Balance</p>
+                  <p className="text-xl font-bold text-gray-900">4,386</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-400 mb-1">Current Price</p>
+                <p className="text-xs text-gray-500 mb-1">Current Price</p>
                 <div className="flex items-baseline gap-2 justify-end">
-                  <span className="text-2xl font-bold text-mint-400">{offer.smart_price.toFixed(2)}</span>
-                  <span className="text-sm text-gray-400">GEL</span>
+                  <span className="text-2xl font-bold" style={{color: '#4CAF50'}}>{offer.smart_price.toFixed(2)}</span>
+                  <span className="text-sm text-gray-500">GEL</span>
                 </div>
               </div>
             </div>
@@ -334,32 +334,32 @@ export default function ReserveOffer() {
             {/* Bottom: Cost & Original Price */}
             <div className="flex items-start justify-between gap-8">
               <div className="flex-1">
-                <p className="text-xs text-gray-400 mb-1">Cost</p>
-                <p className="text-2xl font-bold text-orange-400">{quantity * 5} points</p>
+                <p className="text-xs text-gray-500 mb-1">Cost</p>
+                <p className="text-2xl font-bold text-orange-500">{quantity * 5} points</p>
               </div>
               
               <div className="flex-1 text-right">
-                <p className="text-xs text-gray-400 mb-1">Original Price</p>
+                <p className="text-xs text-gray-500 mb-1">Original Price</p>
                 <div className="flex items-baseline gap-2 justify-end">
-                  <span className="text-xl font-bold text-gray-500 line-through">{offer.original_price.toFixed(2)}</span>
-                  <span className="text-sm text-gray-500">GEL</span>
+                  <span className="text-xl font-bold text-gray-400 line-through">{offer.original_price.toFixed(2)}</span>
+                  <span className="text-sm text-gray-400">GEL</span>
                 </div>
               </div>
             </div>
-            <div className="text-center bg-blue-500/10 text-blue-400 text-xs px-3 py-2 rounded-lg mt-4">
+            <div className="text-center bg-blue-50 text-blue-600 text-xs px-3 py-2 rounded-lg mt-4">
               💳 Pay at pickup
             </div>
           </div>
 
           {/* Quantity Selector */}
-          <div className="bg-[#2a2a2a] p-5 rounded-2xl mb-4">
+          <div className="bg-gray-50 p-5 rounded-2xl mb-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 disabled={quantity <= 1 || penaltyInfo?.isUnderPenalty}
-                className="min-w-[44px] min-h-[44px] rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+                className="min-w-[44px] min-h-[44px] rounded-full bg-gray-200 hover:bg-gray-300 text-gray-900"
                 aria-label="Decrease quantity"
               >
                 <Minus className="h-5 w-5" />
@@ -381,16 +381,16 @@ export default function ReserveOffer() {
                     }
                   }}
                   disabled={penaltyInfo?.isUnderPenalty}
-                  className="text-4xl font-bold text-white mb-1 bg-transparent text-center w-20 focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-lg"
+                  className="text-4xl font-bold text-gray-900 mb-1 bg-transparent text-center w-20 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg"
                 />
-                <div className="text-xs text-gray-400 uppercase tracking-wider">MAX {maxQuantity}</div>
+                <div className="text-xs text-gray-500 uppercase tracking-wider">MAX {maxQuantity}</div>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                 disabled={quantity >= maxQuantity || penaltyInfo?.isUnderPenalty}
-                className="min-w-[44px] min-h-[44px] rounded-full bg-gray-700 hover:bg-gray-600 text-white"
+                className="min-w-[44px] min-h-[44px] rounded-full bg-gray-200 hover:bg-gray-300 text-gray-900"
                 aria-label="Increase quantity"
               >
                 <Plus className="h-5 w-5" />
@@ -398,7 +398,7 @@ export default function ReserveOffer() {
             </div>
             <div className="flex items-center justify-center gap-2 mt-3">
               <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-orange-400 font-medium">
+              <span className="text-sm text-orange-500 font-medium">
                 {offer.quantity_available} {t('offer.availableSuffix')}
               </span>
             </div>
@@ -408,15 +408,15 @@ export default function ReserveOffer() {
           <div className="space-y-3 mb-6">
             {pickupStart && pickupEnd && (
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-5 h-5 text-orange-400" />
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                  <Clock className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-white">{t('label.pickupWindow')}</p>
-                  <p className="text-sm text-gray-400">
+                  <p className="font-medium text-gray-900">{t('label.pickupWindow')}</p>
+                  <p className="text-sm text-gray-600">
                     {formatTime(pickupStart)} - {formatTime(pickupEnd)}
                   </p>
-                  <p className="text-xs text-mint-400 font-medium mt-1">
+                  <p className="text-xs font-medium mt-1" style={{color: '#4CAF50'}}>
                     ⏱ {getTimeRemaining(offer.expires_at)}
                   </p>
                 </div>
@@ -424,13 +424,13 @@ export default function ReserveOffer() {
             )}
             {offer.partner && (
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-mint-500/20 flex items-center justify-center flex-shrink-0">
-                  <MapPin className="w-5 h-5 text-mint-400" />
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-5 h-5" style={{color: '#4CAF50'}} />
                 </div>
                 <div>
-                  <p className="font-medium text-white">{offer.partner.business_name}</p>
+                  <p className="font-medium text-gray-900">{offer.partner.business_name}</p>
                   {partnerAddress && (
-                    <p className="text-sm text-gray-400">{partnerAddress}</p>
+                    <p className="text-sm text-gray-600">{partnerAddress}</p>
                   )}
                 </div>
               </div>
@@ -455,10 +455,10 @@ export default function ReserveOffer() {
               : '🎫 Reserve for Free'}
           </Button>
 
-          <p className="text-xs text-gray-500 text-center">
+          <p className="text-xs text-gray-400 text-center">
             {t('reservation.heldNotice')}
             {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
-              <span className="block mt-1 text-orange-400 font-medium">
+              <span className="block mt-1 text-orange-500 font-medium">
                 ⚠️ {t('reservation.penaltyWarningPrefix')} {penaltyInfo.penaltyCount} {t('reservation.penaltyWarningSuffix')}
               </span>
             )}

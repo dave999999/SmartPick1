@@ -23,7 +23,7 @@ const SHEET_HEIGHTS = {
 export function DraggableBottomSheet({ 
   children
 }: DraggableBottomSheetProps) {
-  const [sheetState, setSheetState] = useState<SheetState>('collapsed');
+  const [sheetState, setSheetState] = useState<SheetState>('mid');
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [currentY, setCurrentY] = useState(0);
@@ -133,15 +133,11 @@ export function DraggableBottomSheet({
   return (
     <div
       ref={sheetRef}
-      className="fixed left-0 right-0 rounded-t-3xl overflow-hidden transition-all duration-300 ease-out"
+      className="fixed left-0 right-0 rounded-t-3xl overflow-hidden transition-all duration-300 ease-out bg-gradient-to-b from-white to-gray-50 dark:from-[#050A12] dark:to-[#0C1623] shadow-[0_-8px_32px_rgba(0,0,0,0.1)] dark:shadow-[0_-8px_32px_rgba(0,246,255,0.15)] border-t border-gray-200 dark:border-[rgba(0,246,255,0.2)]"
       style={{
         bottom: 0,
         height: `${heightPercentage}vh`,
         zIndex: 30,
-        background: 'linear-gradient(to bottom, #050A12 0%, #0C1623 100%)',
-        boxShadow: '0 -8px 32px rgba(0, 246, 255, 0.15), 0 -4px 16px rgba(0, 0, 0, 0.7)',
-        borderTop: '1px solid rgba(0, 246, 255, 0.2)',
-        transform: isDragging ? 'none' : undefined,
         paddingBottom: 'max(20px, env(safe-area-inset-bottom) + 20px)',
       }}
     >
@@ -155,13 +151,7 @@ export function DraggableBottomSheet({
         onClick={handleHandleClick}
       >
         <div
-          className="rounded-full transition-all duration-200"
-          style={{
-            width: '32px',
-            height: '4px',
-            background: 'rgba(0, 246, 255, 0.3)',
-            boxShadow: '0 0 8px rgba(0, 246, 255, 0.4)',
-          }}
+          className="w-8 h-1 rounded-full transition-all duration-200 bg-gray-300 dark:bg-[rgba(0,246,255,0.3)] shadow-sm dark:shadow-[0_0_8px_rgba(0,246,255,0.4)]"
         />
       </div>
 

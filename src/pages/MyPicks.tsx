@@ -488,7 +488,7 @@ export default function MyPicks() {
                           )}
                           <div>
                             <CardTitle className="text-lg text-white">
-                              {reservation.offer.title}
+                              {reservation.offer?.title}
                             </CardTitle>
                             <Popover>
                               <PopoverTrigger asChild>
@@ -505,13 +505,13 @@ export default function MyPicks() {
                                       {reservation.partner.address}
                                     </div>
                                   )}
-                                  {user.role === 'ADMIN' && reservation.partner?.phone && (
+                                  {user?.role === 'ADMIN' && reservation.partner?.phone && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                       <Phone className="h-4 w-4" />
                                       {reservation.partner.phone}
                                     </div>
                                   )}
-                                  {user.role === 'ADMIN' && reservation.partner?.email && (
+                                  {user?.role === 'ADMIN' && reservation.partner?.email && (
                                     <div className="flex items-center gap-2 text-sm text-gray-600">
                                       <Mail className="h-4 w-4" />
                                       {reservation.partner.email}

@@ -9,6 +9,7 @@ import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
 const ReservationModal = lazy(() => import('@/components/ReservationModal'));
+import { OfferBottomSheet } from '@/components/OfferBottomSheet';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -33,6 +34,8 @@ export default function IndexRedesigned() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [selectedOfferIndex, setSelectedOfferIndex] = useState<number>(0);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [showPartnerOffersModal, setShowPartnerOffersModal] = useState(false);
   const [selectedPartner, setSelectedPartner] = useState<{ name: string; address?: string; offers: Offer[] } | null>(null);
@@ -260,21 +263,37 @@ export default function IndexRedesigned() {
   ]);
 
   const handleOfferClick = useCallback((offer: Offer) => {
+    const index = filteredOffers.findIndex(o => o.id === offer.id);
     setSelectedOffer(offer);
+    setSelectedOfferIndex(index >= 0 ? index : 0);
     addRecentlyViewed(offer.id, 'offer');
 
     if (!user) {
       setShowAuthDialog(true);
     } else {
-      setShowReservationModal(true);
+      setShowBottomSheet(true);
     }
-  }, [user, addRecentlyViewed]);
+  }, [user, addRecentlyViewed, filteredOffers]);
 
   const handleReservationSuccess = useCallback(() => {
     loadOffers();
     setShowReservationModal(false);
+    setShowBottomSheet(false);
     setSelectedOffer(null);
   }, []);
+
+  const handleBottomSheetIndexChange = useCallback((newIndex: number) => {
+    if (newIndex >= 0 && newIndex < filteredOffers.length) {
+      setSelectedOfferIndex(newIndex);
+      setSelectedOffer(filteredOffers[newIndex]);
+      addRecentlyViewed(filteredOffers[newIndex].id, 'offer');
+      
+      const params = new URLSearchParams(window.location.search);
+      params.set('selected', filteredOffers[newIndex].id);
+      params.set('index', newIndex.toString());
+      window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+    }
+  }, [filteredOffers, addRecentlyViewed]);
 
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, offers: Offer[]) => {
     setSelectedPartner({ name: partnerName, address: partnerAddress, offers });
@@ -317,17 +336,19 @@ export default function IndexRedesigned() {
               </div>
 
               {/* Draggable Bottom Sheet - Apple Maps Style */}
-              {filteredOffers.length > 0 && (
+              {offers.length > 0 && (
                 <DraggableBottomSheet>
                   <RestaurantFoodSectionNew
                     offers={filteredOffers}
                     onOfferClick={handleOfferClick}
+                    selectedCategory={selectedCategory}
+                    onCategorySelect={setSelectedCategory}
                   />
                 </DraggableBottomSheet>
               )}
 
-              {/* Empty State */}
-              {filteredOffers.length === 0 && (
+              {/* Empty State - Only show when there are no offers at all, not when filtering by category */}
+              {offers.length === 0 && (
                 <div 
                   className="fixed left-0 right-0 rounded-t-3xl flex flex-col items-center justify-center p-8"
                   style={{
@@ -358,7 +379,7 @@ export default function IndexRedesigned() {
               )}
 
               {/* Search Bar Overlay */}
-              <div className="absolute top-3 left-12 right-20 md:right-24 z-50">
+              <div className="absolute top-3 left-4 right-20 md:right-24 z-50">
                 <TopSearchBarRedesigned 
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
@@ -367,7 +388,8 @@ export default function IndexRedesigned() {
               </div>
 
               {/* Floating Vertical Navigation */}
-              <VerticalNav />
+              {/* VerticalNav hidden - theme toggle moved to top-left */}
+              {false && <VerticalNav />}
             </>
           )}
         </div>
@@ -395,15 +417,36 @@ export default function IndexRedesigned() {
           onOfferClick={handleOfferClick}
         />
 
-        <Suspense fallback={null}>
-          <ReservationModal
-            offer={selectedOffer}
+        {/* Old ReservationModal - Disabled in favor of BottomSheet */}
+        {false && (
+          <Suspense fallback={null}>
+            <ReservationModal
+              offer={selectedOffer}
+              user={user}
+              open={showReservationModal}
+              onOpenChange={setShowReservationModal}
+              onSuccess={handleReservationSuccess}
+            />
+          </Suspense>
+        )}
+
+        {/* New Bottom Sheet Offer Viewer */}
+        {user && filteredOffers.length > 0 && (
+          <OfferBottomSheet
+            offers={filteredOffers}
+            initialIndex={selectedOfferIndex}
             user={user}
-            open={showReservationModal}
-            onOpenChange={setShowReservationModal}
-            onSuccess={handleReservationSuccess}
+            open={showBottomSheet}
+            onClose={() => {
+              setShowBottomSheet(false);
+              setSelectedOffer(null);
+            }}
+            onIndexChange={handleBottomSheetIndexChange}
+            onReserveSuccess={handleReservationSuccess}
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
           />
-        </Suspense>
+        )}
 
         <Suspense fallback={null}>
           <AuthDialog
@@ -413,7 +456,7 @@ export default function IndexRedesigned() {
             onSuccess={() => {
               checkUser();
               if (selectedOffer) {
-                setShowReservationModal(true);
+                setShowBottomSheet(true);
               }
             }}
           />

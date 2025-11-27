@@ -730,9 +730,9 @@ export default function AdminAnalyticsPanel() {
                         <TableCell className="font-bold">{idx + 1}</TableCell>
                         <TableCell className="font-medium">{p.business_name}</TableCell>
                         <TableCell className="text-green-600 font-semibold">
-                          {(p.total_revenue ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                          {(0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                         </TableCell>
-                        <TableCell>{p.total_pickups ?? 0}</TableCell>
+                        <TableCell>{p.completed_reservations ?? 0}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -1,21 +1,25 @@
 /**
- * REFACTORED: Premium Dark Restaurant/Food Section (Bottom Sheet Content)
- * Clean offer grid with category filtering
+ * ✨ UNIFIED Restaurant/Food Section
+ * Premium light design with consistent cards
  */
 
 import type { Offer } from '@/lib/types';
-import { OfferCard } from './OfferCard';
+import { OffersGridUnified } from './OffersGridUnified';
 import { CategoryBar } from './CategoryBar';
-import { useState } from 'react';
 
 interface RestaurantFoodSectionNewProps {
   offers: Offer[];
   onOfferClick: (offer: Offer) => void;
+  selectedCategory?: string;
+  onCategorySelect?: (category: string) => void;
 }
 
-export function RestaurantFoodSectionNew({ offers, onOfferClick }: RestaurantFoodSectionNewProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-
+export function RestaurantFoodSectionNew({ 
+  offers, 
+  onOfferClick,
+  selectedCategory = '',
+  onCategorySelect
+}: RestaurantFoodSectionNewProps) {
   const filteredOffers = selectedCategory 
     ? offers.filter(offer => offer.category === selectedCategory)
     : offers;
@@ -27,52 +31,60 @@ export function RestaurantFoodSectionNew({ offers, onOfferClick }: RestaurantFoo
     return hoursDiff < 1;
   });
 
-  if (offers.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-sp-text-muted">No offers available at the moment.</p>
-      </div>
-    );
-  }
+  // Get category label for display
+  const getCategoryLabel = (categoryValue: string) => {
+    const categories: Record<string, string> = {
+      'RESTAURANT': 'Restaurant',
+      'FAST_FOOD': 'Fast Food',
+      'BAKERY': 'Bakery',
+      'DESSERTS_SWEETS': 'Desserts & Sweets',
+      'CAFE': 'Cafe',
+      'DRINKS_JUICE': 'Drinks & Juice',
+      'GROCERY': 'Grocery',
+      'MINI_MARKET': 'Mini Market',
+      'MEAT_BUTCHER': 'Meat & Butcher',
+      'FISH_SEAFOOD': 'Fish & Seafood',
+      'ALCOHOL': 'Alcohol',
+      'DRIVE': 'Drive Through'
+    };
+    return categories[categoryValue] || categoryValue;
+  };
 
   return (
-    <div className="h-full overflow-y-auto bg-sp-surface1">
+    <div className="h-full overflow-y-auto bg-white">
       {/* Category Filter Bar */}
       <CategoryBar
         selectedCategory={selectedCategory}
-        onCategorySelect={setSelectedCategory}
+        onCategorySelect={onCategorySelect || (() => {})}
       />
 
-      <div className="px-4 pt-4 pb-6 space-y-5">
-        {/* Just Added Section */}
-        {newOffers.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[17px] font-semibold text-sp-text-primary">Just Added</h2>
-              <span className="text-[13px] text-sp-text-secondary">{newOffers.length} new</span>
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4">
-              {newOffers.map((offer) => (
-                <div key={offer.id} className="snap-start">
-                  <OfferCard offer={offer} onClick={onOfferClick} variant="scroll" />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All Offers Section */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[17px] font-semibold text-sp-text-primary">All Offers</h2>
-            <span className="text-[13px] text-sp-text-secondary">{filteredOffers.length} total</span>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {filteredOffers.map((offer) => (
-              <OfferCard key={offer.id} offer={offer} onClick={onOfferClick} variant="grid" />
-            ))}
-          </div>
+      <div className="px-4 pt-4 pb-6">
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-900" style={{ fontSize: '16px', lineHeight: '24px' }}>
+            All Offers
+          </h2>
+          <span className="text-gray-500" style={{ fontSize: '14px', lineHeight: '20px' }}>
+            {filteredOffers.length} {filteredOffers.length === 1 ? 'offer' : 'offers'}
+          </span>
         </div>
+
+        {/* Show message if no offers in selected category */}
+        {filteredOffers.length === 0 && selectedCategory ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-500 text-sm text-center">
+              No offers available in {getCategoryLabel(selectedCategory)}
+            </p>
+          </div>
+        ) : (
+          /* Unified Offers Grid */
+          <OffersGridUnified
+            offers={filteredOffers}
+            onOfferClick={onOfferClick}
+            title=""
+            showCount={false}
+          />
+        )}
       </div>
 
       <style>{`

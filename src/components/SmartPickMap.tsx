@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Navigation } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { toast } from 'sonner';
-import smartpickStyle from '@/map/styles/smartpick-cosmic-dark.json';
+import lightStyle from '@/map/styles/smartpick-light.maplibre.json';
 import { supabase } from '@/lib/supabase';
 
 interface SmartPickMapProps {
@@ -30,7 +30,23 @@ interface GroupedLocation {
   category: string;
 }
 
-// Create marker element - Stable positioning (no transforms)
+// Category emoji mapping (same as CategoryBar)
+const CATEGORY_EMOJIS: Record<string, string> = {
+  'RESTAURANT': '🍽️',
+  'FAST_FOOD': '🍔',
+  'BAKERY': '🥐',
+  'DESSERTS_SWEETS': '🍰',
+  'CAFE': '☕',
+  'DRINKS_JUICE': '🥤',
+  'GROCERY': '🛒',
+  'MINI_MARKET': '🏪',
+  'MEAT_BUTCHER': '🥩',
+  'FISH_SEAFOOD': '🐟',
+  'ALCOHOL': '🍷',
+  'DRIVE': '🚗'
+};
+
+// Create marker element with emoji
 function createPulsingMarker(
   _map: maplibregl.Map,
   color: string = '#FF8A00',
@@ -44,23 +60,14 @@ function createPulsingMarker(
     el.setAttribute('data-category', category);
   }
   
-  // Create icon element
-  const iconEl = document.createElement('img');
-  iconEl.className = 'sp-marker-icon';
+  // Use emoji instead of image
+  const emoji = category ? CATEGORY_EMOJIS[category] || '📍' : '📍';
+  el.textContent = emoji;
   
-  if (category) {
-    iconEl.src = `/icons/map-pins/${category}.png`;
-    iconEl.alt = category;
-  } else {
-    // Fallback: simple colored circle
-    el.style.background = color;
-  }
-  
-  el.appendChild(iconEl);
   return el;
 }
 
-// Create expiring soon marker (mint glow)
+// Create expiring soon marker
 function createExpiringMarker(map: maplibregl.Map, category?: string): HTMLElement {
   const el = createPulsingMarker(map, '#37E5AE', category);
   el.classList.add('sp-marker--active');
@@ -125,13 +132,16 @@ const SmartPickMap = memo(({
     fetchMapConfig();
   }, []);
 
-  // Initialize map
+  // Initialize map (only once)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current || !mapTilerKey) return;
 
     try {
+      // Always use light style
+      const baseStyle = lightStyle;
+      
       // Inject API key into style JSON
-      const styleWithKey = JSON.parse(JSON.stringify(smartpickStyle));
+      const styleWithKey = JSON.parse(JSON.stringify(baseStyle));
       styleWithKey.sprite = `https://api.maptiler.com/maps/streets/sprite?key=${mapTilerKey}`;
       styleWithKey.glyphs = `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${mapTilerKey}`;
       styleWithKey.sources.openmaptiles.url = `https://api.maptiler.com/tiles/v3/tiles.json?key=${mapTilerKey}`;
@@ -149,6 +159,11 @@ const SmartPickMap = memo(({
       }
 
       mapRef.current = map;
+      
+      // Force markers to be added after map loads
+      map.once('load', () => {
+        console.log('🗺️ Map loaded, ready for markers');
+      });
 
       return () => {
         map.remove();
@@ -206,9 +221,14 @@ const SmartPickMap = memo(({
   // Update markers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map) {
+      console.log('⚠️ Cannot update markers: map not initialized');
+      return;
+    }
 
     const updateMarkers = () => {
+      console.log('🎯 Updating markers, grouped locations:', groupedLocations.length);
+      
       // Clear existing markers
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
@@ -228,63 +248,15 @@ const SmartPickMap = memo(({
         ? createExpiringMarker(map, location.category)
         : createPulsingMarker(map, '#FF8A00', location.category);
 
-      // Create popup content
-      const popupContent = document.createElement('div');
-      popupContent.className = 'smartpick-popup';
-      popupContent.style.cssText = `
-        padding: 12px;
-        min-width: 200px;
-        max-width: 280px;
-      `;
-
-      const partnerName = document.createElement('div');
-      partnerName.textContent = location.partnerName;
-      partnerName.style.cssText = `
-        font-weight: 600;
-        font-size: 14px;
-        color: #1a1a1a;
-        margin-bottom: 8px;
-      `;
-      popupContent.appendChild(partnerName);
-
-      if (location.partnerAddress) {
-        const address = document.createElement('div');
-        address.textContent = location.partnerAddress;
-        address.style.cssText = `
-          font-size: 12px;
-          color: #666;
-          margin-bottom: 8px;
-        `;
-        popupContent.appendChild(address);
-      }
-
-      const offersCount = document.createElement('div');
-      offersCount.textContent = `${location.offers.length} offer${location.offers.length > 1 ? 's' : ''} available`;
-      offersCount.style.cssText = `
-        font-size: 12px;
-        color: #FF8A00;
-        font-weight: 500;
-      `;
-      popupContent.appendChild(offersCount);
-
-      // Create popup
-      const popup = new maplibregl.Popup({
-        closeButton: true,
-        closeOnClick: false,
-        offset: 25,
-        className: 'smartpick-map-popup'
-      }).setDOMContent(popupContent);
-
       // Create marker - Fixed positioning with center anchor (no drift)
       const marker = new maplibregl.Marker({ 
         element: markerEl,
         anchor: 'center'
       })
         .setLngLat([location.lng, location.lat])
-        .setPopup(popup)
         .addTo(map);
 
-      // Handle marker click
+      // Handle marker click - directly open modal without popup
       markerEl.addEventListener('click', () => {
         if (onMarkerClick) {
           onMarkerClick(location.partnerName, location.partnerAddress, location.offers);
@@ -293,19 +265,34 @@ const SmartPickMap = memo(({
 
       markersRef.current.push(marker);
       });
+      
+      console.log('✅ Added', markersRef.current.length, 'markers to map');
     };
 
     // If map is already loaded, update markers immediately
     if (map.loaded()) {
+      console.log('🗺️ Map already loaded, updating markers now');
       updateMarkers();
     } else {
       // Otherwise wait for the map to load
+      console.log('⏳ Waiting for map to load before adding markers');
       map.once('load', updateMarkers);
     }
+    
+    // Re-add markers when style changes (theme switch)
+    const handleStyleData = () => {
+      if (map.isStyleLoaded()) {
+        console.log('🎨 Map style loaded, re-adding markers');
+        updateMarkers();
+      }
+    };
+    
+    map.on('styledata', handleStyleData);
 
     return () => {
-      // Cleanup: remove the load listener if it hasn't fired yet
+      // Cleanup: remove listeners
       map.off('load', updateMarkers);
+      map.off('styledata', handleStyleData);
     };
   }, [groupedLocations, onMarkerClick]);
 

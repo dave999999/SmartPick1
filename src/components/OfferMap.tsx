@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Offer } from '@/lib/types';
@@ -324,6 +324,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
           partnerId: offer.partner_id,
           partnerName: offer.partner.business_name,
           offers: [offer],
+          category: offer.category,
         });
       }
     });

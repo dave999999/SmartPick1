@@ -21,16 +21,9 @@ export default function ErrorMonitoring() {
   const sentryOptions = sentryClient?.getOptions();
   
   // Get DSN from active client or environment
-  let sentryDSN = '';
-  if (sentryOptions?.dsn) {
-    if (typeof sentryOptions.dsn === 'string') {
-      sentryDSN = sentryOptions.dsn;
-    } else {
-      sentryDSN = sentryOptions.dsn.toString();
-    }
-  } else {
-    sentryDSN = import.meta.env.VITE_SENTRY_DSN || '';
-  }
+  const sentryDSN = (typeof sentryOptions?.dsn === 'string' && sentryOptions.dsn)
+    ? sentryOptions.dsn
+    : (import.meta.env.VITE_SENTRY_DSN || '');
   
   const sentryConfigured = !!sentryDSN && !!sentryClient;
 

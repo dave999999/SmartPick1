@@ -275,7 +275,7 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
       )}
 
       {/* Custom scrollbar styles */}
-      <style jsx>{`
+      <style>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
         }

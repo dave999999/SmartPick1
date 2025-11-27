@@ -70,7 +70,7 @@ export function BottomNavBar() {
       }`}
       style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
     >
-      <div className="mx-4 mb-3 px-4 py-3 bg-black/70 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/40">
+      <div className="mx-4 mb-3 px-4 py-3 bg-white/90 dark:bg-black/70 backdrop-blur-xl rounded-2xl border border-gray-200 dark:border-white/10 shadow-2xl dark:shadow-black/40">
         <div className="flex items-center justify-around gap-2">
           {navItems.map((item, index) => {
             const Icon = item.icon;

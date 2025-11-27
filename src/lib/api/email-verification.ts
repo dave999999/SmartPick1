@@ -28,6 +28,10 @@ const checkRateLimit = async (email: string, actionType: 'verification' | 'passw
   return data === true;
 };
 
+// Env-configured Resend credentials
+const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
+const RESEND_FROM_EMAIL = import.meta.env.VITE_RESEND_FROM_EMAIL || 'SmartPick <noreply@smartpick.ge>';
+
 // Send email via Resend API
 const sendEmailViaResend = async (to: string, subject: string, html: string): Promise<void> => {
   const response = await fetch('https://api.resend.com/emails', {

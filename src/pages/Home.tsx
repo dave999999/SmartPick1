@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { SectionCard } from '@/components/layout/SectionCard';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
@@ -22,17 +23,20 @@ export default function Home() {
           </button>
         }
         right={
-          <div className="flex items-center gap-2" role="group" aria-label="Language selection">
-            <button
-              onClick={() => setLanguage('en')}
-              className={`px-3 py-1 rounded text-sm ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
-              aria-pressed={language === 'en'}
-            >EN</button>
-            <button
-              onClick={() => setLanguage('ka')}
-              className={`px-3 py-1 rounded text-sm ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
-              aria-pressed={language === 'ka'}
-            >KA</button>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <div className="flex items-center gap-2" role="group" aria-label="Language selection">
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1 rounded text-sm ${language === 'en' ? 'bg-gray-200' : 'bg-white'}`}
+                aria-pressed={language === 'en'}
+              >EN</button>
+              <button
+                onClick={() => setLanguage('ka')}
+                className={`px-3 py-1 rounded text-sm ${language === 'ka' ? 'bg-gray-200' : 'bg-white'}`}
+                aria-pressed={language === 'ka'}
+              >KA</button>
+            </div>
           </div>
         }
       />

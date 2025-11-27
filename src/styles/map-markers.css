@@ -1,114 +1,95 @@
 /**
- * Premium Dark Map Marker Styles
- * Glassy markers with soft neon glow
+ * Emoji Map Marker Styles
+ * Simple emoji markers matching category design
+ * CRITICAL: NO transforms on .sp-marker itself - they cause drift on zoom
  */
 
 .sp-marker {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  font-size: 32px;
+  line-height: 1;
+  /* Stable positioning - MapLibre controls this */
   position: relative;
-  /* NO transitions or transforms - these cause drift */
+  /* NO transitions, transforms, or margins on the marker itself */
 }
 
-/* Cosmic orange pulse effect */
+/* Pulse effect on pseudo-element only (doesn't affect marker position) */
 .sp-marker::before {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 100%;
-  height: 100%;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  margin-top: -20px;
   border-radius: 50%;
-  background: rgba(255, 138, 48, 0.3);
-  transform: translate(-50%, -50%);
-  animation: cosmic-pulse 2s ease-out infinite;
+  background: rgba(76, 175, 80, 0.2);
+  animation: light-pulse 2s ease-out infinite;
   pointer-events: none;
   z-index: -1;
+  will-change: opacity;
 }
 
-@keyframes cosmic-pulse {
+@keyframes light-pulse {
   0% {
-    transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0.6;
+    opacity: 0.4;
+    transform: scale(1);
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0.3;
+    opacity: 0.1;
+    transform: scale(1.5);
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.5);
     opacity: 0;
+    transform: scale(2);
   }
 }
 
-.sp-marker-icon {
-  width: 50px;
-  height: 50px;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.6));
-  /* Image itself can have effects, but no transforms */
+.sp-marker:hover {
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4)) brightness(1.1);
 }
 
-.sp-marker:hover .sp-marker-icon {
-  opacity: 0.9;
+.sp-marker--active {
+  filter: drop-shadow(0 3px 6px rgba(255, 87, 34, 0.5)) brightness(1.15);
 }
 
-.sp-marker--active .sp-marker-icon {
-  filter: drop-shadow(0 3px 8px rgba(56,235,193,0.6)) brightness(1.1);
-}
-
-/* BAKERY category - smaller size */
-.sp-marker[data-category="BAKERY"] {
-  width: 40px;
-  height: 40px;
-}
-
-.sp-marker[data-category="BAKERY"] .sp-marker-icon {
-  width: 40px;
-  height: 40px;
-}
-
-/* Map overlay gradient for better contrast */
-.sp-map-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 30%;
-  background: linear-gradient(to bottom, rgba(5,7,12,0.35) 0%, rgba(5,7,12,0) 100%);
-  pointer-events: none;
-  z-index: 1;
+.sp-marker--active::before {
+  background: rgba(255, 87, 34, 0.2);
 }
 
 /* Popup styling */
 .smartpick-map-popup .maplibregl-popup-content {
-  background: linear-gradient(135deg, #141923 0%, #0B0F16 100%);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 14px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
   padding: 0;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.7);
-  color: #FFFFFF;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  color: #333333;
 }
 
 .smartpick-map-popup .maplibregl-popup-tip {
-  border-top-color: #0B0F16;
+  border-top-color: white;
 }
 
 .smartpick-map-popup .maplibregl-popup-close-button {
-  color: #9FA8C3;
-  font-size: 22px;
+  color: #666666;
+  font-size: 20px;
   padding: 8px;
   right: 4px;
   top: 4px;
 }
 
 .smartpick-map-popup .maplibregl-popup-close-button:hover {
-  background-color: rgba(255,255,255,0.1);
-  color: #FFFFFF;
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #333333;
 }
 
 /* Disable animations if user prefers reduced motion */

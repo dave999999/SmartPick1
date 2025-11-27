@@ -259,8 +259,8 @@ export default function AdminAnalyticsPanel() {
                     {topPartners.map((p) => (
                       <TableRow key={p.partner_id}>
                         <TableCell className="font-medium">{p.business_name}</TableCell>
-                        <TableCell>{(p.total_revenue ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
-                        <TableCell>{p.total_pickups ?? 0}</TableCell>
+                        <TableCell>{(0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</TableCell>
+                        <TableCell>{p.completed_reservations ?? 0}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

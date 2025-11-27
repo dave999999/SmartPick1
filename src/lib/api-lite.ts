@@ -1,7 +1,7 @@
 // Minimal API surface for landing page to avoid pulling full api.ts & its transitive imports.
 // Uses lazy supabase loader. Mirrors signatures of original functions used on Index.
 
-import type { PostgrestError } from '@supabase/supabase-js';
+import type { PostgrestError, AuthError } from '@supabase/supabase-js';
 import type { Offer, User } from './types';
 import { getSupabase } from './supabase-lazy';
 
@@ -50,7 +50,7 @@ export async function getActiveOffers(): Promise<Offer[]> {
   return (offers as Offer[]) || [];
 }
 
-export async function getCurrentUser(): Promise<{ user: User | null; error: PostgrestError | null }> {
+export async function getCurrentUser(): Promise<{ user: User | null; error: AuthError | PostgrestError | null }> {
   const supabase = await getSupabase();
   const {
     data: { user },

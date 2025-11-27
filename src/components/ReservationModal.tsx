@@ -398,10 +398,9 @@ export default function ReservationModal({
         ref={modalRef}
         className="max-w-lg max-h-[95vh] overflow-y-auto p-0 rounded-3xl"
         style={{
-          background: 'linear-gradient(to bottom, #03060B 0%, #0A1420 100%)',
-          border: '1.5px solid rgba(0, 246, 255, 0.3)',
-          boxShadow: '0 0 30px rgba(0, 246, 255, 0.2), 0 8px 32px rgba(0, 0, 0, 0.7), inset 0 2px 8px rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(20px)',
+          background: 'white',
+          border: '1px solid rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
           transform: `translate(-50%, calc(-50% + ${dragY}px))`,
           transition: isDragging ? 'none' : 'transform 0.3s ease-out',
           opacity: isDragging ? Math.max(0.5, 1 - dragY / 400) : 1,
@@ -414,7 +413,7 @@ export default function ReservationModal({
         <DialogTitle className="sr-only">{offer.title}</DialogTitle>
         
         {/* Drag Handle Indicator */}
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-50 w-12 h-1 bg-white/20 rounded-full shadow-lg" />
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-10 h-1 bg-gray-300 rounded-full" />
         
         {/* Header Image Component */}
         {offer.images && offer.images.length > 0 && (
@@ -425,21 +424,17 @@ export default function ReservationModal({
           />
         )}
 
-        {/* Content Area with padding - COSMIC NEON GRADIENT BACKGROUND */}
-        <div className="px-5 pb-6 pt-24 space-y-4 rounded-b-3xl"
-          style={{
-            background: 'linear-gradient(to bottom, #03060B 0%, #0A1420 100%)',
-            boxShadow: 'inset 0 4px 12px rgba(0, 0, 0, 0.5)'
-          }}
-        >
+        {/* Content Area - no extra padding, components handle their own */}
+        <div className="space-y-4 bg-white rounded-b-2xl">
+          
           {/* Title Section Component */}
           <TitleSection
             title={offer.title}
             description={offer.description}
             partnerName={offer.partner?.business_name || 'Unknown'}
             partnerAddress={offer.partner?.address}
-              timeRemaining={timeRemaining}
-              isExpiringSoon={isExpiringSoon}
+            timeRemaining={timeRemaining}
+            isExpiringSoon={isExpiringSoon}
             onShareFacebook={handleShareFacebook}
             onShareTwitter={handleShareTwitter}
             onShareInstagram={handleShareInstagram}
@@ -460,53 +455,53 @@ export default function ReservationModal({
           />
 
           {/* Smart Context-Aware Alerts - Only show critical ones */}
-          {insufficientPoints && (
-            <Alert className="bg-orange-50 border-orange-200">
-              <AlertCircle className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-900">
-                <strong>⚠️ Insufficient SmartPoints</strong>
-                <p className="mt-1">
-                  You need {POINTS_PER_UNIT * quantity} more points.
-                </p>
-                <Button
-                  size="sm"
-                  onClick={() => setShowBuyPointsModal(true)}
-                  className="mt-2 bg-orange-600 hover:bg-orange-700"
-                >
-                  Buy SmartPoints
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="px-5 space-y-3">
+            {insufficientPoints && (
+              <Alert className="bg-orange-50 border-orange-200 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-800 text-sm">
+                  <strong>⚠️ Insufficient SmartPoints</strong>
+                  <p className="mt-1">
+                    You need {POINTS_PER_UNIT * quantity} more points.
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowBuyPointsModal(true)}
+                    className="mt-2 bg-orange-600 hover:bg-orange-700 text-xs"
+                  >
+                    Buy SmartPoints
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {isExpired && (
-            <Alert variant="destructive" className="bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-900">
-                <strong>Expired</strong> - This offer is no longer available
-              </AlertDescription>
-            </Alert>
-          )}
+            {isExpired && (
+              <Alert variant="destructive" className="bg-red-50 border-red-200 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-900 text-sm">
+                  <strong>Expired</strong> - This offer is no longer available
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {!isExpired && penaltyInfo?.isUnderPenalty && (
-            <Alert className="bg-red-50 border-red-200">
-              <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-900">
-                <strong>Account Penalty</strong> - Blocked for: {countdown}
-              </AlertDescription>
-            </Alert>
-          )}
+            {!isExpired && penaltyInfo?.isUnderPenalty && (
+              <Alert className="bg-red-50 border-red-200 rounded-xl">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-900 text-sm">
+                  <strong>Account Penalty</strong> - Blocked for: {countdown}
+                </AlertDescription>
+              </Alert>
+            )}
 
-          {!isExpired && isExpiringSoon && !penaltyInfo?.isUnderPenalty && (
-            <Alert className="bg-orange-50 border-orange-200">
-              <Clock className="h-4 w-4 text-orange-600" />
-              <AlertDescription className="text-orange-900">
-                <strong>Hurry!</strong> Expires in {timeRemaining}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Pickup window section removed per request */}
+            {!isExpired && isExpiringSoon && !penaltyInfo?.isUnderPenalty && (
+              <Alert className="bg-orange-50 border-orange-200 rounded-xl">
+                <Clock className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-900 text-sm">
+                  <strong>Hurry!</strong> Expires in {timeRemaining}
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
 
           {/* Reserve Button Component with Total Price */}
           <ReserveButton
@@ -518,7 +513,7 @@ export default function ReservationModal({
 
           {/* Penalty warning if applicable */}
           {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
-            <div className="text-center -mt-2">
+            <div className="text-center px-5 pb-2">
               <p className="text-xs text-orange-600 font-medium">
                 ⚠️ {penaltyInfo.penaltyCount} missed pickup{penaltyInfo.penaltyCount > 1 ? 's' : ''}. Don't miss this one!
               </p>

@@ -135,6 +135,8 @@ export function ReservationCapacitySection({
           {/* Next Upgrade */}
           {!isMaxed && slotInfo.next_slot_cost && (
             <div className="space-y-3">
+              {(() => { const nextCost = slotInfo.next_slot_cost as number; return (
+                <>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white">Next Unlock:</span>
                 <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
@@ -145,15 +147,15 @@ export function ReservationCapacitySection({
               <div className="flex items-center justify-between bg-black/20 border border-white/10 rounded-lg p-3">
                 <span className="text-sm text-gray-400">Cost:</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-orange-500">{slotInfo.next_slot_cost}</span>
+                  <span className="text-2xl font-bold text-orange-500">{nextCost}</span>
                   <span className="text-xs text-gray-400">points</span>
                 </div>
               </div>
 
               <Button
                 onClick={() => {
-                  if (actualBalance < slotInfo.next_slot_cost) {
-                    const needed = slotInfo.next_slot_cost - actualBalance;
+                  if (actualBalance < nextCost) {
+                    const needed = nextCost - actualBalance;
                     toast.error(`Need ${needed} more points to unlock`, {
                       description: 'Buy more points or earn them through activities',
                       duration: 4000,
@@ -165,10 +167,12 @@ export function ReservationCapacitySection({
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg shadow-orange-500/30 hover:scale-[1.02] transition-transform"
               >
                 <Unlock className="w-4 h-4 mr-2" />
-                {actualBalance < slotInfo.next_slot_cost 
-                  ? `Need ${(slotInfo.next_slot_cost - actualBalance).toLocaleString()} more points`
+                {actualBalance < nextCost 
+                  ? `Need ${(nextCost - actualBalance).toLocaleString()} more points`
                   : `Unlock ${slotInfo.current_max + 1}th Slot`}
               </Button>
+                </>
+              ); })()}
             </div>
           )}
 

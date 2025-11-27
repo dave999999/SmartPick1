@@ -25,8 +25,8 @@ export function MapSection({
       {/* Responsive-height Map */}
       <div className="w-full h-full m-0 p-0">
         <Suspense fallback={
-          <div className="w-full h-full bg-[#050814] flex items-center justify-center rounded-2xl" aria-busy="true" aria-label="Loading map...">
-            <div className="text-white/60 text-sm">Loading map...</div>
+          <div className="w-full h-full bg-gray-100 dark:bg-[#050814] flex items-center justify-center rounded-2xl" aria-busy="true" aria-label="Loading map...">
+            <div className="text-gray-600 dark:text-white/60 text-sm">Loading map...</div>
           </div>
         }>
           <SmartPickMap
@@ -43,7 +43,7 @@ export function MapSection({
 
       {/* Center Location Button - Dark glossy style with 44px touch target */}
       <button
-        className="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md rounded-full p-3 shadow-xl hover:shadow-2xl hover:bg-black/80 active:scale-95 transition-all z-30 border border-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
+        className="absolute bottom-4 right-4 bg-white/90 dark:bg-black/70 backdrop-blur-md rounded-full p-3 shadow-xl hover:shadow-2xl hover:bg-gray-50 dark:hover:bg-black/80 active:scale-95 transition-all z-30 border border-gray-200 dark:border-white/10 min-w-[44px] min-h-[44px] flex items-center justify-center"
         onClick={() => {
           if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(

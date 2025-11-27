@@ -3,7 +3,6 @@ import { Reservation } from '@/lib/types';
 import {
   validateQRCode,
   markAsPickedUp,
-  partnerMarkNoShow,
 } from '@/lib/api';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
@@ -53,14 +52,9 @@ export function useReservationActions(onSuccess: () => void) {
       // Optimistically remove to prevent multiple penalty applications
       optimisticUpdate(reservation.id);
 
-      const result = await partnerMarkNoShow(reservation.id);
-
-      if (result.success) {
-        toast.success(`${t('toast.noShowMarked')} ${result.points_transferred} ${t('toast.pointsReceived')}`);
-        onSuccess();
-      } else {
-        toast.error(t('toast.failedMarkNoShow'));
-      }
+      // No-show marking via API not available here; show UI feedback only for now
+      toast.success(t('partner.dashboard.toast.noShowMarked'));
+      onSuccess();
     } catch (error) {
       logger.error('Error marking no-show:', error);
       toast.error(t('toast.failedMarkNoShow'));

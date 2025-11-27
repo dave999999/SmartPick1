@@ -70,10 +70,10 @@ export function TopRightMenu() {
           <Button
             size="icon"
             variant="secondary"
-            className="rounded-full shadow-xl bg-black/70 backdrop-blur-md border border-white/10 hover:bg-black/80 transition-all active:scale-95"
+            className="rounded-full shadow-xl bg-white/90 dark:bg-black/70 backdrop-blur-md border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-black/80 transition-all active:scale-95"
             aria-label="Account menu"
           >
-            <CircleUser className="h-5 w-5 text-white" />
+            <CircleUser className="h-5 w-5 text-gray-700 dark:text-white" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" sideOffset={8} className="w-56">

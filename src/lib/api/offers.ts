@@ -2,6 +2,7 @@ import { supabase, isDemoMode } from '../supabase';
 import { Offer, CreateOfferDTO, OfferFilters } from '../types';
 import { mockOffers } from '../mockData';
 import { uploadImages } from './media';
+import { secureRequest } from '../secureRequest';
 
 /**
  * Offers Module

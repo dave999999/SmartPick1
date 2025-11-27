@@ -482,7 +482,7 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
       await logAction(grantSlotsPartner.id, 'GRANT_SLOTS', `Granted ${toAdd} slots; total now ${newTotal}`);
       setShowGrantSlotsDialog(false);
       setGrantSlotsPartner(null);
-      await fetchPartners(); // Refresh the list
+      await loadPartners(); // Refresh the list
     } catch (e) {
       logger.error('Grant slots error', e);
       toast.error('Failed to grant slots');

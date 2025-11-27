@@ -61,13 +61,13 @@ export function BottomSheetRedesigned({
     <>
       {mapDimOpacity > 0 && (
         <div
-          className="fixed inset-0 bg-black pointer-events-none z-10 transition-opacity duration-300"
+          className="fixed inset-0 bg-black dark:bg-black pointer-events-none z-10 transition-opacity duration-300"
           style={{ opacity: mapDimOpacity }}
         />
       )}
 
       <div 
-        className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-[#0a0a0a] to-[#1a1a1a] rounded-t-[24px] shadow-[0_-8px_32px_rgba(0,0,0,0.8)] overflow-hidden z-20 border-t border-white/10"
+        className="absolute bottom-0 left-0 right-0 bg-gradient-to-b from-white to-gray-50 dark:from-[#0a0a0a] dark:to-[#1a1a1a] rounded-t-[24px] shadow-[0_-8px_32px_rgba(0,0,0,0.2)] dark:shadow-[0_-8px_32px_rgba(0,0,0,0.8)] overflow-hidden z-20 border-t border-gray-200 dark:border-white/10"
         style={{ 
           height: `${sheetHeight}%`,
           maxHeight: 'calc(100% - max(80px, env(safe-area-inset-top) + 80px))',
@@ -81,24 +81,27 @@ export function BottomSheetRedesigned({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="w-16 h-1.5 bg-white/50 rounded-full shadow-lg hover:bg-white/70 transition-colors" />
+          <div className="w-16 h-1.5 bg-gray-300 dark:bg-white/50 rounded-full shadow-lg hover:bg-gray-400 dark:hover:bg-white/70 transition-colors" />
         </div>
 
         <div className="px-4 pb-2">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               {sheetHeight <= 30 ? 'Explore' : 'All Offers'}
             </h2>
-            <span className="text-sm text-gray-400">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {offers.length} {offers.length === 1 ? 'offer' : 'offers'}
             </span>
           </div>
         </div>
 
-        <CategoryBarRedesigned 
-          selectedCategory={selectedCategory}
-          onCategorySelect={onCategorySelect}
-        />
+        {/* CategoryBarRedesigned hidden - theme toggle moved to top-left */}
+        {false && (
+          <CategoryBarRedesigned 
+            selectedCategory={selectedCategory}
+            onCategorySelect={onCategorySelect}
+          />
+        )}
 
         <div 
           className="h-[calc(100%-120px)] overflow-y-auto transition-opacity duration-300"

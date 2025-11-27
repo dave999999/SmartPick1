@@ -305,7 +305,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       if (data.user) {
         // Store terms acceptance in users table (in addition to metadata)
         // Wait for the trigger to create the user row first
+        const userId = data.user?.id;
         setTimeout(async () => {
+          if (!userId) return;
           try {
             const { error: updateError } = await supabase
               .from('users')
@@ -313,7 +315,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 terms_accepted_at: new Date().toISOString(),
                 terms_version: '1.0', // Track which version they agreed to
               })
-              .eq('id', data.user.id);
+              .eq('id', userId);
             
             if (updateError) {
               logger.warn('Failed to update terms acceptance:', updateError);

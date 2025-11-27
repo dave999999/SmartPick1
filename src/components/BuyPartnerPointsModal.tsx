@@ -13,6 +13,9 @@ import { Coins, CreditCard, Check, AlertCircle, Package } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
+// Simple logger fallback
+const logger = console;
+
 interface BuyPartnerPointsModalProps {
   open: boolean;
   onClose: () => void;
