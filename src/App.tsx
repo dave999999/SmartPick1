@@ -8,6 +8,9 @@ import { getCurrentUser } from './lib/api';
 // supabase dynamically imported to reduce initial bundle size
 import { useActivityTracking } from './hooks/useActivityTracking';
 import { initSentry } from './lib/sentry';
+import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
+import { PenaltyModal } from './components/PenaltyModal';
+import type { UserPenalty, PenaltyDetails } from './lib/api/penalty';
 
 // Initialize Sentry as early as possible
 initSentry();
@@ -64,6 +67,9 @@ const AppContent = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+  const [penaltyData, setPenaltyData] = useState<PenaltyDetails | null>(null);
+  const [userPoints, setUserPoints] = useState(0);
 
   // Track user activity for real-time monitoring
   useActivityTracking();
@@ -85,6 +91,19 @@ const AppContent = () => {
 
         // Dynamic import only in production path
         const { supabase } = await import('./lib/supabase');
+
+        // Check if we're in the middle of OAuth callback (don't block it)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isOAuthCallback = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
+        
+        if (isOAuthCallback) {
+          console.log('OAuth callback detected - skipping maintenance check');
+          if (!cancelled) {
+            setIsMaintenanceMode(false);
+            setIsLoading(false);
+          }
+          return;
+        }
 
         const { data: setting } = await supabase
           .from('system_settings')
@@ -134,6 +153,45 @@ const AppContent = () => {
 
     // Defer to next tick to allow first paint before heavy import
     const timer = setTimeout(checkMaintenanceAndUser, 0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Check for active penalties on app load (once user is authenticated)
+  useEffect(() => {
+    let cancelled = false;
+    const checkPenaltyOnLoad = async () => {
+      try {
+        const { user } = await getCurrentUser();
+        if (!user || cancelled) return;
+
+        const { supabase } = await import('./lib/supabase');
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('points')
+          .eq('id', (user as any).id)
+          .single();
+
+        if (cancelled) return;
+        setUserPoints(userProfile?.points || 0);
+
+        const activePenalty = await getActivePenalty((user as any).id);
+        if (cancelled) return;
+        
+        if (activePenalty) {
+          const details = await getPenaltyDetails(activePenalty.id);
+          if (cancelled) return;
+          setPenaltyData(details);
+          setShowPenaltyModal(true);
+        }
+      } catch (error) {
+        console.error('Error checking penalty on load:', error);
+      }
+    };
+
+    const timer = setTimeout(checkPenaltyOnLoad, 500);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -243,6 +301,28 @@ const AppContent = () => {
       <QueueStatus />
       {/* Cookie Consent Banner */}
       <CookieConsent />
+      {/* Penalty Modal (shown on app load if user has active penalty) */}
+      {showPenaltyModal && penaltyData && (
+        <PenaltyModal
+          penalty={penaltyData}
+          userPoints={userPoints}
+          onClose={() => setShowPenaltyModal(false)}
+          onPenaltyLifted={async () => {
+            setShowPenaltyModal(false);
+            // Refresh user points after lifting
+            const { user } = await getCurrentUser();
+            if (user) {
+              const { supabase } = await import('./lib/supabase');
+              const { data: userProfile } = await supabase
+                .from('users')
+                .select('points')
+                .eq('id', (user as any).id)
+                .single();
+              setUserPoints(userProfile?.points || 0);
+            }
+          }}
+        />
+      )}
     </BrowserRouter>
   );
 };
