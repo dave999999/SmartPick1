@@ -25,7 +25,7 @@ L.Icon.Default.mergeOptions({
 
 // New compact UI components
 import CountdownBar from '@/components/reservations/CountdownBar';
-import PenaltyModal from '@/components/PenaltyModal';
+import { PenaltyModal } from '@/components/PenaltyModal';
 import PickupSuccessModal from '@/components/PickupSuccessModal';
 
 export default function ReservationDetail() {
