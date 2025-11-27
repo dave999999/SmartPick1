@@ -203,7 +203,7 @@ export function OfferContent({
         onReserveSuccess();
       }
 
-      navigate('/my-picks');
+      navigate(`/reservation/${reservation.id}`);
 
     } catch (error: any) {
       logger.error('❌ Reservation failed:', error);
@@ -222,7 +222,7 @@ export function OfferContent({
     <motion.div
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      className="px-3.5 pb-3.5"
+      className="px-3.5 pb-1"
     >
       {/* Title Section - Always visible */}
       <TitleSection

@@ -17,7 +17,7 @@ type SheetState = 'collapsed' | 'mid' | 'expanded';
 const SHEET_HEIGHTS = {
   collapsed: 12,
   mid: 45,
-  expanded: 88,
+  expanded: 85,
 } as const;
 
 export function DraggableBottomSheet({ 
@@ -30,7 +30,7 @@ export function DraggableBottomSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
 
   const heightPercentage = isDragging 
-    ? Math.max(15, Math.min(95, SHEET_HEIGHTS[sheetState] + ((startY - currentY) / window.innerHeight) * 100))
+    ? Math.max(15, Math.min(85, SHEET_HEIGHTS[sheetState] + ((startY - currentY) / window.innerHeight) * 100))
     : SHEET_HEIGHTS[sheetState];
 
   const handleTouchStart = (e: React.TouchEvent) => {

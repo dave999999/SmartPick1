@@ -24,7 +24,7 @@ export function OfferImage({
 
   return (
     <motion.div
-      animate={{ height: isExpanded ? 200 : 160 }}
+      animate={{ height: isExpanded ? 130 : 120 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
       className="relative w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
     >

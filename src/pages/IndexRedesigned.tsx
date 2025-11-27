@@ -104,6 +104,23 @@ export default function IndexRedesigned() {
     loadOffers();
     checkUser();
 
+    // Get user's current location on app load
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Set default location (Tbilisi, Georgia) if location access denied
+          setUserLocation([41.7151, 44.8271]);
+        }
+      );
+    } else {
+      // Set default location if geolocation not supported
+      setUserLocation([41.7151, 44.8271]);
+    }
+
     const handleReservationSynced = () => {
       loadOffers();
       toast.success('✅ Queued reservation synced!');
@@ -379,7 +396,7 @@ export default function IndexRedesigned() {
               )}
 
               {/* Search Bar Overlay */}
-              <div className="absolute top-3 left-4 right-20 md:right-24 z-50">
+              <div className="absolute top-3 left-4 right-16 z-50">
                 <TopSearchBarRedesigned 
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}

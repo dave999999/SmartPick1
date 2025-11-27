@@ -21,7 +21,7 @@ export function TitleSection({
   isExpanded
 }: TitleSectionProps) {
   return (
-    <div className="space-y-1.5 pt-2.5">
+    <div className="space-y-1 pt-1.5">
       {/* Title with Time Badge */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-sm font-semibold text-[#111827] flex-1 leading-tight">

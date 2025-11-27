@@ -47,7 +47,7 @@ export function OfferBottomSheet({
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [sheetState, setSheetState] = useState<SheetState>('collapsed');
   const [isDraggingImage, setIsDraggingImage] = useState(false);
-  const controls = useAnimation();
+  const imageControls = useAnimation();
   const y = useMotionValue(0);
   const x = useMotionValue(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -58,7 +58,7 @@ export function OfferBottomSheet({
   const hasNext = currentIndex < offers.length - 1;
 
   // Height states
-  const COLLAPSED_HEIGHT = '45vh';
+  const COLLAPSED_HEIGHT = '36vh';
   const EXPANDED_HEIGHT = '80vh';
 
   // Reset index when initialIndex changes from parent (external update)
@@ -80,14 +80,9 @@ export function OfferBottomSheet({
   // Animate in when opened
   useEffect(() => {
     if (open) {
-      controls.start({
-        y: 0,
-        opacity: 1,
-        transition: { type: 'spring', damping: 30, stiffness: 300 }
-      });
       setSheetState('collapsed'); // Start in collapsed state
     }
-  }, [open, controls]);
+  }, [open]);
 
   // Toggle expand/collapse
   const toggleExpand = () => {
@@ -95,16 +90,50 @@ export function OfferBottomSheet({
   };
 
   // Navigate to previous offer
-  const handlePrevious = () => {
+  const handlePrevious = async () => {
     if (hasPrevious) {
+      // Slide right animation
+      await imageControls.start({
+        x: 100,
+        opacity: 0,
+        transition: { duration: 0.2, ease: 'easeOut' }
+      });
       setCurrentIndex(prev => prev - 1);
+      // Slide in from left
+      await imageControls.start({
+        x: -100,
+        opacity: 0,
+        transition: { duration: 0 }
+      });
+      await imageControls.start({
+        x: 0,
+        opacity: 1,
+        transition: { duration: 0.2, ease: 'easeOut' }
+      });
     }
   };
 
   // Navigate to next offer
-  const handleNext = () => {
+  const handleNext = async () => {
     if (hasNext) {
+      // Slide left animation
+      await imageControls.start({
+        x: -100,
+        opacity: 0,
+        transition: { duration: 0.2, ease: 'easeOut' }
+      });
       setCurrentIndex(prev => prev + 1);
+      // Slide in from right
+      await imageControls.start({
+        x: 100,
+        opacity: 0,
+        transition: { duration: 0 }
+      });
+      await imageControls.start({
+        x: 0,
+        opacity: 1,
+        transition: { duration: 0.2, ease: 'easeOut' }
+      });
     }
   };
 
@@ -126,13 +155,8 @@ export function OfferBottomSheet({
       if (sheetState === 'collapsed') {
         setSheetState('expanded');
       }
-    } else {
-      // Snap back
-      controls.start({
-        y: 0,
-        transition: { type: 'spring', damping: 30, stiffness: 300 }
-      });
     }
+    // No need for snap back - the sheet state handles positioning
   };
 
   // Handle horizontal swipe for navigation
@@ -146,20 +170,32 @@ export function OfferBottomSheet({
     if (offset.x < -80 || velocity.x < -500) {
       // Swipe left - next offer
       if (hasNext) {
-        handleNext();
+        await handleNext();
+      } else {
+        // Snap back if no next offer
+        await imageControls.start({
+          x: 0,
+          transition: { type: 'spring', damping: 25, stiffness: 300 }
+        });
       }
     } else if (offset.x > 80 || velocity.x > 500) {
       // Swipe right - previous offer
       if (hasPrevious) {
-        handlePrevious();
+        await handlePrevious();
+      } else {
+        // Snap back if no previous offer
+        await imageControls.start({
+          x: 0,
+          transition: { type: 'spring', damping: 25, stiffness: 300 }
+        });
       }
+    } else {
+      // Snap back to center if swipe too small
+      await imageControls.start({
+        x: 0,
+        transition: { type: 'spring', damping: 25, stiffness: 300 }
+      });
     }
-    
-    // Always animate back to center
-    await controls.start({
-      x: 0,
-      transition: { type: 'spring', damping: 25, stiffness: 300 }
-    });
     
     setIsDraggingImage(false);
   };
@@ -187,7 +223,8 @@ export function OfferBottomSheet({
         onDragEnd={handleVerticalDragEnd}
         animate={{
           height: sheetState === 'collapsed' ? COLLAPSED_HEIGHT : EXPANDED_HEIGHT,
-          ...controls
+          y: 0,
+          opacity: 1
         }}
         initial={{ y: '100%', opacity: 0 }}
         style={{ y }}
@@ -234,19 +271,80 @@ export function OfferBottomSheet({
           </div>
         </div>
 
-        {/* Header - Sticky Navigation */}
-        <OfferHeader
-          title={currentOffer.title}
-          onPrevious={hasPrevious ? handlePrevious : undefined}
-          onNext={hasNext ? handleNext : undefined}
-          onClose={onClose}
-          isExpanded={sheetState === 'expanded'}
-        />
-
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
           {/* Swipeable Image Section - Horizontal Navigation */}
-          <div className="relative overflow-hidden bg-gray-100 touch-pan-x">
+          <div 
+            className="relative overflow-hidden bg-gray-100 flex justify-center"
+            onDoubleClick={() => {
+              if (sheetState === 'collapsed') {
+                setSheetState('expanded');
+              }
+            }}
+            onTouchStart={(e) => {
+              const touch = e.touches[0];
+              const now = Date.now();
+              const lastTap = (e.currentTarget as any).__lastTap || 0;
+              
+              // Double tap detection
+              if (now - lastTap < 300) {
+                if (sheetState === 'collapsed') {
+                  setSheetState('expanded');
+                }
+              }
+              (e.currentTarget as any).__lastTap = now;
+              
+              (e.currentTarget as any).__touchStart = {
+                x: touch.clientX,
+                y: touch.clientY,
+                time: Date.now()
+              };
+            }}
+            onTouchMove={(e) => {
+              const start = (e.currentTarget as any).__touchStart;
+              if (!start) return;
+              
+              const touch = e.touches[0];
+              const deltaX = Math.abs(touch.clientX - start.x);
+              const deltaY = Math.abs(touch.clientY - start.y);
+              
+              // If predominantly vertical swipe, prevent horizontal drag
+              if (deltaY > deltaX * 1.5) {
+                setIsDraggingImage(false);
+              } else if (deltaX > deltaY * 1.5) {
+                setIsDraggingImage(true);
+              }
+            }}
+            onTouchEnd={(e) => {
+              const start = (e.currentTarget as any).__touchStart;
+              if (!start) return;
+              
+              const touch = e.changedTouches[0];
+              const deltaY = touch.clientY - start.y;
+              const deltaX = Math.abs(touch.clientX - start.x);
+              const deltaTime = Date.now() - start.time;
+              const velocity = Math.abs(deltaY) / deltaTime;
+              
+              // If predominantly vertical swipe
+              if (Math.abs(deltaY) > deltaX * 1.5) {
+                if (deltaY < -50 || velocity > 0.5) {
+                  // Swipe up - expand
+                  if (sheetState === 'collapsed') {
+                    setSheetState('expanded');
+                  }
+                } else if (deltaY > 50 || velocity > 0.5) {
+                  // Swipe down - collapse or close
+                  if (sheetState === 'expanded') {
+                    setSheetState('collapsed');
+                  } else if (sheetState === 'collapsed') {
+                    onClose();
+                  }
+                }
+              }
+              
+              delete (e.currentTarget as any).__touchStart;
+            }}
+          >
             <motion.div
               drag="x"
               dragConstraints={{ left: -100, right: 100 }}
@@ -254,13 +352,14 @@ export function OfferBottomSheet({
               dragMomentum={false}
               onDragStart={handleHorizontalDragStart}
               onDragEnd={handleHorizontalDragEnd}
-              animate={controls}
+              animate={imageControls}
+              initial={{ x: 0, opacity: 1 }}
               style={{ x }}
-              className="will-change-transform flex items-center justify-center gap-4 px-[10%]"
+              className="will-change-transform flex items-center justify-center gap-4 px-[10%] max-w-[450px] mx-auto"
             >
               {/* Previous image (10% visible on left) */}
               <div 
-                className="flex-shrink-0 opacity-50 w-full" 
+                className="flex-shrink-0 opacity-35 w-full max-w-[450px]" 
                 style={{ 
                   visibility: hasPrevious ? 'visible' : 'hidden'
                 }}
@@ -276,7 +375,7 @@ export function OfferBottomSheet({
               </div>
               
               {/* Current image (center, 80% width) */}
-              <div className="flex-shrink-0 w-full">
+              <div className="flex-shrink-0 w-full max-w-[450px]">
                 <OfferImage
                   imageUrl={currentOffer.images?.[0]}
                   title={currentOffer.title}
@@ -287,7 +386,7 @@ export function OfferBottomSheet({
               
               {/* Next image (10% visible on right) */}
               <div 
-                className="flex-shrink-0 opacity-50 w-full" 
+                className="flex-shrink-0 opacity-35 w-full max-w-[450px]" 
                 style={{ 
                   visibility: hasNext ? 'visible' : 'hidden'
                 }}
@@ -332,7 +431,7 @@ export function OfferBottomSheet({
 
           {/* Expand Hint - Only show when collapsed */}
           {sheetState === 'collapsed' && (
-            <div className="flex justify-center py-1.5 text-gray-400">
+            <div className="flex justify-center py-0.5 text-gray-400">
               <button
                 onClick={toggleExpand}
                 className="flex items-center gap-0.5 text-[10px] font-medium hover:text-gray-600 transition-colors"
