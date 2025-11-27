@@ -47,7 +47,8 @@ export const createReservation = async (
     throw new Error('Your account has been banned due to repeated no-shows. Please contact support.');
   }
 
-  // NEW: Check new penalty system
+  // NEW: Check new penalty system (TEMPORARILY DISABLED - database functions not deployed yet)
+  /*
   const canReserve = await canUserReserve(customerId);
   
   if (!canReserve.can_reserve) {
@@ -62,6 +63,7 @@ export const createReservation = async (
     }
     throw new Error(`Cannot create reservation: ${canReserve.reason}`);
   }
+  */
   
   // OLD: Keep old penalty check as fallback
   const penaltyInfo = await checkUserPenalty(customerId);
