@@ -1,6 +1,6 @@
 // Modularized API exports
 export { getPartnerAnalytics, getPartnerPayoutInfo } from './api/partner-analytics';
-export { checkUserPenalty, applyPenalty, clearPenalty } from './api/penalties';
+// Old penalty system removed - using new penalty.ts system
 export { 
   getUserMaxSlots, 
   getUserSlotInfo, 

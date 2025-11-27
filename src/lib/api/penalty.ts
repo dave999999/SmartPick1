@@ -137,7 +137,7 @@ export async function getPenaltyDetails(penaltyId: string): Promise<UserPenalty 
         *,
         users!user_penalties_user_id_fkey(id, email, name, reliability_score),
         partners!user_penalties_partner_id_fkey(id, business_name),
-        reservations!user_penalties_reservation_id_fkey(id, offer_title, pickup_date, pickup_start, pickup_end)
+        reservations!user_penalties_reservation_id_fkey(id, offer_id, quantity, status, created_at, expires_at)
       `)
       .eq('id', penaltyId)
       .single();

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, User, PenaltyInfo } from '@/lib/types';
-import { createReservation, checkUserPenalty, getUserMaxSlots } from '@/lib/api';
+import { createReservation, getUserMaxSlots } from '@/lib/api';
 import { checkRateLimit } from '@/lib/rateLimiter';
 import { checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
 import { getCSRFToken } from '@/lib/csrf';
@@ -176,13 +176,8 @@ export default function ReservationModal({
   }, [penaltyInfo]);
 
   const loadPenaltyInfo = async () => {
-    if (!user) return;
-    try {
-      const info = await checkUserPenalty(user.id);
-      setPenaltyInfo(info);
-    } catch (error) {
-      logger.error('Error loading penalty info:', error);
-    }
+    // Old penalty system removed - new system handles this in reservation flow
+    setPenaltyInfo(null);
   };
 
   const handleReserve = async () => {

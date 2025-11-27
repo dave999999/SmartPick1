@@ -180,8 +180,8 @@ const AppContent = () => {
         const activePenalty = await getActivePenalty((user as any).id);
         if (cancelled) return;
         
-        if (activePenalty) {
-          const details = await getPenaltyDetails(activePenalty.id);
+        if (activePenalty && activePenalty.penalty_id) {
+          const details = await getPenaltyDetails(activePenalty.penalty_id);
           if (cancelled) return;
           setPenaltyData(details);
           setShowPenaltyModal(true);

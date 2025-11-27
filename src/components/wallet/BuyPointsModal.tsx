@@ -163,94 +163,116 @@ export function BuyPointsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-            <Coins className="w-5 h-5 text-orange-500" /> Buy SmartPoints
+      <DialogContent className="sm:max-w-[420px] p-0 gap-0 border-none shadow-2xl overflow-hidden">
+        {/* Compact Header with gradient */}
+        <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-5 pb-4 border-b border-orange-100">
+          <DialogTitle className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-orange-500" />
+            Top Up SmartPoints ✨
           </DialogTitle>
-          <DialogDescription className="text-sm">
-            1 GEL = {BOG_CONFIG.POINTS_PER_GEL} points • Min {BOG_CONFIG.MIN_GEL} / Max {BOG_CONFIG.MAX_GEL} GEL
+          <DialogDescription className="text-xs text-gray-600 mb-3">
+            Use points to reserve great deals instantly
           </DialogDescription>
-        </DialogHeader>
+          
+          {/* Compact Balance Badge */}
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-orange-200">
+            <Coins className="w-4 h-4 text-orange-500" />
+            <span className="text-xs text-gray-600">Balance:</span>
+            <span className="text-sm font-bold text-orange-600">{currentBalance.toLocaleString()}</span>
+            <span className="text-xs text-gray-500">pts</span>
+          </div>
+        </div>
 
-        <div className="space-y-5">
-          {/* Balance */}
-          <Card className="p-3 flex items-center justify-between bg-gradient-to-r from-orange-50 to-amber-50 border-orange-200">
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-gray-500 font-medium">Balance</p>
-              <p className="text-2xl font-extrabold text-orange-600 leading-tight">{currentBalance.toLocaleString()}</p>
-              <p className="text-[10px] text-gray-500">SmartPoints</p>
+        <div className="p-5 space-y-4">
+          {/* Compact Quick Select - 3 per row */}
+          <div>
+            <Label className="text-xs font-semibold text-gray-700 mb-2 block">Choose an amount or enter your own</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {BOG_CONFIG.PACKAGES.map((pkg, idx) => {
+                const selected = selectedPackage === idx && !isCustom;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handlePackageSelect(idx)}
+                    className={`px-3 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+                      selected 
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-md scale-105' 
+                        : 'bg-white hover:bg-orange-50 border-gray-200 text-gray-700 hover:border-orange-300'
+                    }`}
+                  >
+                    {pkg.gel} ₾
+                  </button>
+                );
+              })}
             </div>
-            <Sparkles className="w-10 h-10 text-orange-400" />
-          </Card>
-
-          {/* Quick amounts */}
-            <div>
-              <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block">Quick Select</Label>
-              <div className="flex flex-wrap gap-2">
-                {BOG_CONFIG.PACKAGES.map((pkg, idx) => {
-                  const selected = selectedPackage === idx && !isCustom;
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handlePackageSelect(idx)}
-                      className={`px-3 py-2 rounded-md text-sm font-semibold border flex items-center gap-1 transition ${selected ? 'bg-orange-500 text-white border-orange-500' : 'bg-white hover:bg-orange-50 border-gray-300 text-gray-700'}`}
-                    >
-                      {pkg.gel} GEL
-                      {selected && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-          {/* Custom amount */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="gel" className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block">Custom Amount (GEL)</Label>
-                <Input
-                  id="gel"
-                  inputMode="decimal"
-                  placeholder="Enter GEL"
-                  value={customGel}
-                  onChange={(e) => handleCustomAmountChange(e.target.value)}
-                  className="h-11 text-base font-semibold"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2 block">You Receive</Label>
-                <div className="h-11 px-3 border-2 rounded-md bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 flex items-center justify-between">
-                  <p className="text-base font-bold text-orange-600">
-                    {computedPoints > 0 ? computedPoints.toLocaleString() : '0'}
-                  </p>
-                  <p className="text-xs text-gray-500 font-medium">points</p>
-                </div>
-              </div>
-            </div>
-            <p className="text-[11px] text-gray-500 flex items-center gap-1"><Shield className="w-3 h-3" /> Secure BOG payment • Exact conversion auto-calculated</p>
           </div>
 
-          {/* Summary - with min-height to prevent layout shifts */}
-          <div className="min-h-[100px]">
-            {isValid && (selectedPackage !== null || (isCustom && customGel)) && (
-              <Card className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-600">Amount</span><span className="font-semibold">{computedGel.toFixed(2)} GEL</span></div>
-                  <div className="flex justify-between"><span className="text-gray-600">Points</span><span className="font-semibold text-orange-600">+{computedPoints.toLocaleString()}</span></div>
-                  <div className="flex justify-between pt-2 border-t border-gray-300"><span className="text-gray-600 font-medium">New Balance</span><span className="font-bold text-orange-600 text-lg">{(currentBalance + computedPoints).toLocaleString()} pts</span></div>
-                </div>
-              </Card>
+          {/* Compact Custom Input */}
+          <div>
+            <Label htmlFor="gel" className="text-xs font-semibold text-gray-700 mb-2 block">Or enter custom amount</Label>
+            <div className="relative">
+              <Input
+                id="gel"
+                type="text"
+                inputMode="decimal"
+                placeholder="1-50"
+                value={customGel}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                className="h-11 text-base font-semibold pr-12 rounded-xl border-2 focus:border-orange-400"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">GEL</span>
+            </div>
+            
+            {/* Inline Points Preview */}
+            {computedPoints > 0 && (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-gray-600">You will receive:</span>
+                <span className="font-bold text-orange-600 text-sm">{computedPoints.toLocaleString()} points</span>
+              </div>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" disabled={isLoading} onClick={handleClose}>Cancel</Button>
-            <Button className="flex-1 bg-orange-500 hover:bg-orange-600" disabled={!isValid || isLoading} onClick={handleContinueToPayment}>
-              {isLoading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing...</> : <>Pay {computedGel.toFixed(2)} GEL</>}
+          {/* Ultra Compact Summary */}
+          {isValid && (selectedPackage !== null || (isCustom && customGel)) && (
+            <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs border border-gray-200">
+              <div className="flex justify-between text-gray-600">
+                <span>Amount:</span>
+                <span className="font-semibold text-gray-800">{computedGel.toFixed(2)} GEL</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Points:</span>
+                <span className="font-semibold text-orange-600">+{computedPoints.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between pt-1.5 border-t border-gray-300">
+                <span className="font-medium text-gray-700">New Balance:</span>
+                <span className="font-bold text-orange-600">{(currentBalance + computedPoints).toLocaleString()} pts</span>
+              </div>
+            </div>
+          )}
+
+          {/* Compact Payment Button */}
+          <div className="space-y-2">
+            <Button 
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all" 
+              disabled={!isValid || isLoading} 
+              onClick={handleContinueToPayment}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>Pay {computedGel > 0 ? computedGel.toFixed(2) : '0.00'} GEL</>
+              )}
             </Button>
+            
+            {/* Friendly subtext */}
+            <p className="text-xs text-center text-gray-500 flex items-center justify-center gap-1.5">
+              <Shield className="w-3 h-3" />
+              <span>Secure BOG payment • Your points appear instantly!</span>
+            </p>
           </div>
         </div>
       </DialogContent>

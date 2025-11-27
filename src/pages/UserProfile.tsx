@@ -11,9 +11,15 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Edit, Coins, Clock, Bell, Lock, CreditCard, Settings, HelpCircle, ChevronRight, Globe, Utensils, MapPin, Moon, Sun, Trash2, Key, FileText } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Edit, Coins, Clock, Bell, Lock, CreditCard, Settings, HelpCircle, ChevronRight, Globe, Utensils, MapPin, Moon, Sun, Trash2, Key, FileText, Gift } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
+
+// NEW: Warm, friendly profile components (ULTRA COMPACT)
+import { ProfileHeader } from '@/components/profile/ProfileHeader';
+import { ProfileInfoCard } from '@/components/profile/ProfileInfoCard';
+import { StatsGrid } from '@/components/profile/StatsGrid';
+import { TabsNav } from '@/components/profile/TabsNav';
 import { onPointsChange } from '@/lib/pointsEventBus';
 import { logger } from '@/lib/logger';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -28,7 +34,6 @@ const ReferralCard = lazy(() => import('@/components/gamification/ReferralCard')
 const AchievementsGrid = lazy(() => import('@/components/gamification/AchievementsGrid').then(m => ({ default: m.AchievementsGrid })));
 import { TelegramConnect } from '@/components/TelegramConnect';
 import { ReservationCapacitySection } from '@/components/ReservationCapacitySection';
-import { checkUserPenaltyStatus, PenaltyStatus, liftPenaltyWithPoints } from '@/lib/penalty-system';
 import { getUserStats, UserStats } from '@/lib/gamification-api';
 const BuyPointsModal = lazy(() => import('@/components/wallet/BuyPointsModal').then(m => ({ default: m.BuyPointsModal })));
 import { requestPartnerForgiveness, checkForgivenessStatus } from '@/lib/forgiveness-api';
@@ -82,7 +87,7 @@ function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; on
 
 function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: string; fallbackUntil?: string; onUpdate?: () => void }) {
   const { t } = useI18n();
-  const [status, setStatus] = useState<PenaltyStatus | null>(null);
+  const [status, setStatus] = useState<any | null>(null);
   const [isLifting, setIsLifting] = useState(false);
   const [showForgivenessRequest, setShowForgivenessRequest] = useState(false);
   const [forgivenessReason, setForgivenessReason] = useState('');
@@ -95,14 +100,8 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
 
   const loadStatus = useCallback(async () => {
     try {
-      const s = await checkUserPenaltyStatus(userId);
-      setStatus(s);
-
-      // Check forgiveness status if there's a reservation ID
-      if (s.reservationId) {
-        const fStatus = await checkForgivenessStatus(s.reservationId);
-        setForgivenessStatus(fStatus);
-      }
+      // Old penalty system removed - using new penalty.ts system
+      setStatus(null);
     } catch (err) {
       logger.warn('Failed to load penalty status', err);
     }
@@ -586,45 +585,35 @@ export default function UserProfile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] safe-area-top pb-20 safe-area-bottom">
-      {/* Compact Header with Profile */}
-      <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-emerald-500/20 sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/')}
-                className="h-8 w-8 text-gray-300 hover:text-white hover:bg-emerald-500/20 rounded-full"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <Avatar className="h-9 w-9 border-2 border-emerald-500">
-                <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-emerald-700 text-white text-sm font-bold">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-base font-bold text-white leading-none">{user.name}</h1>
-                <p className="text-xs text-emerald-400">{user.role}</p>
-              </div>
-            </div>
-            {user.penalty_count && user.penalty_count > 0 && (
-              <div className="flex items-center gap-1.5 bg-orange-500/20 px-2.5 py-1 rounded-full border border-orange-500/30">
-                <span className="text-sm">⚠️</span>
-                <span className="text-xs font-semibold text-orange-300">{user.penalty_count}</span>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      {/* NEW: Warm, friendly profile header */}
+      <ProfileHeader 
+        user={user} 
+        onEdit={() => setIsEditing(true)}
+      />
+
+      {/* Penalty Alert - if active */}
+      {(user.penalty_count ?? 0) > 0 && (
+        <div className="px-4 mt-2">
+          <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-800 shadow-sm">
+            <CardContent className="p-3">
+              <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until || undefined} onUpdate={loadUser} />
+            </CardContent>
+          </Card>
         </div>
-      </header>
+      )}
+
+      {/* NEW: Friendly tabs navigation */}
+      <TabsNav 
+        activeTab={activeTab as 'overview' | 'achievements' | 'wallet' | 'settings'}
+        onTabChange={(tab) => setActiveTab(tab)}
+      />
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-3 max-w-5xl">
+      <div className="container mx-auto max-w-5xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-3">
-          <TabsList className={`grid w-full ${userStats ? 'grid-cols-4' : 'grid-cols-2'} max-w-md mx-auto h-9 bg-slate-800/90 backdrop-blur-sm shadow-lg border border-emerald-500/20`}>
-            <TabsTrigger value="overview" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Overview</TabsTrigger>
+          <TabsList className="hidden">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             {userStats && (
               <TabsTrigger value="achievements" className="relative text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">
                 Achievements
@@ -639,139 +628,69 @@ export default function UserProfile() {
             <TabsTrigger value="settings" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Settings</TabsTrigger>
           </TabsList>
 
-          {/* OVERVIEW TAB */}
-          <TabsContent value="overview" className="space-y-4">
-            {/* Penalty Alert - Only if penalized */}
-            {user.penalty_count && user.penalty_count > 0 && (
-              <Card className="border-orange-300 bg-orange-50 shadow-sm">
-                <CardContent className="p-4">
-                  <PenaltyStatusBlock userId={user.id} fallbackUntil={user.penalty_until || undefined} onUpdate={loadUser} />
-                </CardContent>
-              </Card>
+          {/* OVERVIEW TAB - ULTRA COMPACT */}
+          <TabsContent value="overview" className="px-4 space-y-2.5 mt-2">
+            {/* Compact info card (2x2 grid) - Height: ~90px */}
+            <ProfileInfoCard 
+              user={user}
+              onAddPhone={() => {
+                setIsEditing(true);
+                setActiveTab('settings');
+              }}
+            />
+
+            {/* Stats grid (2x2) - Height: ~90px */}
+            {userStats && (
+              <StatsGrid 
+                stats={{
+                  totalReservations: userStats.total_reservations || 0,
+                  moneySaved: userStats.money_saved || 0,
+                  currentStreak: userStats.current_streak || 0,
+                  referrals: userStats.total_referrals || 0
+                }}
+              />
             )}
 
-            {/* Quick Info Cards - Mobile Optimized */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-teal-500/20 rounded-lg p-2.5 border border-teal-500/30">
-                      <Mail className="w-5 h-5 text-teal-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-400 mb-0.5">Email</p>
-                      <p className="text-sm font-semibold text-white truncate">{user.email}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Single-line journey message - Height: ~16px */}
+            {userStats && (
+              <div className="py-1.5">
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 text-center leading-tight">
+                  {userStats.total_reservations === 0 && "Ready to start your journey? 🚀"}
+                  {userStats.total_reservations > 0 && userStats.total_reservations < 5 && "You're off to a strong start — keep going! 🚀"}
+                  {userStats.total_reservations >= 5 && userStats.total_reservations < 15 && "Great progress — you're on fire! 🔥"}
+                  {userStats.total_reservations >= 15 && "Amazing! You're a SmartPick superstar! ⭐"}
+                </p>
+              </div>
+            )}
 
-              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/20 rounded-lg p-2.5 border border-blue-500/30">
-                      <Phone className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-400 mb-0.5">Phone</p>
-                      <p className="text-sm font-semibold text-white">{user.phone || 'Not set'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-purple-500/20 rounded-lg p-2.5 border border-purple-500/30">
-                      <Calendar className="w-5 h-5 text-purple-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-400 mb-0.5">Member Since</p>
-                      <p className="text-sm font-semibold text-white">{formatDate(user.created_at)}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl hover:shadow-2xl transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`${user.penalty_count && user.penalty_count > 0 ? 'bg-orange-500/20 border-orange-500/30' : 'bg-green-500/20 border-green-500/30'} rounded-lg p-2.5 border`}>
-                      <Shield className={`w-5 h-5 ${user.penalty_count && user.penalty_count > 0 ? 'text-orange-400' : 'text-green-400'}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-400 mb-0.5">Account Status</p>
-                      <p className="text-sm font-semibold text-white">{user.penalty_count && user.penalty_count > 0 ? 'Penalized' : 'Good Standing'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {/* Action buttons - Height: ~40px */}
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <Button
+                onClick={() => setActiveTab('settings')}
+                variant="outline"
+                size="sm"
+                className="h-10 text-[12px] font-medium"
+              >
+                <UserIcon className="w-4 h-4 mr-1.5" />
+                Update Profile
+              </Button>
+              <Button
+                onClick={() => {
+                  const referralCode = user.referral_code || user.id.substring(0, 8);
+                  navigator.clipboard.writeText(`https://smartpick.ge?ref=${referralCode}`);
+                  toast.success('Referral link copied!');
+                }}
+                size="sm"
+                className="h-10 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-[12px] font-medium"
+              >
+                <Gift className="w-4 h-4 mr-1.5" />
+                Invite Friends
+              </Button>
             </div>
-
-            {/* Gamification Section - Tabbed Layout */}
-            {userStats ? (
-              <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
-                <Tabs defaultValue="stats" className="w-full">
-                  <div className="border-b border-white/10 px-4">
-                    <TabsList className="grid w-full grid-cols-4 h-auto bg-transparent">
-                      <TabsTrigger 
-                        value="stats" 
-                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-teal-400 data-[state=active]:text-teal-400 rounded-none"
-                      >
-                        Your Stats
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="level" 
-                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-purple-400 data-[state=active]:text-purple-400 rounded-none"
-                      >
-                        Your Level
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="streak" 
-                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-orange-400 data-[state=active]:text-orange-400 rounded-none"
-                      >
-                        Streak
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="referral" 
-                        className="text-xs py-3 text-gray-400 data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-400 data-[state=active]:text-blue-400 rounded-none"
-                      >
-                        Invite
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
-
-                  <TabsContent value="stats" className="p-0 m-0">
-                    <UserStatsCard stats={userStats} />
-                  </TabsContent>
-
-                  <TabsContent value="level" className="p-0 m-0">
-                    <UserLevelCard stats={userStats} />
-                  </TabsContent>
-
-                  <TabsContent value="streak" className="p-0 m-0">
-                    <StreakTracker stats={userStats} />
-                  </TabsContent>
-
-                  <TabsContent value="referral" className="p-0 m-0">
-                    <ReferralCard userId={user.id} totalReferrals={userStats.total_referrals} />
-                  </TabsContent>
-                </Tabs>
-              </Card>
-            ) : (
-              <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50">
-                <CardContent className="p-6 text-center">
-                  <div className="text-5xl mb-3">🎮</div>
-                  <p className="text-sm font-semibold text-amber-900 mb-1">Gamification Loading</p>
-                  <p className="text-xs text-amber-700">Your rewards and achievements will appear here</p>
-                </CardContent>
-              </Card>
-            )}
           </TabsContent>
 
           {/* ACHIEVEMENTS TAB */}
-          <TabsContent value="achievements" className="space-y-4">
+          <TabsContent value="achievements" className="px-4 space-y-3 mt-2">
             <AchievementsGrid
               userId={user.id}
               onUnclaimedCountChange={setUnclaimedCount}
@@ -779,18 +698,18 @@ export default function UserProfile() {
           </TabsContent>
 
           {/* WALLET TAB */}
-          <TabsContent value="wallet" className="space-y-4">
+          <TabsContent value="wallet" className="px-4 space-y-3 mt-2">
             {/* Buy Points Button */}
-            <Card className="bg-gradient-to-br from-teal-500/20 to-emerald-500/20 border-2 border-teal-500/30 shadow-xl">
+            <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">Buy SmartPoints</h3>
-                    <p className="text-xs text-gray-300 mt-1">Get more points to enjoy our services</p>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Buy SmartPoints</h3>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">Get more points to enjoy our services 🪙</p>
                   </div>
                   <Button
                     onClick={() => setIsBuyPointsModalOpen(true)}
-                    className="bg-teal-600 hover:bg-teal-700 text-white h-9"
+                    className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white h-9"
                   >
                     <Coins className="w-4 h-4 mr-2" />
                     Buy Points
@@ -811,20 +730,20 @@ export default function UserProfile() {
           </TabsContent>
 
           {/* SETTINGS TAB */}
-          <TabsContent value="settings" className="space-y-2">
+          <TabsContent value="settings" className="px-4 space-y-2 mt-2">
             {/* ACCOUNT INFORMATION */}
-            <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-white text-sm font-semibold">
-                  <UserIcon className="w-4 h-4 text-teal-400" />
-                  Account
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100 text-sm font-semibold">
+                  <UserIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  Account Info
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-3 pb-3">
                 {isEditing ? (
                   <div className="space-y-2">
                     <div className="space-y-1">
-                      <Label htmlFor="name" className="text-gray-300 text-xs font-medium">Name</Label>
+                      <Label htmlFor="name" className="text-gray-700 dark:text-gray-300 text-xs font-medium">Name</Label>
                       <Input
                         id="name"
                         value={formData.name}
@@ -834,7 +753,7 @@ export default function UserProfile() {
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-gray-300 text-xs font-medium">Phone</Label>
+                      <Label htmlFor="phone" className="text-gray-700 dark:text-gray-300 text-xs font-medium">Phone</Label>
                       <Input
                         id="phone"
                         value={formData.phone}
@@ -848,7 +767,7 @@ export default function UserProfile() {
                       <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="h-8 bg-teal-600 hover:bg-teal-700 text-xs"
+                        className="h-8 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-xs"
                       >
                         {isSaving ? 'Saving...' : 'Save'}
                       </Button>
@@ -866,22 +785,22 @@ export default function UserProfile() {
                   <div className="space-y-2">
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <p className="text-gray-400 mb-0.5">Email</p>
-                        <p className="text-white font-medium truncate">{user.email}</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Email</p>
+                        <p className="text-gray-900 dark:text-gray-100 font-medium truncate">{user.email}</p>
                       </div>
                       <div>
-                        <p className="text-gray-400 mb-0.5">Phone</p>
-                        <p className="text-white font-medium">{user.phone || 'Not set'}</p>
+                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Phone</p>
+                        <p className="text-gray-900 dark:text-gray-100 font-medium">{user.phone || 'Add phone 📱'}</p>
                       </div>
                     </div>
 
                     <Button
                       onClick={() => setIsEditing(true)}
                       variant="outline"
-                      className="w-full h-8 text-xs border-teal-600 text-teal-600 hover:bg-teal-50"
+                      className="w-full h-8 text-xs border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
                     >
                       <Edit className="w-3 h-3 mr-1" />
-                      Edit Profile
+                      Update Profile ✏️
                     </Button>
                   </div>
                 )}
@@ -896,10 +815,10 @@ export default function UserProfile() {
             />
 
             {/* NOTIFICATIONS */}
-            <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-white text-sm font-semibold">
-                  <Bell className="w-4 h-4 text-blue-400" />
+                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100 text-sm font-semibold">
+                  <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   Notifications
                 </CardTitle>
               </CardHeader>
@@ -909,10 +828,10 @@ export default function UserProfile() {
 
                 {/* Compact Notification Toggles */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between py-2 border-b border-white/10">
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-300">Email</span>
+                      <Mail className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Email</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.email}
@@ -921,10 +840,10 @@ export default function UserProfile() {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between py-2 border-b border-white/10">
+                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2">
-                      <Bell className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-300">Push</span>
+                      <Bell className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">Push</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.push}
@@ -935,8 +854,8 @@ export default function UserProfile() {
 
                   <div className="flex items-center justify-between py-2">
                     <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-gray-400" />
-                      <span className="text-xs text-gray-300">SMS</span>
+                      <Phone className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300">SMS</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.sms}
@@ -951,19 +870,19 @@ export default function UserProfile() {
             {/* SECURITY & MORE - Accordion Style */}
             <Accordion type="single" collapsible className="space-y-2">
               {/* Security */}
-              <AccordionItem value="security" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
+              <AccordionItem value="security" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-gray-900 dark:text-gray-100">
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-purple-400" />
-                    <span className="text-sm font-semibold text-white">Security</span>
+                    <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Security</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3 space-y-3">
                   {/* Set/Change Password */}
-                  <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg space-y-3">
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg space-y-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Key className="w-4 h-4 text-purple-400" />
-                      <span className="text-sm font-medium text-white">
+                      <Key className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                         {user?.email?.includes('@') && !(user as any)?.app_metadata?.provider ? 'Change Password' : 'Set Password'}
                       </span>
                     </div>
@@ -998,35 +917,35 @@ export default function UserProfile() {
                   
                   <button
                     onClick={() => toast.error('Requires admin approval')}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-red-50 text-left"
+                    className="w-full flex items-center justify-between p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-left"
                   >
                     <div className="flex items-center gap-2">
-                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                      <span className="text-xs text-red-600">Delete Account</span>
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                      <span className="text-xs text-red-600 dark:text-red-400">Delete Account</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                   </button>
                 </AccordionContent>
               </AccordionItem>
 
               {/* Preferences */}
-              <AccordionItem value="preferences" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
+              <AccordionItem value="preferences" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg px-3">
+                <AccordionTrigger className="py-2.5 hover:no-underline text-gray-900 dark:text-gray-100">
                   <div className="flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-orange-400" />
-                    <span className="text-sm font-semibold text-white">Preferences</span>
+                    <Settings className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Preferences</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-3 space-y-1.5">
                   <button
                     onClick={() => toast.info('🌍 Check the top-right menu to change language', { duration: 3000 })}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-white/5 text-left transition-colors"
+                    className="w-full flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-teal-400" />
-                      <span className="text-xs text-gray-300 font-medium">Language</span>
+                      <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Language</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                   </button>
                   {/* Location and dietary preferences hidden until implementation */}
                 </AccordionContent>

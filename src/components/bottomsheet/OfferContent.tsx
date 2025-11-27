@@ -14,7 +14,7 @@ import { PointsCost } from './PointsCost';
 import { QuantitySelector } from './QuantitySelector';
 import { ReserveButton } from './ReserveButton';
 import { getUserPoints } from '@/lib/smartpoints-api';
-import { checkUserPenalty, createReservation, getUserMaxSlots } from '@/lib/api';
+import { createReservation, getUserMaxSlots } from '@/lib/api';
 import { checkRateLimit, checkServerRateLimit, recordClientAttempt } from '@/lib/rateLimiter-server';
 import { getCSRFToken } from '@/lib/csrf';
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ import { useNavigate } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BuyPointsModal } from '@/components/BuyPointsModal';
+import { PenaltyModal } from '@/components/PenaltyModal';
 
 interface OfferContentProps {
   offer: Offer;
@@ -47,6 +48,8 @@ export function OfferContent({
   const [penaltyInfo, setPenaltyInfo] = useState<any>(null);
   const [countdown, setCountdown] = useState('');
   const [userMaxSlots, setUserMaxSlots] = useState(3);
+  const [showPenaltyModal, setShowPenaltyModal] = useState(false);
+  const [penaltyData, setPenaltyData] = useState<any>(null);
 
   const isProcessingRef = useRef(false);
   const lastClickTimeRef = useRef(0);
@@ -105,13 +108,8 @@ export function OfferContent({
   };
 
   const loadPenaltyInfo = async () => {
-    if (!user) return;
-    try {
-      const info = await checkUserPenalty(user.id);
-      setPenaltyInfo(info);
-    } catch (error) {
-      logger.error('Failed to load penalty info:', error);
-    }
+    // Old penalty system removed - new system handles this in reservation flow
+    setPenaltyInfo(null);
   };
 
   const loadUserMaxSlots = async () => {
@@ -206,8 +204,31 @@ export function OfferContent({
       navigate(`/reservation/${reservation.id}`);
 
     } catch (error: any) {
-      logger.error('❌ Reservation failed:', error);
-      toast.error(error.message || 'Failed to create reservation. Please try again.');
+      // Check if it's a penalty error first
+      let isPenaltyError = false;
+      try {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorData = JSON.parse(errorMessage);
+        
+        if (errorData.type === 'PENALTY_BLOCKED' && errorData.penalty) {
+          logger.log('[OfferContent] Penalty blocked - showing modal');
+          setPenaltyData(errorData.penalty);
+          setShowPenaltyModal(true);
+          setIsReserving(false);
+          isProcessingRef.current = false;
+          isPenaltyError = true;
+          return;
+        }
+      } catch (parseError) {
+        // Not a penalty error, continue with regular error handling
+      }
+      
+      // Only log and show error if it's not a penalty (which is handled via modal)
+      if (!isPenaltyError) {
+        logger.error('❌ Reservation failed:', error);
+        toast.error(error.message || 'Failed to create reservation. Please try again.');
+      }
+      
       setIsReserving(false);
       isProcessingRef.current = false;
     }
@@ -308,6 +329,20 @@ export function OfferContent({
           userId={user.id}
           currentBalance={pointsBalance}
           onSuccess={handleBuyPointsSuccess}
+        />
+      )}
+
+      {/* Penalty Modal */}
+      {showPenaltyModal && penaltyData && user && (
+        <PenaltyModal
+          penalty={penaltyData}
+          userPoints={pointsBalance}
+          onClose={() => setShowPenaltyModal(false)}
+          onPenaltyLifted={() => {
+            setShowPenaltyModal(false);
+            loadPointsBalance();
+            loadPenaltyInfo();
+          }}
         />
       )}
     </motion.div>

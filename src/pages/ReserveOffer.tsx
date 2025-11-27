@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Offer, PenaltyInfo } from '@/lib/types';
-import { getOfferById, createReservation, getCurrentUser, checkUserPenalty } from '@/lib/api';
-import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty'; // NEW: Import new penalty system
+import { Offer } from '@/lib/types';
+import { getOfferById, createReservation, getCurrentUser } from '@/lib/api';
+import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { requestQueue } from '@/lib/requestQueue';
@@ -27,44 +27,20 @@ export default function ReserveOffer() {
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isReserving, setIsReserving] = useState(false);
-  const [penaltyInfo, setPenaltyInfo] = useState<PenaltyInfo | null>(null);
-  const [countdown, setCountdown] = useState('');
   const navigate = useNavigate();
   const { t } = useI18n();
   const isOnline = useOnlineStatus();
   const { subscribeToPush, isSupported: pushSupported } = usePushNotifications();
   
-  // NEW: Penalty modal state
+  // Penalty modal state (new system)
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyData, setPenaltyData] = useState<any>(null);
   const [userPoints, setUserPoints] = useState(0);
 
   useEffect(() => {
     loadOffer();
-    loadPenaltyInfo();
-    checkPenaltyStatus(); // NEW: Check new penalty system on mount
+    checkPenaltyStatus();
   }, [offerId]);
-
-  useEffect(() => {
-    if (penaltyInfo?.isUnderPenalty && penaltyInfo.penaltyUntil) {
-      const interval = setInterval(() => {
-        const now = new Date();
-        const diff = penaltyInfo.penaltyUntil!.getTime() - now.getTime();
-        
-        if (diff <= 0) {
-          setCountdown(t('penalty.lifted'));
-          loadPenaltyInfo(); // Reload to clear penalty
-        } else {
-          const hours = Math.floor(diff / (1000 * 60 * 60));
-          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          setCountdown(`${hours}h ${minutes}m ${seconds}s`);
-        }
-      }, 1000);
-
-      return () => clearInterval(interval);
-    }
-  }, [penaltyInfo]);
 
   const loadOffer = async () => {
     if (!offerId) return;
@@ -86,23 +62,7 @@ export default function ReserveOffer() {
     }
   };
 
-  const loadPenaltyInfo = async () => {
-    try {
-      const { user } = await getCurrentUser();
-      if (!user) {
-        toast.error(t('toast.signInToReserve'));
-        navigate('/');
-        return;
-      }
-
-      const info = await checkUserPenalty(user.id);
-      setPenaltyInfo(info);
-    } catch (error) {
-      logger.error('Error loading penalty info:', error);
-    }
-  };
-  
-  // NEW: Check new penalty system
+  // Check new penalty system
   const checkPenaltyStatus = async () => {
     try {
       const { user } = await getCurrentUser();
@@ -131,11 +91,6 @@ export default function ReserveOffer() {
 
   const handleReserve = async () => {
     if (!offer) return;
-
-    if (penaltyInfo?.isUnderPenalty) {
-      toast.error(`${t('toast.underPenalty')} ${countdown}`);
-      return;
-    }
 
     try {
       setIsReserving(true);
@@ -345,20 +300,6 @@ export default function ReserveOffer() {
             <p className="text-gray-600">{offer.partner?.business_name}</p>
           </div>
 
-          {/* Penalty Warning */}
-          {penaltyInfo?.isUnderPenalty && (
-            <Alert className="bg-red-500/20 border-red-500/50 mb-4">
-              <AlertCircle className="h-4 w-4 text-red-400" />
-              <AlertDescription className="text-red-300">
-                <strong>{t('penalty.accountPenaltyActive')}</strong>
-                <p className="mt-1">
-                  {t('penalty.missedPrefix')} {penaltyInfo.penaltyCount} {t('penalty.missedSuffix')}
-                  {' '}{t('penalty.blockedFor')} <strong>{countdown}</strong>
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Expiring Soon Warning */}
           {isExpiringSoon && (
             <Alert className="bg-orange-500/20 border-orange-500/50 mb-4">
@@ -420,7 +361,7 @@ export default function ReserveOffer() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                disabled={quantity <= 1 || penaltyInfo?.isUnderPenalty}
+                disabled={quantity <= 1}
                 className="min-w-[44px] min-h-[44px] rounded-full bg-gray-200 hover:bg-gray-300 text-gray-900"
                 aria-label="Decrease quantity"
               >
@@ -442,7 +383,7 @@ export default function ReserveOffer() {
                       e.currentTarget.blur(); // Dismiss keyboard
                     }
                   }}
-                  disabled={penaltyInfo?.isUnderPenalty}
+                  disabled={false}
                   className="text-4xl font-bold text-gray-900 mb-1 bg-transparent text-center w-20 focus:outline-none focus:ring-2 focus:ring-orange-500 rounded-lg"
                 />
                 <div className="text-xs text-gray-500 uppercase tracking-wider">MAX {maxQuantity}</div>
@@ -451,7 +392,7 @@ export default function ReserveOffer() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
-                disabled={quantity >= maxQuantity || penaltyInfo?.isUnderPenalty}
+                disabled={quantity >= maxQuantity}
                 className="min-w-[44px] min-h-[44px] rounded-full bg-gray-200 hover:bg-gray-300 text-gray-900"
                 aria-label="Increase quantity"
               >
@@ -506,24 +447,16 @@ export default function ReserveOffer() {
             disabled={
               isReserving || 
               offer.quantity_available === 0 || 
-              penaltyInfo?.isUnderPenalty ||
               !isOnline
             }
           >
             {isReserving 
               ? t('reservation.creating') 
-              : penaltyInfo?.isUnderPenalty 
-              ? `${t('reservation.blocked')} ${countdown}` 
               : '🎫 Reserve for Free'}
           </Button>
 
           <p className="text-xs text-gray-400 text-center">
             {t('reservation.heldNotice')}
-            {penaltyInfo && penaltyInfo.penaltyCount > 0 && !penaltyInfo.isUnderPenalty && (
-              <span className="block mt-1 text-orange-500 font-medium">
-                ⚠️ {t('reservation.penaltyWarningPrefix')} {penaltyInfo.penaltyCount} {t('reservation.penaltyWarningSuffix')}
-              </span>
-            )}
           </p>
         </div>
       </div>
@@ -537,7 +470,6 @@ export default function ReserveOffer() {
           onPenaltyLifted={() => {
             setShowPenaltyModal(false);
             checkPenaltyStatus(); // Refresh penalty status
-            loadPenaltyInfo(); // Refresh old penalty info too
           }}
         />
       )}

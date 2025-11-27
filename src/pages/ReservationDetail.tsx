@@ -25,7 +25,6 @@ L.Icon.Default.mergeOptions({
 
 // New compact UI components
 import CountdownBar from '@/components/reservations/CountdownBar';
-import { PenaltyModal } from '@/components/PenaltyModal';
 import PickupSuccessModal from '@/components/PickupSuccessModal';
 
 export default function ReservationDetail() {
@@ -40,8 +39,6 @@ export default function ReservationDetail() {
   const [etaMinutes, setEtaMinutes] = useState<number | null>(null);
   const [routeProfile] = useState<'driving' | 'walking' | 'cycling'>('driving');
   const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
-  const [userPenaltyInfo, setUserPenaltyInfo] = useState<{penaltyCount: number; penaltyUntil: string | null; isBanned: boolean}>({penaltyCount: 0, penaltyUntil: null, isBanned: false});
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [savedAmount, setSavedAmount] = useState(0);
   const [pointsEarned, setPointsEarned] = useState(0);
@@ -78,25 +75,6 @@ export default function ReservationDetail() {
       setReservation(found);
       const qrUrl = await generateQRCodeDataURL(found.qr_code);
       setQrCodeUrl(qrUrl);
-
-      // Check if reservation failed and user has penalty
-      if (found.status === 'FAILED_PICKUP' || (found.status === 'ACTIVE' && new Date(found.expires_at) < new Date())) {
-        // Fetch user penalty info
-        const { data: userData } = await supabase
-          .from('users')
-          .select('penalty_count, penalty_until, is_banned')
-          .eq('id', user.id)
-          .single();
-        
-        if (userData) {
-          setUserPenaltyInfo({
-            penaltyCount: userData.penalty_count || 0,
-            penaltyUntil: userData.penalty_until,
-            isBanned: userData.is_banned || false
-          });
-          setPenaltyModalOpen(true);
-        }
-      }
     } catch (error) {
       logger.error('Error loading reservation:', error);
       toast.error(t('toast.failedLoadReservation'));
@@ -580,15 +558,6 @@ export default function ReservationDetail() {
           </div>
         </div>
       )}
-
-      {/* Penalty Modal */}
-      <PenaltyModal 
-        open={penaltyModalOpen}
-        onClose={() => setPenaltyModalOpen(false)}
-        penaltyCount={userPenaltyInfo.penaltyCount}
-        penaltyUntil={userPenaltyInfo.penaltyUntil}
-        isBanned={userPenaltyInfo.isBanned}
-      />
 
       {/* Pickup Success Celebration Modal */}
       <PickupSuccessModal
