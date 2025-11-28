@@ -603,7 +603,7 @@ export async function getPendingForgivenessRequests(partnerId: string) {
       .select(`
         *,
         users!user_penalties_user_id_fkey(id, name, email, reliability_score),
-        reservations!user_penalties_reservation_id_fkey(id, offer_title, pickup_date, price)
+        reservations!user_penalties_reservation_id_fkey(id, pickup_date, total_price, offer:offers(title))
       `)
       .eq('partner_id', partnerId)
       .eq('forgiveness_status', 'pending')

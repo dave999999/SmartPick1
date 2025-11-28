@@ -149,9 +149,9 @@ export default function PartnerOffers({
           isProcessing ? 'opacity-60 pointer-events-none' : ''
         } ${isSelected ? 'border-teal-500 ring-2 ring-teal-100' : 'border-gray-200'}`}
       >
-        <CardContent className="p-4">
+        <CardContent className="p-3 sm:p-4">
           {/* Selection Checkbox */}
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-2 sm:mb-3">
             <button
               onClick={() => toggleSelectOffer(offer.id)}
               className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -163,7 +163,7 @@ export default function PartnerOffers({
               )}
             </button>
             {showMetrics && (
-              <div className="flex items-center gap-2 text-xs">
+              <div className="hidden sm:flex items-center gap-2 text-xs">
                 <div className="flex items-center gap-1 bg-emerald-100 px-2.5 py-1 rounded-lg">
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                   <span className="font-bold text-emerald-700">{conversionRate}%</span>
@@ -177,9 +177,9 @@ export default function PartnerOffers({
           </div>
           
           {/* Top Section: Image + Info */}
-          <div className="flex gap-4 mb-4">
+          <div className="flex gap-2 sm:gap-4 mb-3 sm:mb-4">
             {/* Image */}
-            <div className="relative flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+            <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg sm:rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
               <img
                 src={offer.images[0] || '/placeholder-food.jpg'}
                 alt={offer.title}
@@ -194,30 +194,30 @@ export default function PartnerOffers({
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <h3 className="font-bold text-gray-900 text-base line-clamp-2">{offer.title}</h3>
-                <Badge className={`${getStatusColor(status)} text-white text-xs px-3 py-1 rounded-lg shrink-0 font-semibold`}>
+              <div className="flex items-start justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-2">
+                <h3 className="font-bold text-gray-900 text-sm sm:text-base line-clamp-2">{offer.title}</h3>
+                <Badge className={`${getStatusColor(status)} text-white text-[10px] sm:text-xs px-2 sm:px-3 py-0.5 sm:py-1 rounded-md sm:rounded-lg shrink-0 font-semibold`}>
                   {status}
                 </Badge>
               </div>
 
               {/* Price and Stock */}
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-2xl font-bold text-teal-600">₾{offer.smart_price.toFixed(2)}</span>
+              <div className="flex items-baseline gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                <span className="text-lg sm:text-2xl font-bold text-teal-600">₾{offer.smart_price.toFixed(2)}</span>
                 {discountPercent > 0 && (
-                  <span className="text-sm text-gray-500 line-through">₾{offer.original_price.toFixed(2)}</span>
+                  <span className="text-xs sm:text-sm text-gray-500 line-through">₾{offer.original_price.toFixed(2)}</span>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 text-sm text-gray-700">
-                <div className="flex items-center gap-1.5 bg-gray-100 px-2.5 py-1 rounded-lg">
-                  <Package className="w-4 h-4" />
+              <div className="flex items-center gap-1.5 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-gray-100 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg">
+                  <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className={isLowStock ? 'text-orange-600 font-bold' : 'font-semibold'}>
                     {offer.quantity_available}/{offer.quantity_total}
                   </span>
                 </div>
                 {discountPercent > 0 && (
-                  <Badge className="bg-rose-100 text-rose-700 text-xs px-2.5 py-1 rounded-lg border border-rose-200 font-semibold">
+                  <Badge className="bg-rose-100 text-rose-700 text-[10px] sm:text-xs px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg border border-rose-200 font-semibold">
                     -{discountPercent}% OFF
                   </Badge>
                 )}
@@ -226,12 +226,12 @@ export default function PartnerOffers({
           </div>
 
           {/* Actions Row */}
-          <div className="flex gap-2 pt-4 border-t border-gray-200">
+          <div className="flex gap-1.5 sm:gap-2 pt-3 sm:pt-4 border-t border-gray-200">
             {/* Toggle Active/Pause */}
             <button
               onClick={() => onToggleOffer(offer.id, offer.status)}
               disabled={isProcessing || status === 'EXPIRED' || status === 'SOLD_OUT'}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg transition-all text-xs sm:text-sm ${
                 status === 'ACTIVE'
                   ? 'bg-orange-100 hover:bg-orange-200 text-orange-700 border border-orange-200'
                   : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border border-emerald-200'
@@ -245,40 +245,40 @@ export default function PartnerOffers({
             <button
               onClick={() => onRefreshQuantity(offer.id)}
               disabled={isProcessing}
-              className="p-2.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all border border-blue-200"
+              className="p-1.5 sm:p-2.5 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 transition-all border border-blue-200"
               title="Refresh quantity"
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Edit */}
             <button
               onClick={() => onEditOffer(offer)}
               disabled={isProcessing}
-              className="p-2.5 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-700 transition-all border border-teal-200"
+              className="p-1.5 sm:p-2.5 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-700 transition-all border border-teal-200"
               title="Edit offer"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Clone */}
             <button
               onClick={() => onCloneOffer(offer)}
               disabled={isProcessing}
-              className="p-2.5 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-all border border-green-200"
+              className="p-1.5 sm:p-2.5 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 transition-all border border-green-200"
               title="Clone offer"
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             {/* Delete */}
             <button
               onClick={() => setDeleteConfirmId(offer.id)}
               disabled={isProcessing}
-              className="p-2.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 transition-all border border-red-200"
+              className="p-1.5 sm:p-2.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 transition-all border border-red-200"
               title="Delete offer"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </CardContent>

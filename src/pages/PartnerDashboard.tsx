@@ -66,7 +66,6 @@ import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
 import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
-import ForgivenessRequests from '@/components/partner/ForgivenessRequests';
 import PenaltyForgivenessTab from '@/components/partner/PenaltyForgivenessTab';
 import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
@@ -78,6 +77,7 @@ import PartnerOffers from '@/components/partner/PartnerOffers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
 import PartnerOnboardingTour from '@/components/partner/PartnerOnboardingTour';
+import { PartnerDashboardRedesigned } from '@/components/partner/PartnerDashboardRedesigned';
 // (Language switch removed from this page — language control moved to Index header)
 
 const extractErrorMessage = (error: unknown, fallback = 'Unknown error') => {
@@ -124,7 +124,7 @@ export default function PartnerDashboard() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [activeView, setActiveView] = useState('reservations');
+  const [activeView, setActiveView] = useState('slots');
   const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -1054,52 +1054,41 @@ export default function PartnerDashboard() {
       {/* Announcement Popup */}
       <AnnouncementPopup />
       
-      {/* Header - Clean Modern Design */}
-      <header className="bg-white/98 backdrop-blur-sm border-b border-emerald-100/50 sticky top-0 z-50 shadow-md">
-        <div className="container mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex flex-col min-w-0">
-                    <h1 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-transparent bg-clip-text truncate" style={{ fontWeight: 700 }}>
-                      {partner?.business_name}
-                    </h1>
-                    <p className="text-xs text-gray-600 font-normal" style={{ fontWeight: 400 }}>{t('partner.dashboard.title')}</p>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="font-semibold">{partner?.business_name}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+      {/* Header - Compact Mobile Design */}
+      <header className="bg-white/98 backdrop-blur-sm border-b border-emerald-100/50 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex flex-col min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-transparent bg-clip-text truncate leading-tight" style={{ fontWeight: 700 }}>
+                {partner?.business_name}
+              </h1>
+              <p className="text-[10px] sm:text-xs text-gray-500 font-normal leading-tight" style={{ fontWeight: 400 }}>{t('partner.dashboard.title')}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Modern Wallet Card */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Compact Wallet Card */}
             {partnerPoints && (
               <button
                 onClick={() => setIsPurchaseSlotDialogOpen(true)}
-                className="group shrink-0 relative px-4 py-2.5 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 shadow-sm hover:border-emerald-300 hover:shadow-xl hover:shadow-emerald-100/50 active:scale-[0.98] transition-all duration-300"
+                className="group shrink-0 relative px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/50 hover:border-emerald-300 hover:shadow-md active:scale-[0.98] transition-all duration-200"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   {/* Icon */}
-                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 shadow-sm">
-                    <Wallet className="w-5 h-5 text-white" strokeWidth={2} />
+                  <div className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600">
+                    <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
                   </div>
                   
                   {/* Content */}
                   <div className="flex flex-col items-start">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-lg font-bold text-gray-900">
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm sm:text-base font-bold text-gray-900 leading-tight">
                         {partnerPoints.balance}
                       </span>
-                      <span className="text-xs font-semibold text-emerald-600">SP</span>
+                      <span className="text-[10px] font-semibold text-emerald-600">SP</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-600 font-medium">
-                        {partnerPoints.offer_slots} slots
-                      </span>
-                    </div>
+                    <span className="text-[10px] sm:text-xs text-gray-600 font-medium leading-tight">
+                      {partnerPoints.offer_slots} slots
+                    </span>
                   </div>
                 </div>
               </button>
@@ -1111,9 +1100,9 @@ export default function PartnerDashboard() {
                 <Button
                   variant="outline"
                   size="icon"
-                  className="shrink-0 h-10 w-10 rounded-xl bg-white border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all"
+                  className="shrink-0 h-8 w-8 sm:h-9 sm:w-9 rounded-lg sm:rounded-xl bg-white border border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 transition-all"
                 >
-                  <User className="w-5 h-5 text-gray-700" />
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg">
@@ -1378,18 +1367,49 @@ export default function PartnerDashboard() {
               processingIds={processingIds}
             />
             
-            {/* Forgiveness Requests - Show all reservations that might have requests */}
-            <ForgivenessRequests
-              reservations={allReservations}
-              onApprove={handleApproveForgivenessRequest}
-              onDeny={handleDenyForgivenessRequest}
-              processingIds={processingIds}
-            />
-
-            {/* NEW: Penalty-based Forgiveness Requests */}
+            {/* Penalty Forgiveness Requests */}
             {partner?.id && <PenaltyForgivenessTab partnerId={partner.id} />}
           </div>
         )}
+            </div>
+          )}
+
+          {activeView === 'slots' && (
+            <div>
+              {isPending ? (
+                <Card className="mb-6 md:mb-8 rounded-2xl border-[#E8F9F4] shadow-lg opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl md:text-2xl">
+                      📦 Your Offer Slots
+                      <Lock className="w-5 h-5 text-gray-400" />
+                    </CardTitle>
+                    <CardDescription className="text-sm md:text-base">
+                      Manage your offers and slots - available after approval
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8 md:py-12">
+                      <Lock className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2 text-sm md:text-base">{t('partner.dashboard.pending.offersDisabled')}</p>
+                      <p className="text-xs md:text-sm text-gray-400">{t('partner.dashboard.pending.createReach')}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <PartnerDashboardRedesigned
+                  partner={partner!}
+                  offers={offers}
+                  pointBalance={partnerPoints?.balance || 0}
+                  onCreateOffer={() => setIsCreateDialogOpen(true)}
+                  onScanQR={() => setQrScannerOpen(true)}
+                  onEditOffer={openEditDialog}
+                  onToggleOffer={handleToggleOffer}
+                  onDeleteOffer={handleDeleteOffer}
+                  onRefreshQuantity={handleRefreshQuantity}
+                  onCloneOffer={handleCreateNewFromOld}
+                  processingIds={processingIds}
+                />
+              )}
             </div>
           )}
 
@@ -1415,10 +1435,14 @@ export default function PartnerDashboard() {
                   </CardContent>
                 </Card>
               ) : (
-                <PartnerOffers
+                <PartnerDashboardRedesigned
+                  partner={partner!}
                   offers={offers}
-                  onToggleOffer={handleToggleOffer}
+                  pointBalance={partnerPoints?.balance || 0}
+                  onCreateOffer={() => setIsCreateDialogOpen(true)}
+                  onScanQR={() => setQrScannerOpen(true)}
                   onEditOffer={openEditDialog}
+                  onToggleOffer={handleToggleOffer}
                   onDeleteOffer={handleDeleteOffer}
                   onRefreshQuantity={handleRefreshQuantity}
                   onCloneOffer={handleCreateNewFromOld}

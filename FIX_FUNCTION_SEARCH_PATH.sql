@@ -1,79 +1,60 @@
 -- Migration: Fix Function Search Path Security Issues
--- Date: 2025-11-20
+-- Date: 2025-11-28
 -- Purpose: Set search_path on all functions to prevent schema hijacking attacks
 -- This fixes the "Function Search Path Mutable" security warnings
+-- ULTRA SAFE VERSION: Uses dynamic SQL to handle any function signature
 
 BEGIN;
 
 -- ===================================================================
--- PART 1: Point Purchase Functions
+-- AUTOMATIC FIX: Dynamically find and fix ALL mutable functions
 -- ===================================================================
 
-ALTER FUNCTION public.update_point_purchase_orders_updated_at() 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.purchase_reservation_slot(UUID, INTEGER, INTEGER) 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 2: Referral System Functions
--- ===================================================================
-
-ALTER FUNCTION public.apply_referral_code_with_rewards(UUID, TEXT, INET, TEXT, TEXT) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.check_referral_limits(UUID) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.calculate_referral_suspicion_score(UUID, INET, TEXT) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.admin_review_referral(UUID, TEXT, TEXT) 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 3: System Settings Functions
--- ===================================================================
-
-ALTER FUNCTION public.update_system_setting(TEXT, TEXT) 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 4: Push Notifications Functions
--- ===================================================================
-
-ALTER FUNCTION public.update_push_subscriptions_updated_at() 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 5: Partner Functions
--- ===================================================================
-
-ALTER FUNCTION public.partner_mark_no_show(UUID, UUID) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.partner_mark_no_show_no_penalty(UUID, UUID) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.partner_confirm_no_show(UUID, UUID) 
-  SET search_path = public, pg_temp;
-
-ALTER FUNCTION public.partner_forgive_customer(UUID, UUID, TEXT) 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 6: User Achievement Functions
--- ===================================================================
-
-ALTER FUNCTION public.check_user_achievements(UUID) 
-  SET search_path = public, pg_temp;
-
--- ===================================================================
--- PART 7: Auto-Expire Functions
--- ===================================================================
-
-ALTER FUNCTION public.auto_expire_failed_pickups() 
-  SET search_path = public, pg_temp;
+DO $$ 
+DECLARE
+  func_record RECORD;
+  func_signature TEXT;
+  fixed_count INT := 0;
+  error_count INT := 0;
+BEGIN
+  -- Loop through all functions in public schema that don't have search_path set
+  FOR func_record IN 
+    SELECT 
+      p.oid,
+      p.proname,
+      pg_get_function_identity_arguments(p.oid) as args
+    FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+      AND (p.proconfig IS NULL OR NOT array_to_string(p.proconfig, ',') LIKE '%search_path%')
+  LOOP
+    BEGIN
+      -- Build the function signature
+      IF func_record.args = '' THEN
+        func_signature := format('public.%I()', func_record.proname);
+      ELSE
+        func_signature := format('public.%I(%s)', func_record.proname, func_record.args);
+      END IF;
+      
+      -- Try to alter the function
+      EXECUTE format('ALTER FUNCTION %s SET search_path = public, pg_temp', func_signature);
+      fixed_count := fixed_count + 1;
+      
+      RAISE NOTICE 'Fixed: %', func_signature;
+      
+    EXCEPTION WHEN OTHERS THEN
+      error_count := error_count + 1;
+      RAISE WARNING 'Could not fix % - %', func_signature, SQLERRM;
+    END;
+  END LOOP;
+  
+  RAISE NOTICE '====================================';
+  RAISE NOTICE '✅ Fixed % functions', fixed_count;
+  IF error_count > 0 THEN
+    RAISE NOTICE '⚠️  Skipped % functions (errors)', error_count;
+  END IF;
+  RAISE NOTICE '====================================';
+END $$;
 
 -- ===================================================================
 -- VERIFICATION
@@ -84,34 +65,15 @@ DO $$
 DECLARE
   mutable_count INT;
 BEGIN
+  -- Count functions that still have mutable search_path
   SELECT COUNT(*) INTO mutable_count
   FROM pg_proc p
   JOIN pg_namespace n ON p.pronamespace = n.oid
   WHERE n.nspname = 'public'
-    AND p.proname IN (
-      'update_point_purchase_orders_updated_at',
-      'purchase_reservation_slot',
-      'apply_referral_code_with_rewards',
-      'check_referral_limits',
-      'calculate_referral_suspicion_score',
-      'admin_review_referral',
-      'update_system_setting',
-      'update_push_subscriptions_updated_at',
-      'partner_mark_no_show',
-      'partner_mark_no_show_no_penalty',
-      'partner_confirm_no_show',
-      'partner_forgive_customer',
-      'check_user_achievements',
-      'auto_expire_failed_pickups'
-    )
-    AND (prosecdef OR NOT proretset)
-    AND prosrc NOT LIKE '%search_path%';
+    AND (p.proconfig IS NULL OR array_to_string(p.proconfig, ',') NOT LIKE '%search_path%');
 
-  IF mutable_count > 0 THEN
-    RAISE WARNING 'Still have % functions without fixed search_path', mutable_count;
-  ELSE
-    RAISE NOTICE 'All functions now have fixed search_path - security issue resolved!';
-  END IF;
+  RAISE NOTICE '✅ Script completed! Remaining mutable functions: %', mutable_count;
+  RAISE NOTICE 'Check Supabase dashboard - warnings should be gone or reduced!';
 END $$;
 
 COMMIT;
@@ -134,24 +96,25 @@ COMMIT;
 -- - No functionality is changed
 
 -- ===================================================================
--- ROLLBACK (if needed)
+-- ROLLBACK (if needed - NOT RECOMMENDED)
 -- ===================================================================
 /*
--- To remove search_path settings (not recommended):
+-- To remove search_path settings:
 BEGIN;
-ALTER FUNCTION public.update_point_purchase_orders_updated_at() RESET search_path;
-ALTER FUNCTION public.purchase_reservation_slot() RESET search_path;
-ALTER FUNCTION public.apply_referral_code_with_rewards(UUID, TEXT) RESET search_path;
-ALTER FUNCTION public.check_referral_limits(UUID) RESET search_path;
-ALTER FUNCTION public.calculate_referral_suspicion_score(UUID, INET, TEXT) RESET search_path;
-ALTER FUNCTION public.admin_review_referral(UUID, TEXT, TEXT) RESET search_path;
-ALTER FUNCTION public.update_system_setting(TEXT, TEXT) RESET search_path;
-ALTER FUNCTION public.update_push_subscriptions_updated_at() RESET search_path;
-ALTER FUNCTION public.partner_mark_no_show(UUID, UUID) RESET search_path;
-ALTER FUNCTION public.partner_mark_no_show_no_penalty(UUID, UUID) RESET search_path;
-ALTER FUNCTION public.partner_confirm_no_show(UUID, UUID) RESET search_path;
-ALTER FUNCTION public.partner_forgive_customer(UUID, UUID, TEXT) RESET search_path;
-ALTER FUNCTION public.check_user_achievements(UUID) RESET search_path;
-ALTER FUNCTION public.auto_expire_failed_pickups() RESET search_path;
+ALTER FUNCTION public.update_contact_submissions_updated_at() RESET search_path;
+ALTER FUNCTION public.check_email_rate_limit() RESET search_path;
+ALTER FUNCTION public.update_app_config_updated_at() RESET search_path;
+ALTER FUNCTION public.app_metadata_touch_updated_at() RESET search_path;
+ALTER FUNCTION public.cleanup_expired_tokens() RESET search_path;
+ALTER FUNCTION public.create_password_reset_token(TEXT) RESET search_path;
+ALTER FUNCTION public.get_user_by_email(TEXT) RESET search_path;
+ALTER FUNCTION public.update_reliability_score_trigger() RESET search_path;
+ALTER FUNCTION public.calculate_reliability_score() RESET search_path;
+ALTER FUNCTION public.update_offense_history() RESET search_path;
+ALTER FUNCTION public.get_active_penalty(UUID) RESET search_path;
+ALTER FUNCTION public.apply_penalty_for_missed_pickup(UUID, UUID) RESET search_path;
+ALTER FUNCTION public.expire_forgiveness_requests() RESET search_path;
+ALTER FUNCTION public.can_user_reserve(UUID) RESET search_path;
+ALTER FUNCTION public.get_revenue_trends(UUID, TEXT) RESET search_path;
 COMMIT;
 */

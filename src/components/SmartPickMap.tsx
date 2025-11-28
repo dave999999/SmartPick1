@@ -87,9 +87,15 @@ const SmartPickMap = memo(({
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const routeInfoRef = useRef<HTMLDivElement | null>(null);
   const [filteredOffers, setFilteredOffers] = useState<Offer[]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(externalUserLocation || null);
   const [mapTilerKey, setMapTilerKey] = useState<string | null>(null);
+  const [activeRoute, setActiveRoute] = useState<{
+    distance: number;
+    duration: number;
+    partnerName: string;
+  } | null>(null);
 
   // Sync external userLocation with internal state
   useEffect(() => {
@@ -170,6 +176,19 @@ const SmartPickMap = memo(({
 
       mapRef.current = map;
       
+      // Add click listener to clear route when clicking on empty map area
+      map.on('click', (e) => {
+        // Check if click is on a marker or other feature
+        const features = map.queryRenderedFeatures(e.point);
+        if (features.length === 0) {
+          clearRoute();
+          // Notify parent to clear filters (via search query)
+          if (onMarkerClick) {
+            onMarkerClick('', undefined, []);
+          }
+        }
+      });
+      
       // Force markers to be added after map loads
       map.once('load', () => {
         console.log('🗺️ Map loaded, ready for markers');
@@ -184,6 +203,192 @@ const SmartPickMap = memo(({
       toast.error('Failed to load map');
     }
   }, [mapTilerKey, showUserLocation, onLocationChange]);
+
+  // Calculate distance between two points (Haversine formula)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Draw route between user and partner location using actual routing
+  const drawRoute = async (partnerLat: number, partnerLng: number, partnerName: string) => {
+    const map = mapRef.current;
+    if (!map || !userLocation || !mapTilerKey) return;
+
+    // Remove existing route
+    if (map.getLayer('route')) map.removeLayer('route');
+    if (map.getSource('route')) map.removeSource('route');
+
+    try {
+      // Use OpenRouteService API (free, no API key needed for low usage)
+      // Or use OSRM (Open Source Routing Machine)
+      const userLng = userLocation[1];
+      const userLat = userLocation[0];
+      
+      // Using OSRM public API for walking route
+      const url = `https://router.project-osrm.org/route/v1/foot/${userLng},${userLat};${partnerLng},${partnerLat}?overview=full&geometries=geojson`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      
+      console.log('🗺️ OSRM API response:', data);
+
+      if (!data.routes || data.routes.length === 0) {
+        throw new Error('No route found');
+      }
+
+      const route = data.routes[0];
+      console.log('🗺️ Route data:', route);
+      
+      // OSRM returns distance in meters, duration in seconds
+      const distance = route.distance / 1000; // Convert meters to km
+      const duration = route.duration / 60; // Convert seconds to minutes
+
+      setActiveRoute({
+        distance,
+        duration,
+        partnerName
+      });
+
+      // OSRM returns GeoJSON geometry with geometries=geojson parameter
+      const routeCoordinates = route.geometry.coordinates;
+      console.log('🗺️ Route coordinates count:', routeCoordinates.length);
+      
+      if (!routeCoordinates || routeCoordinates.length < 2) {
+        throw new Error('Invalid route coordinates');
+      }
+
+      // Add route line
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoordinates
+          }
+        }
+      });
+
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#FF5722',
+          'line-width': 4,
+          'line-opacity': 0.8
+        }
+      });
+
+      // Fit bounds to show entire route with padding
+      // Bottom padding is larger to keep route visible above the offers section
+      const bounds = new maplibregl.LngLatBounds();
+      routeCoordinates.forEach((coord: [number, number]) => bounds.extend(coord));
+      
+      // Calculate padding - offers section takes ~50% of screen, so bottom padding should be ~60% of viewport height
+      const viewportHeight = window.innerHeight;
+      const bottomPadding = Math.max(viewportHeight * 0.55, 300); // At least 55% of screen or 300px
+      
+      map.fitBounds(bounds, {
+        padding: { 
+          top: 120, 
+          bottom: bottomPadding, 
+          left: 80, 
+          right: 80 
+        },
+        duration: 1000,
+        maxZoom: 15
+      });
+    } catch (error) {
+      logger.error('Error fetching route:', error);
+      
+      // Fallback to straight line if routing fails
+      const distance = calculateDistance(userLocation[0], userLocation[1], partnerLat, partnerLng);
+      const estimatedTime = distance < 2 ? (distance / 5) * 60 : (distance / 30) * 60;
+
+      setActiveRoute({
+        distance,
+        duration: estimatedTime,
+        partnerName
+      });
+
+      const routeCoordinates = [
+        [userLocation[1], userLocation[0]],
+        [partnerLng, partnerLat]
+      ];
+
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoordinates
+          }
+        }
+      });
+
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': '#FF5722',
+          'line-width': 4,
+          'line-opacity': 0.8
+        }
+      });
+
+      const bounds = new maplibregl.LngLatBounds();
+      routeCoordinates.forEach(coord => bounds.extend(coord as [number, number]));
+      
+      // Same padding as actual route - keep visible above offers section
+      const viewportHeight = window.innerHeight;
+      const bottomPadding = Math.max(viewportHeight * 0.55, 300);
+      
+      map.fitBounds(bounds, {
+        padding: { 
+          top: 120, 
+          bottom: bottomPadding, 
+          left: 80, 
+          right: 80 
+        },
+        duration: 1000,
+        maxZoom: 15
+      });
+    }
+  };
+
+  // Clear route when map is clicked
+  const clearRoute = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (map.getLayer('route')) map.removeLayer('route');
+    if (map.getSource('route')) map.removeSource('route');
+    setActiveRoute(null);
+  };
 
   // Use offers directly - they are already filtered by parent component
   useEffect(() => {
@@ -266,8 +471,16 @@ const SmartPickMap = memo(({
         .setLngLat([location.lng, location.lat])
         .addTo(map);
 
-      // Handle marker click - directly open modal without popup
-      markerEl.addEventListener('click', () => {
+      // Handle marker click - draw route and call parent handler
+      markerEl.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        
+        // Draw route if user location exists
+        if (userLocation) {
+          await drawRoute(location.lat, location.lng, location.partnerName);
+        }
+        
+        // Call parent handler to filter offers
         if (onMarkerClick) {
           onMarkerClick(location.partnerName, location.partnerAddress, location.offers);
         }
@@ -408,6 +621,34 @@ const SmartPickMap = memo(({
         className="w-full h-full rounded-2xl"
         style={{ minHeight: '400px' }}
       />
+
+      {/* Route Info Display - Below search bar */}
+      {activeRoute && (
+        <div className="absolute top-16 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg px-3 py-2 z-20 border border-gray-200 max-w-[200px]">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <span className="text-lg">📍</span>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span className="text-[11px] font-semibold text-gray-900 leading-tight truncate">
+                  {activeRoute.partnerName}
+                </span>
+                <span className="text-[10px] text-gray-500 leading-tight">
+                  {activeRoute.distance.toFixed(1)} km • {Math.round(activeRoute.duration)} min
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={clearRoute}
+              className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+              title="Clear route"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Near Me Button */}
       {showUserLocation && (

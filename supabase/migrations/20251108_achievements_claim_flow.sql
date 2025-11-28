@@ -92,12 +92,19 @@ BEGIN
     RAISE EXCEPTION 'Not authenticated';
   END IF;
 
+  -- Auto-check achievements first to unlock if requirements are met
+  BEGIN
+    PERFORM check_user_achievements(v_user_id);
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING 'Failed to check achievements: %', SQLERRM;
+  END;
+
   SELECT * INTO v_row FROM user_achievements
   WHERE user_id = v_user_id AND achievement_id = p_achievement_id
   FOR UPDATE;
 
   IF NOT FOUND THEN
-    RAISE EXCEPTION 'Achievement not unlocked';
+    RAISE EXCEPTION 'Achievement not unlocked for this user';
   END IF;
 
   IF v_row.reward_claimed THEN

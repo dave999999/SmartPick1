@@ -17,8 +17,8 @@ import { logger } from '@/lib/logger';
 
 interface PartnerForgivenessDecisionModalProps {
   penalty: UserPenalty & {
-    users?: { name: string; email: string; reliability_score: number };
-    reservations?: { offer_title: string; pickup_date: string; price: number };
+    users?: { id: string; name: string; email: string; reliability_score: number };
+    reservations?: { pickup_date: string; total_price: number; offer?: { title: string } };
   };
   partnerId: string;
   onClose: () => void;
@@ -82,11 +82,11 @@ export function PartnerForgivenessDecisionModal({
                 </div>
                 <div>
                   <p className="text-gray-600">Missed Offer</p>
-                  <p className="font-semibold">{penalty.reservations?.offer_title || 'N/A'}</p>
+                  <p className="font-semibold">{penalty.reservations?.offer?.title || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Value</p>
-                  <p className="font-semibold">{penalty.reservations?.price || 0} GEL</p>
+                  <p className="font-semibold">{penalty.reservations?.total_price || 0} GEL</p>
                 </div>
                 <div>
                   <p className="text-gray-600">Date</p>

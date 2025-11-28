@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Coins, Plus, TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { Coins, Plus, TrendingUp, TrendingDown, Clock, Sparkles, Rocket, Info, Zap } from 'lucide-react';
 import { getUserPoints, getPointTransactions, formatTransactionReason, formatPointsChange, subscribeToUserPoints } from '@/lib/smartpoints-api';
 import type { UserPoints, PointTransaction } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
@@ -139,99 +139,107 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
 
   return (
     <>
-      <Card className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 shadow-xl">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl">
-              <Coins className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl text-white">SmartPoints Wallet</CardTitle>
-              <CardDescription className="text-gray-400">Manage your points balance</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
+      <div className="bg-white dark:bg-gray-900 pb-6">
+        {/* Ultra-Compact Header - NO SCROLLING */}
+        <div className="bg-emerald-50 dark:bg-emerald-900/20 px-4 py-2.5 border-b border-emerald-100 dark:border-emerald-800">
+          <h1 className="text-[15px] font-bold text-gray-900 dark:text-gray-100 leading-tight mb-0.5">
+            Your SmartPoints Wallet 🎉
+          </h1>
+          <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+            Your points power your reservations
+          </p>
+        </div>
 
-        <CardContent className="space-y-6">
-          {/* Balance Display */}
-          <div className="relative p-6 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 rounded-xl border-2 border-teal-500/30">
-            <div className="flex items-baseline justify-between">
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Current Balance</p>
-                <p className="text-5xl font-bold text-white">{balance}</p>
-                <p className="text-sm text-gray-400 mt-1">SmartPoints</p>
+        <div className="px-4 pt-3 space-y-2.5">
+          {/* Compact Balance Card - Centered & Minimal */}
+          <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-3 text-center">
+              <div className="text-[40px] font-black text-emerald-600 dark:text-emerald-400 leading-none mb-1">
+                {balance}
               </div>
-              {isLowBalance && (
-                <Badge variant="destructive" className="animate-pulse">
-                  Low Balance
-                </Badge>
-              )}
-            </div>
-
-            {isLowBalance && (
-              <div className="mt-4 text-sm text-orange-600 flex items-center gap-2">
-                <span className="font-medium">⚠️ Running low! Buy more to continue reserving offers.</span>
+              <p className="text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-2">
+                SmartPoints
+              </p>
+              <div className="bg-emerald-100 dark:bg-emerald-900/30 rounded-lg px-3 py-1.5">
+                <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                  You can reserve {Math.floor(balance / 5)} units right now
+                </p>
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-black/20 rounded-lg border border-white/10">
-              <p className="text-xs text-gray-400">Per Unit</p>
-              <p className="text-lg font-bold text-white">5 Points</p>
-            </div>
-            <div className="p-3 bg-black/20 rounded-lg border border-white/10">
-              <p className="text-xs text-gray-400">Units Available</p>
-              <p className="text-lg font-bold text-teal-400">{Math.floor(balance / 5)}</p>
-            </div>
-          </div>
+          {/* Main CTA Button - ONE BUTTON ONLY */}
+          <Button
+            onClick={() => setShowBuyModal(true)}
+            className="w-full h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-[13px] rounded-xl shadow-md hover:shadow-lg transition-all"
+          >
+            <Plus className="w-4 h-4 mr-1.5" />
+            Add SmartPoints
+          </Button>
 
-          {/* Recent Transactions */}
+          {/* Compact Info Card - About SmartPoints */}
+          <Card className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <CardContent className="p-2.5">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[12px] font-bold text-gray-900 dark:text-gray-100 mb-0.5">
+                    What are SmartPoints?
+                  </h3>
+                  <p className="text-[10px] text-gray-700 dark:text-gray-300 leading-snug">
+                    Points secure your discounts. You pay at pickup — points just reserve! 🔒
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Tiny Recent Activity Section */}
           <div>
-            <h3 className="font-semibold text-white mb-3 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-400" />
+            <h2 className="text-[12px] font-bold text-gray-900 dark:text-gray-100 mb-1.5 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-gray-600 dark:text-gray-400" />
               Recent Activity
-            </h3>
+            </h2>
 
             {transactions.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No transactions yet</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700">
+                <p className="text-[11px] font-semibold text-gray-600 dark:text-gray-400">
+                  None yet — your reservations will appear here 👋
+                </p>
+              </div>
             ) : (
-              <div className="space-y-2">
-                {transactions.map((transaction) => (
+              <div className="space-y-1.5">
+                {transactions.slice(0, 3).map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-3 bg-black/20 rounded-lg border border-white/10 hover:border-teal-500/30 transition-colors"
+                    className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 flex items-center justify-between"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         transaction.change > 0
-                          ? 'bg-green-500/20 text-green-400'
-                          : 'bg-gray-500/20 text-gray-400'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                          : 'bg-gray-100 dark:bg-gray-700'
                       }`}>
                         {transaction.change > 0 ? (
-                          <TrendingUp className="w-4 h-4" />
+                          <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         ) : (
-                          <TrendingDown className="w-4 h-4" />
+                          <TrendingDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-gray-900 dark:text-gray-100 truncate">
                           {formatTransactionReason(transaction.reason)}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-[9px] text-gray-600 dark:text-gray-400 font-medium">
                           {new Date(transaction.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-lg font-bold ${
-                        transaction.change > 0 ? 'text-green-400' : 'text-white'
+                    <div className="text-right flex-shrink-0 ml-2">
+                      <p className={`text-[13px] font-black ${
+                        transaction.change > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-gray-100'
                       }`}>
                         {formatPointsChange(transaction.change)}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        {transaction.balance_after} total
                       </p>
                     </div>
                   </div>
@@ -239,8 +247,8 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <BuyPointsModal
         open={showBuyModal}

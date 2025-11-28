@@ -24,7 +24,6 @@ import { RestaurantFoodSectionNew } from '@/components/home/RestaurantFoodSectio
 import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import { DraggableBottomSheet } from '@/components/home/DraggableBottomSheet';
-import PartnerOffersModal from '@/components/PartnerOffersModal';
 
 export default function IndexRedesigned() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -37,8 +36,6 @@ export default function IndexRedesigned() {
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [selectedOfferIndex, setSelectedOfferIndex] = useState<number>(0);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
-  const [showPartnerOffersModal, setShowPartnerOffersModal] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState<{ name: string; address?: string; offers: Offer[] } | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
 
@@ -312,10 +309,33 @@ export default function IndexRedesigned() {
     }
   }, [filteredOffers, addRecentlyViewed]);
 
-  const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, offers: Offer[]) => {
-    setSelectedPartner({ name: partnerName, address: partnerAddress, offers });
-    setShowPartnerOffersModal(true);
-  }, []);
+  const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
+    // If empty partner name, clear filters (map clicked on empty area)
+    if (!partnerName || partnerOffers.length === 0) {
+      setSearchQuery('');
+      setShowBottomSheet(false);
+      setSelectedOffer(null);
+      return;
+    }
+    
+    // Open carousel with partner's offers
+    if (partnerOffers.length > 0) {
+      // Filter to show only this partner's offers
+      setSearchQuery(partnerName);
+      
+      // Wait for filteredOffers to update, then open bottom sheet with first offer
+      setTimeout(() => {
+        const firstOfferIndex = offers.findIndex(o => 
+          o.partner_id === partnerOffers[0].partner_id
+        );
+        if (firstOfferIndex >= 0) {
+          setSelectedOfferIndex(firstOfferIndex);
+          setSelectedOffer(partnerOffers[0]);
+          setShowBottomSheet(true);
+        }
+      }, 100);
+    }
+  }, [offers]);
 
   return (
     <>
@@ -423,16 +443,6 @@ export default function IndexRedesigned() {
           sortBy={sortBy}
           onSortChange={setSortBy}
           showDistanceFilter={!!userLocation}
-        />
-
-        {/* Modals */}
-        <PartnerOffersModal
-          partnerName={selectedPartner?.name || ''}
-          partnerAddress={selectedPartner?.address}
-          offers={selectedPartner?.offers || []}
-          open={showPartnerOffersModal}
-          onOpenChange={setShowPartnerOffersModal}
-          onOfferClick={handleOfferClick}
         />
 
         {/* Old ReservationModal - Disabled in favor of BottomSheet */}

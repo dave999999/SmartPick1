@@ -90,13 +90,15 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
 }
 
 /**
- * Get user's point transaction history
+ * Get user's point transaction history (both customer and partner transactions)
  */
 export async function getPointTransactions(
   userId: string,
   limit: number = 10
 ): Promise<PointTransaction[]> {
   try {
+    const allTransactions: PointTransaction[] = [];
+
     // Check if user is a partner
     const { data: profile } = await supabase
       .from('partners')
@@ -105,42 +107,42 @@ export async function getPointTransactions(
       .eq('status', 'APPROVED')
       .maybeSingle();
 
-    // If user is a partner, get partner transactions instead
+    // Get partner transactions if user is a partner
     if (profile?.id) {
-      const { data, error } = await supabase
+      const { data: partnerTxs, error: partnerError } = await supabase
         .from('partner_point_transactions')
         .select('*')
         .eq('partner_id', profile.id)
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .limit(limit * 2); // Get more to ensure we have enough after merging
 
-      if (error) {
-        console.error('Error fetching partner transactions:', error instanceof Error ? error.message : String(error));
-        return [];
+      if (!partnerError && partnerTxs) {
+        // Map partner transactions to match PointTransaction interface
+        allTransactions.push(...partnerTxs.map(tx => ({
+          ...tx,
+          user_id: userId,
+          partner_id: profile.id
+        })) as PointTransaction[]);
       }
-
-      // Map partner transactions to match PointTransaction interface
-      return (data || []).map(tx => ({
-        ...tx,
-        user_id: userId, // Add user_id for compatibility
-        partner_id: profile.id
-      })) as PointTransaction[];
     }
 
-    // Regular customer transactions
-    const { data, error } = await supabase
+    // Also get regular customer transactions
+    const { data: customerTxs, error: customerError } = await supabase
       .from('point_transactions')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit * 2); // Get more to ensure we have enough after merging
 
-    if (error) {
-      console.error('Error fetching transactions:', error instanceof Error ? error.message : String(error));
-      return [];
+    if (!customerError && customerTxs) {
+      allTransactions.push(...customerTxs);
     }
 
-    return data || [];
+    // Sort all transactions by date (newest first) and limit
+    return allTransactions
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, limit);
+
   } catch (error) {
     console.error('Error in getPointTransactions:', error instanceof Error ? error.message : String(error));
     return [];
@@ -336,8 +338,9 @@ export function subscribeToUserPoints(
   userId: string,
   callback: (newBalance: number) => void
 ): RealtimeChannel {
+  // Subscribe to both user_points and partner_points tables
   const channel = supabase
-    .channel(`user_points:${userId}`)
+    .channel(`points:${userId}`)
     .on(
       'postgres_changes',
       {
@@ -349,6 +352,27 @@ export function subscribeToUserPoints(
       (payload) => {
         const newBalance = (payload.new as UserPoints).balance;
         callback(newBalance);
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'partner_points'
+      },
+      async (payload) => {
+        // For partner points, we need to check if this partner belongs to the user
+        const { data: partner } = await supabase
+          .from('partners')
+          .select('user_id')
+          .eq('id', (payload.new as any).user_id)
+          .single();
+        
+        if (partner?.user_id === userId) {
+          const newBalance = (payload.new as any).balance;
+          callback(newBalance);
+        }
       }
     )
     .subscribe();

@@ -94,6 +94,7 @@ export const getPartnerStats = async (partnerId: string) => {
     .from('reservations')
     .select('id', { count: 'exact' })
     .eq('partner_id', partnerId)
+    .eq('status', 'ACTIVE')
     .gte('created_at', today.toISOString());
 
   const { data: pickedUpToday } = await supabase

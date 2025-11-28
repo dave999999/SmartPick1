@@ -26,60 +26,75 @@ export function StatsGrid({ stats }: StatsGridProps) {
   const statCards = [
     {
       icon: Star,
+      emoji: '⭐',
       value: stats.totalReservations,
       label: 'Reservations',
-      gradient: 'from-yellow-400 to-amber-500',
+      hint: stats.totalReservations > 5 ? 'Amazing!' : stats.totalReservations > 0 ? 'Great!' : 'Start!',
       bg: 'bg-amber-50',
+      iconBg: 'bg-amber-100',
       iconColor: 'text-amber-600',
-      trend: stats.totalReservations > 0 ? '+' : ''
+      border: 'border-amber-200'
     },
     {
       icon: DollarSign,
+      emoji: '💰',
       value: `₾${stats.moneySaved.toFixed(0)}`,
-      label: 'Money saved',
-      gradient: 'from-emerald-400 to-green-500',
+      label: 'Saved',
+      hint: stats.moneySaved > 50 ? 'Wow!' : stats.moneySaved > 0 ? 'Nice!' : 'Save!',
       bg: 'bg-emerald-50',
+      iconBg: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
-      trend: stats.moneySaved > 0 ? '+' : ''
+      border: 'border-emerald-200'
     },
     {
       icon: Flame,
+      emoji: '🔥',
       value: stats.currentStreak,
-      label: 'Day streak',
-      gradient: 'from-orange-400 to-red-500',
+      label: 'Streak',
+      hint: stats.currentStreak > 7 ? 'Hot!' : stats.currentStreak > 0 ? 'Yes!' : 'Go!',
       bg: 'bg-orange-50',
+      iconBg: 'bg-orange-100',
       iconColor: 'text-orange-600',
-      trend: stats.currentStreak > 0 ? '🔥' : ''
+      border: 'border-orange-200'
     },
     {
       icon: Gift,
+      emoji: '🎁',
       value: stats.referrals,
       label: 'Referrals',
-      gradient: 'from-purple-400 to-pink-500',
+      hint: stats.referrals > 5 ? 'Star!' : stats.referrals > 0 ? 'Cool!' : 'Share!',
       bg: 'bg-purple-50',
+      iconBg: 'bg-purple-100',
       iconColor: 'text-purple-600',
-      trend: stats.referrals > 0 ? '+' : ''
+      border: 'border-purple-200'
     }
   ];
 
   return (
     <div className="grid grid-cols-2 gap-2">
-      {statCards.map((stat, index) => (
+      {statCards.map((stat) => (
         <Card
           key={stat.label}
-          className="border-gray-200 dark:border-gray-700 shadow-sm"
+          className={`${stat.bg} dark:bg-gray-800 border ${stat.border} dark:border-gray-700 shadow-sm rounded-xl hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200`}
         >
-          <div className="p-2.5 flex items-center justify-between">
-            <div className="flex-1">
-              <p className="text-[20px] font-bold text-gray-900 dark:text-gray-100 leading-none mb-0.5">
-                {stat.value}
-              </p>
-              <p className="text-[9px] font-medium text-gray-600 dark:text-gray-400 leading-tight">
-                {stat.label}
-              </p>
+          <div className="p-2.5">
+            <div className="flex items-start justify-between mb-1">
+              <div className="flex-1">
+                <p className="text-[22px] font-black text-gray-900 dark:text-gray-100 leading-none">
+                  {stat.value}
+                </p>
+                <p className="text-[9px] font-extrabold text-gray-700 dark:text-gray-300 leading-tight mt-1">
+                  {stat.label}
+                </p>
+              </div>
+              
+              <div className={`w-9 h-9 rounded-xl ${stat.iconBg} dark:bg-gray-700 flex items-center justify-center flex-shrink-0 shadow-sm`}>
+                <stat.icon className={`w-5 h-5 ${stat.iconColor} dark:text-gray-300`} />
+              </div>
             </div>
-            <div className={`w-9 h-9 rounded-lg ${stat.bg} dark:opacity-80 flex items-center justify-center flex-shrink-0`}>
-              <stat.icon className={`w-4.5 h-4.5 ${stat.iconColor}`} />
+            
+            <div className="text-[8px] font-bold text-gray-600 dark:text-gray-400 leading-tight">
+              {stat.hint}
             </div>
           </div>
         </Card>

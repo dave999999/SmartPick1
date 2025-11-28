@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 // Removed Badge (unused)
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Edit, Coins, Clock, Bell, Lock, CreditCard, Settings, HelpCircle, ChevronRight, Globe, Utensils, MapPin, Moon, Sun, Trash2, Key, FileText, Gift } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Mail, Phone, Calendar, Shield, Edit, Coins, Clock, Bell, Lock, CreditCard, Settings, HelpCircle, ChevronRight, Globe, Utensils, MapPin, Moon, Sun, Trash2, Key, FileText, Gift, BookOpen, Unlock } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { toast } from 'sonner';
 
@@ -34,7 +33,7 @@ const ReferralCard = lazy(() => import('@/components/gamification/ReferralCard')
 const AchievementsGrid = lazy(() => import('@/components/gamification/AchievementsGrid').then(m => ({ default: m.AchievementsGrid })));
 import { TelegramConnect } from '@/components/TelegramConnect';
 import { ReservationCapacitySection } from '@/components/ReservationCapacitySection';
-import { getUserStats, UserStats } from '@/lib/gamification-api';
+import { getUserStats, UserStats, getLevelProgress } from '@/lib/gamification-api';
 const BuyPointsModal = lazy(() => import('@/components/wallet/BuyPointsModal').then(m => ({ default: m.BuyPointsModal })));
 import { requestPartnerForgiveness, checkForgivenessStatus } from '@/lib/forgiveness-api';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -332,6 +331,7 @@ export default function UserProfile() {
   const [isBuyPointsModalOpen, setIsBuyPointsModalOpen] = useState(false);
   const [showPenaltyWarning, setShowPenaltyWarning] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
   const [notificationSettings, setNotificationSettings] = useState({
     nearby: true,
     favorite_partner: true,
@@ -356,10 +356,43 @@ export default function UserProfile() {
 
   // Settings preferences state
   const [notificationPrefs, setNotificationPrefs] = useState({
+    telegram: false,
     email: true,
     push: true,
     sms: false,
   });
+
+  // Section collapse states
+  const [sectionsOpen, setSectionsOpen] = useState({
+    notifications: true,
+    security: true,
+    preferences: true,
+    support: true,
+  });
+
+  const toggleSection = (section: keyof typeof sectionsOpen) => {
+    setSectionsOpen(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  };
 
   const { t } = useI18n();
 
@@ -607,6 +640,7 @@ export default function UserProfile() {
       <TabsNav 
         activeTab={activeTab as 'overview' | 'achievements' | 'wallet' | 'settings'}
         onTabChange={(tab) => setActiveTab(tab)}
+        unclaimedCount={unclaimedCount}
       />
 
       {/* Content */}
@@ -628,9 +662,9 @@ export default function UserProfile() {
             <TabsTrigger value="settings" className="text-xs text-gray-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400 data-[state=active]:border-emerald-500/50">Settings</TabsTrigger>
           </TabsList>
 
-          {/* OVERVIEW TAB - ULTRA COMPACT */}
-          <TabsContent value="overview" className="px-4 space-y-2.5 mt-2">
-            {/* Compact info card (2x2 grid) - Height: ~90px */}
+          {/* OVERVIEW TAB - FRIENDLY & MOTIVATING */}
+          <TabsContent value="overview" className="px-4 space-y-3 mt-2 pb-6">
+            {/* Compact info card (2x2 grid) */}
             <ProfileInfoCard 
               user={user}
               onAddPhone={() => {
@@ -639,58 +673,222 @@ export default function UserProfile() {
               }}
             />
 
-            {/* Stats grid (2x2) - Height: ~90px */}
+            {/* Friendly Motivational Card */}
             {userStats && (
-              <StatsGrid 
-                stats={{
-                  totalReservations: userStats.total_reservations || 0,
-                  moneySaved: userStats.money_saved || 0,
-                  currentStreak: userStats.current_streak || 0,
-                  referrals: userStats.total_referrals || 0
-                }}
-              />
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800 shadow-sm">
+                <CardContent className="p-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="text-[28px]">
+                      {userStats.total_reservations === 0 && "🌟"}
+                      {userStats.total_reservations > 0 && userStats.total_reservations < 5 && "💪"}
+                      {userStats.total_reservations >= 5 && userStats.total_reservations < 15 && "🔥"}
+                      {userStats.total_reservations >= 15 && "⭐"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-tight mb-0.5">
+                        {userStats.total_reservations === 0 && "You're off to a great start!"}
+                        {userStats.total_reservations > 0 && userStats.total_reservations < 5 && "You're doing amazing!"}
+                        {userStats.total_reservations >= 5 && userStats.total_reservations < 15 && "You're on fire!"}
+                        {userStats.total_reservations >= 15 && "You're a legend!"}
+                      </p>
+                      <p className="text-[11px] text-gray-700 dark:text-gray-300 font-medium">
+                        {userStats.total_reservations === 0 ? "Ready to save? Let's go! 🚀" : "Keep going — you're unstoppable! ✨"}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Single-line journey message - Height: ~16px */}
+            {/* Stats Grid with Friendly Labels */}
             {userStats && (
-              <div className="py-1.5">
-                <p className="text-[11px] text-gray-600 dark:text-gray-400 text-center leading-tight">
-                  {userStats.total_reservations === 0 && "Ready to start your journey? 🚀"}
-                  {userStats.total_reservations > 0 && userStats.total_reservations < 5 && "You're off to a strong start — keep going! 🚀"}
-                  {userStats.total_reservations >= 5 && userStats.total_reservations < 15 && "Great progress — you're on fire! 🔥"}
-                  {userStats.total_reservations >= 15 && "Amazing! You're a SmartPick superstar! ⭐"}
-                </p>
-              </div>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardContent className="p-3">
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {/* Reservations */}
+                    <div className="bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-xl p-3 border border-amber-200 dark:border-amber-800">
+                      <div className="text-[22px] font-black text-amber-700 dark:text-amber-400 leading-none mb-1">
+                        {userStats.total_reservations || 0}
+                      </div>
+                      <div className="text-[9px] font-extrabold text-amber-900 dark:text-amber-300 uppercase tracking-wide leading-none mb-1.5">
+                        Reservations
+                      </div>
+                      <div className="text-[11px] font-bold text-amber-700 dark:text-amber-500">
+                        {userStats.total_reservations === 0 ? "Start now! 🎯" : "Nice! 👏"}
+                      </div>
+                    </div>
+
+                    {/* Money Saved */}
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl p-3 border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-[22px] font-black text-emerald-700 dark:text-emerald-400 leading-none mb-1">
+                        ₾{Math.round(userStats.money_saved || 0)}
+                      </div>
+                      <div className="text-[9px] font-extrabold text-emerald-900 dark:text-emerald-300 uppercase tracking-wide leading-none mb-1.5">
+                        Saved
+                      </div>
+                      <div className="text-[11px] font-bold text-emerald-700 dark:text-emerald-500">
+                        {userStats.money_saved > 0 ? "Save more! 💰" : "Let's save! 💚"}
+                      </div>
+                    </div>
+
+                    {/* Streak */}
+                    <div className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl p-3 border border-orange-200 dark:border-orange-800">
+                      <div className="text-[22px] font-black text-orange-700 dark:text-orange-400 leading-none mb-1">
+                        {userStats.current_streak || 0}
+                      </div>
+                      <div className="text-[9px] font-extrabold text-orange-900 dark:text-orange-300 uppercase tracking-wide leading-none mb-1.5">
+                        Streak
+                      </div>
+                      <div className="text-[11px] font-bold text-orange-700 dark:text-orange-500">
+                        {userStats.current_streak > 0 ? "Go! 🔥" : "Start! 🚀"}
+                      </div>
+                    </div>
+
+                    {/* Referrals */}
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-3 border border-purple-200 dark:border-purple-800">
+                      <div className="text-[22px] font-black text-purple-700 dark:text-purple-400 leading-none mb-1">
+                        {userStats.total_referrals || 0}
+                      </div>
+                      <div className="text-[9px] font-extrabold text-purple-900 dark:text-purple-300 uppercase tracking-wide leading-none mb-1.5">
+                        Referrals
+                      </div>
+                      <div className="text-[11px] font-bold text-purple-700 dark:text-purple-500">
+                        Share! 🎁
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
-            {/* Action buttons - Height: ~40px */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Level Progress System */}
+            {userStats && (() => {
+              const { currentLevel, nextLevel, progress, reservationsToNext } = getLevelProgress(userStats.total_reservations);
+              
+              return (
+                <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border-teal-200 dark:border-teal-800 shadow-sm">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div 
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-[24px]"
+                        style={{ backgroundColor: `${currentLevel.color}20` }}
+                      >
+                        {currentLevel.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-none mb-1">
+                          Your Level
+                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          <span 
+                            className="text-[13px] font-extrabold leading-none"
+                            style={{ color: currentLevel.color }}
+                          >
+                            Level {currentLevel.level}
+                          </span>
+                          <span className="text-[13px] font-semibold text-gray-700 dark:text-gray-300">
+                            — {currentLevel.name}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {nextLevel && (
+                      <>
+                        {/* Progress Bar */}
+                        <div className="space-y-1.5 mb-3">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">
+                              Progress to {nextLevel.name}
+                            </span>
+                            <span className="font-bold text-teal-600 dark:text-teal-400">
+                              {Math.round(progress)}%
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-teal-500 via-cyan-500 to-teal-600 transition-all duration-500"
+                              style={{ width: `${Math.min(100, progress)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Next Level Info */}
+                        <div className="bg-white dark:bg-gray-800 rounded-xl p-2.5 flex items-center justify-between">
+                          <span className="text-[12px] font-semibold text-gray-700 dark:text-gray-300">
+                            {reservationsToNext} more {reservationsToNext === 1 ? 'reservation' : 'reservations'} until Level {nextLevel.level}!
+                          </span>
+                          <span className="text-[18px]">{nextLevel.icon}</span>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })()}
+
+            {/* Referral Progress Tracker */}
+            {userStats && (
+              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800 shadow-sm">
+                <CardContent className="p-3.5">
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <Gift className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Referral Progress
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-1.5 mb-3">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">
+                        {userStats.total_referrals || 0} of 3 friends invited
+                      </span>
+                      <span className="font-bold text-purple-600 dark:text-purple-400">
+                        {Math.round(((userStats.total_referrals || 0) / 3) * 100)}%
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 transition-all duration-500"
+                        style={{ width: `${Math.min(100, ((userStats.total_referrals || 0) / 3) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 text-center">
+                    {(userStats.total_referrals || 0) >= 3 
+                      ? "Bonus unlocked! You're amazing! 🎉"
+                      : `${3 - (userStats.total_referrals || 0)} more ${3 - (userStats.total_referrals || 0) === 1 ? 'friend' : 'friends'} to unlock your bonus! 🎁`
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
               <Button
                 onClick={() => setActiveTab('settings')}
                 variant="outline"
                 size="sm"
-                className="h-10 text-[12px] font-medium"
+                className="h-11 text-[13px] font-bold border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-2xl hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 <UserIcon className="w-4 h-4 mr-1.5" />
-                Update Profile
+                Update ✏️
               </Button>
               <Button
-                onClick={() => {
-                  const referralCode = user.referral_code || user.id.substring(0, 8);
-                  navigator.clipboard.writeText(`https://smartpick.ge?ref=${referralCode}`);
-                  toast.success('Referral link copied!');
-                }}
+                onClick={() => setShowReferralModal(true)}
                 size="sm"
-                className="h-10 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-[12px] font-medium"
+                className="h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[13px] font-extrabold rounded-2xl shadow-md shadow-purple-600/30 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200"
               >
                 <Gift className="w-4 h-4 mr-1.5" />
-                Invite Friends
+                Invite 🚀
               </Button>
             </div>
           </TabsContent>
 
           {/* ACHIEVEMENTS TAB */}
-          <TabsContent value="achievements" className="px-4 space-y-3 mt-2">
+          <TabsContent value="achievements" className="mt-0 h-full overflow-y-auto">
             <AchievementsGrid
               userId={user.id}
               onUnclaimedCountChange={setUnclaimedCount}
@@ -699,75 +897,58 @@ export default function UserProfile() {
 
           {/* WALLET TAB */}
           <TabsContent value="wallet" className="px-4 space-y-3 mt-2">
-            {/* Buy Points Button */}
-            <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Buy SmartPoints</h3>
-                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">Get more points to enjoy our services 🪙</p>
-                  </div>
-                  <Button
-                    onClick={() => setIsBuyPointsModalOpen(true)}
-                    className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-white h-9"
-                  >
-                    <Coins className="w-4 h-4 mr-2" />
-                    Buy Points
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             <SmartPointsWallet userId={user.id} />
 
             {/* Buy Points Modal */}
             <BuyPointsModal
               isOpen={isBuyPointsModalOpen}
               onClose={() => setIsBuyPointsModalOpen(false)}
-              currentBalance={0}
+              currentBalance={userStats?.points || 0}
               userId={user.id}
             />
           </TabsContent>
 
-          {/* SETTINGS TAB */}
-          <TabsContent value="settings" className="px-4 space-y-2 mt-2">
-            {/* ACCOUNT INFORMATION */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100 text-sm font-semibold">
-                  <UserIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  Account Info
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3">
+          {/* SETTINGS TAB - COMPLETELY REDESIGNED */}
+          <TabsContent value="settings" className="px-4 pb-6 space-y-2.5 mt-2">
+            {/* Tiny Header */}
+            <div className="pb-1">
+              <h2 className="text-[16px] font-bold text-gray-900 dark:text-gray-100 leading-tight mb-0.5">
+                Settings ⚙️
+              </h2>
+              <p className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">
+                Manage your SmartPick account
+              </p>
+            </div>
+
+            {/* Account Info Card - Compact */}
+            <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border border-emerald-200 dark:border-emerald-800 shadow-sm">
+              <CardContent className="p-3">
                 {isEditing ? (
                   <div className="space-y-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="name" className="text-gray-700 dark:text-gray-300 text-xs font-medium">Name</Label>
+                    <div>
+                      <Label htmlFor="name" className="text-[10px] font-bold text-gray-700 dark:text-gray-300">Name</Label>
                       <Input
                         id="name"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="h-8 text-sm"
+                        className="h-9 text-sm mt-1"
                       />
                     </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="phone" className="text-gray-700 dark:text-gray-300 text-xs font-medium">Phone</Label>
+                    <div>
+                      <Label htmlFor="phone" className="text-[10px] font-bold text-gray-700 dark:text-gray-300">Phone</Label>
                       <Input
                         id="phone"
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="h-8 text-sm"
+                        className="h-9 text-sm mt-1"
                         placeholder="+995 XXX XXX XXX"
                       />
                     </div>
-
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <Button
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="h-8 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600 text-xs"
+                        className="h-9 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold"
                       >
                         {isSaving ? 'Saving...' : 'Save'}
                       </Button>
@@ -775,7 +956,7 @@ export default function UserProfile() {
                         onClick={handleCancel}
                         disabled={isSaving}
                         variant="outline"
-                        className="h-8 text-xs"
+                        className="h-9 text-xs font-bold"
                       >
                         Cancel
                       </Button>
@@ -783,55 +964,139 @@ export default function UserProfile() {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Email</p>
-                        <p className="text-gray-900 dark:text-gray-100 font-medium truncate">{user.email}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500 dark:text-gray-400 mb-0.5">Phone</p>
-                        <p className="text-gray-900 dark:text-gray-100 font-medium">{user.phone || 'Add phone 📱'}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">Email</p>
+                          <p className="text-[12px] text-gray-900 dark:text-gray-100 font-bold truncate max-w-[200px]">{user.email}</p>
+                        </div>
                       </div>
                     </div>
-
+                    <div className="flex items-center justify-between pt-1 border-t border-emerald-200 dark:border-emerald-800">
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">Phone</p>
+                          <p className="text-[12px] text-gray-900 dark:text-gray-100 font-bold">{user.phone || 'Not added 📱'}</p>
+                        </div>
+                      </div>
+                    </div>
                     <Button
                       onClick={() => setIsEditing(true)}
-                      variant="outline"
-                      className="w-full h-8 text-xs border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      size="sm"
+                      className="w-full h-9 mt-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold"
                     >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Update Profile ✏️
+                      <Edit className="w-3 h-3 mr-1.5" />
+                      Update Profile
                     </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* RESERVATION CAPACITY */}
-            <ReservationCapacitySection
-              userId={user.id}
-              currentBalance={0}
-              onBalanceChange={loadUser}
-            />
+            {/* Reservation Capacity - Compact */}
+            <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 shadow-sm">
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Reservation Capacity 📋
+                    </h3>
+                  </div>
+                  <span className="text-[16px] font-black text-orange-600 dark:text-orange-400">
+                    3 items
+                  </span>
+                </div>
+                
+                <div className="space-y-1.5 mb-2">
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">
+                      3 / 10 slots unlocked
+                    </span>
+                    <span className="font-bold text-orange-600 dark:text-orange-400">
+                      30%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-500"
+                      style={{ width: '30%' }}
+                    />
+                  </div>
+                </div>
 
-            {/* NOTIFICATIONS */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader className="pb-2 pt-3 px-3">
-                <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-gray-100 text-sm font-semibold">
-                  <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  Notifications
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 pb-3 space-y-2">
-                {/* Telegram Integration */}
-                <TelegramConnect userId={user.id} userType="customer" />
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-2 mb-2">
+                  <p className="text-[10px] text-gray-700 dark:text-gray-300 font-semibold">
+                    Next unlock: <span className="text-orange-600 dark:text-orange-400 font-bold">4th slot → 100 pts</span>
+                  </p>
+                </div>
 
-                {/* Compact Notification Toggles */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                <details className="group">
+                  <summary className="text-[10px] font-bold text-gray-600 dark:text-gray-400 cursor-pointer hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
+                    View Future Upgrades ▼
+                  </summary>
+                  <div className="mt-2 space-y-1 text-[10px] text-gray-600 dark:text-gray-400 pl-2">
+                    <p>• 5th slot → 200 pts</p>
+                    <p>• 6th slot → 400 pts</p>
+                    <p>• 7th slot → 800 pts</p>
+                  </div>
+                </details>
+
+                <Button
+                  onClick={() => toast.info('Slot upgrade coming soon!')}
+                  size="sm"
+                  className="w-full h-9 mt-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-xs font-bold"
+                >
+                  <Unlock className="w-3 h-3 mr-1.5" />
+                  Upgrade Slot
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Notifications - Collapsible */}
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800 shadow-sm">
+              <CardContent className="p-3">
+                <button
+                  onClick={() => toggleSection('notifications')}
+                  className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Notifications
+                    </h3>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.notifications ? 'rotate-90' : ''}`} />
+                </button>
+
+                {sectionsOpen.notifications && (
+                  <div className="space-y-1.5">
+                    {/* Telegram Toggle */}
+                    <div className="flex items-center justify-between py-1.5 border-b border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2">
+                        <Send className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                        <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Telegram</span>
+                      </div>
+                      <Switch
+                        checked={notificationPrefs.telegram}
+                        onCheckedChange={(checked) => {
+                          setNotificationPrefs({ ...notificationPrefs, telegram: checked });
+                          if (checked) {
+                            toast.success('🔵 Telegram notifications enabled!');
+                          } else {
+                            toast.info('Telegram notifications disabled');
+                          }
+                        }}
+                        className="scale-75"
+                      />
+                    </div>
+                    {/* Email, Push, SMS Toggles */}
+                  <div className="flex items-center justify-between py-1.5 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Email</span>
+                      <Mail className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Email</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.email}
@@ -839,11 +1104,10 @@ export default function UserProfile() {
                       className="scale-75"
                     />
                   </div>
-
-                  <div className="flex items-center justify-between py-2 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between py-1.5 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-2">
-                      <Bell className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">Push</span>
+                      <Bell className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Push</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.push}
@@ -851,11 +1115,10 @@ export default function UserProfile() {
                       className="scale-75"
                     />
                   </div>
-
-                  <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center justify-between py-1.5">
                     <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300">SMS</span>
+                      <Phone className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">SMS</span>
                     </div>
                     <Switch
                       checked={notificationPrefs.sms}
@@ -864,259 +1127,183 @@ export default function UserProfile() {
                     />
                   </div>
                 </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* SECURITY & MORE - Accordion Style */}
-            <Accordion type="single" collapsible className="space-y-2">
-              {/* Security */}
-              <AccordionItem value="security" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline text-gray-900 dark:text-gray-100">
+            {/* Security - Collapsible */}
+            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800 shadow-sm">
+              <CardContent className="p-3">
+                <button
+                  onClick={() => toggleSection('security')}
+                  className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
+                >
                   <div className="flex items-center gap-2">
                     <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Security</span>
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Security
+                    </h3>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-3 space-y-3">
-                  {/* Set/Change Password */}
-                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Key className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {user?.email?.includes('@') && !(user as any)?.app_metadata?.provider ? 'Change Password' : 'Set Password'}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        type="password"
-                        placeholder="New password (min 6 characters)"
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                        className="text-sm"
-                      />
-                      <Input
-                        type="password"
-                        placeholder="Confirm new password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                        className="text-sm"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={handlePasswordChange}
-                        disabled={isChangingPassword || !passwordForm.newPassword || passwordForm.newPassword !== passwordForm.confirmPassword}
-                        className="w-full"
-                      >
-                        {isChangingPassword ? 'Updating...' : 'Update Password'}
-                      </Button>
-                      <p className="text-xs text-gray-500">
-                        {user?.email?.includes('google') ? 'Set a password to enable email login alongside Google' : 'Use this to change your login password'}
-                      </p>
-                    </div>
-                  </div>
-                  
+                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.security ? 'rotate-90' : ''}`} />
+                </button>
+
+                {sectionsOpen.security && (
+                  <div className="space-y-1.5">
                   <button
-                    onClick={() => toast.error('Requires admin approval')}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-left"
+                    onClick={() => toast.info('Change password feature coming soon')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Trash2 className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
-                      <span className="text-xs text-red-600 dark:text-red-400">Delete Account</span>
+                      <Key className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Change Password</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Preferences */}
-              <AccordionItem value="preferences" className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline text-gray-900 dark:text-gray-100">
-                  <div className="flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Preferences</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-3 space-y-1.5">
                   <button
-                    onClick={() => toast.info('🌍 Check the top-right menu to change language', { duration: 3000 })}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                    onClick={() => toast.info('Manage devices feature coming soon')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">Language</span>
+                      <Shield className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Manage Devices</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
-                  {/* Location and dietary preferences hidden until implementation */}
-                </AccordionContent>
-              </AccordionItem>
-
-              {/* Notifications */}
-              <AccordionItem value="notifications" className="bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a] border-white/10 rounded-lg px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline text-white">
-                  <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-blue-400" />
-                    <span className="text-sm font-semibold text-white">Notifications</span>
+                  <button
+                    onClick={() => toast.info('Two-factor authentication coming soon')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Lock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Two-Factor Auth</span>
+                    </div>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                  </button>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-3 space-y-3">
-                  {!pushSupported ? (
-                    <div className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-600">Push notifications are not supported in your browser.</p>
-                    </div>
-                  ) : !subscription ? (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-600">Get notified about offers near you, from favorite partners, and expiring deals.</p>
-                      <Button
-                        size="sm"
-                        onClick={async () => {
-                          if (user) {
-                            const success = await subscribeToPush(user.id);
-                            if (success) {
-                              toast.success('🔔 Push notifications enabled!');
-                            } else {
-                              toast.error('Failed to enable notifications');
-                            }
-                          }
-                        }}
-                        className="w-full"
-                      >
-                        <Bell className="w-3.5 h-3.5 mr-1.5" />
-                        Enable Notifications
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-2 rounded hover:bg-blue-50">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-3.5 h-3.5 text-blue-500" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">Nearby Offers</p>
-                            <p className="text-[10px] text-gray-500">Get alerts for new offers near you</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={notificationSettings.nearby}
-                          onCheckedChange={async (checked) => {
-                            setNotificationSettings(prev => ({ ...prev, nearby: checked }));
-                            if (user) {
-                              const success = await updateNotificationTypes(user.id, { nearby: checked });
-                              if (success) {
-                                toast.success(checked ? 'Nearby alerts enabled' : 'Nearby alerts disabled');
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded hover:bg-blue-50">
-                        <div className="flex items-center gap-2">
-                          <Heart className="w-3.5 h-3.5 text-pink-500" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">Favorite Partners</p>
-                            <p className="text-[10px] text-gray-500">Updates from partners you favorited</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={notificationSettings.favorite_partner}
-                          onCheckedChange={async (checked) => {
-                            setNotificationSettings(prev => ({ ...prev, favorite_partner: checked }));
-                            if (user) {
-                              const success = await updateNotificationTypes(user.id, { favorite_partner: checked });
-                              if (success) {
-                                toast.success(checked ? 'Favorite partner alerts enabled' : 'Favorite partner alerts disabled');
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-2 rounded hover:bg-blue-50">
-                        <div className="flex items-center gap-2">
-                          <Clock className="w-3.5 h-3.5 text-orange-500" />
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">Expiring Soon</p>
-                            <p className="text-[10px] text-gray-500">Alerts for offers expiring in 30 min</p>
-                          </div>
-                        </div>
-                        <Switch
-                          checked={notificationSettings.expiring}
-                          onCheckedChange={async (checked) => {
-                            setNotificationSettings(prev => ({ ...prev, expiring: checked }));
-                            if (user) {
-                              const success = await updateNotificationTypes(user.id, { expiring: checked });
-                              if (success) {
-                                toast.success(checked ? 'Expiring alerts enabled' : 'Expiring alerts disabled');
-                              }
-                            }
-                          }}
-                        />
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          if (user) {
-                            const success = await unsubscribeFromPush(user.id);
-                            if (success) {
-                              toast.success('Push notifications disabled');
-                            }
-                          }
-                        }}
-                        className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        Disable All Notifications
-                      </Button>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
+                )}
+              </CardContent>
+            </Card>
 
-              {/* Support */}
-              <AccordionItem value="support" className="border border-gray-200 rounded-lg bg-white px-3">
-                <AccordionTrigger className="py-2.5 hover:no-underline">
+            {/* Preferences - Collapsible */}
+            <Card className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 border border-teal-200 dark:border-teal-800 shadow-sm">
+              <CardContent className="p-3">
+                <button
+                  onClick={() => toggleSection('preferences')}
+                  className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
+                >
                   <div className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-sm font-semibold text-gray-900">Support</span>
+                    <Settings className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Preferences
+                    </h3>
                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-3 space-y-1.5">
+                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.preferences ? 'rotate-90' : ''}`} />
+                </button>
+
+                {sectionsOpen.preferences && (
+                  <div className="space-y-1.5">
+                  <button
+                    onClick={() => toast.info('🌍 Check the top-right menu to change language')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/30 text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Language</span>
+                    </div>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                  </button>
+                  <div className="flex items-center justify-between p-2">
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Currency</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400">GEL (₾)</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2">
+                    <div className="flex items-center gap-2">
+                      {isDarkMode ? <Sun className="w-3 h-3 text-teal-600 dark:text-teal-400" /> : <Moon className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Theme</span>
+                    </div>
+                    <button
+                      onClick={toggleTheme}
+                      className="text-[10px] font-bold text-teal-600 dark:text-teal-400 hover:underline"
+                    >
+                      {isDarkMode ? 'Light' : 'Dark'}
+                    </button>
+                  </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Support - Collapsible */}
+            <Card className="bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 border border-sky-200 dark:border-sky-800 shadow-sm">
+              <CardContent className="p-3">
+                <button
+                  onClick={() => toggleSection('support')}
+                  className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                      Support & Help
+                    </h3>
+                  </div>
+                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.support ? 'rotate-90' : ''}`} />
+                </button>
+
+                {sectionsOpen.support && (
+                  <div className="space-y-1.5">
+                  <button
+                    onClick={() => toast.info('📖 Help Center coming soon!')}
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/30 text-left transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <BookOpen className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Help Center</span>
+                    </div>
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                  </button>
                   <a
                     href="mailto:support@smartpick.ge"
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-teal-50 text-left transition-colors"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-teal-500" />
-                      <span className="text-xs text-gray-700 font-medium">Contact Support</span>
+                      <Mail className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Contact Support</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </a>
                   <button
                     onClick={() => setShowTutorial(true)}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-teal-50 text-left transition-colors"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <HelpCircle className="w-3.5 h-3.5 text-purple-500" />
-                      <span className="text-xs text-gray-700 font-medium">View Tutorial</span>
+                      <HelpCircle className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">View Tutorial</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <button
                     onClick={() => window.open('https://smartpick.ge/terms', '_blank')}
-                    className="w-full flex items-center justify-between p-2 rounded hover:bg-teal-50 text-left transition-colors"
+                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5 text-teal-500" />
-                      <span className="text-xs text-gray-700 font-medium">Terms & Privacy</span>
+                      <FileText className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Terms & Privacy</span>
                     </div>
-                    <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            {/* APP INFO - Compact Footer */}
-            <div className="text-center py-3 text-xs text-gray-400">
-              <p>SmartPick v1.0.0</p>
-              <p className="text-gray-400">© 2025 SmartPick</p>
+            {/* Footer */}
+            <div className="text-center pt-2 pb-4">
+              <p className="text-[10px] text-gray-400 dark:text-gray-600">
+                SmartPick v1.0.0 © 2025 SmartPick
+              </p>
             </div>
           </TabsContent>
         </Tabs>
@@ -1135,6 +1322,164 @@ export default function UserProfile() {
         onComplete={() => setShowTutorial(false)}
         userName={(user as any)?.full_name || (user as any)?.user_metadata?.full_name || user?.email?.split('@')[0] || 'there'}
       />
+
+      {/* Referral Modal - Playful & Full Screen */}
+      {showReferralModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-purple-500 to-pink-500 px-6 py-8 text-center relative">
+              <button
+                onClick={() => setShowReferralModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              >
+                <span className="text-white text-xl">×</span>
+              </button>
+              <div className="text-[48px] mb-3">🎁</div>
+              <h2 className="text-[24px] font-black text-white mb-2">
+                Refer Friends, Earn Rewards!
+              </h2>
+              <p className="text-[14px] text-white/90 font-medium">
+                Share SmartPick and get amazing bonuses!
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              {/* Progress Tracker */}
+              {userStats && (
+                <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
+                        Your Progress
+                      </span>
+                      <span className="text-[20px] font-black text-purple-600 dark:text-purple-400">
+                        {userStats.total_referrals || 0}/3
+                      </span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-600 transition-all duration-500"
+                        style={{ width: `${Math.min(100, ((userStats.total_referrals || 0) / 3) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] font-semibold text-gray-700 dark:text-gray-300 text-center">
+                      {(userStats.total_referrals || 0) >= 3 
+                        ? "🎉 Bonus unlocked! You're amazing!"
+                        : `${3 - (userStats.total_referrals || 0)} more ${3 - (userStats.total_referrals || 0) === 1 ? 'friend' : 'friends'} to unlock bonus!`
+                      }
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* How it Works */}
+              <div className="space-y-3">
+                <h3 className="text-[14px] font-bold text-gray-900 dark:text-gray-100">
+                  How It Works:
+                </h3>
+                
+                <div className="space-y-2.5">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0 text-[16px] font-black text-purple-600 dark:text-purple-400">
+                      1
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                        Share your invite link
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                        Send your unique link to friends via WhatsApp, Telegram, or social media
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center flex-shrink-0 text-[16px] font-black text-pink-600 dark:text-pink-400">
+                      2
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                        They sign up & save
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                        Your friend joins SmartPick and starts enjoying great deals
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0 text-[16px] font-black text-purple-600 dark:text-purple-400">
+                      3
+                    </div>
+                    <div className="flex-1 pt-1">
+                      <p className="text-[13px] font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                        You both get rewards! 🎉
+                      </p>
+                      <p className="text-[11px] text-gray-600 dark:text-gray-400">
+                        Earn SmartPoints and unlock exclusive bonuses together
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Share Buttons */}
+              <div className="space-y-2 pt-2">
+                <Button
+                  onClick={() => {
+                    const referralCode = user?.referral_code || user?.id.substring(0, 8);
+                    const text = `Join SmartPick and save on amazing deals! 🎉 Use my invite link: https://smartpick.ge?ref=${referralCode}`;
+                    navigator.clipboard.writeText(`https://smartpick.ge?ref=${referralCode}`);
+                    toast.success('Invite link copied! 🎉');
+                  }}
+                  className="w-full h-12 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold text-[14px] rounded-2xl shadow-lg"
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  Copy Invite Link
+                </Button>
+
+                <Button
+                  onClick={() => {
+                    const referralCode = user?.referral_code || user?.id.substring(0, 8);
+                    const text = `Join SmartPick and save on amazing deals! 🎉`;
+                    const url = `https://smartpick.ge?ref=${referralCode}`;
+                    if (navigator.share) {
+                      navigator.share({ title: 'SmartPick Referral', text, url });
+                    } else {
+                      navigator.clipboard.writeText(`${text} ${url}`);
+                      toast.success('Link copied! Share it with friends! 🎉');
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full h-12 border-2 border-purple-300 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-bold text-[14px] rounded-2xl"
+                >
+                  <Gift className="w-5 h-5 mr-2" />
+                  Share Invite
+                </Button>
+              </div>
+
+              {/* Bonus Info */}
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-800">
+                <CardContent className="p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="text-[24px]">✨</div>
+                    <div className="flex-1">
+                      <p className="text-[12px] font-bold text-gray-900 dark:text-gray-100 mb-1">
+                        Unlock Your Bonus!
+                      </p>
+                      <p className="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                        Invite 3 friends to unlock exclusive rewards, bonus points, and special perks!
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

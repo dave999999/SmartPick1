@@ -55,26 +55,14 @@ export function OffersGridUnified({
         </div>
       )}
 
-      {/* Grid Layout - Fixed card size across all screens */}
-      <div
-        className="flex flex-wrap w-full"
-        style={{
-          gap: '12px'
-        }}
-      >
+      {/* Grid Layout - 2 offers per row with fixed card size */}
+      <div className="grid grid-cols-2 gap-3 w-full" style={{ maxWidth: '360px' }}>
         {offers.map((offer) => (
-          <div
+          <OfferCardUnified
             key={offer.id}
-            style={{
-              width: '155px',
-              flexShrink: 0
-            }}
-          >
-            <OfferCardUnified
-              offer={offer}
-              onClick={onOfferClick}
-            />
-          </div>
+            offer={offer}
+            onClick={onOfferClick}
+          />
         ))}
       </div>
     </div>

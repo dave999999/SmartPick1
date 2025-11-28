@@ -44,7 +44,7 @@ export default function EnhancedStatsCards({ stats, className = '', activeView =
       bgColor: 'bg-white',
       iconBg: 'bg-teal-100',
       iconColor: 'text-teal-600',
-      view: 'offers',
+      view: 'slots',
     },
     {
       title: 'Active',

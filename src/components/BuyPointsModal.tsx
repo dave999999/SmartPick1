@@ -1,16 +1,12 @@
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Coins, CreditCard, Check, AlertCircle } from 'lucide-react';
-import { purchasePoints } from '@/lib/smartpoints-api';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Coins, Loader2, Sparkles, Shield } from 'lucide-react';
+import { BOG_CONFIG } from '@/lib/payments/bog';
+import { supabase } from '@/lib/supabase';
+import { secureRequest } from '@/lib/secureRequest';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
@@ -26,180 +22,253 @@ export function BuyPointsModal({
   open,
   onClose,
   userId,
-  currentBalance,
+  currentBalance: initialBalance,
   onSuccess,
 }: BuyPointsModalProps) {
-  const [isPurchasing, setIsPurchasing] = useState(false);
-  const [purchaseComplete, setPurchaseComplete] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
+  const [customGel, setCustomGel] = useState<string>('');
+  const [isCustom, setIsCustom] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentBalance, setCurrentBalance] = useState(initialBalance);
 
-  const PACKAGE_AMOUNT = 100;
-  const PACKAGE_PRICE = 1; // ₾1
+  // Fetch fresh balance when modal opens
+  useEffect(() => {
+    if (open && userId) {
+      const fetchBalance = async () => {
+        try {
+          logger.log('BuyPointsModal: Fetching balance for user', userId);
+          const { data, error } = await supabase
+            .from('user_points')
+            .select('balance')
+            .eq('user_id', userId)
+            .single();
+          
+          if (error) {
+            logger.error('BuyPointsModal: Error fetching balance', error);
+          } else if (data) {
+            logger.log('BuyPointsModal: Balance fetched', data.balance);
+            setCurrentBalance(data.balance || 0);
+          }
+        } catch (err) {
+          logger.error('BuyPointsModal: Failed to fetch current balance', err);
+        }
+      };
+      fetchBalance();
+    }
+  }, [open, userId]);
 
-  const handlePurchase = async () => {
+  const computedPoints = isCustom
+    ? Math.floor(parseFloat(customGel || '0') * BOG_CONFIG.POINTS_PER_GEL)
+    : selectedPackage !== null
+      ? BOG_CONFIG.PACKAGES[selectedPackage].points
+      : 0;
+
+  const computedGel = isCustom
+    ? parseFloat(customGel || '0')
+    : selectedPackage !== null
+      ? BOG_CONFIG.PACKAGES[selectedPackage].gel
+      : 0;
+
+  const isValid = computedGel >= BOG_CONFIG.MIN_GEL && computedGel <= BOG_CONFIG.MAX_GEL;
+
+  const handlePackageSelect = (index: number) => {
+    setSelectedPackage(index);
+    setIsCustom(false);
+    setCustomGel(BOG_CONFIG.PACKAGES[index].gel.toString());
+  };
+
+  const handleCustomAmountChange = (value: string) => {
+    if (!/^\d*\.?\d{0,2}$/.test(value)) return;
+    
+    setCustomGel(value);
+    setIsCustom(true);
+    setSelectedPackage(null);
+  };
+
+  const handleContinueToPayment = async () => {
+    if (!isValid || !userId) {
+      toast.error('Please select a valid amount');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      setIsPurchasing(true);
+      logger.log('BuyPointsModal: Initiating payment', {
+        points: computedPoints,
+        gel: computedGel,
+        userId,
+      });
 
-      // TODO: In production, integrate with Stripe Checkout here
-      // For now, we'll do a direct purchase (mock payment)
+      const data = await secureRequest<any>({
+        operation: 'createPaymentSession',
+        execute: async () => {
+          const { data, error } = await supabase.functions.invoke('bog-create-session', {
+            body: {
+              points: computedPoints,
+              gel_amount: computedGel,
+            },
+          });
+          if (error) {
+            logger.error('BuyPointsModal: Payment session creation failed', error);
+            if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
+              throw new Error('Cannot connect to payment service. Please test on the production site (smartpick.ge) or check your network connection.');
+            }
+            throw new Error(error.message || 'Failed to create payment session');
+          }
+          if (data?.error) {
+            logger.error('BuyPointsModal: API returned error', data);
+            throw new Error(data.error + (data.details ? `\n\nDetails: ${data.details}` : ''));
+          }
+          if (!data || !data.redirectUrl) {
+            logger.error('BuyPointsModal: Invalid response', data);
+            throw new Error('Invalid response from payment service');
+          }
+          return data;
+        }
+      });
 
-      const result = await purchasePoints(userId, PACKAGE_AMOUNT);
+      logger.log('BuyPointsModal: Payment session created, redirecting', {
+        redirectUrl: data.redirectUrl,
+        orderId: data.orderId,
+      });
 
-      if (result.success && result.newBalance) {
-        setPurchaseComplete(true);
-        onSuccess(result.newBalance);
+      toast.info('Redirecting to secure payment page...');
 
-        // Auto-close after 2 seconds
-        setTimeout(() => {
-          setPurchaseComplete(false);
-          onClose();
-        }, 2000);
-      } else {
-        toast.error(result.error || 'Purchase failed. Please try again.');
-      }
+      setTimeout(() => {
+        window.location.href = data.redirectUrl;
+      }, 500);
+
     } catch (error) {
-      logger.error('Error purchasing points:', error);
-      toast.error('An error occurred. Please try again.');
-    } finally {
-      setIsPurchasing(false);
+      logger.error('BuyPointsModal: Error', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start payment. Please try again.');
+      setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (!isPurchasing) {
-      setPurchaseComplete(false);
+    if (!isLoading) {
+      setSelectedPackage(null);
+      setCustomGel('');
+      setIsCustom(false);
       onClose();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <Coins className="w-6 h-6 text-[#4CC9A8]" />
-            Buy SmartPoints
+      <DialogContent className="sm:max-w-[420px] p-0 gap-0 border-none shadow-2xl overflow-hidden">
+        {/* Compact Header with gradient */}
+        <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-5 pb-4 border-b border-orange-100">
+          <DialogTitle className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-orange-500" />
+            Top Up SmartPoints ✨
           </DialogTitle>
-          <DialogDescription>
-            Get more points to continue reserving amazing deals!
+          <DialogDescription className="text-xs text-gray-600 mb-3">
+            Use points to reserve great deals instantly
           </DialogDescription>
-        </DialogHeader>
-
-        {purchaseComplete ? (
-          <div className="py-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-10 h-10 text-green-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-green-600 mb-2">Purchase Complete!</h3>
-            <p className="text-gray-600">
-              {PACKAGE_AMOUNT} SmartPoints added to your account
-            </p>
+          
+          {/* Compact Balance Badge */}
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-orange-200">
+            <Coins className="w-4 h-4 text-orange-500" />
+            <span className="text-xs text-gray-600">Balance:</span>
+            <span className="text-sm font-bold text-orange-600">{currentBalance.toLocaleString()}</span>
+            <span className="text-xs text-gray-500">pts</span>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Current Balance */}
-            <div className="p-4 bg-gray-50 rounded-lg border">
-              <p className="text-sm text-gray-600 mb-1">Current Balance</p>
-              <p className="text-3xl font-bold text-gray-900">{currentBalance}</p>
-              <p className="text-xs text-gray-500">SmartPoints</p>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {/* Compact Quick Select - 3 per row */}
+          <div>
+            <Label className="text-xs font-semibold text-gray-700 mb-2 block">Choose an amount or enter your own</Label>
+            <div className="grid grid-cols-3 gap-2">
+              {BOG_CONFIG.PACKAGES.map((pkg, idx) => {
+                const selected = selectedPackage === idx && !isCustom;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handlePackageSelect(idx)}
+                    className={`px-3 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+                      selected 
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-md scale-105' 
+                        : 'bg-white hover:bg-orange-50 border-gray-200 text-gray-700 hover:border-orange-300'
+                    }`}
+                  >
+                    {pkg.gel} ₾
+                  </button>
+                );
+              })}
             </div>
-
-            {/* Package Offer */}
-            <div className="relative p-6 bg-gradient-to-br from-[#EFFFF8] to-[#C9F9E9] rounded-xl border-2 border-[#4CC9A8]">
-              <div className="absolute top-2 right-2">
-                <span className="bg-[#4CC9A8] text-white text-xs font-bold px-2 py-1 rounded-full">
-                  BEST VALUE
-                </span>
-              </div>
-
-              <div className="text-center mb-4">
-                <div className="flex items-baseline justify-center gap-2 mb-2">
-                  <Coins className="w-8 h-8 text-[#4CC9A8]" />
-                  <span className="text-5xl font-bold text-gray-900">{PACKAGE_AMOUNT}</span>
-                  <span className="text-gray-600">points</span>
-                </div>
-                <div className="flex items-center justify-center gap-2">
-                  <span className="text-sm text-gray-600">for only</span>
-                  <span className="text-3xl font-bold text-[#4CC9A8]">₾{PACKAGE_PRICE}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Check className="w-4 h-4 text-[#4CC9A8]" />
-                  <span>20 reservations</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Check className="w-4 h-4 text-[#4CC9A8]" />
-                  <span>Never expires</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Check className="w-4 h-4 text-[#4CC9A8]" />
-                  <span>Instant delivery</span>
-                </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Check className="w-4 h-4 text-[#4CC9A8]" />
-                  <span>Secure payment</span>
-                </div>
-              </div>
-            </div>
-
-            {/* After Purchase */}
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-900">
-                <strong>After purchase:</strong> Your new balance will be{' '}
-                <span className="font-bold text-[#4CC9A8]">
-                  {currentBalance + PACKAGE_AMOUNT} SmartPoints
-                </span>
-              </p>
-            </div>
-
-            {/* Info Alert */}
-            <Alert className="bg-gray-50 border-gray-200">
-              <AlertCircle className="h-4 w-4 text-gray-600" />
-              <AlertDescription className="text-gray-700">
-                <p className="text-xs">
-                  <strong>How it works:</strong>
-                  <br />
-                  • Each reservation costs 5 SmartPoints
-                  <br />
-                  • Points never expire
-                  <br />
-                  • Secure payment via Stripe
-                </p>
-              </AlertDescription>
-            </Alert>
           </div>
-        )}
 
-        {!purchaseComplete && (
-          <DialogFooter className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isPurchasing}
-              className="flex-1"
+          {/* Compact Custom Input */}
+          <div>
+            <Label htmlFor="gel" className="text-xs font-semibold text-gray-700 mb-2 block">Or enter custom amount</Label>
+            <div className="relative">
+              <Input
+                id="gel"
+                type="text"
+                inputMode="decimal"
+                placeholder="1-50"
+                value={customGel}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                className="h-11 text-base font-semibold pr-12 rounded-xl border-2 focus:border-orange-400"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">GEL</span>
+            </div>
+            
+            {/* Inline Points Preview */}
+            {computedPoints > 0 && (
+              <div className="mt-2 flex items-center justify-between text-xs">
+                <span className="text-gray-600">You will receive:</span>
+                <span className="font-bold text-orange-600 text-sm">{computedPoints.toLocaleString()} points</span>
+              </div>
+            )}
+          </div>
+
+          {/* Ultra Compact Summary */}
+          {isValid && (selectedPackage !== null || (isCustom && customGel)) && (
+            <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs border border-gray-200">
+              <div className="flex justify-between text-gray-600">
+                <span>Amount:</span>
+                <span className="font-semibold text-gray-800">{computedGel.toFixed(2)} GEL</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Points:</span>
+                <span className="font-semibold text-orange-600">+{computedPoints.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between pt-1.5 border-t border-gray-300">
+                <span className="font-medium text-gray-700">New Balance:</span>
+                <span className="font-bold text-orange-600">{(currentBalance + computedPoints).toLocaleString()} pts</span>
+              </div>
+            </div>
+          )}
+
+          {/* Compact Payment Button */}
+          <div className="space-y-2">
+            <Button 
+              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all" 
+              disabled={!isValid || isLoading} 
+              onClick={handleContinueToPayment}
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePurchase}
-              disabled={isPurchasing}
-              className="flex-1 bg-[#4CC9A8] hover:bg-[#3db891] text-white font-bold text-lg py-6"
-            >
-              {isPurchasing ? (
+              {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...
                 </>
               ) : (
-                <>
-                  <CreditCard className="w-5 h-5 mr-2" />
-                  Pay ₾{PACKAGE_PRICE} Now
-                </>
+                <>Pay {computedGel > 0 ? computedGel.toFixed(2) : '0.00'} GEL</>
               )}
             </Button>
-          </DialogFooter>
-        )}
+            
+            {/* Friendly subtext */}
+            <p className="text-xs text-center text-gray-500 flex items-center justify-center gap-1.5">
+              <Shield className="w-3 h-3" />
+              <span>Secure BOG payment • Your points appear instantly!</span>
+            </p>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
