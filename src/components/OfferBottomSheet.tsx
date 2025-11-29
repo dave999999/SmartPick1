@@ -200,7 +200,10 @@ export function OfferBottomSheet({
     setIsDraggingImage(false);
   };
 
-  if (!open || !currentOffer) return null;
+  if (!open) return null;
+
+  // Check if we have offers
+  const hasOffers = offers.length > 0 && currentOffer;
 
   return (
     <>
@@ -273,9 +276,32 @@ export function OfferBottomSheet({
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
-          {/* Swipeable Image Section - Horizontal Navigation */}
-          <div 
-            className="relative overflow-hidden bg-gray-100 flex justify-center"
+          {!hasOffers ? (
+            /* Empty State - No Offers Available */
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                No Offers Available
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">
+                {selectedCategory 
+                  ? `No offers found in this category. Try selecting a different category or clear the filter.`
+                  : 'No offers are currently available in this area.'}
+              </p>
+              {selectedCategory && (
+                <button
+                  onClick={() => onCategorySelect?.('')}
+                  className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Clear Category Filter
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Swipeable Image Section - Horizontal Navigation */}
+              <div 
+                className="relative overflow-hidden bg-gray-100 flex justify-center"
             onDoubleClick={() => {
               if (sheetState === 'collapsed') {
                 setSheetState('expanded');
@@ -439,13 +465,15 @@ export function OfferBottomSheet({
             )}
           </div>
 
-          {/* Main Content */}
-          <OfferContent
-            offer={currentOffer}
-            user={user}
-            isExpanded={sheetState === 'expanded'}
-            onReserveSuccess={onReserveSuccess}
-          />
+              {/* Main Content */}
+              <OfferContent
+                offer={currentOffer}
+                user={user}
+                isExpanded={sheetState === 'expanded'}
+                onReserveSuccess={onReserveSuccess}
+              />
+            </>
+          )}
         </div>
       </motion.div>
 
