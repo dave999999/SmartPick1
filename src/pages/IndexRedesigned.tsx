@@ -22,6 +22,7 @@ import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned
 import { MapSectionNew } from '@/components/home/MapSectionNew';
 import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
+import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 
 export default function IndexRedesigned() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -194,14 +195,7 @@ export default function IndexRedesigned() {
   const getFilteredAndSortedOffers = (): Offer[] => {
     let filtered = [...offers];
 
-    if (selectedCategory && selectedCategory !== '') {
-      console.log('🔍 Filtering by category:', selectedCategory);
-      console.log('📊 Total offers before filter:', filtered.length);
-      filtered = filtered.filter(o => o.category === selectedCategory);
-      console.log('✅ Offers after filter:', filtered.length);
-      console.log('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
-    }
-
+    // Apply search filter first (for partner name filtering)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(offer =>
@@ -209,6 +203,22 @@ export default function IndexRedesigned() {
         offer.partner?.business_name?.toLowerCase().includes(query) ||
         offer.category.toLowerCase().includes(query)
       );
+      
+      // If searching for a partner, apply category filter to the carousel only
+      // The category filter is applied AFTER partner filter so it only filters the partner's offers
+      if (selectedCategory && selectedCategory !== '') {
+        console.log('🔍 Filtering partner offers by category:', selectedCategory);
+        filtered = filtered.filter(o => o.category === selectedCategory);
+      }
+    } else {
+      // If NOT searching for a partner, apply category filter globally (affects map)
+      if (selectedCategory && selectedCategory !== '') {
+        console.log('🔍 Filtering all offers by category:', selectedCategory);
+        console.log('📊 Total offers before category filter:', filtered.length);
+        filtered = filtered.filter(o => o.category === selectedCategory);
+        console.log('✅ Offers after category filter:', filtered.length);
+        console.log('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
+      }
     }
 
     filtered = filtered.filter(offer =>
@@ -262,6 +272,47 @@ export default function IndexRedesigned() {
     return filtered;
   };
 
+  // Separate filtered offers for the map - don't apply category filter when partner is selected
+  const getMapFilteredOffers = (): Offer[] => {
+    let filtered = [...offers];
+
+    // If partner search is active, show all pins (don't filter by category)
+    if (searchQuery.trim()) {
+      return offers;
+    }
+
+    // Otherwise, apply category filter to map
+    if (selectedCategory && selectedCategory !== '') {
+      filtered = filtered.filter(o => o.category === selectedCategory);
+    }
+
+    // Apply other filters
+    filtered = filtered.filter(offer =>
+      Number(offer.smart_price) >= filters.minPrice &&
+      Number(offer.smart_price) <= filters.maxPrice
+    );
+
+    if (filters.availableNow) {
+      filtered = filtered.filter(offer => (offer as any).available_quantity > 0);
+    }
+
+    if (userLocation && filters.maxDistance < 50) {
+      filtered = filtered.filter(offer => {
+        const location = getPartnerLocation(offer);
+        if (!location) return false;
+        const distance = calculateDistance(
+          userLocation[0],
+          userLocation[1],
+          location.lat,
+          location.lng
+        );
+        return distance <= filters.maxDistance;
+      });
+    }
+
+    return filtered;
+  };
+
   const filteredOffers = useMemo(() => getFilteredAndSortedOffers(), [
     offers,
     selectedCategory,
@@ -272,6 +323,17 @@ export default function IndexRedesigned() {
     filters.availableNow,
     userLocation,
     sortBy
+  ]);
+
+  const mapFilteredOffers = useMemo(() => getMapFilteredOffers(), [
+    offers,
+    selectedCategory,
+    searchQuery,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.maxDistance,
+    filters.availableNow,
+    userLocation
   ]);
 
   const handleOfferClick = useCallback((offer: Offer) => {
@@ -313,6 +375,7 @@ export default function IndexRedesigned() {
       setSearchQuery('');
       setShowBottomSheet(false);
       setSelectedOffer(null);
+      setSelectedCategory('');
       return;
     }
     
@@ -321,19 +384,20 @@ export default function IndexRedesigned() {
       // Filter to show only this partner's offers
       setSearchQuery(partnerName);
       
-      // Wait for filteredOffers to update, then open bottom sheet with first offer
-      setTimeout(() => {
-        const firstOfferIndex = offers.findIndex(o => 
-          o.partner_id === partnerOffers[0].partner_id
-        );
-        if (firstOfferIndex >= 0) {
-          setSelectedOfferIndex(firstOfferIndex);
-          setSelectedOffer(partnerOffers[0]);
-          setShowBottomSheet(true);
-        }
-      }, 100);
+      // Set the category from the first offer (most common category for this partner)
+      const categoryCount: Record<string, number> = {};
+      partnerOffers.forEach(offer => {
+        categoryCount[offer.category] = (categoryCount[offer.category] || 0) + 1;
+      });
+      const mostCommonCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+      setSelectedCategory(mostCommonCategory);
+      
+      // Immediately set the first offer and open bottom sheet
+      setSelectedOfferIndex(0);
+      setSelectedOffer(partnerOffers[0]);
+      setShowBottomSheet(true);
     }
-  }, [offers]);
+  }, []);
 
   return (
     <>
@@ -361,7 +425,7 @@ export default function IndexRedesigned() {
               {/* Full Screen Map */}
               <div className="absolute inset-0 w-full h-full z-10">
                 <MapSectionNew
-                  offers={filteredOffers}
+                  offers={mapFilteredOffers}
                   onOfferClick={handleOfferClick}
                   onMarkerClick={handleMarkerClick}
                   selectedCategory={selectedCategory}
@@ -442,6 +506,28 @@ export default function IndexRedesigned() {
         onReserveSuccess={handleReservationSuccess}
         selectedCategory={selectedCategory}
         onCategorySelect={setSelectedCategory}
+      />
+
+      {/* Bottom Navigation - Premium Floating Style */}
+      <FloatingBottomNav 
+        onSearchClick={() => {
+          // Toggle offers carousel - slide up/down
+          if (showBottomSheet) {
+            // If already open, close it (slide down)
+            setShowBottomSheet(false);
+            setSelectedOffer(null);
+          } else {
+            // If closed, open carousel with first offer (slide up)
+            if (filteredOffers.length > 0) {
+              setSelectedOffer(filteredOffers[0]);
+              setSelectedOfferIndex(0);
+              setShowBottomSheet(true);
+              console.log('Opening carousel with', filteredOffers.length, 'offers');
+            } else {
+              console.log('No offers to display');
+            }
+          }
+        }}
       />
     </>
   );

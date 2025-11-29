@@ -9,6 +9,23 @@ import { getSupabase } from './supabase-lazy';
 export async function getActiveOffers(): Promise<Offer[]> {
   const supabase = await getSupabase();
   
+  // First check: How many total offers exist?
+  const { data: totalOffers, error: totalError } = await supabase
+    .from('offers')
+    .select('*', { count: 'exact', head: false })
+    .limit(5);
+  
+  console.log('🔍 Total offers in DB:', totalOffers?.length || 0);
+  if (totalOffers && totalOffers.length > 0) {
+    console.log('📦 Sample offer:', {
+      id: totalOffers[0].id,
+      status: totalOffers[0].status,
+      expires_at: totalOffers[0].expires_at,
+      quantity_available: totalOffers[0].quantity_available,
+      title: totalOffers[0].title
+    });
+  }
+  
   // Query for ACTIVE status, not expired, and has stock
   const { data: offers, error } = await supabase
     .from('offers')
@@ -23,6 +40,8 @@ export async function getActiveOffers(): Promise<Offer[]> {
     console.warn('[api-lite] getActiveOffers error', error);
     return [];
   }
+
+  console.log('✅ Active offers found:', offers?.length || 0);
 
   if (!offers || offers.length === 0) {
     return [];

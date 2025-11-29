@@ -48,6 +48,7 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then(module => ({ d
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => ({ default: module.ResetPassword })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const VerifyRequested = lazy(() => import('./pages/VerifyRequested').then(module => ({ default: module.VerifyRequested })));
+const FloatingBottomNavDemo = lazy(() => import('./pages/FloatingBottomNavDemo'));
 
 // (Removed unused loadLeafletCSS helper)
 
@@ -319,6 +320,7 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-requested" element={<VerifyRequested />} />
+          <Route path="/demo/bottom-nav" element={<FloatingBottomNavDemo />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

@@ -203,7 +203,7 @@ export function OfferBottomSheet({
   if (!open) return null;
 
   // Check if we have offers
-  const hasOffers = offers.length > 0 && currentOffer;
+  const hasOffers = offers.length > 0;
 
   return (
     <>
@@ -276,7 +276,7 @@ export function OfferBottomSheet({
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto">
-          {!hasOffers ? (
+          {!hasOffers || !currentOffer ? (
             /* Empty State - No Offers Available */
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
               <div className="text-6xl mb-4">🔍</div>

@@ -44,8 +44,8 @@ export function TopRightMenu() {
     init();
   }, []);
 
-  // Hide on partner dashboard - it has its own menu
-  if (location.pathname === '/partner') {
+  // Hide on partner dashboard and homepage - they have their own menus
+  if (location.pathname === '/partner' || location.pathname === '/') {
     return null;
   }
 

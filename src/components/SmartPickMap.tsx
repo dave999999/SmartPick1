@@ -61,6 +61,11 @@ function createPulsingMarker(
     el.setAttribute('data-category', category);
   }
   
+  // Inline styles for marker size (40% smaller)
+  el.style.fontSize = '18px'; // Reduced from ~30px to 18px (40% reduction)
+  el.style.cursor = 'pointer';
+  el.style.userSelect = 'none';
+  
   // Use emoji instead of image
   const emoji = category ? CATEGORY_EMOJIS[category] || '📍' : '📍';
   el.textContent = emoji;
@@ -654,7 +659,7 @@ const SmartPickMap = memo(({
       {showUserLocation && (
         <Button
           onClick={handleNearMe}
-          className="absolute bottom-4 left-4 bg-[#FF8A00] hover:bg-[#e67a00] text-white rounded-full p-3 shadow-lg z-10"
+          className="absolute top-1/2 -translate-y-1/2 right-4 bg-[#FF8A00] hover:bg-[#e67a00] text-white rounded-full p-3 shadow-lg z-10"
           size="icon"
         >
           <Navigation className="w-5 h-5" />
