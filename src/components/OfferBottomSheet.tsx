@@ -12,7 +12,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, useAnimation, PanInfo, useMotionValue } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Offer, User } from '@/lib/types';
 import { OfferHeader } from './bottomsheet/OfferHeader';
 import { OfferImage } from './bottomsheet/OfferImage';
@@ -368,6 +368,7 @@ export function OfferBottomSheet({
                   <OfferImage
                     imageUrl={offers[currentIndex - 1]?.images?.[0]}
                     title={offers[currentIndex - 1]?.title}
+                    description={offers[currentIndex - 1]?.description}
                     category={offers[currentIndex - 1]?.category}
                     isExpanded={sheetState === 'expanded'}
                   />
@@ -379,6 +380,22 @@ export function OfferBottomSheet({
                 <OfferImage
                   imageUrl={currentOffer.images?.[0]}
                   title={currentOffer.title}
+                  description={currentOffer.description}
+                  timeRemaining={(() => {
+                    if (!currentOffer.expires_at) return '';
+                    const now = new Date();
+                    const end = new Date(currentOffer.expires_at);
+                    const diff = end.getTime() - now.getTime();
+                    if (diff <= 0) return 'Expired';
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                  })()}
+                  isExpiringSoon={(() => {
+                    if (!currentOffer.expires_at) return false;
+                    const diff = new Date(currentOffer.expires_at).getTime() - new Date().getTime();
+                    return diff > 0 && diff < 3600000;
+                  })()}
                   category={currentOffer.category}
                   isExpanded={sheetState === 'expanded'}
                 />
@@ -395,6 +412,7 @@ export function OfferBottomSheet({
                   <OfferImage
                     imageUrl={offers[currentIndex + 1]?.images?.[0]}
                     title={offers[currentIndex + 1]?.title}
+                    description={offers[currentIndex + 1]?.description}
                     category={offers[currentIndex + 1]?.category}
                     isExpanded={sheetState === 'expanded'}
                   />
@@ -428,19 +446,6 @@ export function OfferBottomSheet({
             isExpanded={sheetState === 'expanded'}
             onReserveSuccess={onReserveSuccess}
           />
-
-          {/* Expand Hint - Only show when collapsed */}
-          {sheetState === 'collapsed' && (
-            <div className="flex justify-center py-0.5 text-gray-400">
-              <button
-                onClick={toggleExpand}
-                className="flex items-center gap-0.5 text-[10px] font-medium hover:text-gray-600 transition-colors"
-              >
-                <ChevronUp className="w-3 h-3" />
-                Swipe up for details
-              </button>
-            </div>
-          )}
         </div>
       </motion.div>
 

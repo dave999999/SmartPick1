@@ -7,7 +7,6 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Offer, User } from '@/lib/types';
 import { Clock, AlertCircle } from 'lucide-react';
-import { TitleSection } from './TitleSection';
 import { PriceInfo } from './PriceInfo';
 import { BalanceInfo } from './BalanceInfo';
 import { PointsCost } from './PointsCost';
@@ -245,14 +244,7 @@ export function OfferContent({
       transition={{ duration: 0.2 }}
       className="px-3.5 pb-1"
     >
-      {/* Title Section - Always visible */}
-      <TitleSection
-        title={offer.title}
-        description={offer.description}
-        timeRemaining={timeRemaining}
-        isExpiringSoon={isExpiringSoon}
-        isExpanded={isExpanded}
-      />
+      {/* Title Section removed - now displayed as overlay on image */}
 
       {/* Expanded content - Only show when expanded */}
       {isExpanded && (
