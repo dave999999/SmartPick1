@@ -413,24 +413,6 @@ export default function IndexRedesigned() {
           </Suspense>
         )}
 
-        {/* New Bottom Sheet Offer Viewer - Opens when clicking map markers */}
-        {filteredOffers.length > 0 && (
-          <OfferBottomSheet
-            offers={filteredOffers}
-            initialIndex={selectedOfferIndex}
-            user={user}
-            open={showBottomSheet}
-            onClose={() => {
-              setShowBottomSheet(false);
-              setSelectedOffer(null);
-            }}
-            onIndexChange={handleBottomSheetIndexChange}
-            onReserveSuccess={handleReservationSuccess}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-          />
-        )}
-
         <Suspense fallback={null}>
           <AuthDialog
             open={showAuthDialog}
@@ -445,6 +427,24 @@ export default function IndexRedesigned() {
           />
         </Suspense>
       </div>
+
+      {/* New Bottom Sheet Offer Viewer - Opens when clicking map markers - Outside main container for proper z-index */}
+      {filteredOffers.length > 0 && (
+        <OfferBottomSheet
+          offers={filteredOffers}
+          initialIndex={selectedOfferIndex}
+          user={user}
+          open={showBottomSheet}
+          onClose={() => {
+            setShowBottomSheet(false);
+            setSelectedOffer(null);
+          }}
+          onIndexChange={handleBottomSheetIndexChange}
+          onReserveSuccess={handleReservationSuccess}
+          selectedCategory={selectedCategory}
+          onCategorySelect={setSelectedCategory}
+        />
+      )}
     </>
   );
 }
