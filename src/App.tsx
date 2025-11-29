@@ -159,6 +159,36 @@ const AppContent = () => {
     };
   }, []);
 
+  // Global auth error handler - catch refresh token errors
+  useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    (async () => {
+      try {
+        const { supabase } = await import('./lib/supabase');
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('✅ Token refreshed successfully');
+          }
+          if (event === 'SIGNED_OUT') {
+            console.log('🔐 User signed out');
+            // Clear any cached data
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('recentAuthTs');
+            }
+          }
+        });
+        subscription = data.subscription;
+      } catch (error) {
+        console.error('Error setting up auth listener:', error);
+      }
+    })();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
   // Check for active penalties on app load (once user is authenticated)
   useEffect(() => {
     let cancelled = false;

@@ -35,7 +35,23 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
       data: { user },
       error,
     } = await supabase.auth.getUser();
-    if (error) return { user: null, error };
+    
+    // Handle invalid refresh token error
+    if (error) {
+      if (error.message?.includes('Invalid Refresh Token') || error.message?.includes('Refresh Token Not Found')) {
+        console.warn('🔐 Invalid refresh token detected - clearing session');
+        try {
+          await supabase.auth.signOut();
+          // Clear local storage
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('recentAuthTs');
+          }
+        } catch (signOutError) {
+          console.error('Error signing out:', signOutError);
+        }
+      }
+      return { user: null, error };
+    }
     if (!user) return { user: null };
 
     // Try to read public profile; if missing, do not block long waits here
