@@ -20,10 +20,8 @@ const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').th
 // Premium Dark Design Components
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
 import { MapSectionNew } from '@/components/home/MapSectionNew';
-import { RestaurantFoodSectionNew } from '@/components/home/RestaurantFoodSectionNew';
 import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
-import { DraggableBottomSheet } from '@/components/home/DraggableBottomSheet';
 
 export default function IndexRedesigned() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -372,49 +370,6 @@ export default function IndexRedesigned() {
                   userLocation={userLocation}
                 />
               </div>
-
-              {/* Draggable Bottom Sheet - Apple Maps Style */}
-              {offers.length > 0 && (
-                <DraggableBottomSheet>
-                  <RestaurantFoodSectionNew
-                    offers={filteredOffers}
-                    onOfferClick={handleOfferClick}
-                    selectedCategory={selectedCategory}
-                    onCategorySelect={setSelectedCategory}
-                  />
-                </DraggableBottomSheet>
-              )}
-
-              {/* Empty State - Only show when there are no offers at all, not when filtering by category */}
-              {offers.length === 0 && (
-                <div 
-                  className="fixed left-0 right-0 rounded-t-3xl flex flex-col items-center justify-center p-8"
-                  style={{
-                    bottom: 0,
-                    height: '35vh',
-                    zIndex: 30,
-                    background: 'linear-gradient(to bottom, #050A12 0%, #0C1623 100%)',
-                    boxShadow: '0 -8px 32px rgba(0, 246, 255, 0.15), 0 -4px 16px rgba(0, 0, 0, 0.7)',
-                    borderTop: '1px solid rgba(0, 246, 255, 0.2)',
-                    paddingBottom: 'max(20px, env(safe-area-inset-bottom) + 20px)',
-                  }}
-                >
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-xl font-bold text-sp-text-primary mb-2">No offers found</h3>
-                  <p className="text-sp-text-secondary text-center mb-6">Try adjusting your filters or search query</p>
-                  <button
-                    onClick={() => {
-                      setFilters({ maxDistance: 10, minPrice: 0, maxPrice: 100 });
-                      setSearchQuery('');
-                      setSelectedCategory('');
-                      setSortBy('newest');
-                    }}
-                    className="bg-gradient-to-r from-sp-accent-orange to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    Clear All Filters
-                  </button>
-                </div>
-              )}
 
               {/* Search Bar Overlay */}
               <div className="absolute top-3 left-4 right-16 z-50">
