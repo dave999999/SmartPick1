@@ -413,8 +413,8 @@ export default function IndexRedesigned() {
           </Suspense>
         )}
 
-        {/* New Bottom Sheet Offer Viewer */}
-        {user && filteredOffers.length > 0 && (
+        {/* New Bottom Sheet Offer Viewer - Opens when clicking map markers */}
+        {filteredOffers.length > 0 && (
           <OfferBottomSheet
             offers={filteredOffers}
             initialIndex={selectedOfferIndex}
