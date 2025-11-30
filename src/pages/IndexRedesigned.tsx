@@ -10,6 +10,10 @@ import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
 const ReservationModal = lazy(() => import('@/components/ReservationModal'));
 import { OfferBottomSheet } from '@/components/OfferBottomSheet';
+import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
+import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
+import ReservationModalNew from '@/components/map/ReservationModalNew';
+import NavigationMode from '@/components/map/NavigationMode';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -19,12 +23,13 @@ const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').th
 
 // Premium Dark Design Components
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
-import { MapSectionNew } from '@/components/home/MapSectionNew';
+// import { MapSectionNew } from '@/components/home/MapSectionNew'; // REPLACED by SmartPickGoogleMap
 import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 
 export default function IndexRedesigned() {
+  const { isLoaded: googleMapsLoaded, google } = useGoogleMaps();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -37,6 +42,15 @@ export default function IndexRedesigned() {
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
+  
+  // NEW: Google Maps navigation state
+  const [showNewReservationModal, setShowNewReservationModal] = useState(false);
+  const [navigationMode, setNavigationMode] = useState(false);
+  const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
+  const mapInstanceRef = useCallback((mapInstance: any) => {
+    // Store map instance for NavigationMode
+    (window as any).__smartPickMapInstance = mapInstance;
+  }, []);
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -422,17 +436,28 @@ export default function IndexRedesigned() {
             </div>
           ) : (
             <>
-              {/* Full Screen Map */}
+              {/* Full Screen Map - Google Maps */}
               <div className="absolute inset-0 w-full h-full z-10">
-                <MapSectionNew
-                  offers={mapFilteredOffers}
-                  onOfferClick={handleOfferClick}
-                  onMarkerClick={handleMarkerClick}
-                  selectedCategory={selectedCategory}
-                  onCategorySelect={setSelectedCategory}
-                  onLocationChange={setUserLocation}
-                  userLocation={userLocation}
-                />
+                {googleMapsLoaded ? (
+                  <SmartPickGoogleMap
+                    offers={mapFilteredOffers}
+                    onOfferClick={handleOfferClick}
+                    onMarkerClick={handleMarkerClick}
+                    selectedCategory={selectedCategory}
+                    onCategorySelect={setSelectedCategory}
+                    onLocationChange={setUserLocation}
+                    userLocation={userLocation}
+                    selectedOffer={selectedOffer}
+                    showUserLocation={true}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <div className="text-center space-y-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                      <p className="text-gray-600 text-sm">Loading map...</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Search Bar Overlay */}
@@ -497,7 +522,7 @@ export default function IndexRedesigned() {
         offers={filteredOffers}
         initialIndex={selectedOfferIndex}
         user={user}
-        open={showBottomSheet}
+        open={showBottomSheet && !navigationMode}
         onClose={() => {
           setShowBottomSheet(false);
           setSelectedOffer(null);
@@ -506,7 +531,47 @@ export default function IndexRedesigned() {
         onReserveSuccess={handleReservationSuccess}
         selectedCategory={selectedCategory}
         onCategorySelect={setSelectedCategory}
+        onReserveClick={(offer) => {
+          setSelectedOffer(offer);
+          setShowNewReservationModal(true);
+        }}
       />
+      
+      {/* NEW: In-page Reservation Modal (replaces separate reservation page) */}
+      {selectedOffer && (
+        <ReservationModalNew
+          offer={selectedOffer}
+          user={user}
+          open={showNewReservationModal}
+          onClose={() => setShowNewReservationModal(false)}
+          onReservationCreated={(reservationId) => {
+            setActiveReservationId(reservationId);
+            setNavigationMode(true);
+            setShowBottomSheet(false);
+            setShowNewReservationModal(false);
+            toast.success('🎉 Reservation created! Starting navigation...');
+          }}
+        />
+      )}
+      
+      {/* NEW: Navigation Mode - Live GPS tracking with route */}
+      {navigationMode && selectedOffer?.partner && userLocation && googleMapsLoaded && (
+        <NavigationMode
+          mapInstance={(window as any).__smartPickMapInstance}
+          destination={{
+            lat: selectedOffer.partner.latitude!,
+            lng: selectedOffer.partner.longitude!,
+            name: selectedOffer.partner.business_name,
+          }}
+          userLocation={userLocation}
+          onStop={() => {
+            setNavigationMode(false);
+            setActiveReservationId(null);
+            setShowBottomSheet(true);
+            toast.info('Navigation stopped');
+          }}
+        />
+      )}
 
       {/* Bottom Navigation - Premium Floating Style */}
       <FloatingBottomNav 

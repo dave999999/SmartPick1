@@ -28,6 +28,7 @@ interface OfferContentProps {
   user: User | null;
   isExpanded: boolean;
   onReserveSuccess?: () => void;
+  onReserveClick?: (offer: Offer) => void; // NEW: For opening reservation modal
 }
 
 const POINTS_PER_UNIT = 5;
@@ -37,7 +38,8 @@ export function OfferContent({
   offer,
   user,
   isExpanded,
-  onReserveSuccess
+  onReserveSuccess,
+  onReserveClick
 }: OfferContentProps) {
   const [quantity, setQuantity] = useState(1);
   const [pointsBalance, setPointsBalance] = useState<number>(0);
@@ -175,6 +177,13 @@ export function OfferContent({
         setInsufficientPoints(true);
         setShowBuyPointsModal(true);
         toast.error(`⚠️ You need ${totalCost} SmartPoints to reserve ${quantity} unit(s).`);
+        isProcessingRef.current = false;
+        return;
+      }
+      
+      // NEW: If onReserveClick callback provided, use new modal flow
+      if (onReserveClick) {
+        onReserveClick(offer);
         isProcessingRef.current = false;
         return;
       }

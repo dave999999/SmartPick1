@@ -11,6 +11,7 @@ import { initSentry } from './lib/sentry';
 import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
 import { PenaltyModal } from './components/PenaltyModal';
 import type { UserPenalty, PenaltyDetails } from './lib/api/penalty';
+import { GoogleMapProvider } from './components/map/GoogleMapProvider';
 
 // Initialize Sentry as early as possible
 initSentry();
@@ -362,8 +363,10 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <AppContent />
+      <GoogleMapProvider>
+        <Toaster />
+        <AppContent />
+      </GoogleMapProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -29,6 +29,7 @@ interface OfferBottomSheetProps {
   onReserveSuccess?: () => void;
   selectedCategory?: string;
   onCategorySelect?: (category: string) => void;
+  onReserveClick?: (offer: Offer) => void; // NEW: For opening reservation modal
 }
 
 type SheetState = 'collapsed' | 'expanded' | 'minimized';
@@ -42,7 +43,8 @@ export function OfferBottomSheet({
   onIndexChange,
   onReserveSuccess,
   selectedCategory = '',
-  onCategorySelect
+  onCategorySelect,
+  onReserveClick
 }: OfferBottomSheetProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [sheetState, setSheetState] = useState<SheetState>('collapsed');
@@ -471,6 +473,7 @@ export function OfferBottomSheet({
                 user={user}
                 isExpanded={sheetState === 'expanded'}
                 onReserveSuccess={onReserveSuccess}
+                onReserveClick={onReserveClick}
               />
             </>
           )}
