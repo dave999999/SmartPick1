@@ -179,6 +179,26 @@ Order successfully completed. Great job! 👏`;
 }
 
 /**
+ * Send reservation cancelled notification to partner
+ */
+export async function notifyPartnerReservationCancelled(
+  partnerId: string,
+  customerName: string,
+  offerTitle: string,
+  quantity: number
+) {
+  const message = `🚫 <b>Reservation Cancelled</b>
+
+<b>Customer:</b> ${customerName}
+<b>Item:</b> ${offerTitle}
+<b>Quantity:</b> ${quantity}
+
+The customer cancelled their reservation. Quantity has been restored to your offer.`;
+
+  return sendNotification(partnerId, message, 'partner');
+}
+
+/**
  * Send no-show notification to partner
  */
 export async function notifyPartnerNoShow(

@@ -16,10 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
-import { Clock, MapPin, Minus, Plus, X } from 'lucide-react';
+import { Clock, MapPin, Minus, Plus, X, Wallet } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { PenaltyModal } from '@/components/PenaltyModal';
+import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
 import { supabase } from '@/lib/supabase';
 import {
   Dialog,
@@ -34,6 +35,7 @@ interface ReservationModalProps {
   open: boolean;
   onClose: () => void;
   onReservationCreated: (reservationId: string) => void;
+  initialQuantity?: number;
 }
 
 export default function ReservationModalNew({
@@ -42,21 +44,64 @@ export default function ReservationModalNew({
   open,
   onClose,
   onReservationCreated,
+  initialQuantity = 1,
 }: ReservationModalProps) {
   const { t } = useI18n();
   const isOnline = useOnlineStatus();
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState(initialQuantity);
   const [isReserving, setIsReserving] = useState(false);
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyData, setPenaltyData] = useState<any>(null);
   const [userPoints, setUserPoints] = useState(0);
+  const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
 
-  // Check penalty status when modal opens
+  // Sync quantity when modal opens with new initialQuantity
+  useEffect(() => {
+    if (open) {
+      setQuantity(initialQuantity);
+    }
+  }, [open, initialQuantity]);
+
+  // Fetch user points and check penalty status when modal opens
   useEffect(() => {
     if (open && user) {
       checkPenaltyStatus();
+      fetchUserPoints();
     }
   }, [open, user]);
+
+  const fetchUserPoints = async () => {
+    if (!user) {
+      logger.warn('No user provided to fetchUserPoints');
+      return;
+    }
+    
+    try {
+      // Try to get the actual user ID - could be user.id or (user as any).id
+      const userId = (user as any).id || user.id;
+      logger.log('Fetching points for user:', { userId, userObject: user });
+      
+      const { data: points, error } = await supabase
+        .from('user_points')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error) {
+        logger.error('Supabase error fetching user points:', error);
+        setUserPoints(0);
+        return;
+      }
+      
+      logger.log('Raw points data from DB:', points);
+      const balance = points?.balance || 0;
+      logger.log('User points balance parsed:', balance, 'Type:', typeof balance);
+      setUserPoints(balance);
+    } catch (error) {
+      logger.error('Exception fetching user points:', error);
+      setUserPoints(0);
+    }
+  };
 
   const checkPenaltyStatus = async () => {
     if (!user) return;
@@ -200,6 +245,8 @@ export default function ReservationModalNew({
 
   const totalPrice = offer.smart_price * quantity;
   const maxQuantity = Math.min(3, offer.quantity_available);
+  const POINTS_PER_UNIT = 5;
+  const totalPoints = POINTS_PER_UNIT * quantity;
   
   const pickupStart = offer.pickup_start || offer.pickup_window?.start || '';
   const pickupEnd = offer.pickup_end || offer.pickup_window?.end || '';
@@ -211,136 +258,144 @@ export default function ReservationModalNew({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center justify-between">
-              <span>Reserve Offer</span>
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <X className="w-5 h-5" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            {/* Food Image */}
-            {offer.images && offer.images.length > 0 && (
-              <div className="relative h-48 w-full overflow-hidden rounded-xl">
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden bg-gradient-to-b from-white via-orange-50/10 to-white shadow-2xl backdrop-blur-sm animate-in slide-in-from-bottom-4 duration-300">
+          <DialogTitle className="sr-only">Reserve {offer.title}</DialogTitle>
+          
+          {/* Compact Header Row - Image Left, Details Right */}
+          <div className="relative p-3 pb-2">
+            <div className="flex items-start gap-2.5">
+              {/* Left: Compact Image */}
+              {offer.images && offer.images.length > 0 && (
                 <img
-                  src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 600, quality: 85 })}
+                  src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 150, quality: 75 })}
                   alt={offer.title}
-                  className="w-full h-full object-cover"
+                  className="w-[70px] h-[70px] rounded-xl object-cover flex-shrink-0 shadow-md border border-gray-100"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
                 />
+              )}
+              
+              {/* Right: Title, Partner, Price, Emotional Tag */}
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <h2 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-tight">{offer.title}</h2>
+                <p className="text-[10px] text-gray-600">{offer.partner?.business_name}</p>
+                <p className="text-xl font-bold text-green-600 tracking-tight leading-none mt-1">{offer.smart_price.toFixed(2)} GEL</p>
+                <p className="text-[9px] font-semibold text-orange-600 mt-1">Great pick! ✨</p>
               </div>
-            )}
+              
+              {/* Close Button - Top Right */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose}
+                className="h-6 w-6 rounded-full hover:bg-gray-100 -mt-0.5 -mr-0.5 flex-shrink-0 transition-all"
+              >
+                <X className="w-3 h-3 text-gray-400" />
+              </Button>
+            </div>
+          </div>
 
-            {/* Title */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{offer.title}</h2>
-              <p className="text-sm text-gray-600">{offer.partner?.business_name}</p>
+          <div className="px-3 pb-3 space-y-2.5">
+            {/* SmartPoints Price Card - Super Compact */}
+            <div className="bg-gradient-to-br from-green-50 to-teal-50 p-2.5 rounded-xl border border-green-200/50 shadow-sm">
+              <p className="text-[10px] text-gray-700 leading-tight mb-2">
+                <span className="font-semibold">Pickup Price: {offer.smart_price.toFixed(2)} GEL</span><br />
+                You'll pay at pickup — reserving costs <span className="font-bold text-orange-600">{totalPoints} SmartPoints</span>.
+              </p>
+              <div className="flex items-center justify-between pt-2 border-t border-green-200/50">
+                <span className="text-[10px] text-gray-600">
+                  Your Balance: <span className="font-bold text-teal-600">{userPoints} Points</span>
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => setShowBuyPointsModal(true)}
+                  className="h-5 px-2 py-0 text-[9px] font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full shadow-sm"
+                >
+                  <Wallet className="w-2.5 h-2.5 mr-0.5" />
+                  Add Points
+                </Button>
+              </div>
             </div>
 
-            {/* Expiring Soon Warning */}
-            {isExpiringSoon && (
-              <Alert className="bg-orange-50 border-orange-200">
-                <Clock className="h-4 w-4 text-orange-500" />
-                <AlertDescription className="text-orange-700">
-                  <strong>Hurry!</strong> {getTimeRemaining(offer.expires_at)}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Description */}
-            <p className="text-sm text-gray-700">{offer.description}</p>
-
-            {/* Pricing */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Price per unit</span>
-                <span className="text-xl font-bold text-green-600">{offer.smart_price.toFixed(2)} GEL</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Original price</span>
-                <span className="text-sm text-gray-400 line-through">{offer.original_price.toFixed(2)} GEL</span>
-              </div>
-            </div>
-
-            {/* Quantity Selector */}
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <div className="flex items-center justify-between">
+            {/* Quantity Selector - Super Compact Single Line */}
+            <div className="bg-gray-50 p-2 rounded-xl border border-gray-200/50">
+              <div className="flex items-center justify-center gap-3 mb-1">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="rounded-full bg-gray-200 hover:bg-gray-300"
+                  className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95"
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-3 w-3 text-gray-700" />
                 </Button>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">{quantity}</div>
-                  <div className="text-xs text-gray-500">MAX {maxQuantity}</div>
-                </div>
+                <span className="text-2xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                   disabled={quantity >= maxQuantity}
-                  className="rounded-full bg-gray-200 hover:bg-gray-300"
+                  className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3 w-3 text-gray-700" />
                 </Button>
               </div>
-              <div className="text-center mt-2">
-                <span className="text-sm text-orange-500 font-medium">
-                  {offer.quantity_available} available
-                </span>
-              </div>
+              <p className="text-[9px] text-center text-gray-600 font-medium">
+                MAX {maxQuantity} – <span className="text-green-600 font-semibold">{offer.quantity_available} available</span> · Fresh batch just in! 🌾
+              </p>
             </div>
 
-            {/* Pickup Info */}
-            <div className="space-y-2">
+            {/* Pickup Details Card - Tiny 2-Line Card */}
+            <div className="bg-orange-50/40 p-2 rounded-xl border border-orange-200/30 space-y-1">
               {pickupStart && pickupEnd && (
-                <div className="flex items-start gap-2">
-                  <Clock className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Pickup Window</p>
-                    <p className="text-xs text-gray-600">
-                      {formatTime(pickupStart)} - {formatTime(pickupEnd)}
-                    </p>
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3 h-3 text-orange-600 flex-shrink-0" />
+                  <span className="text-[10px] text-gray-700 font-medium">
+                    {formatTime(pickupStart)} - {formatTime(pickupEnd)}
+                  </span>
                 </div>
               )}
               {partnerAddress && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">{offer.partner?.business_name}</p>
-                    <p className="text-xs text-gray-600">{partnerAddress}</p>
-                  </div>
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
+                  <span className="text-[10px] text-gray-700 leading-tight">{partnerAddress}</span>
                 </div>
               )}
             </div>
 
-            {/* Total */}
-            <div className="bg-orange-50 p-4 rounded-xl border border-orange-200">
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold">Total</span>
-                <span className="text-2xl font-bold text-orange-600">
-                  {totalPrice.toFixed(2)} GEL
-                </span>
-              </div>
-              <p className="text-xs text-orange-600 mt-1">💳 Pay at pickup</p>
+            {/* Friendly Microcopy Block - Shorter */}
+            <div className="text-center py-1.5">
+              <p className="text-[10px] text-gray-700 leading-snug">
+                We'll hold this discount for you. ✨ You'll only pay the pickup price.
+              </p>
             </div>
 
-            {/* Reserve Button */}
-            <Button
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white text-lg py-6 rounded-xl font-bold"
-              onClick={handleReserve}
-              disabled={isReserving || offer.quantity_available === 0 || !isOnline}
-            >
-              {isReserving ? 'Reserving...' : '🎫 Confirm Reservation'}
-            </Button>
+            {/* Reservation Button - Compact Height */}
+            <div className="space-y-1.5">
+              <Button
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm py-2.5 rounded-xl font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] duration-200"
+                onClick={handleReserve}
+                disabled={isReserving || offer.quantity_available === 0 || !isOnline || userPoints < totalPoints}
+              >
+                {isReserving ? (
+                  <span className="flex items-center gap-1.5">
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Reserving...
+                  </span>
+                ) : (
+                  `🤝 Reserve for ${totalPoints} SmartPoints`
+                )}
+              </Button>
+              {userPoints < totalPoints && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-1.5 text-center">
+                  <p className="text-[10px] text-red-600 font-semibold">
+                    Need {totalPoints - userPoints} more point{totalPoints - userPoints > 1 ? 's' : ''} to reserve
+                  </p>
+                </div>
+              )}
+              <p className="text-center text-[9px] text-gray-500 font-medium">
+                Held for 1 hour ⏳✨
+              </p>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -355,6 +410,19 @@ export default function ReservationModalNew({
             setShowPenaltyModal(false);
             checkPenaltyStatus();
           }}
+        />
+      )}
+
+      {/* Buy Points Modal */}
+      {showBuyPointsModal && user && (
+        <BuyPointsModal
+          isOpen={showBuyPointsModal}
+          onClose={() => {
+            setShowBuyPointsModal(false);
+            fetchUserPoints(); // Refresh balance after purchase
+          }}
+          currentBalance={userPoints}
+          userId={user.id}
         />
       )}
     </>

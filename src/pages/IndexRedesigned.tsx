@@ -9,7 +9,7 @@ import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
 const ReservationModal = lazy(() => import('@/components/ReservationModal'));
-import { OfferBottomSheet } from '@/components/OfferBottomSheet';
+import { MegaBottomSheet } from '@/components/discover/MegaBottomSheet';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
 import ReservationModalNew from '@/components/map/ReservationModalNew';
@@ -20,6 +20,15 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { FilterState, SortOption } from '@/components/SearchAndFilters';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
+
+// NEW: Post-Reservation Experience Components
+import { ReservationStateManager } from '@/components/reservation/ReservationStateManager';
+import { LiveRouteDrawer } from '@/components/reservation/LiveRouteDrawer';
+import { ReservationSheet } from '@/components/reservation/ReservationSheet';
+import type { Reservation as ReservationSheetData } from '@/components/reservation/ReservationSheet';
+import { useLiveGPS } from '@/hooks/useLiveGPS';
+import { getReservationById, cancelReservation } from '@/lib/api/reservations';
+import { Reservation } from '@/lib/types';
 
 // Premium Dark Design Components
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
@@ -41,16 +50,36 @@ export default function IndexRedesigned() {
   const [selectedOfferIndex, setSelectedOfferIndex] = useState<number>(0);
   const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [smartPointsBalance, setSmartPointsBalance] = useState<number>(0);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
+  
+  // NEW: Unified Discover Sheet state
+  const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState<'discover' | 'carousel' | 'reservation' | 'qr'>('discover');
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [highlightedOfferId, setHighlightedOfferId] = useState<string | null>(null);
+  const [selectedSort, setSelectedSort] = useState<'recommended' | 'nearest' | 'cheapest' | 'expiring' | 'newest'>('recommended');
   
   // NEW: Google Maps navigation state
   const [showNewReservationModal, setShowNewReservationModal] = useState(false);
+  const [reservationQuantity, setReservationQuantity] = useState(1);
   const [navigationMode, setNavigationMode] = useState(false);
   const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
   const mapInstanceRef = useCallback((mapInstance: any) => {
     // Store map instance for NavigationMode
     (window as any).__smartPickMapInstance = mapInstance;
   }, []);
+
+  // NEW: Post-Reservation System State
+  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  const [isPostResNavigating, setIsPostResNavigating] = useState(false);
+  const { googleMap } = useGoogleMaps();
+  
+  // Enable GPS tracking when navigating
+  const { position: gpsPosition } = useLiveGPS({ 
+    enabled: isPostResNavigating,
+    updateInterval: 3000 
+  });
 
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -109,6 +138,50 @@ export default function IndexRedesigned() {
       setIsLoading(false);
     }
   }
+
+  // Load active reservation when user is detected
+  useEffect(() => {
+    if (user?.id) {
+      loadActiveReservation();
+      
+      // Refresh every 30 seconds to check for status changes
+      const interval = setInterval(() => {
+        loadActiveReservation();
+      }, 30000);
+      
+      return () => clearInterval(interval);
+    } else {
+      setActiveReservation(null);
+    }
+  }, [user]);
+
+  const loadActiveReservation = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { getCustomerReservations } = await import('@/lib/api/reservations');
+      const reservations = await getCustomerReservations(user.id);
+      
+      // Find the first ACTIVE reservation
+      const activeRes = reservations.find(r => r.status === 'ACTIVE');
+      
+      if (activeRes) {
+        // Only update if it's a new reservation or status changed
+        if (!activeReservation || activeReservation.id !== activeRes.id) {
+          setActiveReservation(activeRes);
+          logger.log('Active reservation loaded:', activeRes.id);
+        }
+      } else {
+        // Clear if no active reservation found
+        if (activeReservation) {
+          setActiveReservation(null);
+          logger.log('No active reservation found');
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to load active reservation:', error);
+    }
+  };
 
   useEffect(() => {
     loadOffers();
@@ -175,6 +248,24 @@ export default function IndexRedesigned() {
   const checkUser = async () => {
     const { user } = await getCurrentUser();
     setUser(user);
+    
+    // Fetch balance from user_points table
+    if (user?.id) {
+      const { data: pointsData, error } = await supabase
+        .from('user_points')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error) {
+        logger.warn('Error fetching user points:', error);
+        setSmartPointsBalance(0);
+      } else {
+        setSmartPointsBalance(pointsData?.balance || 0);
+      }
+    } else {
+      setSmartPointsBalance(0);
+    }
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -390,28 +481,29 @@ export default function IndexRedesigned() {
       setShowBottomSheet(false);
       setSelectedOffer(null);
       setSelectedCategory('');
+      setDiscoverSheetOpen(false);
       return;
     }
     
-    // Open carousel with partner's offers
+    // Open unified sheet in Partner Mode with partner's offers
     if (partnerOffers.length > 0) {
-      // Filter to show only this partner's offers
-      setSearchQuery(partnerName);
-      
-      // Set the category from the first offer (most common category for this partner)
-      const categoryCount: Record<string, number> = {};
-      partnerOffers.forEach(offer => {
-        categoryCount[offer.category] = (categoryCount[offer.category] || 0) + 1;
-      });
-      const mostCommonCategory = Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-      setSelectedCategory(mostCommonCategory);
-      
-      // Immediately set the first offer and open bottom sheet
-      setSelectedOfferIndex(0);
-      setSelectedOffer(partnerOffers[0]);
-      setShowBottomSheet(true);
+      const partnerId = partnerOffers[0]?.partner_id;
+      if (partnerId) {
+        setSelectedPartnerId(partnerId);
+        setSheetMode('carousel');
+        setDiscoverSheetOpen(true);
+        
+        // Center map on partner
+        if (googleMap && partnerOffers[0]?.partner?.location) {
+          googleMap.panTo({
+            lat: partnerOffers[0].partner.location.latitude,
+            lng: partnerOffers[0].partner.location.longitude,
+          });
+          googleMap.setZoom(15);
+        }
+      }
     }
-  }, []);
+  }, [googleMap]);
 
   return (
     <>
@@ -449,6 +541,7 @@ export default function IndexRedesigned() {
                     userLocation={userLocation}
                     selectedOffer={selectedOffer}
                     showUserLocation={true}
+                    highlightedOfferId={highlightedOfferId}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -458,15 +551,6 @@ export default function IndexRedesigned() {
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Search Bar Overlay */}
-              <div className="absolute top-3 left-4 right-16 z-50">
-                <TopSearchBarRedesigned 
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  onFilterClick={() => setShowFilterDrawer(true)} 
-                />
               </div>
 
               {/* Floating Vertical Navigation */}
@@ -517,42 +601,115 @@ export default function IndexRedesigned() {
         </Suspense>
       </div>
 
-      {/* New Bottom Sheet Offer Viewer - Opens when clicking map markers - Outside main container for proper z-index */}
-      <OfferBottomSheet
-        offers={filteredOffers}
-        initialIndex={selectedOfferIndex}
+      {/* MEGA BOTTOM SHEET - THE ONLY SHEET */}
+      <MegaBottomSheet
+        isOpen={discoverSheetOpen}
+        mode={sheetMode}
+        offers={filteredOffers.map(offer => ({
+          ...offer,
+          discount_percent: Math.round(
+            ((offer.original_price - offer.smart_price) / offer.original_price) * 100
+          ),
+        }))}
         user={user}
-        open={showBottomSheet && !navigationMode}
+        selectedOfferId={selectedOffer?.id}
+        partnerId={selectedPartnerId}
         onClose={() => {
-          setShowBottomSheet(false);
-          setSelectedOffer(null);
+          setDiscoverSheetOpen(false);
+          setSelectedPartnerId(null);
+          setSheetMode('discover');
         }}
-        onIndexChange={handleBottomSheetIndexChange}
-        onReserveSuccess={handleReservationSuccess}
-        selectedCategory={selectedCategory}
-        onCategorySelect={setSelectedCategory}
-        onReserveClick={(offer) => {
-          setSelectedOffer(offer);
-          setShowNewReservationModal(true);
+        onModeChange={setSheetMode}
+        onOfferSelect={(offerId) => {
+          const offer = filteredOffers.find(o => o.id === offerId);
+          if (offer) {
+            setSelectedOffer(offer);
+            setHighlightedOfferId(offerId);
+          }
+        }}
+        onReserve={(offerId, quantity) => {
+          const offer = filteredOffers.find(o => o.id === offerId);
+          if (offer) {
+            setSelectedOffer(offer);
+            setReservationQuantity(quantity);
+            setShowNewReservationModal(true);
+          }
         }}
       />
-      
+
       {/* NEW: In-page Reservation Modal (replaces separate reservation page) */}
       {selectedOffer && (
         <ReservationModalNew
           offer={selectedOffer}
           user={user}
           open={showNewReservationModal}
+          initialQuantity={reservationQuantity}
           onClose={() => setShowNewReservationModal(false)}
-          onReservationCreated={(reservationId) => {
-            setActiveReservationId(reservationId);
-            setNavigationMode(true);
-            setShowBottomSheet(false);
-            setShowNewReservationModal(false);
-            toast.success('🎉 Reservation created! Starting navigation...');
+          onReservationCreated={async (reservationId) => {
+            // Fetch full reservation data
+            const reservation = await getReservationById(reservationId);
+            if (reservation) {
+              setActiveReservation(reservation);
+              // Close all sheets and modals - only show FloatingReservationCard
+              setShowBottomSheet(false);
+              setShowNewReservationModal(false);
+              setDiscoverSheetOpen(false);
+              setSelectedOffer(null);
+              setSheetMode('discover'); // Reset sheet mode
+            }
           }}
         />
       )}
+      
+      {/* NEW: Bottom Sheet Reservation Experience */}
+      <ReservationSheet
+        reservation={activeReservation ? {
+          id: activeReservation.id,
+          offerId: activeReservation.offer_id,
+          offerTitle: activeReservation.offer?.title || 'Offer',
+          partnerName: activeReservation.partner?.business_name || activeReservation.offer?.partner?.business_name || 'Partner',
+          imageUrl: activeReservation.offer?.images?.[0] || '/images/Map.jpg',
+          pickupPriceGel: activeReservation.offer?.smart_price || 0,
+          pointsUsed: activeReservation.smart_points_used || 0,
+          quantity: activeReservation.quantity,
+          pickupWindowStart: activeReservation.offer?.pickup_start_time || new Date().toISOString(),
+          pickupWindowEnd: activeReservation.offer?.pickup_end_time || new Date().toISOString(),
+          expiresAt: activeReservation.expires_at,
+          distanceMeters: 230,
+          durationMinutes: 3,
+          qrPayload: activeReservation.qr_code || activeReservation.id,
+          addressLine: activeReservation.offer?.pickup_location || 'Location',
+          status: 'active',
+        } : null}
+        isVisible={!!activeReservation}
+        onDismiss={() => setActiveReservation(null)}
+        onNavigate={(reservation) => {
+          const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.addressLine)}`;
+          window.open(url, '_blank');
+        }}
+        onCancel={async (reservationId) => {
+          try {
+            await cancelReservation(reservationId);
+            setActiveReservation(null);
+            toast.success('Reservation cancelled. Your SmartPoints have been refunded.');
+          } catch (error) {
+            toast.error('Failed to cancel reservation');
+            logger.error('Cancel reservation error:', error);
+          }
+        }}
+        onReservationExpired={() => {
+          setActiveReservation(null);
+          toast.error('⏰ Your reservation has expired.');
+        }}
+      />
+      
+      {/* NEW: Live Route Drawing on Map */}
+      <LiveRouteDrawer
+        map={googleMap}
+        reservation={activeReservation}
+        userLocation={gpsPosition ? { lat: gpsPosition.lat, lng: gpsPosition.lng } : null}
+        isNavigating={isPostResNavigating}
+      />
       
       {/* NEW: Navigation Mode - Live GPS tracking with route */}
       {navigationMode && selectedOffer?.partner && userLocation && googleMapsLoaded && (
@@ -576,21 +733,13 @@ export default function IndexRedesigned() {
       {/* Bottom Navigation - Premium Floating Style */}
       <FloatingBottomNav 
         onSearchClick={() => {
-          // Toggle offers carousel - slide up/down
-          if (showBottomSheet) {
-            // If already open, close it (slide down)
-            setShowBottomSheet(false);
-            setSelectedOffer(null);
+          // Open new discover sheet in discover mode
+          if (discoverSheetOpen) {
+            setDiscoverSheetOpen(false);
           } else {
-            // If closed, open carousel with first offer (slide up)
-            if (filteredOffers.length > 0) {
-              setSelectedOffer(filteredOffers[0]);
-              setSelectedOfferIndex(0);
-              setShowBottomSheet(true);
-              console.log('Opening carousel with', filteredOffers.length, 'offers');
-            } else {
-              console.log('No offers to display');
-            }
+            setDiscoverSheetOpen(true);
+            setSheetMode('discover');
+            setSelectedPartnerId(null);
           }
         }}
       />

@@ -547,13 +547,13 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
     return;
   }
 
-  // For ACTIVE reservations - refund points and restore quantity before cancelling
-  logger.log('Cancelling active reservation with refund');
+  // For ACTIVE reservations - NO REFUND (penalty), restore quantity, notify partner
+  logger.log('Cancelling active reservation - NO POINT REFUND (penalty policy)');
 
-  // Restore offer quantity
+  // Restore offer quantity to partner
   const { data: offer } = await supabase
     .from('offers')
-    .select('quantity_available')
+    .select('quantity_available, business_id, title')
     .eq('id', reservation.offer_id)
     .single();
 
@@ -562,39 +562,30 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .from('offers')
       .update({ quantity_available: offer.quantity_available + reservation.quantity })
       .eq('id', reservation.offer_id);
-  }
 
-  // REFUND POINTS - Give back points based on quantity (5 points per unit)
-  const POINTS_PER_RESERVATION = 5;
-  const totalPointsToRefund = POINTS_PER_RESERVATION * reservation.quantity;
+    // Get customer name for notification
+    const { data: customer } = await supabase
+      .from('users')
+      .select('full_name')
+      .eq('id', reservation.customer_id)
+      .single();
 
-  logger.log('Attempting to refund points:', {
-    userId: reservation.customer_id,
-    amount: totalPointsToRefund,
-    quantity: reservation.quantity,
-    reservationId
-  });
-
-  const { data: refundResult, error: refundError } = await supabase.rpc('add_user_points', {
-    p_user_id: reservation.customer_id,
-    p_amount: totalPointsToRefund,
-    p_reason: 'refund',
-    p_metadata: {
-      reservation_id: reservationId,
-      offer_id: reservation.offer_id,
-      quantity: reservation.quantity,
-      points_refunded: totalPointsToRefund,
-      cancelled_at: new Date().toISOString()
+    // Notify partner about cancellation (fire-and-forget)
+    if (offer.business_id && customer) {
+      const { notifyPartnerReservationCancelled } = await import('@/lib/telegram');
+      notifyPartnerReservationCancelled(
+        offer.business_id,
+        customer.full_name || 'Unknown Customer',
+        offer.title,
+        reservation.quantity
+      ).catch(err => {
+        logger.log('Partner notification failed (non-blocking):', err);
+      });
     }
-  });
-
-  if (refundError) {
-    console.error('❌ Error refunding points:', refundError);
-    console.error('Full refund error details:', JSON.stringify(refundError, null, 2));
-    // Don't throw - still cancel the reservation even if refund fails
-  } else {
-    logger.log('Points refunded successfully:', refundResult);
   }
+
+  // NO POINT REFUND - User loses points as penalty for cancellation
+  logger.log('Points NOT refunded - cancellation penalty applied');
 
   // Mark active reservation as cancelled
   const { error } = await supabase

@@ -28,6 +28,7 @@ interface SmartPickGoogleMapProps {
   userLocation?: [number, number] | null;
   showUserLocation?: boolean;
   selectedOffer?: Offer | null;
+  highlightedOfferId?: string | null;
 }
 
 interface GroupedLocation {
@@ -54,6 +55,50 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   'ALCOHOL': '🍷',
   'DRIVE': '🚗'
 };
+
+const CATEGORY_COLORS: Record<string, string> = {
+  'RESTAURANT': '#ef4444', // red
+  'FAST_FOOD': '#f97316', // orange
+  'BAKERY': '#f59e0b', // amber
+  'DESSERTS_SWEETS': '#ec4899', // pink
+  'CAFE': '#8b5cf6', // purple
+  'DRINKS_JUICE': '#06b6d4', // cyan
+  'GROCERY': '#10b981', // green
+  'MINI_MARKET': '#14b8a6', // teal
+  'MEAT_BUTCHER': '#dc2626', // dark red
+  'FISH_SEAFOOD': '#3b82f6', // blue
+  'ALCOHOL': '#9333ea', // violet
+  'DRIVE': '#6366f1' // indigo
+};
+
+// Create simple circular marker with category color and emoji
+function createCustomMarker(emoji: string, color: string): string {
+  return `
+    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <!-- Drop shadow -->
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      
+      <!-- Colored circle background -->
+      <circle cx="20" cy="20" r="18" fill="${color}" filter="url(#shadow)"/>
+      
+      <!-- White inner circle -->
+      <circle cx="20" cy="20" r="14" fill="white"/>
+      
+      <!-- Emoji text -->
+      <text x="20" y="20" 
+            font-size="20" 
+            text-anchor="middle" 
+            dominant-baseline="central" 
+            font-family="Arial, sans-serif">
+        ${emoji}
+      </text>
+    </svg>
+  `;
+}
 
 // Light map style matching SmartPick design
 const SMARTPICK_MAP_STYLE = [
@@ -101,6 +146,7 @@ export default function SmartPickGoogleMap({
   showUserLocation = false,
   onLocationChange,
   selectedOffer,
+  highlightedOfferId,
 }: SmartPickGoogleMapProps) {
   const { isLoaded, google } = useGoogleMaps();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -154,14 +200,30 @@ export default function SmartPickGoogleMap({
       const map = new google.maps.Map(mapContainerRef.current, {
         center: { lat: 41.7151, lng: 44.8271 }, // Tbilisi
         zoom: 13,
-        mapId: 'SMARTPICK_MAP', // Required for AdvancedMarkerElement
+        // Temporarily removed mapId to use custom styles and hide POIs
+        // mapId: 'SMARTPICK_MAP',
+        styles: [
+          {
+            featureType: 'poi',
+            stylers: [{ visibility: 'off' }]
+          },
+          {
+            featureType: 'poi.business',
+            stylers: [{ visibility: 'off' }]
+          },
+          {
+            featureType: 'transit',
+            elementType: 'labels.icon',
+            stylers: [{ visibility: 'off' }]
+          }
+        ],
         disableDefaultUI: true,
         zoomControl: false,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
         gestureHandling: 'greedy',
-        clickableIcons: false, // Disable clickable POI icons
+        clickableIcons: false,
       });
 
       mapRef.current = map;
@@ -214,35 +276,56 @@ export default function SmartPickGoogleMap({
         return expiresAt <= twoHoursFromNow;
       });
 
-      // Create custom marker HTML
+      // Create custom colored pin marker
       const emoji = CATEGORY_EMOJIS[location.category] || '📍';
+      const color = CATEGORY_COLORS[location.category] || '#6b7280';
+      const svgString = createCustomMarker(emoji, color);
+      
       const markerDiv = document.createElement('div');
-      markerDiv.innerHTML = emoji;
-      markerDiv.style.fontSize = '24px';
+      markerDiv.innerHTML = svgString;
       markerDiv.style.cursor = 'pointer';
       markerDiv.style.userSelect = 'none';
       markerDiv.style.transition = 'transform 0.2s';
+      markerDiv.style.width = '40px';
+      markerDiv.style.height = '40px';
       
+      // Add glow effect for expiring soon
       if (hasExpiringSoon) {
-        markerDiv.style.filter = 'drop-shadow(0 0 8px #37E5AE)';
+        markerDiv.style.filter = 'drop-shadow(0 0 12px #37E5AE)';
       }
 
       markerDiv.addEventListener('mouseenter', () => {
-        markerDiv.style.transform = 'scale(1.2)';
+        markerDiv.style.transform = 'scale(1.1)';
       });
       markerDiv.addEventListener('mouseleave', () => {
         markerDiv.style.transform = 'scale(1)';
       });
 
-      const marker = new google.maps.marker.AdvancedMarkerElement({
-        map,
-        position: { lat: location.lat, lng: location.lng },
-        content: markerDiv,
-        title: location.partnerName,
-      });
+      // Use Overlay to position custom HTML marker
+      const marker = new google.maps.OverlayView();
+      marker.onAdd = function() {
+        this.getPanes()!.overlayMouseTarget.appendChild(markerDiv);
+      };
+      marker.draw = function() {
+        const projection = this.getProjection();
+        const position = projection.fromLatLngToDivPixel(
+          new google.maps.LatLng(location.lat, location.lng)
+        );
+        if (position) {
+          markerDiv.style.position = 'absolute';
+          markerDiv.style.left = (position.x - 20) + 'px';
+          markerDiv.style.top = (position.y - 20) + 'px';
+        }
+      };
+      marker.onRemove = function() {
+        if (markerDiv.parentNode) {
+          markerDiv.parentNode.removeChild(markerDiv);
+        }
+      };
+      marker.setMap(map);
 
       // Handle marker click
-      marker.addListener('click', () => {
+      markerDiv.addEventListener('click', () => {
         // Show distance info if user location available
         if (userLocation) {
           const from: LatLng = { lat: userLocation[0], lng: userLocation[1] };
@@ -314,12 +397,28 @@ export default function SmartPickGoogleMap({
     `;
     userMarkerDiv.appendChild(ring);
 
-    const userMarker = new google.maps.marker.AdvancedMarkerElement({
-      map,
-      position: { lat: userLocation[0], lng: userLocation[1] },
-      content: userMarkerDiv,
-      title: 'Your Location',
-    });
+    // Use Overlay for user marker
+    const userMarker = new google.maps.OverlayView();
+    userMarker.onAdd = function() {
+      this.getPanes()!.overlayMouseTarget.appendChild(userMarkerDiv);
+    };
+    userMarker.draw = function() {
+      const projection = this.getProjection();
+      const position = projection.fromLatLngToDivPixel(
+        new google.maps.LatLng(userLocation[0], userLocation[1])
+      );
+      if (position) {
+        userMarkerDiv.style.position = 'absolute';
+        userMarkerDiv.style.left = (position.x - 8) + 'px';
+        userMarkerDiv.style.top = (position.y - 8) + 'px';
+      }
+    };
+    userMarker.onRemove = function() {
+      if (userMarkerDiv.parentNode) {
+        userMarkerDiv.parentNode.removeChild(userMarkerDiv);
+      }
+    };
+    userMarker.setMap(map);
 
     userMarkerRef.current = userMarker;
 
@@ -365,6 +464,27 @@ export default function SmartPickGoogleMap({
       }
     }
   }, [selectedOffer, google, userLocation]);
+
+  // NEW: Highlight marker when card is scrolled into view
+  useEffect(() => {
+    if (!google || !highlightedOfferId || markersRef.current.length === 0) return;
+
+    // Find marker for highlighted offer
+    const marker = markersRef.current.find((m: any) => {
+      const offers = m.offers || [];
+      return offers.some((offer: Offer) => offer.id === highlightedOfferId);
+    });
+
+    if (marker) {
+      // Bounce animation
+      marker.setAnimation(google.maps.Animation.BOUNCE);
+      
+      // Stop after 1 second
+      setTimeout(() => {
+        if (marker) marker.setAnimation(null);
+      }, 1000);
+    }
+  }, [highlightedOfferId, google]);
 
   // Handle "Near Me" button
   const handleNearMe = () => {

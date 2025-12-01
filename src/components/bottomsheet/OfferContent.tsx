@@ -140,6 +140,16 @@ export function OfferContent({
         return;
       }
 
+      // NEW: If onReserveClick callback provided, use new modal flow
+      // The modal will handle ALL validation and reservation logic
+      // Skip ALL checks here - just open the modal
+      if (onReserveClick) {
+        onReserveClick(offer);
+        isProcessingRef.current = false;
+        return;
+      }
+
+      // OLD FLOW (for backward compatibility if no modal callback):
       // Time-based debounce
       const timeSinceLastClick = now - lastClickTimeRef.current;
       if (timeSinceLastClick < DEBOUNCE_MS && lastClickTimeRef.current > 0) {
@@ -157,6 +167,7 @@ export function OfferContent({
         return;
       }
 
+      // OLD FLOW (for backward compatibility if no modal callback):
       // CSRF protection
       const csrfToken = await getCSRFToken();
       if (!csrfToken) {
@@ -177,13 +188,6 @@ export function OfferContent({
         setInsufficientPoints(true);
         setShowBuyPointsModal(true);
         toast.error(`⚠️ You need ${totalCost} SmartPoints to reserve ${quantity} unit(s).`);
-        isProcessingRef.current = false;
-        return;
-      }
-      
-      // NEW: If onReserveClick callback provided, use new modal flow
-      if (onReserveClick) {
-        onReserveClick(offer);
         isProcessingRef.current = false;
         return;
       }
