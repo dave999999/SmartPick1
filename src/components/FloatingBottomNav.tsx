@@ -30,20 +30,20 @@ export function FloatingBottomNav({ onSearchClick }: FloatingBottomNavProps) {
             className="
               relative mx-3 mb-2
               bg-white dark:bg-sp-surface1
-              rounded-[24px]
-              shadow-[0_8px_32px_rgba(0,0,0,0.1)]
-              dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)]
+              rounded-[20px]
+              shadow-[0_4px_16px_rgba(0,0,0,0.08)]
+              dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
               border border-gray-100 dark:border-sp-border-soft
               pointer-events-auto
               backdrop-blur-xl
               bg-opacity-95 dark:bg-opacity-95
             "
             style={{
-              height: '64px',
+              height: '52px',
             }}
           >
             {/* Navigation Items Grid */}
-            <div className="flex items-center justify-between h-full px-3">
+            <div className="flex items-center justify-between h-full px-2">
               
               {/* Left Section - Home */}
               <NavButton
@@ -64,7 +64,7 @@ export function FloatingBottomNav({ onSearchClick }: FloatingBottomNavProps) {
               />
 
               {/* Center Space for Floating Button */}
-              <div className="w-[68px]" />
+              <div className="w-[56px]" />
 
               {/* Profile */}
               <NavButton
@@ -86,16 +86,16 @@ export function FloatingBottomNav({ onSearchClick }: FloatingBottomNavProps) {
             </div>
 
             {/* Floating Center Button - Search Offers */}
-            <div className="absolute left-1/2 -translate-x-1/2 -top-4">
+            <div className="absolute left-1/2 -translate-x-1/2 -top-3">
               <button
                 onClick={onSearchClick}
                 className="
                   relative
-                  w-[60px] h-[60px]
+                  w-[50px] h-[50px]
                   rounded-full
                   bg-gradient-to-br from-[#FF8A00] to-[#FF6B00]
-                  shadow-[0_6px_20px_rgba(255,138,0,0.35)]
-                  hover:shadow-[0_8px_24px_rgba(255,138,0,0.45)]
+                  shadow-[0_4px_16px_rgba(255,138,0,0.3)]
+                  hover:shadow-[0_6px_20px_rgba(255,138,0,0.4)]
                   active:scale-95
                   transition-all duration-300
                   flex items-center justify-center
@@ -158,8 +158,8 @@ function NavButton({ onClick, isActive, icon, label }: NavButtonProps) {
     <button
       onClick={onClick}
       className={`
-        flex flex-col items-center justify-center
-        min-w-[56px] h-full
+        flex items-center justify-center
+        min-w-[48px] h-full
         transition-all duration-300 ease-out
         group
         ${isActive ? 'scale-105' : 'scale-100 hover:scale-105'}
@@ -174,28 +174,6 @@ function NavButton({ onClick, isActive, icon, label }: NavButtonProps) {
       `}>
         {icon}
       </div>
-
-      {/* Label */}
-      <span className={`
-        mt-1 text-[10px] font-medium tracking-wide
-        transition-all duration-300
-        ${isActive 
-          ? 'text-[#FF8A00] dark:text-[#FF8A00] font-semibold scale-100 opacity-100' 
-          : 'text-gray-600 dark:text-sp-text-muted scale-95 opacity-80'
-        }
-        group-hover:text-[#FF8A00] group-hover:scale-100 group-hover:opacity-100
-      `}>
-        {label}
-      </span>
-
-      {/* Active indicator dot */}
-      {isActive && (
-        <div className="
-          mt-0.5 w-1 h-1 rounded-full 
-          bg-[#FF8A00]
-          animate-pulse
-        " />
-      )}
     </button>
   );
 }
@@ -207,8 +185,8 @@ function NavButton({ onClick, isActive, icon, label }: NavButtonProps) {
 function HomeIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -225,8 +203,8 @@ function HomeIcon() {
 function HeartIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -242,8 +220,8 @@ function HeartIcon() {
 function SearchIcon() {
   return (
     <svg
-      width="28"
-      height="28"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="white"
       className="relative z-10 drop-shadow-lg"
@@ -260,8 +238,8 @@ function SearchIcon() {
 function UserIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -278,8 +256,8 @@ function UserIcon() {
 function MenuIcon() {
   return (
     <svg
-      width="22"
-      height="22"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"

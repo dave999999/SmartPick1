@@ -30,6 +30,7 @@ import ErrorMonitoring from '@/components/admin/ErrorMonitoring';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 
 interface DashboardStats {
   totalPartners: number;
@@ -684,6 +685,7 @@ export default function AdminDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+      <FloatingBottomNav />
     </div>
   );
 }

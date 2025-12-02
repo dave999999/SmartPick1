@@ -1,0 +1,363 @@
+/**
+ * ActiveReservationCard - Modern, Minimal, Google Maps/Uber/Wolt Inspired
+ * 
+ * 🎨 Design System:
+ * - Rounded corners: rounded-3xl (24px)
+ * - Shadows: shadow-lg with soft black/5 opacity
+ * - Spacing: 4/8/12 system (p-4, space-y-3)
+ * - Typography: Inter font family with balanced hierarchy
+ * - Colors: Pastel backgrounds, minimal icons, orange gradient CTAs
+ * - Motion: Subtle fade-in, pulse countdown, smooth interactions
+ * 
+ * 🗺 Features:
+ * - Real-time countdown timer with color-coded urgency
+ * - Live GPS route tracking (via useLiveRoute hook)
+ * - Dynamic distance & ETA updates
+ * - QR code preview with tap-to-expand
+ * - Clean dual-action buttons (Cancel outlined, Navigate gradient)
+ * - Figma-level spacing and proportions
+ * 
+ * 📱 Mobile-First:
+ * - Floats 8px above bottom nav
+ * - Compact 52px image preview
+ * - Touch-optimized button heights (h-12)
+ * - Smooth animations with framer-motion
+ */
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Clock, MapPin, Navigation, QrCode, X } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useLiveRoute } from '@/hooks/useLiveRoute';
+
+// ============================================
+// TYPES
+// ============================================
+
+export interface ActiveReservation {
+  id: string;
+  offerTitle: string;
+  partnerName: string;
+  imageUrl: string;
+  quantity: number;
+  expiresAt: string;
+  pickupWindowStart: string;
+  pickupWindowEnd: string;
+  qrPayload: string;
+  partnerLocation: {
+    lat: number;
+    lng: number;
+  };
+  pickupAddress: string;
+}
+
+export interface ActiveReservationCardProps {
+  reservation: ActiveReservation | null;
+  userLocation: { lat: number; lng: number } | null;
+  onNavigate: (reservation: ActiveReservation) => void;
+  onCancel: (reservationId: string) => void;
+  onExpired: () => void;
+}
+
+// ============================================
+// COUNTDOWN HOOK
+// ============================================
+
+function useCountdown(expiresAt: string | null) {
+  // Initialize with null to indicate "not yet calculated"
+  const [remainingMs, setRemainingMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!expiresAt) {
+      setRemainingMs(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const target = new Date(expiresAt).getTime();
+      const diff = Math.max(0, target - now);
+      setRemainingMs(diff);
+    };
+
+    // Calculate immediately
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  const ms = remainingMs ?? 0;
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  
+  // Only mark as expired if we've calculated the time AND it's actually expired
+  const isExpired = remainingMs !== null && remainingMs <= 0;
+
+  // Color-coded urgency
+  let colorClass = 'text-green-600';
+  if (minutes < 10) colorClass = 'text-red-500';
+  else if (minutes < 30) colorClass = 'text-orange-500';
+
+  return { formatted, isExpired, colorClass, remainingMs: ms };
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+
+export function ActiveReservationCard({
+  reservation,
+  userLocation,
+  onNavigate,
+  onCancel,
+  onExpired,
+}: ActiveReservationCardProps) {
+  const [showQRModal, setShowQRModal] = useState(false);
+  const { formatted, isExpired, colorClass, remainingMs } = useCountdown(reservation?.expiresAt || null);
+
+  // Live route tracking
+  const { distanceInMeters, etaInMinutes, isTracking } = useLiveRoute(
+    userLocation,
+    reservation?.partnerLocation || null,
+    { enabled: !!reservation }
+  );
+
+  // Handle expiration - only call once when it transitions to expired
+  const hasCalledExpired = React.useRef(false);
+  const lastReservationId = React.useRef<string | null>(null);
+  
+  useEffect(() => {
+    // Reset flag when reservation ID changes (new reservation)
+    if (reservation && reservation.id !== lastReservationId.current) {
+      lastReservationId.current = reservation.id;
+      hasCalledExpired.current = false;
+    }
+    
+    // Call onExpired only when it transitions to expired AND we haven't called it yet
+    if (isExpired && reservation && !hasCalledExpired.current) {
+      hasCalledExpired.current = true;
+      onExpired();
+    }
+  }, [isExpired, reservation, onExpired]);
+
+  // Don't show card if reservation is null or already expired
+  if (!reservation || isExpired) return null;
+
+  const pickupTime = formatPickupTime(reservation.pickupWindowStart, reservation.pickupWindowEnd);
+  const distanceText = formatDistance(distanceInMeters);
+
+  return (
+    <>
+      {/* Main Card */}
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+          className="fixed left-4 right-4 z-40 bg-white rounded-3xl shadow-lg shadow-black/5 overflow-hidden"
+          style={{ bottom: 'calc(80px + 8px)' }} // 8px above bottom nav
+        >
+          {/* Content */}
+          <div className="p-4 space-y-3">
+            {/* Header Row */}
+            <div className="flex items-center gap-3">
+              {/* Product Image */}
+              <img
+                src={reservation.imageUrl}
+                alt={reservation.offerTitle}
+                className="w-[52px] h-[52px] rounded-2xl object-cover flex-shrink-0"
+              />
+
+              {/* Title & Partner */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-gray-900 truncate">
+                  {reservation.offerTitle}
+                </h3>
+                <p className="text-sm text-muted-foreground truncate">
+                  {reservation.partnerName}
+                </p>
+              </div>
+
+              {/* Countdown Timer with Pulse Animation */}
+              <motion.div
+                animate={remainingMs < 600000 ? { scale: [1, 1.05, 1] } : {}}
+                transition={{ duration: 1, repeat: Infinity, repeatDelay: 1 }}
+                className="text-right flex-shrink-0"
+              >
+                <div className={`text-base font-bold font-mono ${colorClass}`}>
+                  {formatted}
+                </div>
+                <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                  EXPIRES
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Info Chips Row */}
+            <div className="flex items-center gap-2 text-xs">
+              {/* Pickup Time */}
+              <div className="flex items-center gap-1.5 bg-orange-50/50 px-3 py-1.5 rounded-full">
+                <Clock className="w-3.5 h-3.5 text-orange-500" />
+                <span className="font-medium text-gray-700">{pickupTime}</span>
+              </div>
+
+              {/* Distance & ETA */}
+              <div className="flex items-center gap-1.5 bg-blue-50/50 px-3 py-1.5 rounded-full">
+                <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                <span className="font-medium text-gray-700">
+                  {distanceText} • {etaInMinutes} min
+                </span>
+              </div>
+
+              {/* Quantity */}
+              <div className="ml-auto bg-gray-100 px-3 py-1.5 rounded-full">
+                <span className="font-semibold text-gray-900">{reservation.quantity}</span>
+                <span className="text-gray-500 ml-1">item{reservation.quantity > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+
+            {/* QR Preview Section */}
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowQRModal(true)}
+              className="bg-gradient-to-br from-orange-50 to-amber-50 border border-black/10 rounded-2xl p-3 flex items-center justify-between cursor-pointer hover:border-orange-300 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                {/* QR Thumbnail */}
+                <div className="bg-white p-1.5 rounded-lg shadow-sm">
+                  <QRCodeSVG value={reservation.qrPayload} size={48} level="M" />
+                </div>
+
+                {/* Text */}
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Show QR at pickup</p>
+                  <p className="text-xs text-gray-500">Tap to enlarge</p>
+                </div>
+              </div>
+
+              {/* Arrow Indicator */}
+              <QrCode className="w-5 h-5 text-orange-400" />
+            </motion.div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              {/* Cancel Button - Outlined */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (window.confirm('Cancel reservation? You will not get your SmartPoints back.')) {
+                    onCancel(reservation.id);
+                  }
+                }}
+                className="flex-1 h-12 bg-white border-2 border-orange-500 text-orange-600 hover:bg-orange-50 font-semibold rounded-full transition-all"
+              >
+                Cancel
+              </motion.button>
+
+              {/* Navigate Button - Gradient CTA */}
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={() => onNavigate(reservation)}
+                className="flex-1 h-12 bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white font-semibold rounded-full shadow-md shadow-orange-500/30 transition-all flex items-center justify-center gap-2"
+              >
+                <Navigation className="w-5 h-5" />
+                Navigate
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* QR Code Modal */}
+      <AnimatePresence>
+        {showQRModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowQRModal(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4 text-gray-600" />
+              </button>
+
+              {/* QR Content */}
+              <div className="flex flex-col items-center gap-4">
+                {/* Large QR Code */}
+                <div className="bg-white p-4 rounded-2xl border border-gray-200">
+                  <QRCodeSVG value={reservation.qrPayload} size={240} level="H" />
+                </div>
+
+                {/* QR Payload */}
+                <div className="text-center">
+                  <p className="text-lg font-mono font-bold text-gray-900 mb-1">
+                    {reservation.qrPayload}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Show this code to the partner at pickup
+                  </p>
+                </div>
+
+                {/* Product Details */}
+                <div className="w-full bg-gray-50 rounded-2xl p-4 space-y-2">
+                  <p className="text-sm font-semibold text-gray-900">{reservation.offerTitle}</p>
+                  <p className="text-xs text-gray-600">{reservation.partnerName}</p>
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                    <span className="text-xs text-gray-500">Pickup time:</span>
+                    <span className="text-xs font-medium text-gray-900">{pickupTime}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Expires in:</span>
+                    <span className={`text-xs font-bold font-mono ${colorClass}`}>{formatted}</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+function formatPickupTime(startIso: string, endIso: string): string {
+  const start = new Date(startIso);
+  const end = new Date(endIso);
+
+  const formatHour = (date: Date) => {
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  };
+
+  return `${formatHour(start)}–${formatHour(end)}`;
+}
+
+function formatDistance(meters: number): string {
+  if (meters < 1000) {
+    return `${meters}m`;
+  }
+  return `${(meters / 1000).toFixed(1)}km`;
+}

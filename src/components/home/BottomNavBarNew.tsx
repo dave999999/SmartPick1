@@ -47,12 +47,12 @@ export function BottomNavBarNew() {
       className="fixed left-0 right-0 z-[9999]"
       style={{ 
         bottom: 'env(safe-area-inset-bottom)',
-        height: '60px',
+        height: '50px',
       }}
     >
       <div className="h-full flex items-center justify-center px-3">
         <div className="
-          px-8 py-2.5
+          px-6 py-2
           backdrop-blur-[16px]
           rounded-3xl
           border border-sp-border-soft
@@ -73,10 +73,10 @@ export function BottomNavBarNew() {
                   key={index}
                   onClick={item.onClick}
                   className="
-                    relative flex flex-col items-center gap-1
+                    relative flex items-center justify-center
                     transition-all duration-200 
                     hover:scale-110 active:scale-95 
-                    min-w-[56px] py-0.5
+                    w-10 h-10
                   "
                 >
                   <div className={`
@@ -86,7 +86,7 @@ export function BottomNavBarNew() {
                   `}>
                     <Icon 
                       className={`
-                        w-[26px] h-[26px] 
+                        w-6 h-6
                         ${active ? 'text-sp-accent-orange' : 'text-sp-text-muted'}
                         transition-colors duration-200
                       `}
@@ -106,18 +106,6 @@ export function BottomNavBarNew() {
                       " />
                     )}
                   </div>
-
-                  {/* Label - only show on active */}
-                  {active && (
-                    <span className="
-                      text-[9px] font-semibold 
-                      text-sp-text-primary 
-                      tracking-wide uppercase
-                      animate-in fade-in-0 slide-in-from-bottom-1
-                    ">
-                      {item.label}
-                    </span>
-                  )}
                 </button>
               );
             })}

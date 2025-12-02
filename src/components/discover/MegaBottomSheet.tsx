@@ -16,6 +16,7 @@ import { X, Search, MapPin, Clock, ChevronUp, ChevronLeft, ChevronRight, Sparkle
 import { EnrichedOffer } from '@/lib/offerFilters';
 import { User } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
+import { OfferCarouselModal } from './OfferCarouselModal';
 
 // ============================================
 // TYPES
@@ -39,11 +40,18 @@ interface MegaBottomSheetProps {
 
 const CATEGORIES = [
   { id: 'all', label: 'All', emoji: '⭐' },
-  { id: 'restaurant', label: 'Dining', emoji: '🍽️' },
-  { id: 'bakery', label: 'Bakery', emoji: '🥐' },
-  { id: 'cafe', label: 'Café', emoji: '☕' },
-  { id: 'grocery', label: 'Grocery', emoji: '🛒' },
-  { id: 'dessert', label: 'Sweets', emoji: '🍰' },
+  { id: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
+  { id: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
+  { id: 'BAKERY', label: 'Bakery', emoji: '🥐' },
+  { id: 'DESSERTS_SWEETS', label: 'Desserts', emoji: '🍰' },
+  { id: 'CAFE', label: 'Café', emoji: '☕' },
+  { id: 'DRINKS_JUICE', label: 'Drinks', emoji: '🥤' },
+  { id: 'GROCERY', label: 'Grocery', emoji: '🛒' },
+  { id: 'MINI_MARKET', label: 'Mini Market', emoji: '🏪' },
+  { id: 'MEAT_BUTCHER', label: 'Meat', emoji: '🥩' },
+  { id: 'FISH_SEAFOOD', label: 'Fish', emoji: '🐟' },
+  { id: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
+  { id: 'DRIVE', label: 'Drive', emoji: '🚗' },
 ];
 
 const SORT_OPTIONS = [
@@ -87,18 +95,18 @@ export function MegaBottomSheet({
     switch (mode) {
       case 'discover':
         if (height === 'collapsed') return '20vh';
-        if (height === 'mid') return '50vh';
+        if (height === 'mid') return '35vh';
         return 'calc(100vh - 80px)';
       case 'detail':
-        return 'calc(100vh - 80px)'; // Button now in scrollable content
+        return '50vh'; // Smaller detail view
       case 'carousel':
-        return 'calc(100vh - 80px)'; // Button now in scrollable content
+        return '50vh'; // Smaller carousel view
       case 'reservation':
-        return 'calc(100vh - 80px)'; // Full height minus nav
+        return '60vh'; // Compact reservation view
       case 'qr':
         return '30vh';
       default:
-        return '50vh';
+        return '35vh';
     }
   };
 
@@ -201,6 +209,46 @@ export function MegaBottomSheet({
 
   if (!isOpen) return null;
 
+  // Detail mode (single offer) renders as standalone modal
+  if (mode === 'detail' && currentOffer) {
+    return (
+      <AnimatePresence>
+        <OfferCarouselModal
+          offers={[currentOffer]}
+          initialIndex={0}
+          onClose={() => {
+            onModeChange('discover');
+            setHeight('mid');
+          }}
+          onReserve={(offer) => {
+            onOfferSelect(offer.id);
+            onModeChange('reservation');
+          }}
+        />
+      </AnimatePresence>
+    );
+  }
+
+  // Carousel mode (multiple offers) renders as standalone modal
+  if (mode === 'carousel' && currentOffer) {
+    return (
+      <AnimatePresence>
+        <OfferCarouselModal
+          offers={carouselOffers}
+          initialIndex={carouselIndex}
+          onClose={() => {
+            onModeChange('discover');
+            setHeight('mid');
+          }}
+          onReserve={(offer) => {
+            onOfferSelect(offer.id);
+            onModeChange('reservation');
+          }}
+        />
+      </AnimatePresence>
+    );
+  }
+
   const backdropOpacity = mode === 'discover' && height === 'full' ? 0.5 : 0.3;
 
   return (
@@ -255,47 +303,6 @@ export function MegaBottomSheet({
                 onModeChange('detail'); // Show single offer detail
               }}
               onClose={onClose}
-            />
-          )}
-
-          {mode === 'detail' && currentOffer && (
-            <CarouselContent
-              key="detail"
-              offers={[currentOffer]} // Single offer only
-              currentIndex={0}
-              onIndexChange={() => {}} // No carousel in detail mode
-              onBack={() => {
-                onModeChange('discover');
-                setHeight('mid');
-              }}
-              onReserve={() => {
-                onReserve?.(currentOffer.id, quantity);
-              }}
-              onClose={onClose}
-              user={user}
-              quantity={quantity}
-              setQuantity={setQuantity}
-            />
-          )}
-
-          {mode === 'carousel' && currentOffer && (
-            <CarouselContent
-              key="carousel"
-              offers={carouselOffers}
-              currentIndex={carouselIndex}
-              onIndexChange={setCarouselIndex}
-              onBack={() => {
-                onModeChange('discover');
-                setHeight('mid');
-              }}
-              onReserve={() => {
-                // Directly trigger reservation modal with current quantity
-                onReserve?.(currentOffer.id, quantity);
-              }}
-              onClose={onClose}
-              user={user}
-              quantity={quantity}
-              setQuantity={setQuantity}
             />
           )}
 
@@ -373,76 +380,6 @@ function DiscoverContent({
 
   return (
     <>
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-100">
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold">🔥 Discover Deals</h1>
-            <p className="text-xs text-gray-500 mt-0.5">
-              <span className="font-semibold text-orange-600">{offers.length}</span> deals • auto-updated
-            </p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Search */}
-        <div className="px-4 pb-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-orange-400"
-            />
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="px-4 pb-2">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {SORT_OPTIONS.map((opt) => {
-              const Icon = typeof opt.icon === 'string' ? null : opt.icon;
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => setSortBy(opt.id)}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                    sortBy === opt.id ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {Icon ? <Icon className="w-3.5 h-3.5" /> : <span>{opt.emoji}</span>}
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Categories */}
-        <div className="px-4 pb-3">
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                  selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
-                    : 'bg-orange-50 text-orange-700'
-                }`}
-              >
-                <span>{cat.emoji}</span>
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Grid */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {offers.length === 0 ? (
@@ -531,153 +468,156 @@ function CarouselContent({ offers, currentIndex, onIndexChange, onBack, onReserv
   });
 
   return (
-    <div className="flex flex-col h-full max-h-full bg-gradient-to-b from-orange-50/20 via-white to-white">
-      {/* Compact Header */}
-      <div className="flex-shrink-0 px-4 py-2.5 flex items-center justify-between border-b border-gray-100">
-        <button onClick={onBack} className="text-sm text-gray-600 flex items-center gap-1 hover:text-gray-900">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <div className="flex-1 text-center">
-          <div className="text-sm font-bold text-orange-600">✨ Great Pick!</div>
-          <div className="text-[10px] text-gray-500">Freshly prepared at {partner?.business_name || 'Partner'} 🍽️</div>
-        </div>
-        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full">
-          <X className="w-4 h-4 text-gray-600" />
-        </button>
-      </div>
+    <div className="flex flex-col h-full bg-white">
+      {/* COMPACT HEADER - Horizontal Layout */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-100">
+        <div className="flex items-center gap-3 p-3">
+          
+          {/* LEFT: SWIPEABLE PHOTO CAROUSEL */}
+          <motion.div
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+            className="relative flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden bg-gray-100 shadow-md"
+          >
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentIndex}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="w-full h-full"
+              >
+                {offer?.images?.[currentIndex] ? (
+                  <img
+                    src={offer.images[currentIndex]}
+                    alt={offer.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl">🎁</div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+            
+            {/* Pagination Dots */}
+            {offers.length > 1 && (
+              <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+                {offers.slice(0, 5).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-1 h-1 rounded-full transition-all ${
+                      idx === currentIndex ? 'bg-white w-2' : 'bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
 
-      {/* Scrollable Content - NO SCROLL NEEDED */}
-      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-3 pb-24">
-        
-        {/* MEDIUM IMAGE - 40% Smaller */}
-        <motion.div
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-          className="mb-2"
-        >
-          <div className="relative w-full rounded-xl overflow-hidden shadow-md">
-            <div className="aspect-[16/10] bg-gray-100">
-              {offer?.images?.[0] ? (
-                <img src={offer.images[0]} alt={offer.title} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-5xl">🎁</div>
-              )}
-            </div>
-            {/* Swipe indicators */}
+            {/* Swipe Indicators */}
             {currentIndex > 0 && (
-              <div className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1">
-                <ChevronLeft className="w-3.5 h-3.5" />
+              <div className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-0.5">
+                <ChevronLeft className="w-3 h-3" />
               </div>
             )}
             {currentIndex < offers.length - 1 && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1">
-                <ChevronRight className="w-3.5 h-3.5" />
+              <div className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-0.5">
+                <ChevronRight className="w-3 h-3" />
               </div>
             )}
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* MINI THUMBNAILS - Horizontal Strip */}
-        {offers.length > 1 && (
-          <div className="flex gap-1.5 overflow-x-auto mb-3 scrollbar-hide">
-            {offers.slice(0, 5).map((o, idx) => (
-              <button
-                key={idx}
-                onClick={() => onIndexChange(idx)}
-                className={`flex-shrink-0 w-8 h-8 rounded-md overflow-hidden transition-all ${
-                  idx === currentIndex ? 'ring-2 ring-orange-500' : 'opacity-40'
-                }`}
-              >
-                {o.images?.[0] ? (
-                  <img src={o.images[0]} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs">🎁</div>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* TITLE & PRICE - Compact */}
-        <div className="mb-3">
-          <h2 className="text-base font-bold leading-tight mb-1.5">{offer?.title}</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-green-600">{offer?.smart_price}₾</span>
-            <span className="text-sm text-gray-400 line-through">{offer?.original_price}₾</span>
-            {discount > 0 && (
-              <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                −{discount}%
+          {/* RIGHT: OFFER INFO */}
+          <div className="flex-1 min-w-0">
+            <button onClick={onClose} className="float-right p-0.5 hover:bg-gray-100 rounded-full transition-colors">
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+            
+            <h2 className="text-sm font-bold text-gray-900 leading-tight mb-0.5 pr-6 line-clamp-2">
+              {offer?.title}
+            </h2>
+            <p className="text-[10px] text-gray-500 mb-1.5">{partner?.business_name}</p>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-green-600">{offer?.smart_price}₾</span>
+              <span className="bg-orange-50 text-orange-600 text-[9px] font-semibold px-2 py-0.5 rounded-full border border-orange-200">
+                {totalPoints} SmartPoints
               </span>
-            )}
-          </div>
-        </div>
-
-        {/* 🟢 SMART DEAL CARD - All-in-One */}
-        <div className="bg-gradient-to-br from-green-50 to-teal-50 p-3 rounded-xl border border-green-200/50 shadow-sm mb-3">
-          <div className="flex items-start gap-2 mb-2">
-            <span className="text-lg">💸</span>
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-700">Pickup Price: <span className="text-green-600">{offer?.smart_price}₾</span></p>
-              <p className="text-xs text-gray-600 mt-0.5">
-                ⭐ Reserve now for <span className="font-bold text-orange-600">{totalPoints} SmartPoints</span>
-              </p>
             </div>
           </div>
-          <div className="flex items-center justify-between pt-2 border-t border-green-200/40">
-            <span className="text-xs text-gray-600">
-              Balance: <span className="font-bold text-teal-600">{userPoints}</span>
-            </span>
-            <button className="text-[10px] font-semibold bg-teal-500 hover:bg-teal-600 text-white rounded-full px-2.5 py-1 transition-colors">
-              Add Points →
-            </button>
-          </div>
         </div>
+      </div>
 
-        {/* QUANTITY - Capsule Style */}
-        <div className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-xl border border-gray-200/50 mb-3">
-          <div className="flex items-center gap-3">
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+
+        {/* QUANTITY SECTION - Super Compact */}
+        <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-2.5">
+          <div className="text-[11px] font-semibold text-gray-700 mb-2">Quantity</div>
+          <div className="flex items-center justify-center gap-2.5 mb-1.5">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
-              className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-30 flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-orange-400 disabled:opacity-30 disabled:hover:border-gray-300 flex items-center justify-center transition-all bg-white active:scale-95"
             >
-              <span className="text-base font-bold text-gray-700">−</span>
+              <span className="text-base font-bold text-gray-600">−</span>
             </button>
-            <span className="text-xl font-bold text-gray-900 w-6 text-center">{quantity}</span>
+            <span className="text-2xl font-bold text-gray-900 w-9 text-center">{quantity}</span>
             <button
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
               disabled={quantity >= maxQuantity}
-              className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-30 flex items-center justify-center transition-all"
+              className="w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-orange-400 disabled:opacity-30 disabled:hover:border-gray-300 flex items-center justify-center transition-all bg-white active:scale-95"
             >
-              <span className="text-base font-bold text-gray-700">+</span>
+              <span className="text-base font-bold text-gray-600">+</span>
             </button>
           </div>
-          <p className="text-[10px] text-gray-600 font-medium">
-            Max {maxQuantity} • <span className="text-green-600 font-semibold">{offer?.quantity_available} left</span> 🌿
-          </p>
+          <div className="flex items-center justify-between text-[9px]">
+            <span className="text-gray-500">Up to {maxQuantity} per order</span>
+            <span className="text-green-600 font-semibold">{offer?.quantity_available} available</span>
+          </div>
         </div>
 
-        {/* PICKUP TIME - Minimal */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-orange-50/60 rounded-lg border border-orange-200/40 mb-3">
-          <Clock className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
-          <span className="text-xs text-gray-700 font-medium">🕒 Pickup until 8 PM</span>
+        {/* PICKUP INFO BLOCK - Clean & Grouped */}
+        <div className="bg-white rounded-lg border border-gray-200 p-2.5 space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />
+            <span className="text-[11px] text-gray-900 font-medium">Today · 11:50 PM – 11:50 PM</span>
+          </div>
+          <div className="flex items-center gap-1.5 pb-1.5 border-b border-gray-100">
+            <MapPin className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+            <span className="text-[11px] text-gray-700">{partner?.business_name || 'Partner Location'}</span>
+          </div>
+          
+          {/* Info Box */}
+          <div className="bg-blue-50/40 rounded-md p-2 mt-1.5">
+            <div className="flex items-start gap-1.5">
+              <span className="text-blue-500 flex-shrink-0 text-xs">ℹ️</span>
+              <p className="text-[9px] text-gray-600 leading-snug">
+                You'll pay <span className="font-semibold text-gray-900">{offer?.smart_price}₾</span> at pickup. 
+                Reservation costs <span className="font-semibold text-orange-600">{totalPoints} SmartPoints</span>.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* RESERVE BUTTON - Right after pickup time */}
+      </div>
+
+      {/* FIXED BOTTOM CTA */}
+      <div className="flex-shrink-0 bg-white border-t border-gray-100 p-3 pt-2.5 pb-20">
         <button
           onClick={onReserve}
           disabled={!hasEnoughPoints}
-          className={`w-full py-3.5 rounded-2xl font-bold shadow-xl transition-all text-sm ${
+          className={`w-full py-3.5 rounded-xl font-bold text-sm shadow-lg transition-all ${
             hasEnoughPoints
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 hover:shadow-2xl active:scale-[0.98]'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-xl active:scale-[0.98]'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {hasEnoughPoints ? `Reserve for ${totalPoints} SmartPoints →` : 'Not enough SmartPoints'}
+          Reserve for {totalPoints} SmartPoints
         </button>
-
+        <p className="text-center text-[9px] text-gray-500 mt-1.5">🕓 Held for 1 hour</p>
       </div>
     </div>
   );
@@ -725,112 +665,128 @@ function ReservationContent({ offer, user, quantity, setQuantity, onBack, onConf
   const hasEnoughPoints = userPoints >= totalPoints;
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white via-orange-50/10 to-white">
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 flex items-center justify-between">
-        <button onClick={onBack} className="text-orange-600 font-medium text-sm flex items-center gap-1">
-          <ChevronLeft className="w-4 h-4" />
-          Back
-        </button>
-        <h2 className="text-base font-bold">✨ Reserve This Deal</h2>
-        <div className="w-12" />
+    <div className="flex flex-col h-full bg-white">
+      {/* COMPACT HEADER */}
+      <div className="flex-shrink-0 bg-white border-b border-gray-100">
+        <div className="flex items-center gap-2 p-2.5">
+          
+          {/* LEFT: PHOTO THUMBNAIL */}
+          <div className="relative flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-100 shadow-sm">
+            {offer?.images?.[0] ? (
+              <img
+                src={offer.images[0]}
+                alt={offer.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-xl">🎁</div>
+            )}
+          </div>
+
+          {/* RIGHT: INFO */}
+          <div className="flex-1 min-w-0">
+            <button onClick={onBack} className="float-right text-orange-600 text-[10px] font-medium flex items-center gap-0.5">
+              <ChevronLeft className="w-3 h-3" />
+              Back
+            </button>
+            
+            <h2 className="text-[11px] font-bold text-gray-900 leading-tight mb-0.5 pr-10 line-clamp-1">
+              {offer?.title}
+            </h2>
+            <p className="text-[8px] text-gray-500 mb-0.5">{partner?.business_name}</p>
+            
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-bold text-green-600">{totalPrice.toFixed(2)}₾</span>
+              <span className="bg-orange-50 text-orange-600 text-[8px] font-semibold px-1.5 py-0.5 rounded-full border border-orange-200">
+                {totalPoints} SmartPoints
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
-        {/* Compact Header Row - Image Left, Details Right */}
-        <div className="flex items-start gap-3 mb-3 pb-3 border-b border-gray-100">
-          {offer.images?.[0] && (
-            <img
-              src={offer.images[0]}
-              alt={offer.title}
-              className="w-[70px] h-[70px] rounded-xl object-cover flex-shrink-0 shadow-md border border-gray-100"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-gray-900 line-clamp-2 leading-tight mb-1">{offer.title}</h3>
-            <p className="text-xs text-gray-600">{partner?.business_name}</p>
-            <p className="text-xl font-bold text-green-600 tracking-tight leading-none mt-1">{offer.smart_price.toFixed(2)} ₾</p>
-            <p className="text-xs font-semibold text-orange-600 mt-1">Great pick! ✨</p>
-          </div>
-        </div>
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
 
-        {/* SmartPoints Price Card - Super Compact */}
-        <div className="bg-gradient-to-br from-green-50 to-teal-50 p-3 rounded-xl border border-green-200/50 shadow-sm mb-3">
-          <p className="text-xs text-gray-700 leading-tight mb-2">
-            <span className="font-semibold">Pickup Price: {totalPrice.toFixed(2)} ₾</span><br />
-            You'll pay at pickup — reserving costs <span className="font-bold text-orange-600">{totalPoints} SmartPoints</span>.
-          </p>
-          <div className="flex items-center justify-between pt-2 border-t border-green-200/50">
-            <span className="text-xs text-gray-600">
-              Your Balance: <span className="font-bold text-teal-600">{userPoints} Points</span>
-            </span>
-            <button
-              className="h-6 px-3 py-0 text-xs font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full shadow-sm"
-            >
-              Add Points
-            </button>
-          </div>
-        </div>
-
-        {/* Quantity Selector - Super Compact Single Line */}
-        <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200/50 mb-3">
-          <div className="flex items-center justify-center gap-3 mb-1">
+        {/* QUANTITY SECTION - Super Compact */}
+        <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-2">
+          <div className="text-[10px] font-semibold text-gray-700 mb-1.5">Quantity</div>
+          <div className="flex items-center justify-center gap-2 mb-1">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
-              className="h-8 w-8 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95 flex items-center justify-center"
+              className="w-7 h-7 rounded-lg border-2 border-gray-300 hover:border-orange-400 disabled:opacity-30 disabled:hover:border-gray-300 flex items-center justify-center transition-all bg-white active:scale-95"
             >
-              <span className="text-sm font-bold text-gray-700">−</span>
+              <span className="text-sm font-bold text-gray-600">−</span>
             </button>
-            <span className="text-2xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
+            <span className="text-xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
             <button
               onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
               disabled={quantity >= maxQuantity}
-              className="h-8 w-8 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95 flex items-center justify-center"
+              className="w-7 h-7 rounded-lg border-2 border-gray-300 hover:border-orange-400 disabled:opacity-30 disabled:hover:border-gray-300 flex items-center justify-center transition-all bg-white active:scale-95"
             >
-              <span className="text-sm font-bold text-gray-700">+</span>
+              <span className="text-sm font-bold text-gray-600">+</span>
             </button>
           </div>
-          <p className="text-xs text-center text-gray-600 font-medium">
-            MAX {maxQuantity} – <span className="text-green-600 font-semibold">{offer.quantity_available} available</span> · Fresh batch just in! 🌾
-          </p>
+          <div className="flex items-center justify-between text-[8px]">
+            <span className="text-gray-500">Up to {maxQuantity} per order</span>
+            <span className="text-green-600 font-semibold">{offer.quantity_available} available</span>
+          </div>
         </div>
 
-        {/* Pickup Details Card - Tiny 2-Line Card */}
-        <div className="bg-orange-50/40 p-2.5 rounded-xl border border-orange-200/30 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
-            <span className="text-xs text-gray-700 font-medium">Pickup until 8 PM</span>
+        {/* PICKUP INFO BLOCK - Clean & Grouped */}
+        <div className="bg-white rounded-lg border border-gray-200 p-2 space-y-1">
+          <div className="flex items-center gap-1.5">
+            <Clock className="w-3 h-3 text-orange-500 flex-shrink-0" />
+            <span className="text-[10px] text-gray-900 font-medium">Today · 11:50 PM – 11:50 PM</span>
           </div>
-          {offer.distance && (
-            <div className="flex items-center gap-2">
-              <MapPin className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-              <span className="text-xs text-gray-700">{partner?.business_name} · {offer.distance.toFixed(1)}km away</span>
+          <div className="flex items-center gap-1.5 pb-1 border-b border-gray-100">
+            <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
+            <span className="text-[10px] text-gray-700">{partner?.business_name}</span>
+          </div>
+          
+          {/* Info Box */}
+          <div className="bg-blue-50/40 rounded-md p-1.5 mt-1">
+            <div className="flex items-start gap-1">
+              <span className="text-blue-500 flex-shrink-0 text-[10px]">ℹ️</span>
+              <p className="text-[8px] text-gray-600 leading-snug">
+                You'll pay <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)}₾</span> at pickup. 
+                Reservation costs <span className="font-semibold text-orange-600">{totalPoints} SmartPoints</span>.
+              </p>
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Balance (if needed) */}
+        {!hasEnoughPoints && (
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-lg border border-red-200 p-2">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] text-gray-700">
+                Balance: <span className="font-bold text-red-600">{userPoints} Points</span>
+              </div>
+              <button className="text-[8px] font-semibold bg-orange-500 hover:bg-orange-600 text-white rounded-full px-2 py-0.5 shadow-sm transition-all">
+                Add Points
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Sticky Bottom CTA */}
-      <div className="flex-shrink-0 border-t border-gray-100 bg-white px-4 py-3 space-y-2">
+      {/* FIXED BOTTOM CTA */}
+      <div className="flex-shrink-0 bg-white border-t border-gray-100 px-3 py-2 pb-20">
         <button
           onClick={onConfirm}
           disabled={!hasEnoughPoints || !user}
-          className={`w-full py-3.5 rounded-xl font-bold shadow-lg transition-all ${
+          className={`w-full py-3 rounded-lg font-bold text-sm shadow-md transition-all ${
             hasEnoughPoints && user
-              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:shadow-lg active:scale-[0.98]'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          {!user ? 'Sign In to Reserve' : hasEnoughPoints ? `Reserve for ${totalPoints} SmartPoints` : 'Not enough SmartPoints'}
+          {!user ? 'Sign In' : hasEnoughPoints ? `Confirm — ${totalPoints} SmartPoints` : 'Not enough SmartPoints'}
         </button>
-        <p className="text-center text-xs text-gray-500">
-          We'll save this for you for 1 hour ✨
-        </p>
-        <p className="text-center text-xs text-gray-400">
-          Pay only at pickup — no prepayment needed.
-        </p>
+        <p className="text-center text-[8px] text-gray-500 mt-1">🕓 Held for 1 hour</p>
       </div>
     </div>
   );
@@ -875,24 +831,24 @@ function OfferCard({ offer, onClick }: { offer: EnrichedOffer; onClick: () => vo
   const discount = Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
 
   return (
-    <div onClick={onClick} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-      <div className="relative aspect-square bg-gray-100">
+    <div onClick={onClick} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+      <div className="relative aspect-[4/3] bg-gray-100">
         {offer.images?.[0] ? (
           <img src={offer.images[0]} alt={offer.title} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl">🎁</div>
+          <div className="w-full h-full flex items-center justify-center text-2xl">🎁</div>
         )}
         {discount > 0 && (
-          <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">
+          <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
             -{discount}%
           </div>
         )}
       </div>
-      <div className="p-2">
-        <h3 className="text-xs font-semibold line-clamp-2 mb-1">{offer.title}</h3>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold text-orange-600">{offer.smart_price}₾</span>
-          <span className="text-[10px] text-gray-400 line-through">{offer.original_price}₾</span>
+      <div className="p-1.5">
+        <h3 className="text-[11px] font-semibold line-clamp-1 mb-0.5">{offer.title}</h3>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xs font-bold text-orange-600">{offer.smart_price}₾</span>
+          <span className="text-[9px] text-gray-400 line-through">{offer.original_price}₾</span>
         </div>
       </div>
     </div>

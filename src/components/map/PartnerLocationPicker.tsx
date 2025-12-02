@@ -50,9 +50,18 @@ export default function PartnerLocationPicker({
 
   // Initialize map
   useEffect(() => {
-    if (!isLoaded || !google || !mapContainerRef.current || mapRef.current) return;
+    if (!isLoaded || !google || !mapContainerRef.current) return;
+    if (mapRef.current) return; // Already initialized
+
+    logger.log('Initializing partner location picker map...', { isLoaded, hasGoogle: !!google, hasContainer: !!mapContainerRef.current });
 
     try {
+      // Ensure google.maps.Map is available
+      if (!google.maps || !google.maps.Map) {
+        logger.error('google.maps.Map not available');
+        return;
+      }
+
       const map = new google.maps.Map(mapContainerRef.current, {
         center: markerPosition,
         zoom: 15,
@@ -65,23 +74,19 @@ export default function PartnerLocationPicker({
 
       mapRef.current = map;
 
-      // Create draggable marker
-      const markerDiv = document.createElement('div');
-      markerDiv.innerHTML = '📍';
-      markerDiv.style.fontSize = '32px';
-      markerDiv.style.cursor = 'move';
-
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      // Create standard draggable marker (compatible without Map ID)
+      const marker = new google.maps.Marker({
         map,
         position: markerPosition,
-        content: markerDiv,
-        gmpDraggable: true,
+        draggable: true,
+        title: 'Business Location',
+        animation: google.maps.Animation.DROP,
       });
 
       markerRef.current = marker;
 
       // Handle marker drag
-      marker.addListener('dragend', (event: any) => {
+      google.maps.event.addListener(marker, 'dragend', (event: any) => {
         const newPos = {
           lat: event.latLng.lat(),
           lng: event.latLng.lng(),
@@ -104,12 +109,12 @@ export default function PartnerLocationPicker({
       });
 
       // Handle map click
-      map.addListener('click', (event: any) => {
+      google.maps.event.addListener(map, 'click', (event: any) => {
         const newPos = {
           lat: event.latLng.lat(),
           lng: event.latLng.lng(),
         };
-        marker.position = newPos;
+        marker.setPosition(newPos);
         setMarkerPosition(newPos);
         map.panTo(newPos);
 
@@ -177,7 +182,7 @@ export default function PartnerLocationPicker({
         }
 
         if (markerRef.current) {
-          markerRef.current.position = newPos;
+          markerRef.current.setPosition(newPos);
         }
 
         // Notify parent

@@ -56,7 +56,7 @@ export function LiveRouteDrawer({
 
   // Draw route when navigation starts or user moves
   useEffect(() => {
-    if (!map || !reservation?.partner || !userLocation || !isNavigating) {
+    if (!map || !userLocation || !isNavigating || !reservation) {
       // Clear route when not navigating
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setDirections({ routes: [] } as any);
@@ -68,8 +68,15 @@ export function LiveRouteDrawer({
       return;
     }
 
-    const partnerLat = reservation.partner.latitude;
-    const partnerLng = reservation.partner.longitude;
+    // Get partner location from various possible paths
+    const partnerLat = reservation.partner?.latitude || 
+                      reservation.partner?.location?.latitude || 
+                      reservation.offer?.partner?.latitude || 
+                      reservation.offer?.partner?.location?.latitude;
+    const partnerLng = reservation.partner?.longitude || 
+                      reservation.partner?.location?.longitude || 
+                      reservation.offer?.partner?.longitude || 
+                      reservation.offer?.partner?.location?.longitude;
 
     if (!partnerLat || !partnerLng) return;
 

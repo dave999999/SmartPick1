@@ -28,6 +28,7 @@ import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import ImageLibraryModal from '@/components/ImageLibraryModal';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
+import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -1834,6 +1835,7 @@ export default function PartnerDashboard() {
           partnerName={partner.business_name}
         />
       )}
+      <FloatingBottomNav />
     </div>
   );
 }

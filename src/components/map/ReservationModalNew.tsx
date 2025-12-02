@@ -258,144 +258,149 @@ export default function ReservationModalNew({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden bg-gradient-to-b from-white via-orange-50/10 to-white shadow-2xl backdrop-blur-sm animate-in slide-in-from-bottom-4 duration-300">
+        <DialogContent className="max-w-[420px] p-0 gap-0 overflow-hidden bg-white shadow-[0_-10px_30px_rgba(0,0,0,0.05),0_-2px_10px_rgba(0,0,0,0.03)] rounded-t-[32px] border-0 animate-in slide-in-from-bottom-4 duration-300 sm:rounded-t-[32px]">
           <DialogTitle className="sr-only">Reserve {offer.title}</DialogTitle>
           
-          {/* Compact Header Row - Image Left, Details Right */}
-          <div className="relative p-3 pb-2">
-            <div className="flex items-start gap-2.5">
-              {/* Left: Compact Image */}
+          {/* Handle / Dragger */}
+          <div className="flex justify-center pt-4 pb-3">
+            <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+          </div>
+          
+          <div className="px-6 pb-8 space-y-6">
+            {/* 1. HEADER AREA - Product Photo + Details */}
+            <div className="flex items-center gap-4">
+              {/* Product Photo */}
               {offer.images && offer.images.length > 0 && (
-                <img
-                  src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 150, quality: 75 })}
-                  alt={offer.title}
-                  className="w-[70px] h-[70px] rounded-xl object-cover flex-shrink-0 shadow-md border border-gray-100"
-                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
-                />
+                <div className="w-20 h-20 flex-shrink-0 rounded-[18px] overflow-hidden">
+                  <img
+                    src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 160, quality: 80 })}
+                    alt={offer.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
+                  />
+                </div>
               )}
               
-              {/* Right: Title, Partner, Price, Emotional Tag */}
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <h2 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-tight">{offer.title}</h2>
-                <p className="text-[10px] text-gray-600">{offer.partner?.business_name}</p>
-                <p className="text-xl font-bold text-green-600 tracking-tight leading-none mt-1">{offer.smart_price.toFixed(2)} GEL</p>
-                <p className="text-[9px] font-semibold text-orange-600 mt-1">Great pick! ✨</p>
+              {/* Product Details */}
+              <div className="flex-grow">
+                <h1 className="text-xl font-extrabold text-gray-900 leading-snug mb-1">{offer.title}</h1>
+                <p className="text-sm text-gray-500 mb-2">{offer.partner?.business_name}</p>
+                
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-gray-900">{offer.smart_price.toFixed(2)} ₾</span>
+                  <span className="text-xs font-semibold text-green-600">Great pick! ✨</span>
+                </div>
               </div>
-              
-              {/* Close Button - Top Right */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onClose}
-                className="h-6 w-6 rounded-full hover:bg-gray-100 -mt-0.5 -mr-0.5 flex-shrink-0 transition-all"
+            </div>
+
+            {/* 2. PICKUP & COST SECTION */}
+            <div className="text-sm space-y-3">
+              {/* Pickup Price Row */}
+              <div className="flex justify-between items-center pb-3 border-b border-[#EAEAEA]">
+                <span className="text-gray-600">Pickup price</span>
+                <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)} ₾</span>
+              </div>
+              {/* Reservation Cost Row */}
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Reservation cost</span>
+                <span className="font-semibold text-orange-500">{totalPoints} SmartPoints</span>
+              </div>
+            </div>
+
+            {/* 3. BALANCE SECTION */}
+            <div className="bg-[#E8F8ED] rounded-[18px] p-4 flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-800">
+                Your balance: <span className="font-bold">{userPoints}</span> points
+              </p>
+              <Button
+                onClick={() => setShowBuyPointsModal(true)}
+                className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-full h-auto transition-all"
               >
-                <X className="w-3 h-3 text-gray-400" />
+                Add Points
               </Button>
             </div>
-          </div>
 
-          <div className="px-3 pb-3 space-y-2.5">
-            {/* SmartPoints Price Card - Super Compact */}
-            <div className="bg-gradient-to-br from-green-50 to-teal-50 p-2.5 rounded-xl border border-green-200/50 shadow-sm">
-              <p className="text-[10px] text-gray-700 leading-tight mb-2">
-                <span className="font-semibold">Pickup Price: {offer.smart_price.toFixed(2)} GEL</span><br />
-                You'll pay at pickup — reserving costs <span className="font-bold text-orange-600">{totalPoints} SmartPoints</span>.
-              </p>
-              <div className="flex items-center justify-between pt-2 border-t border-green-200/50">
-                <span className="text-[10px] text-gray-600">
-                  Your Balance: <span className="font-bold text-teal-600">{userPoints} Points</span>
-                </span>
-                <Button
-                  size="sm"
-                  onClick={() => setShowBuyPointsModal(true)}
-                  className="h-5 px-2 py-0 text-[9px] font-semibold bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-full shadow-sm"
-                >
-                  <Wallet className="w-2.5 h-2.5 mr-0.5" />
-                  Add Points
-                </Button>
-              </div>
-            </div>
-
-            {/* Quantity Selector - Super Compact Single Line */}
-            <div className="bg-gray-50 p-2 rounded-xl border border-gray-200/50">
-              <div className="flex items-center justify-center gap-3 mb-1">
+            {/* 4. QUANTITY SELECTOR */}
+            <div className="flex justify-between items-center w-full bg-white rounded-[18px] border border-gray-200 shadow-sm p-3">
+              <div className="flex items-center gap-4">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95"
+                  className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition-all p-0"
                 >
-                  <Minus className="h-3 w-3 text-gray-700" />
+                  <Minus className="w-4 h-4" />
                 </Button>
-                <span className="text-2xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
+                <span className="text-lg font-bold text-gray-900 w-6 text-center">{quantity}</span>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                   disabled={quantity >= maxQuantity}
-                  className="h-7 w-7 rounded-full bg-white hover:bg-orange-50 shadow-sm border border-gray-200 disabled:opacity-40 transition-all active:scale-95"
+                  className="w-8 h-8 rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 transition-all p-0"
                 >
-                  <Plus className="h-3 w-3 text-gray-700" />
+                  <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-[9px] text-center text-gray-600 font-medium">
-                MAX {maxQuantity} – <span className="text-green-600 font-semibold">{offer.quantity_available} available</span> · Fresh batch just in! 🌾
-              </p>
+              <span className="text-xs font-medium text-green-600">
+                MAX {maxQuantity} — {offer.quantity_available} available
+              </span>
             </div>
 
-            {/* Pickup Details Card - Tiny 2-Line Card */}
-            <div className="bg-orange-50/40 p-2 rounded-xl border border-orange-200/30 space-y-1">
+            {/* 5. PICKUP TIME + LOCATION */}
+            <div className="space-y-4 p-4 bg-white rounded-[18px] border border-gray-200 shadow-sm">
+              {/* Pickup Time */}
               {pickupStart && pickupEnd && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-orange-600 flex-shrink-0" />
-                  <span className="text-[10px] text-gray-700 font-medium">
-                    {formatTime(pickupStart)} - {formatTime(pickupEnd)}
+                <div className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Pickup time: <span className="font-semibold text-gray-900">{formatTime(pickupStart)} – {formatTime(pickupEnd)}</span>
                   </span>
                 </div>
               )}
+              
+              {/* Address */}
               {partnerAddress && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3 text-green-600 flex-shrink-0" />
-                  <span className="text-[10px] text-gray-700 leading-tight">{partnerAddress}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Friendly Microcopy Block - Shorter */}
-            <div className="text-center py-1.5">
-              <p className="text-[10px] text-gray-700 leading-snug">
-                We'll hold this discount for you. ✨ You'll only pay the pickup price.
-              </p>
-            </div>
-
-            {/* Reservation Button - Compact Height */}
-            <div className="space-y-1.5">
-              <Button
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-sm py-2.5 rounded-xl font-bold shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] duration-200"
-                onClick={handleReserve}
-                disabled={isReserving || offer.quantity_available === 0 || !isOnline || userPoints < totalPoints}
-              >
-                {isReserving ? (
-                  <span className="flex items-center gap-1.5">
-                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Reserving...
+                <div className="flex items-center gap-3">
+                  <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Address: <span className="font-semibold text-gray-900">{partnerAddress}</span>
                   </span>
-                ) : (
-                  `🤝 Reserve for ${totalPoints} SmartPoints`
-                )}
-              </Button>
-              {userPoints < totalPoints && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-1.5 text-center">
-                  <p className="text-[10px] text-red-600 font-semibold">
-                    Need {totalPoints - userPoints} more point{totalPoints - userPoints > 1 ? 's' : ''} to reserve
-                  </p>
                 </div>
               )}
-              <p className="text-center text-[9px] text-gray-500 font-medium">
-                Held for 1 hour ⏳✨
+            </div>
+
+            {/* 6. DESCRIPTION TEXT */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-500 text-center">
+                We'll hold this discount for you. You'll only pay the pickup price.
               </p>
             </div>
+
+            {/* 7. MAIN CTA BUTTON */}
+            <Button
+              className="w-full py-4 text-lg font-bold text-white bg-gradient-to-r from-[#FF8A00] to-[#FF6A00] hover:opacity-90 rounded-[28px] shadow-lg shadow-orange-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-orange-500/50"
+              onClick={handleReserve}
+              disabled={isReserving || offer.quantity_available === 0 || !isOnline || userPoints < totalPoints}
+            >
+              {isReserving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Reserving...
+                </span>
+              ) : (
+                `Reserve for ${totalPoints} SmartPoints`
+              )}
+            </Button>
+            
+            {userPoints < totalPoints && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center mt-2">
+                <p className="text-xs text-red-600 font-semibold">
+                  Need {totalPoints - userPoints} more point{totalPoints - userPoints > 1 ? 's' : ''} to reserve
+                </p>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

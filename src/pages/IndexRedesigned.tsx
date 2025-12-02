@@ -8,8 +8,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
-const ReservationModal = lazy(() => import('@/components/ReservationModal'));
-import { MegaBottomSheet } from '@/components/discover/MegaBottomSheet';
+import { OffersSheet } from '@/components/discover/OffersSheet';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
 import ReservationModalNew from '@/components/map/ReservationModalNew';
@@ -22,20 +21,19 @@ import { FilterState, SortOption } from '@/components/SearchAndFilters';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
 
 // NEW: Post-Reservation Experience Components
-import { ReservationStateManager } from '@/components/reservation/ReservationStateManager';
 import { LiveRouteDrawer } from '@/components/reservation/LiveRouteDrawer';
-import { ReservationSheet } from '@/components/reservation/ReservationSheet';
-import type { Reservation as ReservationSheetData } from '@/components/reservation/ReservationSheet';
+import { ActiveReservationCard } from '@/components/reservation/ActiveReservationCard';
+import type { ActiveReservation } from '@/components/reservation/ActiveReservationCard';
 import { useLiveGPS } from '@/hooks/useLiveGPS';
 import { getReservationById, cancelReservation } from '@/lib/api/reservations';
 import { Reservation } from '@/lib/types';
 
 // Premium Dark Design Components
 import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
-// import { MapSectionNew } from '@/components/home/MapSectionNew'; // REPLACED by SmartPickGoogleMap
 import { VerticalNav } from '@/components/home/VerticalNav';
 import { FilterDrawer } from '@/components/home/FilterDrawer';
 import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {
   const { isLoaded: googleMapsLoaded, google } = useGoogleMaps();
@@ -89,6 +87,8 @@ export default function IndexRedesigned() {
     maxPrice: 100,
   });
   const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
+  const [currentPath, setCurrentPath] = useState<string>('/');
 
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
@@ -182,6 +182,16 @@ export default function IndexRedesigned() {
       logger.error('Failed to load active reservation:', error);
     }
   };
+
+  // Auto-open OffersSheet after 1.5 seconds - give user time to see homepage first
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDiscoverSheetOpen(true);
+      setSheetMode('discover');
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array - runs once on mount
 
   useEffect(() => {
     loadOffers();
@@ -531,18 +541,20 @@ export default function IndexRedesigned() {
               {/* Full Screen Map - Google Maps */}
               <div className="absolute inset-0 w-full h-full z-10">
                 {googleMapsLoaded ? (
-                  <SmartPickGoogleMap
-                    offers={mapFilteredOffers}
-                    onOfferClick={handleOfferClick}
-                    onMarkerClick={handleMarkerClick}
-                    selectedCategory={selectedCategory}
-                    onCategorySelect={setSelectedCategory}
-                    onLocationChange={setUserLocation}
-                    userLocation={userLocation}
-                    selectedOffer={selectedOffer}
-                    showUserLocation={true}
-                    highlightedOfferId={highlightedOfferId}
-                  />
+                  <>
+                    <SmartPickGoogleMap
+                      offers={mapFilteredOffers}
+                      onOfferClick={handleOfferClick}
+                      onMarkerClick={handleMarkerClick}
+                      selectedCategory={selectedCategory}
+                      onCategorySelect={setSelectedCategory}
+                      onLocationChange={setUserLocation}
+                      userLocation={userLocation}
+                      selectedOffer={selectedOffer}
+                      showUserLocation={true}
+                      highlightedOfferId={highlightedOfferId}
+                    />
+                  </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">
                     <div className="text-center space-y-2">
@@ -560,51 +572,25 @@ export default function IndexRedesigned() {
           )}
         </div>
 
-        {/* Filter Drawer */}
-        <FilterDrawer
-          open={showFilterDrawer}
-          onOpenChange={setShowFilterDrawer}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          filters={filters}
-          onFiltersChange={setFilters}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          showDistanceFilter={!!userLocation}
-        />
-
-        {/* Old ReservationModal - Disabled in favor of BottomSheet */}
-        {false && (
-          <Suspense fallback={null}>
-            <ReservationModal
-              offer={selectedOffer}
-              user={user}
-              open={showReservationModal}
-              onOpenChange={setShowReservationModal}
-              onSuccess={handleReservationSuccess}
-            />
-          </Suspense>
-        )}
-
-        <Suspense fallback={null}>
-          <AuthDialog
-            open={showAuthDialog}
-            onOpenChange={setShowAuthDialog}
-            defaultTab={defaultAuthTab}
-            onSuccess={() => {
-              checkUser();
-              if (selectedOffer) {
-                setShowBottomSheet(true);
-              }
-            }}
-          />
-        </Suspense>
       </div>
 
-      {/* MEGA BOTTOM SHEET - THE ONLY SHEET */}
-      <MegaBottomSheet
+      <Suspense fallback={null}>
+        <AuthDialog
+          open={showAuthDialog}
+          onOpenChange={setShowAuthDialog}
+          defaultTab={defaultAuthTab}
+          onSuccess={() => {
+            checkUser();
+            if (selectedOffer) {
+              setShowBottomSheet(true);
+            }
+          }}
+        />
+      </Suspense>
+
+      {/* NEW OFFERS SHEET - Premium Marketplace Design */}
+      <OffersSheet
         isOpen={discoverSheetOpen}
-        mode={sheetMode}
         offers={filteredOffers.map(offer => ({
           ...offer,
           discount_percent: Math.round(
@@ -612,26 +598,24 @@ export default function IndexRedesigned() {
           ),
         }))}
         user={user}
-        selectedOfferId={selectedOffer?.id}
-        partnerId={selectedPartnerId}
+        userLocation={userLocation}
         onClose={() => {
           setDiscoverSheetOpen(false);
           setSelectedPartnerId(null);
-          setSheetMode('discover');
         }}
-        onModeChange={setSheetMode}
         onOfferSelect={(offerId) => {
           const offer = filteredOffers.find(o => o.id === offerId);
           if (offer) {
             setSelectedOffer(offer);
             setHighlightedOfferId(offerId);
+            // Open reservation modal or detail view
+            setShowNewReservationModal(true);
           }
         }}
-        onReserve={(offerId, quantity) => {
+        onOfferReserve={(offerId) => {
           const offer = filteredOffers.find(o => o.id === offerId);
           if (offer) {
             setSelectedOffer(offer);
-            setReservationQuantity(quantity);
             setShowNewReservationModal(true);
           }
         }}
@@ -661,45 +645,58 @@ export default function IndexRedesigned() {
         />
       )}
       
-      {/* NEW: Bottom Sheet Reservation Experience */}
-      <ReservationSheet
+      {/* NEW: Active Reservation Card - Modern Design */}
+      <ActiveReservationCard
         reservation={activeReservation ? {
           id: activeReservation.id,
-          offerId: activeReservation.offer_id,
           offerTitle: activeReservation.offer?.title || 'Offer',
           partnerName: activeReservation.partner?.business_name || activeReservation.offer?.partner?.business_name || 'Partner',
           imageUrl: activeReservation.offer?.images?.[0] || '/images/Map.jpg',
-          pickupPriceGel: activeReservation.offer?.smart_price || 0,
-          pointsUsed: activeReservation.smart_points_used || 0,
           quantity: activeReservation.quantity,
+          expiresAt: activeReservation.expires_at,
           pickupWindowStart: activeReservation.offer?.pickup_start_time || new Date().toISOString(),
           pickupWindowEnd: activeReservation.offer?.pickup_end_time || new Date().toISOString(),
-          expiresAt: activeReservation.expires_at,
-          distanceMeters: 230,
-          durationMinutes: 3,
           qrPayload: activeReservation.qr_code || activeReservation.id,
-          addressLine: activeReservation.offer?.pickup_location || 'Location',
-          status: 'active',
+          partnerLocation: {
+            lat: activeReservation.offer?.partner?.location?.latitude || 
+                 activeReservation.offer?.partner?.latitude || 
+                 activeReservation.partner?.location?.latitude || 
+                 activeReservation.partner?.latitude || 41.7151,
+            lng: activeReservation.offer?.partner?.location?.longitude || 
+                 activeReservation.offer?.partner?.longitude || 
+                 activeReservation.partner?.location?.longitude || 
+                 activeReservation.partner?.longitude || 44.8271,
+          },
+          pickupAddress: activeReservation.offer?.pickup_location || 
+                        activeReservation.partner?.address || 
+                        activeReservation.offer?.partner?.address || 'Location',
         } : null}
-        isVisible={!!activeReservation}
-        onDismiss={() => setActiveReservation(null)}
+        userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
         onNavigate={(reservation) => {
-          const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.addressLine)}`;
+          // Option 1: Open Google Maps in new tab
+          const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.pickupAddress)}`;
           window.open(url, '_blank');
+          
+          // Option 2: Pan map to partner location (uncomment if preferred)
+          // if (googleMap) {
+          //   googleMap.panTo(reservation.partnerLocation);
+          //   googleMap.setZoom(16);
+          // }
+          // setIsPostResNavigating(true);
         }}
         onCancel={async (reservationId) => {
           try {
             await cancelReservation(reservationId);
             setActiveReservation(null);
-            toast.success('Reservation cancelled. Your SmartPoints have been refunded.');
+            toast.success('Reservation cancelled');
           } catch (error) {
             toast.error('Failed to cancel reservation');
             logger.error('Cancel reservation error:', error);
           }
         }}
-        onReservationExpired={() => {
+        onExpired={() => {
           setActiveReservation(null);
-          toast.error('⏰ Your reservation has expired.');
+          toast.error('⏰ Your reservation has expired');
         }}
       />
       
@@ -707,8 +704,8 @@ export default function IndexRedesigned() {
       <LiveRouteDrawer
         map={googleMap}
         reservation={activeReservation}
-        userLocation={gpsPosition ? { lat: gpsPosition.lat, lng: gpsPosition.lng } : null}
-        isNavigating={isPostResNavigating}
+        userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
+        isNavigating={!!activeReservation}
       />
       
       {/* NEW: Navigation Mode - Live GPS tracking with route */}

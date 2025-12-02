@@ -219,11 +219,11 @@ export const CATEGORY_CONFIG: Record<MainCategory, CategoryConfig> = {
   
   GROCERY: {
     value: 'GROCERY',
-    label: 'Grocery',
-    emoji: '🛒',
+    label: 'Fruit&Vegetable',
+    emoji: '🥕',
     iconName: 'grocery',
     labelKey: 'category.GROCERY',
-    description: 'Supermarkets and grocery stores',
+    description: 'Fresh fruits and vegetables',
   },
   
   MINI_MARKET: {
