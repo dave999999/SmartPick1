@@ -466,6 +466,7 @@ export default function IndexRedesigned() {
 
   const handleReservationSuccess = useCallback(() => {
     loadOffers();
+    loadActiveReservation(); // Load the newly created reservation immediately
     setShowReservationModal(false);
     setShowBottomSheet(false);
     setSelectedOffer(null);
@@ -630,16 +631,25 @@ export default function IndexRedesigned() {
           initialQuantity={reservationQuantity}
           onClose={() => setShowNewReservationModal(false)}
           onReservationCreated={async (reservationId) => {
-            // Fetch full reservation data
+            logger.log('🎯 onReservationCreated called with ID:', reservationId);
+            
+            // Close UI immediately for better UX
+            setShowBottomSheet(false);
+            setShowNewReservationModal(false);
+            setDiscoverSheetOpen(false);
+            setSelectedOffer(null);
+            setSheetMode('discover');
+            
+            // Fetch full reservation data (this triggers the modal to appear)
+            logger.log('🔄 Fetching reservation data...');
             const reservation = await getReservationById(reservationId);
+            logger.log('✅ Reservation fetched:', reservation);
+            
             if (reservation) {
               setActiveReservation(reservation);
-              // Close all sheets and modals - only show FloatingReservationCard
-              setShowBottomSheet(false);
-              setShowNewReservationModal(false);
-              setDiscoverSheetOpen(false);
-              setSelectedOffer(null);
-              setSheetMode('discover'); // Reset sheet mode
+              logger.log('✅ Active reservation state updated');
+            } else {
+              logger.error('❌ Failed to fetch reservation');
             }
           }}
         />

@@ -15,6 +15,8 @@ interface GoogleMapsContextValue {
   isLoading: boolean;
   error: string | null;
   google: any | null;
+  googleMap: google.maps.Map | null;
+  setGoogleMap: (map: google.maps.Map | null) => void;
 }
 
 const GoogleMapsContext = createContext<GoogleMapsContextValue>({
@@ -22,6 +24,8 @@ const GoogleMapsContext = createContext<GoogleMapsContextValue>({
   isLoading: false,
   error: null,
   google: null,
+  googleMap: null,
+  setGoogleMap: () => {},
 });
 
 export function useGoogleMaps() {
@@ -47,6 +51,7 @@ export function GoogleMapProvider({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [googleInstance, setGoogleInstance] = useState<any>(null);
+  const [googleMap, setGoogleMap] = useState<google.maps.Map | null>(null);
 
   useEffect(() => {
     // Check if already loaded
@@ -99,6 +104,8 @@ export function GoogleMapProvider({
         isLoading,
         error,
         google: googleInstance,
+        googleMap,
+        setGoogleMap,
       }}
     >
       {children}

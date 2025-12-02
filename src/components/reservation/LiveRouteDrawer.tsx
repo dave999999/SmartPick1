@@ -160,6 +160,7 @@ export function LiveRouteDrawer({
           `;
           document.head.appendChild(style);
 
+          // Use modern AdvancedMarkerElement with custom HTML content
           partnerMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
             map,
             position: { lat: partnerLat, lng: partnerLng },

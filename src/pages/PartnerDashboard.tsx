@@ -1835,7 +1835,6 @@ export default function PartnerDashboard() {
           partnerName={partner.business_name}
         />
       )}
-      <FloatingBottomNav />
     </div>
   );
 }

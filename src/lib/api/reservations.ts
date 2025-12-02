@@ -285,10 +285,11 @@ export const getReservationById = async (reservationId: string, retryCount = 0):
   }
 
   if (!basicData) {
-    // Retry a few times in case of brief RLS propagation delay
-    if (retryCount < 2) {
-      logger.info(`Reservation ${reservationId} not found, retrying...`);
-      await new Promise(r => setTimeout(r, 300));
+    // More aggressive retry - up to 5 attempts with shorter delays for new reservations
+    if (retryCount < 5) {
+      const delay = retryCount === 0 ? 100 : 500; // Fast first retry, then 500ms
+      logger.info(`Reservation ${reservationId} not found, retrying in ${delay}ms...`);
+      await new Promise(r => setTimeout(r, delay));
       return getReservationById(reservationId, retryCount + 1);
     }
     logger.warn(`Reservation ${reservationId} not found after ${retryCount + 1} attempts`);
@@ -553,7 +554,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   // Restore offer quantity to partner
   const { data: offer } = await supabase
     .from('offers')
-    .select('quantity_available, business_id, title')
+    .select('quantity_available, partner_id, title')
     .eq('id', reservation.offer_id)
     .single();
 
@@ -571,10 +572,10 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .single();
 
     // Notify partner about cancellation (fire-and-forget)
-    if (offer.business_id && customer) {
+    if (offer.partner_id && customer) {
       const { notifyPartnerReservationCancelled } = await import('@/lib/telegram');
       notifyPartnerReservationCancelled(
-        offer.business_id,
+        offer.partner_id,
         customer.full_name || 'Unknown Customer',
         offer.title,
         reservation.quantity

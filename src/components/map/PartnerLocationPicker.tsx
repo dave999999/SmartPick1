@@ -65,6 +65,7 @@ export default function PartnerLocationPicker({
       const map = new google.maps.Map(mapContainerRef.current, {
         center: markerPosition,
         zoom: 15,
+        mapId: 'PARTNER_LOCATION_PICKER', // Required for AdvancedMarkerElement
         disableDefaultUI: false,
         zoomControl: true,
         mapTypeControl: false,
@@ -74,19 +75,26 @@ export default function PartnerLocationPicker({
 
       mapRef.current = map;
 
-      // Create standard draggable marker (compatible without Map ID)
-      const marker = new google.maps.Marker({
+      // Create modern AdvancedMarkerElement with custom pin
+      const pinElement = new google.maps.marker.PinElement({
+        background: '#10B981',
+        borderColor: '#FFFFFF',
+        glyphColor: '#FFFFFF',
+        scale: 1.2,
+      });
+
+      const marker = new google.maps.marker.AdvancedMarkerElement({
         map,
         position: markerPosition,
-        draggable: true,
+        content: pinElement.element,
+        gmpDraggable: true,
         title: 'Business Location',
-        animation: google.maps.Animation.DROP,
       });
 
       markerRef.current = marker;
 
       // Handle marker drag
-      google.maps.event.addListener(marker, 'dragend', (event: any) => {
+      marker.addListener('dragend', (event: any) => {
         const newPos = {
           lat: event.latLng.lat(),
           lng: event.latLng.lng(),
@@ -109,12 +117,12 @@ export default function PartnerLocationPicker({
       });
 
       // Handle map click
-      google.maps.event.addListener(map, 'click', (event: any) => {
+      map.addListener('click', (event: any) => {
         const newPos = {
           lat: event.latLng.lat(),
           lng: event.latLng.lng(),
         };
-        marker.setPosition(newPos);
+        marker.position = newPos;
         setMarkerPosition(newPos);
         map.panTo(newPos);
 
@@ -182,7 +190,7 @@ export default function PartnerLocationPicker({
         }
 
         if (markerRef.current) {
-          markerRef.current.setPosition(newPos);
+          markerRef.current.position = newPos;
         }
 
         // Notify parent

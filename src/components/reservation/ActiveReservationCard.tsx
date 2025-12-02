@@ -129,20 +129,31 @@ export function ActiveReservationCard({
   // Handle expiration - only call once when it transitions to expired
   const hasCalledExpired = React.useRef(false);
   const lastReservationId = React.useRef<string | null>(null);
+  const hasFullyLoaded = React.useRef(false);
   
   useEffect(() => {
     // Reset flag when reservation ID changes (new reservation)
     if (reservation && reservation.id !== lastReservationId.current) {
       lastReservationId.current = reservation.id;
       hasCalledExpired.current = false;
+      hasFullyLoaded.current = false;
+      
+      // Mark as fully loaded after countdown has been calculated
+      setTimeout(() => {
+        hasFullyLoaded.current = true;
+      }, 100);
     }
     
-    // Call onExpired only when it transitions to expired AND we haven't called it yet
-    if (isExpired && reservation && !hasCalledExpired.current) {
+    // Call onExpired only when:
+    // 1. Countdown has been calculated (not the initial null state)
+    // 2. It's actually expired
+    // 3. We haven't called it yet
+    // 4. The component has fully loaded
+    if (isExpired && reservation && !hasCalledExpired.current && hasFullyLoaded.current && remainingMs !== null) {
       hasCalledExpired.current = true;
       onExpired();
     }
-  }, [isExpired, reservation, onExpired]);
+  }, [isExpired, reservation, onExpired, remainingMs]);
 
   // Don't show card if reservation is null or already expired
   if (!reservation || isExpired) return null;

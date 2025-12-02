@@ -173,7 +173,7 @@ export function OffersSheet({
         className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[24px] flex flex-col overflow-hidden"
         style={{ 
           height: getHeight(), 
-          maxHeight: 'calc(100vh - 68px)',
+          maxHeight: 'calc(100vh - 100px)', // Reduced from 68px to 100px for iPhone safety
           boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.06)'
         }}
       >
@@ -182,8 +182,17 @@ export function OffersSheet({
           <div className="w-12 h-1 bg-gray-300 rounded-full" />
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden bg-white">
+        {/* Scrollable Content - Prevent pull-to-refresh on iOS */}
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-white"
+          onTouchStart={(e) => {
+            // Prevent pull-to-refresh if scrolled to top
+            const element = e.currentTarget;
+            if (element.scrollTop === 0) {
+              element.scrollTop = 1;
+            }
+          }}
+        >
           <div className="max-w-[480px] mx-auto pb-24">
             
             {/* Header - Brand + Close */}

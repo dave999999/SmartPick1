@@ -148,7 +148,7 @@ export default function SmartPickGoogleMap({
   selectedOffer,
   highlightedOfferId,
 }: SmartPickGoogleMapProps) {
-  const { isLoaded, google } = useGoogleMaps();
+  const { isLoaded, google, setGoogleMap } = useGoogleMaps();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -194,14 +194,14 @@ export default function SmartPickGoogleMap({
 
   // Initialize map
   useEffect(() => {
-    if (!isLoaded || !google || !mapContainerRef.current || mapRef.current) return;
+    if (!isLoaded || !google || !mapContainerRef.current) return;
+    if (mapRef.current) return; // Already initialized
 
     try {
       const map = new google.maps.Map(mapContainerRef.current, {
         center: { lat: 41.7151, lng: 44.8271 }, // Tbilisi
         zoom: 13,
-        // Temporarily removed mapId to use custom styles and hide POIs
-        // mapId: 'SMARTPICK_MAP',
+        mapId: 'SMARTPICK_MAP', // Required for AdvancedMarkerElement
         styles: [
           {
             featureType: 'poi',
@@ -227,6 +227,7 @@ export default function SmartPickGoogleMap({
       });
 
       mapRef.current = map;
+      setGoogleMap(map); // Expose map instance to context
       logger.log('Google Map initialized');
 
       // Clear selection on map click
@@ -244,12 +245,13 @@ export default function SmartPickGoogleMap({
     }
 
     return () => {
+      // Cleanup on unmount only
       if (mapRef.current) {
-        // Cleanup
+        setGoogleMap(null);
         mapRef.current = null;
       }
     };
-  }, [isLoaded, google, onMarkerClick]);
+  }, [isLoaded, google, setGoogleMap]);
 
   // Update markers
   useEffect(() => {
