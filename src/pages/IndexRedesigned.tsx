@@ -147,6 +147,22 @@ export default function IndexRedesigned() {
   useEffect(() => {
     if (user?.id) {
       loadActiveReservation();
+      
+      // Clean up old celebration keys (older than 24 hours) to prevent localStorage bloat
+      const cleanupOldCelebrations = () => {
+        const keys = Object.keys(localStorage);
+        const celebrationKeys = keys.filter(k => k.startsWith('pickup-celebrated-'));
+        logger.log(`🧹 Found ${celebrationKeys.length} celebration keys in localStorage`);
+        
+        // Keep only the last 5 celebration keys, remove the rest
+        if (celebrationKeys.length > 5) {
+          const keysToRemove = celebrationKeys.slice(0, celebrationKeys.length - 5);
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+          logger.log(`🧹 Cleaned up ${keysToRemove.length} old celebration keys`);
+        }
+      };
+      
+      cleanupOldCelebrations();
     } else {
       setActiveReservation(null);
     }
@@ -154,9 +170,14 @@ export default function IndexRedesigned() {
 
   // Set up real-time subscription when active reservation exists
   useEffect(() => {
-    if (!activeReservation?.id) return;
+    if (!activeReservation?.id) {
+      logger.log('🔌 No active reservation - skipping subscription setup');
+      return;
+    }
 
     logger.log('🔗 Setting up real-time subscription for reservation:', activeReservation.id);
+    
+    let isCleanedUp = false;
 
     const channel = supabase
       .channel(`reservation-${activeReservation.id}`)
@@ -169,6 +190,8 @@ export default function IndexRedesigned() {
           filter: `id=eq.${activeReservation.id}`
         },
         (payload) => {
+          if (isCleanedUp) return; // Ignore events after cleanup
+          
           logger.log('🔔 Real-time reservation update received:', payload);
           
           // Check if order was picked up
@@ -194,8 +217,10 @@ export default function IndexRedesigned() {
               setActiveReservation(null);
             }
           } else {
-            // Reload for other changes
-            loadActiveReservation();
+            // Reload for other changes (but throttle this)
+            if (!isCleanedUp) {
+              loadActiveReservation();
+            }
           }
         }
       )
@@ -203,15 +228,23 @@ export default function IndexRedesigned() {
         logger.log('📡 Subscription status:', status);
       });
 
-    // Add polling fallback as backup (every 5 seconds for ACTIVE reservations)
+    // Add polling fallback as backup (reduced to every 10 seconds to save battery)
     const pollingInterval = setInterval(() => {
-      loadActiveReservation();
-    }, 5000);
+      if (!isCleanedUp) {
+        loadActiveReservation();
+      }
+    }, 10000); // Increased from 5s to 10s to reduce CPU/battery usage
 
     return () => {
-      logger.log('🔌 Cleaning up reservation subscription');
+      isCleanedUp = true;
+      logger.log('🔌 Cleaning up reservation subscription and polling');
       clearInterval(pollingInterval);
-      channel.unsubscribe();
+      
+      // Remove the channel completely
+      channel.unsubscribe().then(() => {
+        supabase.removeChannel(channel);
+        logger.log('✅ Channel removed from Supabase client');
+      });
     };
   }, [activeReservation?.id]);
 
