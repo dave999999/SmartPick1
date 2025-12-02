@@ -18,6 +18,8 @@ import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 import { FilterState, SortOption } from '@/components/SearchAndFilters';
+import { CheckCircle } from 'lucide-react';
+import PickupSuccessModal from '@/components/PickupSuccessModal';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
 
 // NEW: Post-Reservation Experience Components
@@ -71,6 +73,8 @@ export default function IndexRedesigned() {
   // NEW: Post-Reservation System State
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [isPostResNavigating, setIsPostResNavigating] = useState(false);
+  const [showPickupSuccessModal, setShowPickupSuccessModal] = useState(false);
+  const [pickupModalData, setPickupModalData] = useState<{ savedAmount: number; pointsEarned: number } | null>(null);
   const { googleMap } = useGoogleMaps();
   
   // Enable GPS tracking when navigating
@@ -143,17 +147,73 @@ export default function IndexRedesigned() {
   useEffect(() => {
     if (user?.id) {
       loadActiveReservation();
-      
-      // Refresh every 30 seconds to check for status changes
-      const interval = setInterval(() => {
-        loadActiveReservation();
-      }, 30000);
-      
-      return () => clearInterval(interval);
     } else {
       setActiveReservation(null);
     }
   }, [user]);
+
+  // Set up real-time subscription when active reservation exists
+  useEffect(() => {
+    if (!activeReservation?.id) return;
+
+    logger.log('🔗 Setting up real-time subscription for reservation:', activeReservation.id);
+
+    const channel = supabase
+      .channel(`reservation-${activeReservation.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reservations',
+          filter: `id=eq.${activeReservation.id}`
+        },
+        (payload) => {
+          logger.log('🔔 Real-time reservation update received:', payload);
+          
+          // Check if order was picked up
+          if (payload.new && payload.new.status === 'PICKED_UP') {
+            logger.log('✅ Order picked up detected via real-time!');
+            
+            // Check localStorage to prevent duplicate celebrations
+            const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
+            if (!localStorage.getItem(celebrationKey)) {
+              localStorage.setItem(celebrationKey, 'true');
+              
+              // Calculate actual savings: (original price * quantity) - discounted price
+              const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
+              const discountedPrice = activeReservation.total_price || 0;
+              const savedAmount = originalTotal - discountedPrice;
+              const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
+              
+              // Show pickup success modal
+              setPickupModalData({ savedAmount, pointsEarned });
+              setShowPickupSuccessModal(true);
+              
+              // Clear active reservation
+              setActiveReservation(null);
+            }
+          } else {
+            // Reload for other changes
+            loadActiveReservation();
+          }
+        }
+      )
+      .subscribe((status) => {
+        logger.log('📡 Subscription status:', status);
+      });
+
+    // Add polling fallback as backup (every 5 seconds for ACTIVE reservations)
+    const pollingInterval = setInterval(() => {
+      loadActiveReservation();
+    }, 5000);
+
+    return () => {
+      logger.log('🔌 Cleaning up reservation subscription');
+      clearInterval(pollingInterval);
+      channel.unsubscribe();
+    };
+  }, [activeReservation?.id]);
 
   const loadActiveReservation = async () => {
     if (!user?.id) return;
@@ -162,6 +222,37 @@ export default function IndexRedesigned() {
       const { getCustomerReservations } = await import('@/lib/api/reservations');
       const reservations = await getCustomerReservations(user.id);
       
+      // Check if current active reservation was picked up
+      if (activeReservation) {
+        const currentRes = reservations.find(r => r.id === activeReservation.id);
+        if (currentRes && currentRes.status === 'PICKED_UP') {
+          logger.log('✅ Order picked up detected via polling!');
+          
+          // Check localStorage to prevent duplicate celebrations
+          const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
+          if (!localStorage.getItem(celebrationKey)) {
+            localStorage.setItem(celebrationKey, 'true');
+            
+            // Calculate actual savings: (original price * quantity) - discounted price
+            const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
+            const discountedPrice = activeReservation.total_price || 0;
+            const savedAmount = originalTotal - discountedPrice;
+            const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
+            
+            // Show pickup success modal
+            setPickupModalData({ savedAmount, pointsEarned });
+            setShowPickupSuccessModal(true);
+            
+            // Clear active reservation
+            setActiveReservation(null);
+          } else {
+            // Just clear if already celebrated
+            setActiveReservation(null);
+          }
+          return;
+        }
+      }
+      
       // Find the first ACTIVE reservation
       const activeRes = reservations.find(r => r.status === 'ACTIVE');
       
@@ -169,7 +260,7 @@ export default function IndexRedesigned() {
         // Only update if it's a new reservation or status changed
         if (!activeReservation || activeReservation.id !== activeRes.id) {
           setActiveReservation(activeRes);
-          logger.log('Active reservation loaded:', activeRes.id);
+          logger.log('✅ Active reservation state updated');
         }
       } else {
         // Clear if no active reservation found
@@ -734,6 +825,19 @@ export default function IndexRedesigned() {
             setShowBottomSheet(true);
             toast.info('Navigation stopped');
           }}
+        />
+      )}
+
+      {/* Pickup Success Modal with confetti and achievements */}
+      {pickupModalData && (
+        <PickupSuccessModal
+          open={showPickupSuccessModal}
+          onClose={() => {
+            setShowPickupSuccessModal(false);
+            setPickupModalData(null);
+          }}
+          savedAmount={pickupModalData.savedAmount}
+          pointsEarned={pickupModalData.pointsEarned}
         />
       )}
 
