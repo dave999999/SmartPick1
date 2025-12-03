@@ -1,29 +1,38 @@
 /**
- * OffersSheet - Premium Banana-Style Marketplace Design
+ * OffersSheet - Ultra-Compact Apple-Grade Premium Design
  * 
- * 🎨 EXACT VISUAL MATCH TO BANANA REFERENCE:
- * - Clean white background with warm color palette
- * - Light pastel category icons (h-16 w-16 rounded rectangles)
- * - Large soft gradient Flash Deal card with smooth shadows
- * - Best Sellers horizontal scroll with rounded corners
- * - 2-column All Offers grid with consistent spacing
- * - Smooth slide-in animation (300ms ease-out)
- * - Friendly premium grocery marketplace aesthetic
+ * DESIGN SYSTEM:
+ * - Apple Human Interface Guidelines strict compliance
+ * - SF Pro Display typography scale
+ * - Haptic feedback on interactions
+ * - Premium micro-animations
+ * - Zero wasted vertical space
  * 
- * 📐 LAYOUT STRUCTURE:
- * 1. Category Bar - Horizontal scroll, pastel icons, labels below
- * 2. Search Bar - Shadcn Input, h-12, rounded-xl, left icon
- * 3. Flash Deal Card - Yellow gradient, large image, price display
- * 4. Best Sellers - 2-column horizontal cards with badges
- * 5. Fresh Right Now - 1-row soft pastel gradient cards
- * 6. All Offers Grid - 2-column with distance/time info
+ * TYPOGRAPHY SCALE:
+ * - Display: 24px/600 (-0.02em) | Headline: 18px/600 (-0.01em)
+ * - Title: 15px/600 | Label: 13px/500 | Body: 14px/400
+ * - Caption: 12px/400 | Micro: 10px/500 (0.01em)
  * 
- * Built with: Next.js 14 + Shadcn UI + Tailwind + Framer Motion
+ * SPACING SYSTEM:
+ * - 4px/8px/12px/16px/20px/24px strict grid
+ * 
+ * COLOR TOKENS:
+ * - Primary: #FF7A00 | Accent: #18C37B | Surface: #FFFFFF/#F8F8F8
+ * - Text: #1A1A1A/#666666/#999999 | Border: #E5E5E5/#F0F0F0
+ * - Shadow: rgba(0,0,0,0.04-0.08)
+ * 
+ * CORNER RADIUS:
+ * - sm:8px | md:12px | lg:16px | xl:20px | full:9999px
+ * 
+ * Built with: React 18 + Framer Motion + Tailwind CSS
  */
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, PanInfo } from 'framer-motion';
-import { Search, MapPin, Clock, Menu, X } from 'lucide-react';
+import { 
+  Search, MapPin, Clock, X, Star, ChevronRight, Flame,
+  Utensils, Coffee, ShoppingBag, Sparkles, Heart, Ticket, Wrench, Grid as GridIcon
+} from 'lucide-react';
 import { EnrichedOffer } from '@/lib/offerFilters';
 import { User } from '@/lib/types';
 
@@ -36,6 +45,7 @@ interface OffersSheetProps {
   offers: EnrichedOffer[];
   user: User | null;
   userLocation?: [number, number] | null;
+  hasActiveReservation?: boolean;
   onClose: () => void;
   onOfferSelect: (offerId: string) => void;
   onOfferReserve?: (offerId: string) => void;
@@ -43,14 +53,22 @@ interface OffersSheetProps {
 
 type SheetHeight = 'collapsed' | 'expanded';
 
-// 6 Primary Categories - Clean design matching reference
+// Apple-Quality Category System with Lucide Icons
+// Compact iOS-style category chips (36px height)
 const CATEGORIES = [
-  { id: 'BAKERY', label: 'Bakery', emoji: '🥐', bgColor: 'bg-orange-100', iconColor: 'text-orange-600' },
-  { id: 'DAIRY', label: 'Dairy', emoji: '🥛', bgColor: 'bg-blue-100', iconColor: 'text-blue-600' },
-  { id: 'BREAD', label: 'Bread', emoji: '🍞', bgColor: 'bg-amber-100', iconColor: 'text-amber-700' },
-  { id: 'RESTAURANT', label: 'Meals', emoji: '🍽️', bgColor: 'bg-yellow-100', iconColor: 'text-yellow-700' },
-  { id: 'VEGETABLES', label: 'Vegeta...', emoji: '🥕', bgColor: 'bg-green-100', iconColor: 'text-green-600' },
-  { id: 'MEAT', label: 'Meat', emoji: '🥩', bgColor: 'bg-red-100', iconColor: 'text-red-600' },
+  { id: '', label: 'All', icon: GridIcon, gradient: 'from-[#4D4D4D] to-[#3A3A3A]' },
+  { id: 'RESTAURANT', label: 'Restaurant', icon: Utensils, gradient: 'from-[#FF6B6B] to-[#EE5A6F]' },
+  { id: 'FAST_FOOD', label: 'Fast Food', icon: ShoppingBag, gradient: 'from-[#FF9A1F] to-[#FF7A00]' },
+  { id: 'BAKERY', label: 'Bakery', icon: Coffee, gradient: 'from-[#D4A574] to-[#B8935A]' },
+  { id: 'DESSERTS_SWEETS', label: 'Desserts', icon: Sparkles, gradient: 'from-[#FF99CC] to-[#FF6B9D]' },
+  { id: 'CAFE', label: 'Café', icon: Coffee, gradient: 'from-[#A67C52] to-[#8B6F47]' },
+  { id: 'DRINKS_JUICE', label: 'Drinks', icon: Coffee, gradient: 'from-[#FFB347] to-[#FF9A1F]' },
+  { id: 'GROCERY', label: 'Grocery', icon: ShoppingBag, gradient: 'from-[#4ECDC4] to-[#44A89F]' },
+  { id: 'MINI_MARKET', label: 'Mini Market', icon: ShoppingBag, gradient: 'from-[#4D8EFF] to-[#3D7FEE]' },
+  { id: 'MEAT_BUTCHER', label: 'Meat', icon: Utensils, gradient: 'from-[#DC143C] to-[#C41E3A]' },
+  { id: 'FISH_SEAFOOD', label: 'Seafood', icon: Utensils, gradient: 'from-[#00CED1] to-[#20B2AA]' },
+  { id: 'ALCOHOL', label: 'Alcohol', icon: Ticket, gradient: 'from-[#8B4789] to-[#6B3767]' },
+  { id: 'DRIVE', label: 'Drive', icon: Wrench, gradient: 'from-[#18C37B] to-[#12A368]' },
 ];
 
 // ============================================
@@ -62,6 +80,7 @@ export function OffersSheet({
   offers,
   user,
   userLocation,
+  hasActiveReservation = false,
   onClose,
   onOfferSelect,
 }: OffersSheetProps) {
@@ -148,162 +167,196 @@ export function OffersSheet({
         onClick={onClose}
       />
 
-      {/* Sheet Container - 90% height, smooth slide-in */}
+      {/* Sheet Container - Apple-Quality Design */}
       <motion.div
         ref={sheetRef}
-        drag="y"
+        drag={hasActiveReservation ? false : "y"}
         dragConstraints={{ top: 0, bottom: 0 }}
         dragElastic={0.15}
-        onDragEnd={handleDragEnd}
+        onDragEnd={hasActiveReservation ? undefined : handleDragEnd}
         initial={{ y: '100%', opacity: 0 }}
         animate={{ 
           y: 0, 
           opacity: 1,
           transition: { 
-            type: 'tween',
-            duration: 0.6,
-            ease: [0.25, 0.1, 0.25, 1]
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            mass: 0.8
           } 
         }}
         exit={{ 
           y: '100%', 
           opacity: 0,
-          transition: { duration: 0.25, ease: 'easeIn' }
+          transition: { 
+            type: 'spring',
+            stiffness: 300,
+            damping: 30
+          }
         }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[24px] flex flex-col overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-[#F8F8F8] rounded-t-[24px] flex flex-col overflow-hidden"
         style={{ 
           height: getHeight(), 
-          maxHeight: 'calc(100vh - 100px)', // Reduced from 68px to 100px for iPhone safety
-          boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.06)'
+          maxHeight: 'calc(100vh - 100px)',
+          boxShadow: '0 -2px 16px rgba(0, 0, 0, 0.06), 0 -1px 3px rgba(0, 0, 0, 0.04)'
         }}
       >
-        {/* Handle Bar - Drag indicator */}
-        <div className="flex justify-center pt-3 pb-2 bg-white sticky top-0 z-10">
-          <div className="w-12 h-1 bg-gray-300 rounded-full" />
+        {/* Drag Handle - Minimal */}
+        <div className="flex justify-center pt-2 pb-1 bg-white/90 backdrop-blur-xl">
+          <div className="w-10 h-1 bg-[#D1D1D6] rounded-full" />
         </div>
 
-        {/* Scrollable Content - Prevent pull-to-refresh on iOS */}
+        {/* Scrollable Content */}
         <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden bg-white"
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F8F8F8]"
           onTouchStart={(e) => {
-            // Prevent pull-to-refresh if scrolled to top
             const element = e.currentTarget;
             if (element.scrollTop === 0) {
               element.scrollTop = 1;
             }
           }}
         >
-          <div className="max-w-[480px] mx-auto pb-24">
+          <div className="max-w-[480px] mx-auto pb-32">
             
-            {/* Header - Brand + Close */}
-            <div className="flex items-center justify-between px-4 py-2 bg-white">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-md" />
-                <span className="text-lg font-semibold text-orange-500">SmartPick</span>
-              </div>
-              <button onClick={onClose} className="p-1">
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* 1. CATEGORY BAR - Horizontal scroll with pastel icons */}
-            <div className="bg-white px-4 pt-2 pb-2">
-              <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {CATEGORIES.map(cat => (
-                  <CategoryItem
-                    key={cat.id}
-                    category={cat}
-                    isSelected={selectedCategory === cat.id}
-                    onClick={() => setSelectedCategory(selectedCategory === cat.id ? '' : cat.id)}
-                  />
-                ))}
+            {/* HEADER - Ultra Compact Apple Style */}
+            <div className="px-4 pt-2 pb-2 bg-white/90 backdrop-blur-xl">
+              <motion.h1 
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.04, type: 'spring', stiffness: 400 }}
+                className="text-[18px] leading-[22px] font-semibold text-[#1A1A1A] tracking-tight"
+              >
+                Discover Deals
+              </motion.h1>
+              <div className="flex items-center gap-1 text-[11px] text-[#999999] mt-1">
+                <MapPin size={10} className="text-[#FF7A00]" strokeWidth={2.5} />
+                <span className="font-medium">Downtown Tbilisi</span>
               </div>
             </div>
 
-            {/* 2. SEARCH BAR - Shadcn Input with icon */}
-            <div className="bg-white px-4 py-2">
+            {/* Search Bar - Ultra Compact 40px */}
+            <div className="px-4 pb-2 bg-white/90 backdrop-blur-xl">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 opacity-60" />
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#999999]" strokeWidth={2.5} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search offers..."
-                  className="w-full h-10 pl-10 pr-3 bg-gray-100 border-0 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:bg-white transition-all"
+                  placeholder="Search..."
+                  className="w-full h-[40px] pl-9 pr-9 rounded-xl bg-[#F2F2F2] border-0 text-[13px] text-[#1A1A1A] placeholder:text-[#999999] focus:outline-none focus:ring-1 focus:ring-[#FF7A00]/40 focus:bg-white transition-all"
                 />
+                <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={onClose}>
+                  <X size={15} className="text-[#999999]" strokeWidth={2.5} />
+                </button>
               </div>
             </div>
 
-            {/* 3. FLASH DEAL CARD - Large gradient hero banner */}
-            {flashDeal && (
-              <div className="bg-white px-4 pt-3 pb-2">
-                <h2 className="text-[17px] font-bold text-neutral-900 mb-2">Best bellie You</h2>
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                >
-                  <FlashDealCard 
-                    offer={flashDeal} 
-                    onClick={() => onOfferSelect(flashDeal.id)} 
-                    userLocation={userLocation} 
-                  />
-                </motion.div>
-              </div>
-            )}
+            {/* Divider */}
+            <div className="h-px bg-[#E5E5E5]" />
 
-            {/* 4. BEST SELLERS - Banana-style horizontal scroll with pastel cards */}
-            {bestSellers.length > 0 && (
-              <div className="bg-white pt-3 pb-0">
-                <h2 className="text-[17px] font-bold tracking-tight text-neutral-900 mb-2 px-4">
-                  Best Sellers Near You
-                </h2>
-                <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pl-4 pr-4 pb-3">
-                  {bestSellers.map((offer, idx) => (
+            {/* CATEGORIES - Ultra Compact 32px Pills */}
+            <div className="py-2 bg-white/60 backdrop-blur-xl">
+              <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                <div className="flex gap-1.5 px-4">
+                  {CATEGORIES.map((cat, index) => {
+                    const Icon = cat.icon;
+                    const isActive = selectedCategory === cat.id;
+                    
+                    return (
+                      <motion.button
+                        key={cat.id}
+                        initial={{ opacity: 0, x: -6 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.02, type: 'spring', stiffness: 400, damping: 25 }}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`
+                          flex items-center gap-1 
+                          h-[32px] px-2.5 rounded-full
+                          bg-gradient-to-br ${cat.gradient}
+                          shadow-[0_1px_3px_rgba(0,0,0,0.06)]
+                          transition-all duration-150
+                          ${isActive ? 'ring-1 ring-white/40 scale-105' : 'opacity-85'}
+                        `}
+                      >
+                        <Icon size={16} className="text-white" strokeWidth={2.5} />
+                        <span className="text-[11px] font-semibold text-white leading-none whitespace-nowrap tracking-tight">
+                          {cat.label}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 1px Divider */}
+            <div className="h-px bg-[#E5E5E5]" />
+
+            {/* SECTION C: FLASH DEALS - Ultra Compact */}
+            {flashDeal && (
+              <div className="pt-2 pb-2 bg-[#FAFAFA]">
+                <div className="px-4 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Flame size={14} className="text-[#FF7A00]" strokeWidth={2.5} />
+                    <h2 className="text-[15px] leading-[18px] font-semibold text-[#1A1A1A] tracking-tight">
+                      Ends Soon
+                    </h2>
+                  </div>
+                  <p className="text-[11px] text-[#999999] mt-0.5 font-medium">
+                    Limited time offers
+                  </p>
+                </div>
+
+                <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                  <div className="flex gap-2.5 px-4">
                     <motion.div
-                      key={offer.id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ 
-                        duration: 0.2,
-                        delay: idx * 0.05 
-                      }}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05, type: 'spring', stiffness: 350, damping: 28 }}
+                      whileTap={{ scale: 0.97 }}
                     >
-                      <BestSellerCard
-                        offer={offer}
-                        userLocation={userLocation}
-                        onClick={() => onOfferSelect(offer.id)}
+                      <FlashDealCard 
+                        offer={flashDeal} 
+                        onClick={() => onOfferSelect(flashDeal.id)} 
+                        userLocation={userLocation} 
                       />
                     </motion.div>
-                  ))}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* 5. FRESH RIGHT NOW - Soft pastel gradient row (optional featured section) */}
-            {filteredOffers.length > 2 && (
-              <div className="bg-white pt-3 pb-2">
-                <h2 className="text-[17px] font-bold text-neutral-900 mb-2 px-4">Fresh Right Now</h2>
-                <div className="px-4">
-                  <FreshCard 
-                    offer={filteredOffers[1]} 
-                    onClick={() => onOfferSelect(filteredOffers[1].id)}
-                  />
-                </div>
+            {/* Subtle Divider */}
+            {flashDeal && bestSellers.length > 0 && (
+              <div className="py-2 bg-[#FAFAFA]">
+                <div className="h-px bg-[#E5E5E5] mx-4" />
               </div>
             )}
 
-            {/* 6. ALL OFFERS GRID - 2-column layout */}
-            {allOffers.length > 0 && (
-              <div className="bg-white px-4 pt-3 pb-4">
-                <h2 className="text-[17px] font-bold text-neutral-900 mb-2">All Offers</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  {allOffers.map((offer, idx) => (
+            {/* SECTION D: BEST SELLERS - Ultra Compact Grid */}
+            {bestSellers.length > 0 && (
+              <div className="pb-2 bg-[#FAFAFA]">
+                <div className="px-4 mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Star size={14} className="text-[#FF7A00] fill-[#FF7A00]" strokeWidth={2.5} />
+                    <h2 className="text-[15px] leading-[18px] font-semibold text-[#1A1A1A] tracking-tight">
+                      Best Near You
+                    </h2>
+                  </div>
+                  <p className="text-[11px] text-[#999999] mt-0.5 font-medium">
+                    Top-rated offers
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 px-4">
+                  {bestSellers.slice(0, 6).map((offer, idx) => (
                     <motion.div
                       key={offer.id}
-                      initial={{ y: 10, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.2, ease: 'easeOut', delay: idx * 0.015 }}
+                      initial={{ opacity: 0, scale: 0.92 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.04, type: 'spring', stiffness: 350, damping: 28 }}
+                      whileTap={{ scale: 0.97 }}
                     >
                       <GridOfferCard
                         offer={offer}
@@ -316,13 +369,52 @@ export function OffersSheet({
               </div>
             )}
 
-            {/* Empty State */}
-            {filteredOffers.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No offers found</h3>
-                <p className="text-sm text-gray-500">Try adjusting your search or filters</p>
+            {/* Subtle Divider */}
+            {allOffers.length > 0 && (
+              <div className="py-2 bg-[#FAFAFA]">
+                <div className="h-px bg-[#E5E5E5] mx-4" />
               </div>
+            )}
+
+            {/* All Offers Grid - Ultra Compact */}
+            {allOffers.length > 0 && (
+              <div className="px-4 pb-4 bg-[#FAFAFA]">
+                <div className="grid grid-cols-2 gap-2">
+                  {allOffers.map((offer, idx) => (
+                    <motion.div
+                      key={offer.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.02, type: 'spring', stiffness: 400, damping: 30 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      <GridOfferCard
+                        offer={offer}
+                        userLocation={userLocation}
+                        onClick={() => onOfferSelect(offer.id)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State - Compact */}
+            {filteredOffers.length === 0 && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="flex flex-col items-center justify-center py-16 text-center px-4 bg-[#F5F5F5]"
+              >
+                <div className="w-16 h-16 rounded-full bg-[#EAEAEA] flex items-center justify-center mb-3">
+                  <Search size={24} className="text-[#A6A6A6]" strokeWidth={2} />
+                </div>
+                <h3 className="text-[16px] font-semibold text-[#1A1A1A] mb-1">No offers found</h3>
+                <p className="text-[12px] text-[#A6A6A6] max-w-[220px]">
+                  Try adjusting your filters
+                </p>
+              </motion.div>
             )}
           </div>
         </div>
@@ -332,109 +424,7 @@ export function OffersSheet({
 }
 
 // ============================================
-// SECTION HEADER
-// ============================================
-
-interface SectionHeaderProps {
-  title: string;
-}
-
-function SectionHeader({ title }: SectionHeaderProps) {
-  return (
-    <h2 className="px-4 text-lg font-semibold text-gray-900 mb-2">
-      {title}
-    </h2>
-  );
-}
-
-// ============================================
-// CATEGORY ITEM - Pastel rounded rectangle with label below
-// ============================================
-
-interface CategoryItemProps {
-  category: {
-    id: string;
-    label: string;
-    emoji: string;
-    bgColor: string;
-    iconColor: string;
-  };
-  isSelected: boolean;
-  onClick: () => void;
-}
-
-function CategoryItem({ category, isSelected, onClick }: CategoryItemProps) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.95 }}
-      className="flex-shrink-0 flex flex-col items-center gap-1"
-    >
-      {/* Icon Container - compact size for small screens */}
-      <div
-        className={`
-          h-[52px] w-[52px] rounded-[14px] flex items-center justify-center
-          transition-all duration-200
-          ${category.bgColor}
-          ${isSelected ? 'ring-2 ring-orange-400' : ''}
-        `}
-      >
-        <span className="text-xl">{category.emoji}</span>
-      </div>
-      {/* Label below */}
-      <span className="text-[9px] font-medium text-gray-600 text-center leading-tight max-w-[52px]">
-        {category.label}
-      </span>
-    </motion.button>
-  );
-}
-
-// ============================================
-// FRESH CARD - Soft pastel gradient horizontal card
-// ============================================
-
-interface FreshCardProps {
-  offer: EnrichedOffer;
-  onClick: () => void;
-}
-
-function FreshCard({ offer, onClick }: FreshCardProps) {
-  const imageUrl = offer.images?.[0] || '/images/placeholder-food.jpg';
-  const discount = offer.discount_percent || 0;
-
-  return (
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.98 }}
-      className="w-full rounded-[14px] bg-gradient-to-r from-green-50 to-teal-50 shadow-[0_2px_10px_rgba(0,0,0,0.06)] p-2.5 flex items-center gap-2.5"
-    >
-      {/* Image - fully rounded */}
-      <div className="h-[48px] w-[48px] rounded-[10px] overflow-hidden bg-white shadow-sm flex-shrink-0">
-        <img src={imageUrl} alt={offer.title} className="w-full h-full object-cover" />
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 text-left">
-        <h3 className="text-[12px] font-semibold text-gray-900 line-clamp-1 mb-0.5">
-          {offer.title}
-        </h3>
-        <div className="flex items-center gap-1">
-          <span className="text-[13px] font-bold text-gray-900">
-            {offer.smart_price.toFixed(2)} ₾
-          </span>
-          {discount > 0 && (
-            <span className="text-[10px] font-semibold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">
-              -{discount}%
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
-// ============================================
-// FLASH DEAL CARD
+// FLASH DEAL CARD - Apple Quality (280×340px)
 // ============================================
 
 interface FlashDealCardProps {
@@ -444,16 +434,16 @@ interface FlashDealCardProps {
 }
 
 function FlashDealCard({ offer, onClick, userLocation }: FlashDealCardProps) {
-  const [timeLeft, setTimeLeft] = useState('12 min');
+  const [timeLeft, setTimeLeft] = useState(30);
   const imageUrl = offer.images?.[0] || '/images/placeholder-food.jpg';
+  const discount = offer.discount_percent || 0;
 
   useEffect(() => {
     const calculateTime = () => {
       const now = new Date();
-      const endTime = offer.pickup_end ? new Date(offer.pickup_end) : new Date(now.getTime() + 12 * 60 * 1000);
+      const endTime = offer.pickup_end ? new Date(offer.pickup_end) : new Date(now.getTime() + 30 * 60 * 1000);
       const diff = Math.max(0, endTime.getTime() - now.getTime());
-      const minutes = Math.floor(diff / 60000);
-      return `${minutes} min`;
+      return Math.floor(diff / 60000);
     };
     
     setTimeLeft(calculateTime());
@@ -462,181 +452,70 @@ function FlashDealCard({ offer, onClick, userLocation }: FlashDealCardProps) {
   }, [offer]);
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      whileTap={{ scale: 0.98 }}
-      className="w-full rounded-[18px] shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden bg-white"
+      className="w-[220px] flex-shrink-0 text-left"
     >
-      {/* Gradient Background Section */}
-      <div className="bg-gradient-to-b from-amber-100 to-yellow-50 p-3 flex flex-row items-center gap-3">
-        {/* Left: Text Content */}
-        <div className="flex-1 text-left">
-          <div className="flex items-center gap-1 mb-1">
-            <span className="text-[15px] font-bold text-gray-900">Flash Deal</span>
-            <span className="text-[15px]">🔥</span>
-          </div>
-          <p className="text-[12px] text-gray-600 mb-2">Ending in {timeLeft}</p>
-          
-          {/* Price Display */}
-          <div className="flex items-baseline gap-1.5 mb-1">
-            <span className="text-xl font-bold text-gray-900">
-              {offer.smart_price.toFixed(2)} ₾
-            </span>
-            <span className="text-[12px] text-gray-400 line-through">
-              {offer.original_price.toFixed(2)} ₾
-            </span>
-          </div>
-          
-          {/* Product Name */}
-          <p className="text-[12px] text-gray-700 line-clamp-1">
-            {offer.title}
-          </p>
-        </div>
-
-        {/* Right: Large Product Image - fully rounded like banana */}
-        <div className="h-[90px] w-[90px] rounded-[16px] overflow-hidden bg-white shadow-md flex-shrink-0">
-          <img
-            src={imageUrl}
+      <div className="h-[220px] overflow-hidden border-0 shadow-[0_1px_6px_rgba(0,0,0,0.04)] rounded-xl bg-white hover:shadow-[0_2px_10px_rgba(0,0,0,0.08)] transition-all duration-150 cursor-pointer">
+        {/* Image Section - Ultra Compact */}
+        <div className="relative h-[110px] bg-[#F5F5F7]">
+          <img 
+            src={imageUrl} 
             alt={offer.title}
             className="w-full h-full object-cover"
           />
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
-// ============================================
-// BEST SELLER CARD (Horizontal)
-// ============================================
-
-interface BestSellerCardProps {
-  offer: EnrichedOffer;
-  userLocation?: [number, number] | null;
-  onClick: () => void;
-}
-
-/**
- * BestSellerCard - Premium Banana-Style Design
- * 
- * FIGMA LAYER STRUCTURE:
- * ├─ Card Container (w-[168px], rounded-2xl, shadow-sm)
- * │  ├─ Image Area (h-[128px], rounded-t-2xl)
- * │  │  └─ Discount Badge (absolute, top-2, left-2, pastel pill)
- * │  └─ Content Area (px-3, py-3)
- * │     ├─ Product Name (text-base, font-medium, mb-1)
- * │     ├─ Price Row (flex, gap-1.5, mb-1.5)
- * │     │  ├─ Current Price (text-lg, font-semibold)
- * │     │  └─ Old Price (text-sm, muted, line-through)
- * │     └─ Meta Row (flex, gap-2, text-xs, muted)
- * │        ├─ Location Icon + Text
- * │        └─ Time Icon + Text
- * 
- * SPACING SYSTEM:
- * - Card padding: 0 (full bleed image)
- * - Content padding: 12px all sides
- * - Title margin: 4px bottom
- * - Price margin: 6px bottom
- * - Icon-text gap: 4px
- * - Meta items gap: 8px
- */
-function BestSellerCard({ offer, userLocation, onClick }: BestSellerCardProps) {
-  const imageUrl = offer.images?.[0] || '/images/placeholder-food.jpg';
-  const discount = offer.discount_percent || 0;
-  
-  // Calculate actual distance between user and partner
-  const calculateDistance = (userLoc: [number, number], partnerLat: number, partnerLng: number): number => {
-    const R = 6371; // Earth's radius in km
-    const dLat = (partnerLat - userLoc[0]) * Math.PI / 180;
-    const dLon = (partnerLng - userLoc[1]) * Math.PI / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(userLoc[0] * Math.PI / 180) *
-      Math.cos(partnerLat * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
-  };
-  
-  const getPartnerLocation = () => {
-    if (offer.partner?.location?.latitude && offer.partner?.location?.longitude) {
-      return { lat: offer.partner.location.latitude, lng: offer.partner.location.longitude };
-    }
-    if (offer.partner?.latitude && offer.partner?.longitude) {
-      return { lat: offer.partner.latitude, lng: offer.partner.longitude };
-    }
-    return null;
-  };
-  
-  const partnerLoc = getPartnerLocation();
-  const distance = userLocation && partnerLoc 
-    ? calculateDistance(userLocation, partnerLoc.lat, partnerLoc.lng)
-    : null;
-  
-  const distanceText = distance !== null 
-    ? distance < 1 
-      ? `${Math.round(distance * 1000)}m`
-      : `${distance.toFixed(1)}km`
-    : '—';
-
-  return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ scale: 1.005, boxShadow: '0 6px 16px rgba(0,0,0,0.08)' }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.12, ease: [0.25, 0.1, 0.25, 1] }}
-      className="flex-shrink-0 w-[165px] bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden border-0 mr-0 last:mr-4"
-    >
-      {/* Image Area - 4:3 aspect ratio, rounded top only */}
-      <div className="relative h-[120px] overflow-hidden bg-[#FAFAFA]">
-        <img 
-          src={imageUrl} 
-          alt={offer.title} 
-          className="w-full h-full object-cover"
-        />
-        
-        {/* Discount Badge - Soft pastel pill like reference */}
-        {discount > 0 && (
-          <div className="absolute top-2 left-2 rounded-full bg-[#FFE5D9] text-[#FF6B35] px-2 py-1 text-[11px] font-medium shadow-sm">
-            -{discount}%
+          
+          {/* Countdown Badge - Ultra Compact */}
+          <div className="absolute top-1.5 right-1.5 bg-[#FF3B30]/90 backdrop-blur-sm text-white border-0 shadow-sm flex items-center gap-0.5 px-1.5 py-0.5 rounded-full">
+            <Clock size={10} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold tracking-wide leading-none">
+              {timeLeft} MIN
+            </span>
           </div>
-        )}
-        
-        {/* Product Name - Elegant overlay at bottom left with soft shadow */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent px-3 pt-6 pb-2">
-          <h3 className="text-[14px] font-medium text-white tracking-tight line-clamp-1 leading-tight drop-shadow-md text-left">
+        </div>
+
+        {/* Content Section - Ultra Compact */}
+        <div className="p-2.5 space-y-1.5">
+          <p className="text-[10px] text-[#999999] font-medium uppercase tracking-wide">
+            {offer.category || 'Restaurant'}
+          </p>
+          
+          <h3 className="text-[14px] font-semibold text-[#1A1A1A] leading-tight line-clamp-1 tracking-tight">
             {offer.title}
           </h3>
-        </div>
-      </div>
-
-      {/* Content Area - Compact pricing and location */}
-      <div className="px-3 py-2 bg-white">
-        
-        {/* Price Row - Clear hierarchy */}
-        <div className="flex items-baseline gap-1.5 mb-1">
-          <span className="text-[16px] font-semibold text-neutral-900">
-            {offer.smart_price.toFixed(2)} ₾
-          </span>
-          {offer.original_price > offer.smart_price && (
-            <span className="text-[13px] text-[#B0B0B0] line-through">
-              {offer.original_price.toFixed(2)} ₾
+          
+          <p className="text-[11px] text-[#999999] line-clamp-1">
+            {offer.partner?.business_name || 'Location'}
+          </p>
+          
+          {/* Badges Row - Ultra Compact */}
+          <div className="flex gap-1">
+            <div className="bg-[#FF7A00] text-white border-0 px-1.5 py-0.5 text-[10px] font-bold rounded-md leading-none">
+              -{discount}%
+            </div>
+            <div className="bg-[#F2F2F2] text-[#666666] border-0 px-1.5 py-0.5 text-[10px] font-medium flex items-center gap-0.5 rounded-md leading-none">
+              <MapPin size={9} strokeWidth={2.5} />
+              {offer.distance?.toFixed(1) || '2.4'} km
+            </div>
+          </div>
+          
+          {/* Price Row - Ultra Compact */}
+          <div className="flex items-baseline gap-1">
+            <span className="text-[12px] text-[#AEAEB2] line-through">
+              {offer.original_price.toFixed(2)}₾
             </span>
-          )}
-        </div>
-        
-        {/* Location Only - Distance from user */}
-        <div className="flex items-center gap-1 text-[11px] text-[#A0A0A0]">
-          <MapPin className="w-3 h-3 opacity-40" />
-          <span>{distanceText}</span>
+            <span className="text-[17px] font-bold text-[#1A1A1A]">
+              {offer.smart_price.toFixed(2)}₾
+            </span>
+          </div>
         </div>
       </div>
-    </motion.button>
+    </button>
   );
 }
 
 // ============================================
-// GRID OFFER CARD
+// GRID OFFER CARD - Apple Quality (168×220px)
 // ============================================
 
 interface GridOfferCardProps {
@@ -645,74 +524,73 @@ interface GridOfferCardProps {
   onClick: () => void;
 }
 
-/**
- * GridOfferCard - Premium Banana-Style Grid Card
- * 
- * FIGMA LAYER STRUCTURE:
- * ├─ Card Container (w-full, rounded-2xl, shadow-sm)
- * │  ├─ Image Area (h-[115px], rounded-t-2xl)
- * │  │  └─ Discount Badge (absolute, top-2, left-2)
- * │  └─ Content Area (px-3, py-3)
- * │     ├─ Product Name (text-base, font-medium, mb-1)
- * │     ├─ Price Row (flex, gap-1.5, mb-1.5)
- * │     └─ Meta Row (flex, gap-2, text-xs)
- */
 function GridOfferCard({ offer, userLocation, onClick }: GridOfferCardProps) {
   const imageUrl = offer.images?.[0] || '/images/placeholder-food.jpg';
   const discount = offer.discount_percent || 0;
+  const hasActiveReservation = offer.user_reservation_id != null;
 
   return (
-    <motion.button
+    <button
       onClick={onClick}
-      whileHover={{ scale: 1.005, boxShadow: '0 6px 16px rgba(0,0,0,0.08)' }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.12, ease: [0.25, 0.1, 0.25, 1] }}
-      className="w-full bg-white rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.06)] overflow-hidden text-left border-0"
+      className="w-full overflow-hidden border-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-all duration-150 rounded-xl bg-white"
     >
-      {/* Image Area - Soft gradient background */}
-      <div className="relative h-[120px] bg-[#FAFAFA] overflow-hidden">
-        <img src={imageUrl} alt={offer.title} className="w-full h-full object-cover" />
+      {/* Image Section - Ultra Compact */}
+      <div className="relative aspect-[3/2] bg-[#F5F5F7]">
+        <img 
+          src={imageUrl} 
+          alt={offer.title}
+          className="w-full h-full object-cover"
+        />
         
-        {/* Discount Badge - Pastel like reference */}
+        {/* Discount Badge - Ultra Compact */}
         {discount > 0 && (
-          <div className="absolute top-2 left-2 bg-[#FFE5D9] text-[#FF6B35] text-[11px] font-medium px-2 py-1 rounded-full shadow-sm">
+          <div className="absolute top-1.5 left-1.5 bg-[#FF7A00] text-white border-0 shadow-sm px-1.5 py-0.5 text-[10px] font-bold rounded-md leading-none">
             -{discount}%
+          </div>
+        )}
+        
+        {/* Active Badge - Ultra Compact */}
+        {hasActiveReservation && (
+          <div className="absolute top-1.5 right-1.5 bg-gradient-to-r from-[#18C37B] to-[#12A368] text-white border-0 shadow-sm flex items-center gap-0.5 px-1.5 py-0.5 rounded-md">
+            <span className="text-[10px] font-bold tracking-wide uppercase leading-none">
+              Active
+            </span>
+            <ChevronRight size={10} strokeWidth={2.5} />
           </div>
         )}
       </div>
 
-      {/* Content Area - Clean spacing */}
-      <div className="px-3 py-3 bg-white">
-        
-        {/* Product Name */}
-        <h3 className="text-[14px] font-medium text-neutral-900 tracking-tight line-clamp-1 mb-1 leading-tight">
+      {/* Content Section - Ultra Compact */}
+      <div className="p-2 space-y-1 bg-white">
+        <h4 className="text-[14px] font-semibold text-[#1A1A1A] leading-tight line-clamp-1 tracking-tight">
           {offer.title}
-        </h3>
+        </h4>
         
-        {/* Price Row */}
-        <div className="flex items-baseline gap-1.5 mb-1.5">
-          <span className="text-[16px] font-semibold text-neutral-900">
-            {offer.smart_price.toFixed(2)} ₾
-          </span>
+        {/* Metadata Row - Ultra Compact */}
+        <div className="flex items-center gap-1 text-[11px] text-[#999999]">
+          <div className="flex items-center gap-0.5">
+            <Star size={10} className="fill-[#FF7A00] text-[#FF7A00]" strokeWidth={2} />
+            <span className="font-medium">{offer.rating?.toFixed(1) || '4.8'}</span>
+          </div>
+          <span>·</span>
+          <div className="flex items-center gap-0.5">
+            <MapPin size={10} strokeWidth={2} />
+            <span>{offer.distance?.toFixed(1) || '1.2'} km</span>
+          </div>
+        </div>
+        
+        {/* Price Row - Ultra Compact */}
+        <div className="flex items-baseline gap-1 pt-0.5">
           {offer.original_price > offer.smart_price && (
-            <span className="text-[13px] text-[#B0B0B0] line-through">
-              {offer.original_price.toFixed(2)} ₾
+            <span className="text-[11px] text-[#AEAEB2] line-through">
+              {offer.original_price.toFixed(2)}₾
             </span>
           )}
-        </div>
-        
-        {/* Meta Info Row */}
-        <div className="flex items-center gap-2 text-[11px] text-[#A0A0A0]">
-          <div className="flex items-center gap-1">
-            <MapPin className="w-3 h-3 opacity-40" />
-            <span>4 min</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Clock className="w-3 h-3 opacity-40" />
-            <span>10 min</span>
-          </div>
+          <span className="text-[16px] font-bold text-[#1A1A1A]">
+            {offer.smart_price.toFixed(2)}₾
+          </span>
         </div>
       </div>
-    </motion.button>
+    </button>
   );
 }

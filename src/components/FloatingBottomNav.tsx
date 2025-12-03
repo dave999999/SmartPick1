@@ -1,7 +1,21 @@
 /**
- * FloatingBottomNav - Premium curved bottom navigation with floating center button
- * Design inspired by modern mobile apps (Revolut, Uber, Apple Wallet)
- * Features: cosmic orange theme, elevated center button, smooth animations
+ * FloatingBottomNav - Ultra-Compact Apple-Grade Navigation
+ * 
+ * DESIGN PRINCIPLES:
+ * - Apple Human Interface Guidelines
+ * - SF Symbols icon weight (medium stroke)
+ * - Minimal height, maximum touch targets
+ * - Subtle floating effect
+ * - Premium micro-interactions
+ * 
+ * SPECIFICATIONS:
+ * - Bar Height: 56px
+ * - Center Button: 50px diameter
+ * - Icon Size: 20px (SF Symbol medium)
+ * - Label Size: 11px (SF Caption)
+ * - Bottom Gap: 8px
+ * - Corner Radius: 20px
+ * - Shadow: Soft floating sheet
  */
 
 import { useState } from 'react';
@@ -21,25 +35,24 @@ export function FloatingBottomNav({ onSearchClick }: FloatingBottomNavProps) {
 
   return (
     <>
-      {/* Main Navigation Container */}
+      {/* Main Navigation Container - Ultra Compact Apple Style */}
       <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
-        {/* Safe area padding for iOS home indicator */}
-        <div className="pb-safe relative">
-          {/* Floating curved bar */}
+        {/* 8px bottom gap (Apple standard) */}
+        <div className="pb-2 relative">
+          {/* Floating Sheet - 54px height */}
           <div 
             className="
-              relative mx-3 mb-2
-              bg-white dark:bg-sp-surface1
+              relative mx-3 mb-0
+              bg-white/95 dark:bg-sp-surface1/95
               rounded-[20px]
-              shadow-[0_4px_16px_rgba(0,0,0,0.08)]
-              dark:shadow-[0_4px_16px_rgba(0,0,0,0.3)]
-              border border-gray-100 dark:border-sp-border-soft
+              shadow-[0_-2px_16px_rgba(0,0,0,0.06),0_1px_3px_rgba(0,0,0,0.04)]
+              dark:shadow-[0_-2px_16px_rgba(0,0,0,0.3)]
+              border border-[#E5E5E5]/50 dark:border-sp-border-soft
               pointer-events-auto
-              backdrop-blur-xl
-              bg-opacity-95 dark:bg-opacity-95
+              backdrop-blur-xl backdrop-saturate-150
             "
             style={{
-              height: '52px',
+              height: '54px',
             }}
           >
             {/* Navigation Items Grid */}
@@ -85,36 +98,41 @@ export function FloatingBottomNav({ onSearchClick }: FloatingBottomNavProps) {
               />
             </div>
 
-            {/* Floating Center Button - Search Offers */}
-            <div className="absolute left-1/2 -translate-x-1/2 -top-3">
+            {/* Floating Center Button - Apple Style 50px */}
+            <div className="absolute left-1/2 -translate-x-1/2 -top-[14px]">
               <button
                 onClick={onSearchClick}
                 className="
                   relative
                   w-[50px] h-[50px]
                   rounded-full
-                  bg-gradient-to-br from-[#FF8A00] to-[#FF6B00]
-                  shadow-[0_4px_16px_rgba(255,138,0,0.3)]
-                  hover:shadow-[0_6px_20px_rgba(255,138,0,0.4)]
-                  active:scale-95
-                  transition-all duration-300
+                  bg-gradient-to-br from-[#FF7A00] to-[#E56B00]
+                  shadow-[0_2px_8px_rgba(255,122,0,0.2),0_4px_12px_rgba(255,122,0,0.15)]
+                  hover:shadow-[0_4px_12px_rgba(255,122,0,0.3),0_6px_16px_rgba(255,122,0,0.2)]
+                  active:scale-[1.15]
+                  transition-all duration-150 ease-out
                   flex items-center justify-center
                   group
-                  animate-float
+                  will-change-transform
                 "
-                aria-label="Search Offers"
+                aria-label="Discover Deals"
+                style={{
+                  animation: 'float 3s ease-in-out infinite',
+                }}
               >
-                {/* Glow effect */}
+                {/* Glow Ring */}
                 <div className="
                   absolute inset-0 rounded-full
-                  bg-gradient-to-br from-[#FF8A00] to-[#FF6B00]
-                  opacity-40 blur-xl
-                  group-hover:opacity-60
-                  transition-opacity duration-300
+                  bg-gradient-to-br from-[#FF7A00] to-[#E56B00]
+                  opacity-0 blur-xl
+                  group-hover:opacity-40 group-active:opacity-60
+                  transition-opacity duration-200
                 " />
                 
                 {/* Icon */}
-                <SearchIcon />
+                <div className="relative z-10 scale-95">
+                  <SearchIcon />
+                </div>
               </button>
             </div>
           </div>
@@ -158,22 +176,34 @@ function NavButton({ onClick, isActive, icon, label }: NavButtonProps) {
     <button
       onClick={onClick}
       className={`
-        flex items-center justify-center
-        min-w-[48px] h-full
-        transition-all duration-300 ease-out
+        flex flex-col items-center justify-center gap-0.5
+        min-w-[52px] h-full py-1.5
+        transition-all duration-150 ease-out
         group
-        ${isActive ? 'scale-105' : 'scale-100 hover:scale-105'}
+        ${isActive ? 'scale-105' : 'scale-100 hover:scale-102'}
       `}
       aria-label={label}
     >
-      {/* Icon Container */}
+      {/* Icon - SF Symbol Medium Weight */}
       <div className={`
-        transition-all duration-300
-        ${isActive ? 'text-[#FF8A00] dark:text-[#FF8A00]' : 'text-gray-500 dark:text-sp-text-muted'}
-        group-hover:text-[#FF8A00]
+        transition-all duration-150
+        ${isActive ? 'text-[#FF7A00]' : 'text-[#666666]'}
+        group-hover:text-[#FF7A00]
       `}>
-        {icon}
+        <div className="w-5 h-5 flex items-center justify-center">
+          {icon}
+        </div>
       </div>
+      
+      {/* Label - SF Caption */}
+      <span className={`
+        text-[11px] font-medium leading-none tracking-tight
+        transition-all duration-150
+        ${isActive ? 'text-[#FF7A00]' : 'text-[#999999]'}
+        group-hover:text-[#FF7A00]
+      `}>
+        {label}
+      </span>
     </button>
   );
 }

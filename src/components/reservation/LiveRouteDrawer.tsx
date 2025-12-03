@@ -25,23 +25,30 @@ export function LiveRouteDrawer({
   const lastUpdateRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
-    if (!map || !window.google) return;
+    if (!map || !window.google) {
+      console.log('⚠️ Map or Google not ready:', { hasMap: !!map, hasGoogle: !!window.google });
+      return;
+    }
+
+    console.log('✅ Initializing DirectionsService and DirectionsRenderer');
 
     // Initialize services
     if (!directionsServiceRef.current) {
       directionsServiceRef.current = new google.maps.DirectionsService();
+      console.log('📍 DirectionsService created');
     }
 
     if (!directionsRendererRef.current) {
       directionsRendererRef.current = new google.maps.DirectionsRenderer({
         map,
-        suppressMarkers: true, // We'll add custom markers
+        suppressMarkers: false, // Use Google's default markers (blue line, A/B pins)
         polylineOptions: {
-          strokeColor: '#FF7A00',
+          strokeColor: '#4285F4', // Google Maps blue
           strokeWeight: 5,
-          strokeOpacity: 0.8,
+          strokeOpacity: 0.9,
         },
       });
+      console.log('📍 DirectionsRenderer created and attached to map');
     }
 
     return () => {
@@ -56,6 +63,13 @@ export function LiveRouteDrawer({
 
   // Draw route when navigation starts or user moves
   useEffect(() => {
+    console.log('🧭 LiveRouteDrawer effect:', { 
+      hasMap: !!map, 
+      hasUserLocation: !!userLocation, 
+      isNavigating, 
+      hasReservation: !!reservation 
+    });
+    
     if (!map || !userLocation || !isNavigating || !reservation) {
       // Clear route when not navigating
       if (directionsRendererRef.current) {
@@ -101,79 +115,24 @@ export function LiveRouteDrawer({
     };
 
     directionsServiceRef.current?.route(request, (result: google.maps.DirectionsResult | null, status: google.maps.DirectionsStatus) => {
+      console.log('🗺️ Directions API response:', { status, hasResult: !!result });
+      
       if (status === google.maps.DirectionsStatus.OK && result) {
+        console.log('✅ Drawing route on map');
         directionsRendererRef.current?.setDirections(result);
 
-        // Add custom partner marker with pulse
-        if (!partnerMarkerRef.current) {
-          const markerContent = document.createElement('div');
-          markerContent.className = 'partner-marker-pulse';
-          markerContent.innerHTML = `
-            <div style="position: relative; width: 48px; height: 48px;">
-              <!-- Pulse rings -->
-              <div style="
-                position: absolute;
-                inset: 0;
-                border-radius: 50%;
-                background: rgba(249, 115, 22, 0.3);
-                animation: pulse 2s ease-out infinite;
-              "></div>
-              <div style="
-                position: absolute;
-                inset: 0;
-                border-radius: 50%;
-                background: rgba(249, 115, 22, 0.2);
-                animation: pulse 2s ease-out infinite 0.5s;
-              "></div>
-              <!-- Main marker -->
-              <div style="
-                position: absolute;
-                inset: 8px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #FF7A00 0%, #F97316 100%);
-                box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border: 3px solid white;
-              ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                </svg>
-              </div>
-            </div>
-          `;
+        // Google will automatically show:
+        // - 'A' marker at origin (user location)
+        // - 'B' marker at destination (partner location)
+        // - Blue route line connecting them
 
-          // Add pulse animation CSS
-          const style = document.createElement('style');
-          style.textContent = `
-            @keyframes pulse {
-              0% {
-                transform: scale(1);
-                opacity: 0.8;
-              }
-              100% {
-                transform: scale(2);
-                opacity: 0;
-              }
-            }
-          `;
-          document.head.appendChild(style);
-
-          // Use modern AdvancedMarkerElement with custom HTML content
-          partnerMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
-            map,
-            position: { lat: partnerLat, lng: partnerLng },
-            content: markerContent,
-            title: reservation.partner?.business_name || 'Partner Location',
-          });
-        }
-
-        // Auto-center map on route
+        // Auto-center map on route with padding
         const bounds = new google.maps.LatLngBounds();
         bounds.extend(userLocation);
         bounds.extend({ lat: partnerLat, lng: partnerLng });
-        map.fitBounds(bounds, { top: 100, bottom: 100, left: 50, right: 50 });
+        map.fitBounds(bounds, { top: 120, bottom: 120, left: 60, right: 60 });
+      } else {
+        console.error('❌ Directions request failed:', status);
       }
     });
   }, [map, reservation, userLocation, isNavigating]);

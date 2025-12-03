@@ -9,6 +9,7 @@ import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
 import { OffersSheet } from '@/components/discover/OffersSheet';
+import { AnimatePresence } from 'framer-motion';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
 import ReservationModalNew from '@/components/map/ReservationModalNew';
@@ -30,11 +31,8 @@ import { useLiveGPS } from '@/hooks/useLiveGPS';
 import { getReservationById, cancelReservation } from '@/lib/api/reservations';
 import { Reservation } from '@/lib/types';
 
-// Premium Dark Design Components
-import { TopSearchBarRedesigned } from '@/components/home/TopSearchBarRedesigned';
-import { VerticalNav } from '@/components/home/VerticalNav';
-import { FilterDrawer } from '@/components/home/FilterDrawer';
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+// Premium Navigation Components
+import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
 import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {
@@ -45,30 +43,19 @@ export default function IndexRedesigned() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [showReservationModal, setShowReservationModal] = useState(false);
-  const [showBottomSheet, setShowBottomSheet] = useState(false);
-  const [selectedOfferIndex, setSelectedOfferIndex] = useState<number>(0);
-  const [showFilterDrawer, setShowFilterDrawer] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [smartPointsBalance, setSmartPointsBalance] = useState<number>(0);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
   
   // NEW: Unified Discover Sheet state
   const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
-  const [sheetMode, setSheetMode] = useState<'discover' | 'carousel' | 'reservation' | 'qr'>('discover');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [highlightedOfferId, setHighlightedOfferId] = useState<string | null>(null);
-  const [selectedSort, setSelectedSort] = useState<'recommended' | 'nearest' | 'cheapest' | 'expiring' | 'newest'>('recommended');
   
   // NEW: Google Maps navigation state
   const [showNewReservationModal, setShowNewReservationModal] = useState(false);
   const [reservationQuantity, setReservationQuantity] = useState(1);
   const [navigationMode, setNavigationMode] = useState(false);
   const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
-  const mapInstanceRef = useCallback((mapInstance: any) => {
-    // Store map instance for NavigationMode
-    (window as any).__smartPickMapInstance = mapInstance;
-  }, []);
 
   // NEW: Post-Reservation System State
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
@@ -308,14 +295,16 @@ export default function IndexRedesigned() {
   };
 
   // Auto-open OffersSheet after 1.5 seconds - give user time to see homepage first
+  // BUT: Don't auto-open if there's an active reservation
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDiscoverSheetOpen(true);
-      setSheetMode('discover');
+      if (!activeReservation) {
+        setDiscoverSheetOpen(true);
+      }
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array - runs once on mount
+  }, [activeReservation]); // Only run when activeReservation changes
 
   useEffect(() => {
     loadOffers();
@@ -382,24 +371,6 @@ export default function IndexRedesigned() {
   const checkUser = async () => {
     const { user } = await getCurrentUser();
     setUser(user);
-    
-    // Fetch balance from user_points table
-    if (user?.id) {
-      const { data: pointsData, error } = await supabase
-        .from('user_points')
-        .select('balance')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) {
-        logger.warn('Error fetching user points:', error);
-        setSmartPointsBalance(0);
-      } else {
-        setSmartPointsBalance(pointsData?.balance || 0);
-      }
-    } else {
-      setSmartPointsBalance(0);
-    }
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -576,44 +547,18 @@ export default function IndexRedesigned() {
   ]);
 
   const handleOfferClick = useCallback((offer: Offer) => {
-    const index = filteredOffers.findIndex(o => o.id === offer.id);
     setSelectedOffer(offer);
-    setSelectedOfferIndex(index >= 0 ? index : 0);
     addRecentlyViewed(offer.id, 'offer');
 
     if (!user) {
       setShowAuthDialog(true);
-    } else {
-      setShowBottomSheet(true);
     }
-  }, [user, addRecentlyViewed, filteredOffers]);
-
-  const handleReservationSuccess = useCallback(() => {
-    loadOffers();
-    loadActiveReservation(); // Load the newly created reservation immediately
-    setShowReservationModal(false);
-    setShowBottomSheet(false);
-    setSelectedOffer(null);
-  }, []);
-
-  const handleBottomSheetIndexChange = useCallback((newIndex: number) => {
-    if (newIndex >= 0 && newIndex < filteredOffers.length) {
-      setSelectedOfferIndex(newIndex);
-      setSelectedOffer(filteredOffers[newIndex]);
-      addRecentlyViewed(filteredOffers[newIndex].id, 'offer');
-      
-      const params = new URLSearchParams(window.location.search);
-      params.set('selected', filteredOffers[newIndex].id);
-      params.set('index', newIndex.toString());
-      window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
-    }
-  }, [filteredOffers, addRecentlyViewed]);
+  }, [user, addRecentlyViewed]);
 
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
     // If empty partner name, clear filters (map clicked on empty area)
     if (!partnerName || partnerOffers.length === 0) {
       setSearchQuery('');
-      setShowBottomSheet(false);
       setSelectedOffer(null);
       setSelectedCategory('');
       setDiscoverSheetOpen(false);
@@ -625,7 +570,6 @@ export default function IndexRedesigned() {
       const partnerId = partnerOffers[0]?.partner_id;
       if (partnerId) {
         setSelectedPartnerId(partnerId);
-        setSheetMode('carousel');
         setDiscoverSheetOpen(true);
         
         // Center map on partner
@@ -678,7 +622,10 @@ export default function IndexRedesigned() {
                       selectedOffer={selectedOffer}
                       showUserLocation={true}
                       highlightedOfferId={highlightedOfferId}
+                      hideMarkers={!!activeReservation}
                     />
+                    {/* Debug: Check if pins are hidden */}
+                    {!!activeReservation && console.log('🔵 Map pins HIDDEN - active reservation exists')}
                   </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -690,9 +637,6 @@ export default function IndexRedesigned() {
                 )}
               </div>
 
-              {/* Floating Vertical Navigation */}
-              {/* VerticalNav hidden - theme toggle moved to top-left */}
-              {false && <VerticalNav />}
             </>
           )}
         </div>
@@ -706,9 +650,6 @@ export default function IndexRedesigned() {
           defaultTab={defaultAuthTab}
           onSuccess={() => {
             checkUser();
-            if (selectedOffer) {
-              setShowBottomSheet(true);
-            }
           }}
         />
       </Suspense>
@@ -724,6 +665,7 @@ export default function IndexRedesigned() {
         }))}
         user={user}
         userLocation={userLocation}
+        hasActiveReservation={!!activeReservation}
         onClose={() => {
           setDiscoverSheetOpen(false);
           setSelectedPartnerId(null);
@@ -758,11 +700,9 @@ export default function IndexRedesigned() {
             logger.log('🎯 onReservationCreated called with ID:', reservationId);
             
             // Close UI immediately for better UX
-            setShowBottomSheet(false);
             setShowNewReservationModal(false);
             setDiscoverSheetOpen(false);
             setSelectedOffer(null);
-            setSheetMode('discover');
             
             // Fetch full reservation data (this triggers the modal to appear)
             logger.log('🔄 Fetching reservation data...');
@@ -780,8 +720,10 @@ export default function IndexRedesigned() {
       )}
       
       {/* NEW: Active Reservation Card - Modern Design */}
-      <ActiveReservationCard
-        reservation={activeReservation ? {
+      <AnimatePresence mode="wait">
+        {activeReservation && (
+          <ActiveReservationCard
+            reservation={{
           id: activeReservation.id,
           offerTitle: activeReservation.offer?.title || 'Offer',
           partnerName: activeReservation.partner?.business_name || activeReservation.offer?.partner?.business_name || 'Partner',
@@ -804,9 +746,9 @@ export default function IndexRedesigned() {
           pickupAddress: activeReservation.offer?.pickup_location || 
                         activeReservation.partner?.address || 
                         activeReservation.offer?.partner?.address || 'Location',
-        } : null}
-        userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
-        onNavigate={(reservation) => {
+            }}
+            userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
+            onNavigate={(reservation) => {
           // Option 1: Open Google Maps in new tab
           const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.pickupAddress)}`;
           window.open(url, '_blank');
@@ -832,7 +774,9 @@ export default function IndexRedesigned() {
           setActiveReservation(null);
           toast.error('⏰ Your reservation has expired');
         }}
-      />
+          />
+        )}
+      </AnimatePresence>
       
       {/* NEW: Live Route Drawing on Map */}
       <LiveRouteDrawer
@@ -874,15 +818,17 @@ export default function IndexRedesigned() {
         />
       )}
 
-      {/* Bottom Navigation - Premium Floating Style */}
+      {/* Bottom Navigation - Premium iOS Glass Style */}
       <FloatingBottomNav 
-        onSearchClick={() => {
+        onCenterClick={() => {
+          // Don't open offers sheet if there's an active reservation
+          if (activeReservation) return;
+          
           // Open new discover sheet in discover mode
           if (discoverSheetOpen) {
             setDiscoverSheetOpen(false);
           } else {
             setDiscoverSheetOpen(true);
-            setSheetMode('discover');
             setSelectedPartnerId(null);
           }
         }}

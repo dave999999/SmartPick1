@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, MapPin, Clock, Heart, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { resolveOfferImageUrl } from '@/lib/api';
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
 
 export default function Favorites() {
   const navigate = useNavigate();
@@ -192,7 +192,12 @@ export default function Favorites() {
           </div>
         )}
       </div>
-      <FloatingBottomNav />
+      <FloatingBottomNav 
+        onCenterClick={() => {
+          // Navigate to home and open offers
+          window.location.href = '/';
+        }}
+      />
     </div>
   );
 }

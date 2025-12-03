@@ -1,8 +1,20 @@
 /**
- * ReservationModal - In-page reservation flow
+ * ReservationModalNew - Apple-Grade Premium Offer Details Sheet
  * 
- * Opens as a modal/bottom-sheet on homepage instead of navigating to separate page.
- * After successful reservation, enters Navigation Mode.
+ * DESIGN SPECIFICATIONS:
+ * - Ultra-compact iOS Wallet/Apple Card aesthetic
+ * - Glossy frosted glass cards with subtle gradients
+ * - 35% reduced white space for optimal mobile density
+ * - Premium haptic feedback and micro-animations
+ * - Perfectly responsive for 360px-428px screens
+ * 
+ * VISUAL IDENTITY:
+ * - Apple Wallet card styling
+ * - Apple Maps place card layout
+ * - Apple Music gradient CTA button
+ * - SF Pro Display typography equivalent
+ * 
+ * Opens as a bottom sheet on homepage, enters Navigation Mode after reservation.
  */
 
 import { useState, useEffect } from 'react';
@@ -258,22 +270,22 @@ export default function ReservationModalNew({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-[420px] p-0 gap-0 overflow-hidden bg-white shadow-[0_-10px_30px_rgba(0,0,0,0.05),0_-2px_10px_rgba(0,0,0,0.03)] rounded-t-[32px] border-0 animate-in slide-in-from-bottom-4 duration-300 sm:rounded-t-[32px]">
+        <DialogContent className="max-w-[420px] p-0 gap-0 overflow-hidden bg-[#F8F8F8] shadow-[0_-4px_24px_rgba(0,0,0,0.08),0_-2px_8px_rgba(0,0,0,0.04)] rounded-t-[28px] border-0 animate-in slide-in-from-bottom-4 duration-300 sm:rounded-t-[28px]">
           <DialogTitle className="sr-only">Reserve {offer.title}</DialogTitle>
           
-          {/* Handle / Dragger */}
-          <div className="flex justify-center pt-4 pb-3">
-            <div className="w-10 h-1 bg-gray-300 rounded-full"></div>
+          {/* Apple-style Drag Handle */}
+          <div className="flex justify-center pt-3 pb-2 bg-white/60 backdrop-blur-xl">
+            <div className="w-9 h-1 bg-[#D1D1D6] rounded-full" />
           </div>
           
-          <div className="px-6 pb-8 space-y-6">
-            {/* 1. HEADER AREA - Product Photo + Details */}
-            <div className="flex items-center gap-4">
-              {/* Product Photo */}
+          <div className="px-4 pb-3 space-y-3">
+            {/* 1. COMPACT HEADER - Apple Wallet Style */}
+            <div className="bg-white/95 backdrop-blur-xl rounded-[12px] p-3 flex items-start gap-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              {/* Thumbnail Image */}
               {offer.images && offer.images.length > 0 && (
-                <div className="w-20 h-20 flex-shrink-0 rounded-[18px] overflow-hidden">
+                <div className="w-16 h-16 flex-shrink-0 rounded-[10px] overflow-hidden shadow-sm">
                   <img
-                    src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 160, quality: 80 })}
+                    src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 128, quality: 85 })}
                     alt={offer.title}
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
@@ -281,122 +293,159 @@ export default function ReservationModalNew({
                 </div>
               )}
               
-              {/* Product Details */}
-              <div className="flex-grow">
-                <h1 className="text-xl font-extrabold text-gray-900 leading-snug mb-1">{offer.title}</h1>
-                <p className="text-sm text-gray-500 mb-2">{offer.partner?.business_name}</p>
-                
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-gray-900">{offer.smart_price.toFixed(2)} ₾</span>
-                  <span className="text-xs font-semibold text-green-600">Great pick! ✨</span>
+              {/* Title & Subtext */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-[17px] font-semibold text-[#1B1B1B] leading-tight mb-0.5 tracking-tight line-clamp-1">
+                  {offer.title}
+                </h1>
+                <p className="text-[13px] text-[#888] mb-1.5 line-clamp-1">
+                  {offer.partner?.business_name}
+                </p>
+                <div className="inline-flex items-baseline gap-1.5">
+                  <span className="text-[20px] font-semibold text-[#1B1B1B] tracking-tight">
+                    {offer.smart_price.toFixed(2)} ₾
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* 2. PICKUP & COST SECTION */}
-            <div className="text-sm space-y-3">
-              {/* Pickup Price Row */}
-              <div className="flex justify-between items-center pb-3 border-b border-[#EAEAEA]">
-                <span className="text-gray-600">Pickup price</span>
-                <span className="font-semibold text-gray-900">{totalPrice.toFixed(2)} ₾</span>
+            {/* 2. PRICE CARDS - Frosted Glass Apple Style */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Pickup Price Card */}
+              <div 
+                className="bg-white/65 backdrop-blur-[22px] rounded-[14px] p-3 border border-white/40 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7), rgba(247,247,247,0.7))' }}
+              >
+                <p className="text-[12px] text-[#888] mb-1 font-medium">Pickup price</p>
+                <p className="text-[17px] font-semibold text-[#1B1B1B] tracking-tight">
+                  {totalPrice.toFixed(2)} ₾
+                </p>
               </div>
-              {/* Reservation Cost Row */}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Reservation cost</span>
-                <span className="font-semibold text-orange-500">{totalPoints} SmartPoints</span>
+              
+              {/* Reservation Cost Card */}
+              <div 
+                className="bg-white/65 backdrop-blur-[22px] rounded-[14px] p-3 border border-white/40 shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
+                style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7), rgba(247,247,247,0.7))' }}
+              >
+                <p className="text-[12px] text-[#888] mb-1 font-medium">Reserve with</p>
+                <p className="text-[17px] font-semibold text-[#FF8800] tracking-tight">
+                  {totalPoints} Points
+                </p>
               </div>
             </div>
 
-            {/* 3. BALANCE SECTION */}
-            <div className="bg-[#E8F8ED] rounded-[18px] p-4 flex justify-between items-center">
-              <p className="text-sm font-medium text-gray-800">
-                Your balance: <span className="font-bold">{userPoints}</span> points
+            {/* 3. BALANCE CARD - Apple Wallet Mint Gradient */}
+            <div 
+              className="rounded-[14px] p-3 flex justify-between items-center shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-[#D9FCEB]/60"
+              style={{ background: 'linear-gradient(135deg, #D9FCEB 0%, #ffffff 100%)' }}
+            >
+              <p className="text-[14px] font-medium text-[#1B1B1B]">
+                Balance: <span className="font-semibold">{userPoints}</span> pts
               </p>
-              <Button
+              <button
                 onClick={() => setShowBuyPointsModal(true)}
-                className="bg-green-500 hover:bg-green-600 text-white text-xs font-bold py-1 px-3 rounded-full h-auto transition-all"
+                className="bg-[#21C58F] hover:bg-[#1FB581] text-white text-[13px] font-semibold px-3 py-1.5 rounded-full h-auto transition-all active:scale-95 shadow-sm"
               >
                 Add Points
-              </Button>
+              </button>
             </div>
 
-            {/* 4. QUANTITY SELECTOR */}
-            <div className="flex justify-between items-center w-full bg-white rounded-[18px] border border-gray-200 shadow-sm p-3">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
+            {/* 4. QUANTITY SELECTOR - iOS Compact Stepper */}
+            <div className="flex justify-between items-center bg-white/95 backdrop-blur-xl rounded-[14px] px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+              <div className="flex items-center gap-3">
+                <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
-                  className="w-8 h-8 rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 transition-all p-0"
+                  className="w-7 h-7 rounded-full border border-[#E2E2E2] text-[#555] hover:bg-[#F8F8F8] disabled:opacity-30 disabled:hover:bg-transparent transition-all active:scale-90 flex items-center justify-center"
                 >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <span className="text-lg font-bold text-gray-900 w-6 text-center">{quantity}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                  <Minus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </button>
+                <span className="text-[17px] font-semibold text-[#1B1B1B] w-5 text-center">
+                  {quantity}
+                </span>
+                <button
                   onClick={() => setQuantity(Math.min(maxQuantity, quantity + 1))}
                   disabled={quantity >= maxQuantity}
-                  className="w-8 h-8 rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-40 transition-all p-0"
+                  className="w-7 h-7 rounded-full bg-[#FF8800] text-white hover:bg-[#E86F00] disabled:opacity-30 disabled:bg-[#EAEAEA] transition-all active:scale-90 flex items-center justify-center shadow-sm"
                 >
-                  <Plus className="w-4 h-4" />
-                </Button>
+                  <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+                </button>
               </div>
-              <span className="text-xs font-medium text-green-600">
-                MAX {maxQuantity} — {offer.quantity_available} available
+              <span className="text-[11px] font-medium text-[#21C58F]">
+                Max {maxQuantity} • {offer.quantity_available} left
               </span>
             </div>
 
-            {/* 5. PICKUP TIME + LOCATION */}
-            <div className="space-y-4 p-4 bg-white rounded-[18px] border border-gray-200 shadow-sm">
+            {/* 5. PICKUP INFO - Apple Maps Place Card Style */}
+            <div 
+              className="rounded-[14px] p-3 space-y-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+              style={{ background: 'linear-gradient(135deg, #ffffff, #f9f9f9)' }}
+            >
               {/* Pickup Time */}
               {pickupStart && pickupEnd && (
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Pickup time: <span className="font-semibold text-gray-900">{formatTime(pickupStart)} – {formatTime(pickupEnd)}</span>
-                  </span>
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-[#FF8800] flex-shrink-0" strokeWidth={2.5} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-[#888] font-medium uppercase tracking-wide mb-0.5">
+                      Pickup window
+                    </p>
+                    <p className="text-[14px] font-semibold text-[#1B1B1B] tracking-tight">
+                      {formatTime(pickupStart)} – {formatTime(pickupEnd)}
+                    </p>
+                  </div>
                 </div>
+              )}
+              
+              {/* Divider */}
+              {pickupStart && pickupEnd && partnerAddress && (
+                <div className="h-px bg-[#EAEAEA]" />
               )}
               
               {/* Address */}
               {partnerAddress && (
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                  <span className="text-sm font-medium text-gray-700">
-                    Address: <span className="font-semibold text-gray-900">{partnerAddress}</span>
-                  </span>
+                <div className="flex items-center gap-2.5">
+                  <MapPin className="w-4 h-4 text-[#FF8800] flex-shrink-0" strokeWidth={2.5} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-[#888] font-medium uppercase tracking-wide mb-0.5">
+                      Location
+                    </p>
+                    <p className="text-[14px] font-semibold text-[#1B1B1B] leading-tight line-clamp-2">
+                      {partnerAddress}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* 6. DESCRIPTION TEXT */}
-            <div className="mb-6">
-              <p className="text-sm text-gray-500 text-center">
-                We'll hold this discount for you. You'll only pay the pickup price.
-              </p>
-            </div>
-
-            {/* 7. MAIN CTA BUTTON */}
-            <Button
-              className="w-full py-4 text-lg font-bold text-white bg-gradient-to-r from-[#FF8A00] to-[#FF6A00] hover:opacity-90 rounded-[28px] shadow-lg shadow-orange-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-4 focus:ring-orange-500/50"
+            {/* 6. HELPER TEXT */}
+            <p className="text-[12px] text-[#B1B1B1] text-center px-2 leading-relaxed">
+              Reserve now, pay on pickup. Your discount is guaranteed.
+            </p>
+          </div>
+          
+          {/* 7. FLOATING FOOTER CTA - Apple Music Gradient Style */}
+          <div className="sticky bottom-0 bg-gradient-to-t from-[#F8F8F8] via-[#F8F8F8] to-transparent pt-2 pb-3 px-4">
+            <button
               onClick={handleReserve}
               disabled={isReserving || offer.quantity_available === 0 || !isOnline || userPoints < totalPoints}
+              className="w-full h-[52px] rounded-full text-[17px] font-semibold text-white bg-gradient-to-r from-[#FF8800] to-[#E86F00] hover:opacity-90 shadow-[0_6px_22px_rgba(255,136,0,0.25),inset_0_1px_0_rgba(255,255,255,0.2)] transition-all duration-150 active:scale-[0.96] disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none"
+              style={{ 
+                boxShadow: isReserving ? 'none' : '0 6px 22px rgba(255,136,0,0.25), inset 0 1px 0 rgba(255,255,255,0.2)'
+              }}
             >
               {isReserving ? (
                 <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Reserving...
                 </span>
               ) : (
                 `Reserve for ${totalPoints} SmartPoints`
               )}
-            </Button>
+            </button>
             
             {userPoints < totalPoints && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center mt-2">
-                <p className="text-xs text-red-600 font-semibold">
+              <div className="mt-2 bg-[#FFF0F0] border border-[#FFD7D7] rounded-[12px] px-3 py-2 text-center">
+                <p className="text-[12px] text-[#FF3B30] font-semibold">
                   Need {totalPoints - userPoints} more point{totalPoints - userPoints > 1 ? 's' : ''} to reserve
                 </p>
               </div>

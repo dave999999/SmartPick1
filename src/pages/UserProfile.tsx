@@ -43,7 +43,7 @@ import { PenaltyWarningDialog } from '@/components/PenaltyWarningDialog';
 import { OnboardingDialog } from '@/components/OnboardingDialog';
 import { supabase } from '@/lib/supabase';
 // motion import removed (unused in this file after refactor)
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
 
 function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
@@ -1481,7 +1481,12 @@ export default function UserProfile() {
           </div>
         </div>
       )}
-      <FloatingBottomNav />
+      <FloatingBottomNav 
+        onCenterClick={() => {
+          // Navigate to home
+          window.location.href = '/';
+        }}
+      />
     </div>
   );
 }

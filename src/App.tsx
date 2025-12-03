@@ -39,7 +39,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const NotificationsDebug = lazy(() => import('./pages/NotificationsDebug'));
 const SentryTest = lazy(() => import('./pages/SentryTest'));
 const MaintenanceMode = lazy(() => import('./pages/MaintenanceMode'));
-const UserProfile = lazy(() => import('./pages/UserProfile'));
+const UserProfile = lazy(() => import('./pages/UserProfileApple'));
 const HapticTest = lazy(() => import('./pages/HapticTest'));
 const AccessibilityTest = lazy(() => import('./pages/AccessibilityTest'));
 const Terms = lazy(() => import('./pages/Terms'));
@@ -50,6 +50,8 @@ const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => 
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const VerifyRequested = lazy(() => import('./pages/VerifyRequested').then(module => ({ default: module.VerifyRequested })));
 const FloatingBottomNavDemo = lazy(() => import('./pages/FloatingBottomNavDemo'));
+const ActiveReservationV2Demo = lazy(() => import('./pages/ActiveReservationV2Demo'));
+const DesignReference = lazy(() => import('./pages/DesignReference'));
 
 // (Removed unused loadLeafletCSS helper)
 
@@ -272,7 +274,12 @@ const AppContent = () => {
   }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       {/* Global quick actions menu (top-right) */}
       <TopRightMenu />
       <Suspense fallback={<PageLoader />}>
@@ -322,6 +329,8 @@ const AppContent = () => {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-requested" element={<VerifyRequested />} />
           <Route path="/demo/bottom-nav" element={<FloatingBottomNavDemo />} />
+          <Route path="/demo/reservation-v2" element={<ActiveReservationV2Demo />} />
+          <Route path="/design-reference" element={<DesignReference />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

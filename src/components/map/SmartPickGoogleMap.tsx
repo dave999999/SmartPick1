@@ -29,6 +29,7 @@ interface SmartPickGoogleMapProps {
   showUserLocation?: boolean;
   selectedOffer?: Offer | null;
   highlightedOfferId?: string | null;
+  hideMarkers?: boolean; // Hide all offer markers (e.g., during navigation)
 }
 
 interface GroupedLocation {
@@ -147,6 +148,7 @@ export default function SmartPickGoogleMap({
   onLocationChange,
   selectedOffer,
   highlightedOfferId,
+  hideMarkers = false,
 }: SmartPickGoogleMapProps) {
   const { isLoaded, google, setGoogleMap } = useGoogleMaps();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -201,22 +203,7 @@ export default function SmartPickGoogleMap({
       const map = new google.maps.Map(mapContainerRef.current, {
         center: { lat: 41.7151, lng: 44.8271 }, // Tbilisi
         zoom: 13,
-        mapId: 'SMARTPICK_MAP', // Required for AdvancedMarkerElement
-        styles: [
-          {
-            featureType: 'poi',
-            stylers: [{ visibility: 'off' }]
-          },
-          {
-            featureType: 'poi.business',
-            stylers: [{ visibility: 'off' }]
-          },
-          {
-            featureType: 'transit',
-            elementType: 'labels.icon',
-            stylers: [{ visibility: 'off' }]
-          }
-        ],
+        mapId: '923c0e6030ce547166b44338', // Map ID with custom style (no POI icons)
         disableDefaultUI: true,
         zoomControl: false,
         mapTypeControl: false,
@@ -262,6 +249,11 @@ export default function SmartPickGoogleMap({
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
+
+    // If markers should be hidden (e.g., during navigation), don't render them
+    if (hideMarkers) {
+      return;
+    }
 
     // Create info window if not exists
     if (!infoWindowRef.current) {
@@ -359,7 +351,7 @@ export default function SmartPickGoogleMap({
     });
 
     logger.log(`Added ${markersRef.current.length} markers to Google Map`);
-  }, [groupedLocations, google, userLocation, onMarkerClick]);
+  }, [groupedLocations, google, userLocation, onMarkerClick, hideMarkers]);
 
   // Update user location marker
   useEffect(() => {

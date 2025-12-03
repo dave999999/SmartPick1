@@ -127,9 +127,7 @@ function useCountdown(expiresAt: string | null) {
   const formatted = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   
   const isExpired = remainingMs !== null && remainingMs <= 0;
-  
-  // Calculate progress based on 60-minute reservation window
-  const progressPercent = remainingMs !== null ? Math.min(100, (remainingMs / (60 * 60 * 1000)) * 100) : 0;
+  const progressPercent = remainingMs !== null ? Math.min(100, (remainingMs / (30 * 60 * 1000)) * 100) : 0;
 
   return { formatted, isExpired, progressPercent, remainingMs: ms, minutes };
 }
@@ -187,19 +185,6 @@ function FloatingQRModule({
       animate={{ y: 0, opacity: 1, scale: 1 }}
       transition={{ type: 'spring', damping: 26, stiffness: 350, delay: 0.15 }}
     >
-      {/* Colored pulse ring */}
-      <div 
-        className="absolute"
-        style={{
-          width: size + 16,
-          height: size + 16,
-          borderRadius: '50%',
-          border: `3px solid ${ringColor}`,
-          opacity: 0.4,
-          animation: 'color-pulse 2s ease-in-out infinite',
-        }}
-      />
-
       {/* Floating Shadow Container */}
       <div 
         className="relative flex items-center justify-center"
@@ -280,7 +265,7 @@ function FloatingQRModule({
             />
           )}
           
-          {/* 24 Micro-dots (Soft Glow) */}
+          {/* 24 Micro-dots (More Premium) */}
           {Array.from({ length: 24 }).map((_, i) => {
             const angle = (i * 360) / 24 - 90;
             const dotX = center + radius * Math.cos((angle * Math.PI) / 180);
@@ -289,31 +274,23 @@ function FloatingQRModule({
             
             return (
               <g key={i}>
-                {/* Soft glow effect for active dots */}
-                {isActive && (
+                {isActive && isGlossy && (
                   <circle 
                     cx={dotX} 
                     cy={dotY} 
-                    r={2.5} 
+                    r={3} 
                     fill={ringColor} 
-                    opacity="0.15"
-                    className="transition-opacity duration-1000"
-                    style={{
-                      filter: `blur(1.5px)`,
-                      animation: 'subtle-glow 3s ease-in-out infinite',
-                    }}
+                    opacity="0.3" 
+                    className="animate-pulse" 
+                    style={{ animationDuration: '2s' }} 
                   />
                 )}
-                {/* Main dot */}
                 <circle 
                   cx={dotX} 
                   cy={dotY} 
-                  r={1.5} 
-                  fill={isActive ? ringColor : 'rgba(255,255,255,0.3)'}
-                  className="transition-all duration-700"
-                  style={{
-                    opacity: isActive ? 0.9 : 0.4,
-                  }}
+                  r={1.8} 
+                  fill={isActive ? ringColor : 'rgba(255,255,255,0.35)'}
+                  className="transition-all duration-500"
                 />
               </g>
             );
@@ -501,7 +478,7 @@ export function ActiveReservationCard({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
         transition={{ type: 'spring', damping: 26, stiffness: 350 }}
-        className="fixed bottom-0 left-0 right-0 z-[60] overflow-visible pointer-events-auto"
+        className="fixed bottom-0 left-0 right-0 z-40 overflow-visible pointer-events-auto"
         style={{
           maxHeight: '40vh',
           background: isGlossy 

@@ -74,113 +74,148 @@ export function ReferralCard({ userId, totalReferrals }: ReferralCardProps) {
   }
 
   return (
-    <Card className="bg-transparent border-none shadow-none">
-      <CardHeader className="px-4 pb-3">
-        <CardTitle className="flex items-center gap-2 text-white">
-          <Users className="w-5 h-5 text-purple-400" />
-          Invite Friends
-        </CardTitle>
-        <CardDescription className="text-gray-400">Share SmartPick and earn rewards together!</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Rewards Info */}
-        <div className="p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl border-2 border-purple-500/30">
-          <div className="flex items-center gap-3 mb-3">
-            <Gift className="w-8 h-8 text-purple-400" />
-            <div>
-              <h4 className="font-bold text-white">Referral Rewards</h4>
-              <p className="text-xs text-gray-300">Both you and your friend get bonuses!</p>
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-[#F8F9FB] to-white pb-24">
+      {/* Apple-Style Header */}
+      <div className="px-5 pt-6 pb-4">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#007AFF] to-[#5AC8FA] flex items-center justify-center shadow-sm">
+            <Users size={20} strokeWidth={2.5} className="text-white" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 bg-black/20 rounded-lg border border-purple-400/30">
-              <div className="text-2xl font-black text-purple-400 mb-1">+50</div>
-              <div className="text-xs text-gray-400">Points for you</div>
-            </div>
-            <div className="p-3 bg-black/20 rounded-lg border border-purple-400/30">
-              <div className="text-2xl font-black text-pink-400 mb-1">+50</div>
-              <div className="text-xs text-gray-400">Points for friend</div>
-            </div>
+          <div>
+            <h1 className="text-[22px] font-semibold text-[#1A1A1A] leading-tight">
+              Refer Friends
+            </h1>
+            <p className="text-[13px] text-[#6F6F6F] leading-tight">
+              Share SmartPick and earn together
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Your Referral Code */}
-        <div>
-          <label className="text-sm font-semibold text-gray-300 mb-2 block">Your Referral Code</label>
-          <div className="flex gap-2">
-            <Input
-              value={referralCode}
-              readOnly
-              className="font-mono text-lg font-bold text-center bg-teal-500/20 border-teal-500/50 text-teal-300"
-            />
-            <Button
-              onClick={handleCopy}
-              variant="outline"
-              size="icon"
-              className={`w-12 border-purple-400/50 hover:bg-purple-500/20 ${copied ? 'bg-purple-500/20 border-purple-500' : ''}`}
-            >
-              {copied ? (
-                <Check className="w-5 h-5 text-purple-400" />
-              ) : (
-                <Copy className="w-5 h-5 text-purple-400" />
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-gray-400 mt-2 text-center">
-            Share this code with friends or use the link below
-          </p>
-        </div>
+      <div className="px-5 space-y-4">
+        {/* Hero Reward Card - Frosted Glass */}
+        <Card className="bg-gradient-to-br from-[#007AFF] to-[#5AC8FA] rounded-[18px] shadow-[0_4px_16px_rgba(0,122,255,0.2)] border-0 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+          <CardContent className="p-6 relative">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                <Gift size={24} strokeWidth={2} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-[17px] font-semibold text-white leading-tight">
+                  Referral Rewards
+                </h3>
+                <p className="text-[13px] text-white/80 leading-tight">
+                  Win-win for both of you
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-white/15 backdrop-blur-sm rounded-[14px] p-4 text-center">
+                <div className="text-[32px] font-bold text-white leading-none mb-1">+50</div>
+                <div className="text-[13px] text-white/80 font-medium">Points for you</div>
+              </div>
+              <div className="bg-white/15 backdrop-blur-sm rounded-[14px] p-4 text-center">
+                <div className="text-[32px] font-bold text-white leading-none mb-1">+50</div>
+                <div className="text-[13px] text-white/80 font-medium">For your friend</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Referral Code Card */}
+        <Card className="bg-gradient-to-br from-[#34C759]/10 to-[#30D158]/10 rounded-[18px] border border-[#34C759]/20 shadow-none">
+          <CardContent className="p-5">
+            <label className="text-[13px] font-medium text-[#6F6F6F] mb-3 block">
+              Your Referral Code
+            </label>
+            <div className="flex gap-3">
+              <Input
+                value={referralCode}
+                readOnly
+                className="font-mono text-[20px] font-bold text-center bg-white border-[rgba(0,0,0,0.08)] text-[#1A1A1A] h-[52px] rounded-[14px] focus-visible:ring-[#34C759]"
+              />
+              <Button
+                onClick={handleCopy}
+                variant="outline"
+                size="icon"
+                className={`w-[52px] h-[52px] rounded-[14px] border-[rgba(0,0,0,0.08)] transition-all ${
+                  copied 
+                    ? 'bg-[#34C759] border-[#34C759] text-white' 
+                    : 'bg-white hover:bg-[#F8F9FB]'
+                }`}
+              >
+                {copied ? (
+                  <Check size={20} strokeWidth={2.5} />
+                ) : (
+                  <Copy size={20} strokeWidth={2} className="text-[#1A1A1A]" />
+                )}
+              </Button>
+            </div>
+            <p className="text-[13px] text-[#6F6F6F] mt-3 text-center">
+              Share this code or use the button below
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Share Button */}
         <Button
           onClick={handleShare}
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-6"
+          className="w-full h-[52px] bg-gradient-to-r from-[#007AFF] to-[#5AC8FA] hover:shadow-[0_8px_24px_rgba(0,122,255,0.3)] text-white font-semibold text-[15px] rounded-[14px] shadow-[0_2px_8px_rgba(0,122,255,0.2)] transition-all"
         >
-          <Share2 className="w-5 h-5 mr-2" />
+          <Share2 size={20} strokeWidth={2.5} className="mr-2" />
           Share Referral Link
         </Button>
 
-        {/* Stats */}
-        <div className="flex items-center justify-between p-4 bg-black/20 rounded-lg border-2 border-purple-400/30">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center">
-              <Users className="w-6 h-6 text-purple-400" />
+        {/* Stats Card */}
+        <Card className="bg-white rounded-[18px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[rgba(0,0,0,0.06)]">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-[#007AFF]/10 flex items-center justify-center">
+                  <Users size={24} strokeWidth={2} className="text-[#007AFF]" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-medium text-[#1A1A1A]">Friends Referred</p>
+                  <p className="text-[13px] text-[#6F6F6F]">Lifetime total</p>
+                </div>
+              </div>
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200 }}
+                className="text-[42px] font-bold text-[#007AFF] leading-none"
+              >
+                {totalReferrals}
+              </motion.div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-400">Friends Referred</p>
-              <p className="text-xs text-gray-500">Lifetime total</p>
-            </div>
-          </div>
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
-            className="text-4xl font-black text-purple-400"
-          >
-            {totalReferrals}
-          </motion.div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* How it Works */}
-        <div className="space-y-3">
-          <p className="text-xs font-semibold text-gray-400">How it works:</p>
-          <div className="space-y-2">
-            {[
-              { step: '1', text: 'Share your referral code with friends' },
-              { step: '2', text: 'Friend signs up using your code' },
-              { step: '3', text: 'Both get +50 SmartPoints instantly!' }
-            ].map((item) => (
-              <div key={item.step} className="flex items-start gap-3 text-sm">
-                <div className="w-6 h-6 rounded-full bg-purple-500/30 flex items-center justify-center flex-shrink-0 font-bold text-purple-300 text-xs">
-                  {item.step}
+        <Card className="bg-white rounded-[18px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-[rgba(0,0,0,0.06)]">
+          <CardContent className="p-5">
+            <h3 className="text-[17px] font-semibold text-[#1A1A1A] mb-4">
+              How It Works
+            </h3>
+            <div className="space-y-3">
+              {[
+                { step: '1', text: 'Share your referral code with friends' },
+                { step: '2', text: 'Friend signs up using your code' },
+                { step: '3', text: 'Both get +50 SmartPoints instantly!' }
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#007AFF]/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[15px] font-semibold text-[#007AFF]">{item.step}</span>
+                  </div>
+                  <span className="text-[15px] text-[#1A1A1A] pt-1">{item.text}</span>
                 </div>
-                <span className="text-gray-300">{item.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
 
