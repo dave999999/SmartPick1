@@ -73,7 +73,14 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[90vh] p-0 border-none bg-[#FAFAFA] rounded-t-[28px] overflow-hidden z-40"
+        className="h-[82vh] max-h-[720px] p-0 border-none bg-[#FAFAFA] rounded-t-[24px] overflow-hidden z-40"
+        style={{
+          left: '8px',
+          right: '8px',
+          bottom: '8px',
+          width: 'calc(100% - 16px)',
+          maxWidth: '100%',
+        }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
           Discover Deals and Offers
@@ -122,13 +129,13 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
               <>
                 {/* Featured Offer */}
                 {featuredOffer && (
-                  <div className="px-4 pt-4 pb-3">
-                    <h2 className="text-[18px] font-semibold text-gray-900 mb-3">
+                  <div className="px-4 pt-3 pb-2">
+                    <h2 className="text-[17px] font-semibold text-gray-900 mb-2">
                       Today's Special Offer
                     </h2>
                     <HeroOfferCard
                       title={featuredOffer.title}
-                      imageUrl={featuredOffer.images?.[0] || '/images/placeholder-food.jpg'}
+                      imageUrl={featuredOffer.images?.[0] || '/images/Map.jpg'}
                       priceNow={`₾${Math.round(featuredOffer.smart_price).toLocaleString()}`}
                       priceOld={featuredOffer.original_price ? `₾${Math.round(featuredOffer.original_price).toLocaleString()}` : undefined}
                       discountLabel={getDiscount(featuredOffer) ? `${getDiscount(featuredOffer)}% off` : undefined}
@@ -141,9 +148,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
 
                 {/* Popular Now - Horizontal Scroll */}
                 {popularOffers.length > 0 && (
-                  <div className="pb-3">
-                    <div className="flex items-center justify-between px-4 mb-3">
-                      <h2 className="text-[18px] font-semibold text-gray-900">
+                  <div className="pb-2">
+                    <div className="flex items-center justify-between px-4 mb-2">
+                      <h2 className="text-[17px] font-semibold text-gray-900">
                         Popular Now
                       </h2>
                       <button className="text-[13px] font-medium text-[#FF7A1A]">
@@ -156,7 +163,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
                           <div key={offer.id} className="flex-shrink-0 w-[110px]">
                             <OfferListCard
                               title={offer.title}
-                              imageUrl={offer.images?.[0] || '/images/placeholder-food.jpg'}
+                              imageUrl={offer.images?.[0] || '/images/Map.jpg'}
                               priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                               priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
                               onClick={() => onOfferSelect(offer)}
@@ -172,9 +179,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
 
             {/* Featured Offers Grid */}
             {filteredOffers.length > 0 && (
-              <div className="px-4 pt-4 pb-24">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-[18px] font-semibold text-gray-900">
+              <div className="px-4 pt-3 pb-20">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-[17px] font-semibold text-gray-900">
                     Featured Offers
                   </h2>
                 </div>
@@ -183,7 +190,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
                     <OfferListCard
                       key={offer.id}
                       title={offer.title}
-                      imageUrl={offer.images?.[0] || '/images/placeholder-food.jpg'}
+                      imageUrl={offer.images?.[0] || '/images/Map.jpg'}
                       priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                       priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
                       onClick={() => onOfferSelect(offer)}

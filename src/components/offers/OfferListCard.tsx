@@ -61,6 +61,9 @@ export function OfferListCard({
           alt={title}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg';
+          }}
         />
 
         {/* Price Tag - Bottom Left Corner */}

@@ -63,7 +63,11 @@ export function HeroOfferCard({
           <img
             src={imageUrl}
             alt={title}
+            loading="lazy"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg';
+            }}
           />
           
           {/* Favorite Icon Overlay */}
