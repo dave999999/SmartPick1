@@ -131,8 +131,8 @@ export default defineConfig({
             return 'supabase-vendor';
           }
           
-          // Leaflet - map library (152 KB!)
-          if (id.includes('leaflet')) {
+          // Leaflet - map library (152 KB!) - ONLY pure leaflet, not react-leaflet
+          if (id.includes('leaflet') && !id.includes('react-leaflet')) {
             return 'leaflet-vendor';
           }
           
