@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, Reservation, Partner } from '@/lib/types';
-import { offerDataSchema, validateData, getValidationErrorMessage } from '@/lib/schemas';
+import { extractErrorMessage } from '@/lib/utils/errors';
+import { calculatePickupEndTime, is24HourBusiness } from '@/lib/utils/businessHours';
 import {
   getPartnerByUserId,
   getPartnerById,
@@ -10,11 +11,9 @@ import {
   getPartnerStats,
   updateOffer,
   deleteOffer,
-  validateQRCode,
   markAsPickedUp,
   getCurrentUser,
   signOut,
-  resolveOfferImageUrl,
   getPartnerPoints,
   purchaseOfferSlot,
   partnerConfirmNoShow,
@@ -26,7 +25,6 @@ import { approveForgivenessRequest, denyForgivenessRequest } from '@/lib/api/par
 import { supabase } from '@/lib/supabase';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
-import ImageLibraryModal from '@/components/ImageLibraryModal';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
 import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 import { Button } from '@/components/ui/button';
@@ -57,18 +55,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Plus, CheckCircle, QrCode, LogOut, Lock, User, Home, Wallet, Camera, Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
+import { Plus, QrCode, LogOut, Lock, User, Home, Wallet, Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TelegramConnect } from '@/components/TelegramConnect';
-import QRScanner from '@/components/QRScanner';
 import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
 import EnhancedStatsCards from '@/components/partner/EnhancedStatsCards';
 import QuickActions from '@/components/partner/QuickActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
 import PenaltyForgivenessTab from '@/components/partner/PenaltyForgivenessTab';
-import QRScanFeedback from '@/components/partner/QRScanFeedback';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { useI18n } from '@/lib/i18n';
 import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
@@ -79,36 +74,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
 import PartnerOnboardingTour from '@/components/partner/PartnerOnboardingTour';
 import { PartnerDashboardRedesigned } from '@/components/partner/PartnerDashboardRedesigned';
+import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
+import { PurchaseSlotDialog } from '@/components/partner/PurchaseSlotDialog';
+import { EditOfferDialog } from '@/components/partner/EditOfferDialog';
+import { useOfferActions } from '@/hooks/useOfferActions';
+import { useReservationActions } from '@/hooks/useReservationActions';
 // (Language switch removed from this page — language control moved to Index header)
 
-const extractErrorMessage = (error: unknown, fallback = 'Unknown error') => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (typeof error === 'object' && error !== null) {
-    const baseMessage = (error as { message?: string }).message;
-    if (baseMessage) {
-      return baseMessage;
-    }
-
-    if ('error' in error && typeof (error as { error?: { message?: string } }).error === 'object') {
-      const nested = (error as { error?: { message?: string } }).error?.message;
-      if (nested) {
-        return nested;
-      }
-    }
-  }
-
-  return fallback;
-};
-
 export default function PartnerDashboard() {
-  logger.log('🚨🚨🚨 PARTNER DASHBOARD LOADED - Debug Build 20251109204500 🚨🚨🚨');
   const { t, language, setLanguage } = useI18n();
   const [partner, setPartner] = useState<Partner | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -126,21 +99,18 @@ export default function PartnerDashboard() {
   const [qrScannerOpen, setQrScannerOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [activeView, setActiveView] = useState('slots');
-  const [qrInput, setQrInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-  const [isProcessingQR, setIsProcessingQR] = useState(false);
-  const isProcessingQRRef = useRef(false); // Use ref for immediate synchronous check
-  const [imageFiles, setImageFiles] = useState<(string | File)[]>([]);
-  const [selectedLibraryImage, setSelectedLibraryImage] = useState<string | null>(null);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({}); 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [lastQrResult, setLastQrResult] = useState<null | 'success' | 'error'>(null);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
   // Auto-expiration for 24h businesses: 12 hours by spec
   const [autoExpire6h, setAutoExpire6h] = useState(true);
   const navigate = useNavigate();
+
+  // Action hooks
+  const offerActions = useOfferActions(partner, loadPartnerData);
+  const reservationActions = useReservationActions(loadPartnerData);
   // Admin impersonation support: if localStorage has impersonate_partner_id we load that partner instead
   const impersonatePartnerId = typeof window !== 'undefined' ? localStorage.getItem('impersonate_partner_id') : null;
   const isImpersonating = !!impersonatePartnerId;
@@ -150,30 +120,6 @@ export default function PartnerDashboard() {
   
   // Check if partner operates 24 hours
   const is24HourBusiness = partner?.open_24h === true;
-
-  // Get business closing time as Date
-  const getClosingTime = (): Date | null => {
-    // First check if partner operates 24/7
-    if (partner?.open_24h) {
-      return null; // No closing time for 24/7 businesses
-    }
-
-    // Use partner's closing_time field
-    if (partner?.closing_time) {
-      const [hours, minutes] = partner.closing_time.split(':').map(Number);
-      const closing = new Date();
-      closing.setHours(hours, minutes, 0, 0);
-
-      // If closing time is in the past today, it means tomorrow
-      if (closing < new Date()) {
-        closing.setDate(closing.getDate() + 1);
-      }
-
-      return closing;
-    }
-
-    return null;
-  };
 
   useEffect(() => {
     loadPartnerData();
@@ -194,8 +140,6 @@ export default function PartnerDashboard() {
           filter: `partner_id=eq.${partner.id}`,
         },
         (payload) => {
-          logger.log('🔴 New reservation created:', payload.new);
-          
           // Add new reservation to the list if it's active
           const newReservation = payload.new as Reservation;
           if (newReservation.status === 'ACTIVE') {
@@ -224,8 +168,6 @@ export default function PartnerDashboard() {
           filter: `partner_id=eq.${partner.id}`,
         },
         (payload) => {
-          logger.log('🟡 Reservation updated:', payload.new);
-          
           const updatedReservation = payload.new as Reservation;
           
           // Update in active reservations list
@@ -259,8 +201,7 @@ export default function PartnerDashboard() {
     };
   }, [partner?.id]);
 
-  // Pickup times are set automatically on submit; no UI auto-fill needed
-  useEffect(() => {}, [isCreateDialogOpen, partner]);
+
 
   const loadPartnerData = async () => {
     try {
@@ -436,33 +377,7 @@ export default function PartnerDashboard() {
 
       const now = new Date();
       const pickupStart: Date = now;
-      let pickupEnd: Date = now;
-
-      logger.log('Creating offer with business settings:', {
-        is24HourBusiness,
-        autoExpire6h: shouldAutoExpire,
-        opening_time: partner?.opening_time,
-        closing_time: partner?.closing_time,
-        open_24h: partner?.open_24h,
-      });
-
-      if (is24HourBusiness && shouldAutoExpire) {
-        // 24-hour business: live next 12 hours
-        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
-        logger.log('24/7 business: Offer will be live for 12 hours until', pickupEnd);
-      } else {
-        const closing = getClosingTime();
-        logger.log('Regular business closing time:', closing);
-        if (closing && closing > now) {
-          // Live until closing time today
-          pickupEnd = closing;
-          logger.log('Offer will be live until closing time:', pickupEnd);
-        } else {
-          // Fallback if closing unknown/past: default to +2 hours
-          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-          logger.log('Using fallback: Offer will be live for 2 hours until', pickupEnd);
-        }
-      }
+      const pickupEnd: Date = calculatePickupEndTime(partner, shouldAutoExpire);
 
       // Images are library URLs only (custom uploads removed)
       // Prefer imageFiles, but fall back to selectedLibraryImage if needed
@@ -481,11 +396,7 @@ export default function PartnerDashboard() {
           setSelectedLibraryImage(formImages[0]);
         }
       }
-      logger.log('CreateOffer image selection debug:', {
-        imageFiles,
-        selectedLibraryImage,
-        processedImages
-      });
+
 
       // Ensure at least one image is selected
       if (processedImages.length === 0) {
@@ -510,21 +421,9 @@ export default function PartnerDashboard() {
       };
 
       if (partner) {
-        // Log partner info for debugging
-        logger.log('Partner info:', {
-          id: partner.id,
-          user_id: partner.user_id,
-          status: partner.status,
-          business_name: partner.business_name
-        });
-
-        // Check current auth user
+        // Verify partner authentication
         const { data: { user: currentUser } } = await supabase.auth.getUser();
-        logger.log('Current auth user:', {
-          id: currentUser?.id,
-          email: currentUser?.email
-        });
-
+        
         // Verify partner_id matches user_id
         if (partner.user_id !== currentUser?.id) {
           logger.error('MISMATCH: Partner user_id does not match current user!');
@@ -532,9 +431,7 @@ export default function PartnerDashboard() {
           return;
         }
 
-  // Determine status
-        // Create offer with only columns that exist in the table
-        // Note: scheduled_publish_at and auto_expire_in don't exist in offers table
+        // Create offer with validated data
         const insertData = {
           partner_id: partner.id,
           title: offerData.title,
@@ -550,8 +447,6 @@ export default function PartnerDashboard() {
           status: 'ACTIVE',
           expires_at: offerData.pickup_window.end.toISOString(),
         };
-
-        logger.log('Creating offer with data:', insertData);
 
         const { data, error } = await supabase
           .from('offers')
@@ -569,7 +464,6 @@ export default function PartnerDashboard() {
           throw new Error(`Failed to create offer: ${error.message}`);
         }
 
-          logger.log('Offer created successfully:', data);
         toast.success(t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
         setImageFiles([]);
@@ -593,95 +487,6 @@ export default function PartnerDashboard() {
     localStorage.removeItem('impersonate_partner_id');
     toast.success('Exited impersonation');
     navigate('/admin');
-  };
-
-  const handleEditOffer = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!editingOffer) return;
-
-    const formData = new FormData(e.currentTarget);
-
-    try {
-      // Validate form data with Zod schema for security
-      const rawData = {
-        title: (formData.get('title') as string)?.trim(),
-        description: (formData.get('description') as string)?.trim(),
-        original_price: parseFloat(formData.get('original_price') as string),
-        smart_price: parseFloat(formData.get('smart_price') as string),
-        quantity: parseInt(formData.get('quantity') as string),
-        auto_expire_6h: autoExpire6h,
-      };
-
-      const validationResult = validateData(offerDataSchema, rawData);
-      
-      if (!validationResult.success) {
-        const errorMsg = getValidationErrorMessage(validationResult.errors);
-        toast.error(errorMsg);
-        return;
-      }
-
-      const { title, description, original_price: originalPrice, smart_price: smartPrice, quantity } = validationResult.data;
-
-      // Images are library URLs only (custom uploads removed)
-      let processedImages = imageFiles.filter((img): img is string => typeof img === 'string');
-      if (processedImages.length === 0 && selectedLibraryImage) {
-        processedImages = [selectedLibraryImage];
-      }
-      logger.log('EditOffer image selection debug:', {
-        imageFiles,
-        selectedLibraryImage,
-        processedImages
-      });
-
-      // Use processed images if new ones were selected, otherwise keep existing
-      const imageUrls = (processedImages.length > 0)
-        ? processedImages
-        : (editingOffer.images || []);
-
-      // Compute pickup times automatically based on business hours (same logic as create)
-      const now = new Date();
-      const pickupStart: Date = now;
-      let pickupEnd: Date = now;
-
-      if (is24HourBusiness && autoExpire6h) {
-        // 24-hour business: live next 12 hours
-        pickupEnd = new Date(now.getTime() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000);
-      } else {
-        const closing = getClosingTime();
-        if (closing && closing > now) {
-          // Live until closing time today
-          pickupEnd = closing;
-        } else {
-          // Fallback if closing unknown/past: default to +2 hours
-          pickupEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-        }
-      }
-
-      const updates = {
-        title: formData.get('title') as string,
-        description: formData.get('description') as string,
-        category: partner?.business_type || editingOffer.category,
-        images: imageUrls,
-        original_price: originalPrice,
-        smart_price: smartPrice,
-        quantity_total: quantity,
-        quantity_available: quantity,
-        pickup_start: pickupStart.toISOString(),
-        pickup_end: pickupEnd.toISOString(),
-        expires_at: pickupEnd.toISOString(),
-      };
-
-      await updateOffer(editingOffer.id, updates);
-  toast.success(t('partner.dashboard.toast.offerUpdated'));
-      setIsEditDialogOpen(false);
-      setEditingOffer(null);
-      setImageFiles([]);
-      setSelectedLibraryImage(null);
-      loadPartnerData();
-    } catch (error) {
-      logger.error('Error updating offer:', error);
-  toast.error(t('partner.dashboard.toast.offerUpdateFailed'));
-    }
   };
 
   const handleRefreshQuantity = async (offerId: string) => {
@@ -751,69 +556,6 @@ export default function PartnerDashboard() {
         });
       }
     };
-
-  const handleToggleOffer = async (offerId: string, currentStatus: string) => {
-    if (processingIds.has(offerId)) return;
-
-    try {
-      setProcessingIds(prev => new Set(prev).add(offerId));
-      const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
-      await updateOffer(offerId, { status: newStatus });
-  toast.success(t('partner.dashboard.toast.toggleSuccess'));
-      loadPartnerData();
-    } catch (error) {
-  toast.error(t('partner.dashboard.toast.toggleFailed'));
-    } finally {
-      setProcessingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(offerId);
-        return newSet;
-      });
-    }
-  };
-
-  const handleDeleteOffer = async (offerId: string) => {
-  if (!confirm(t('partner.dashboard.confirm.deleteOffer'))) return;
-    
-    try {
-      await deleteOffer(offerId);
-  toast.success(t('partner.dashboard.toast.offerDeleted'));
-      loadPartnerData();
-    } catch (error) {
-  toast.error(t('partner.dashboard.toast.offerDeleteFailed'));
-    }
-  };
-
-  const handleMarkAsPickedUp = async (reservation: Reservation) => {
-  if (processingIds.has(reservation.id)) return;
-
-  try {
-    setProcessingIds(prev => new Set(prev).add(reservation.id));
-
-    // Optimistically remove from UI to prevent repeat clicks
-    setReservations(prev => prev.filter(r => r.id !== reservation.id));
-
-    // ✅ Only update reservation status in database
-    await markAsPickedUp(reservation.id);
-
-    // ❌ Do NOT modify offer quantity or status here
-    // Offer quantity was already decreased when the reservation was made
-
-  toast.success(t('partner.dashboard.toast.pickupConfirmed'));
-    loadPartnerData();
-  } catch (error) {
-    logger.error('Error marking as picked up:', error);
-    const errorMsg = extractErrorMessage(error);
-    toast.error(`Failed to mark as picked up: ${errorMsg}`);
-    loadPartnerData();
-  } finally {
-    setProcessingIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(reservation.id);
-      return newSet;
-    });
-  }
-};
 
   const handleConfirmNoShow = async (reservation: Reservation) => {
     if (processingIds.has(reservation.id)) return;
@@ -924,31 +666,6 @@ export default function PartnerDashboard() {
       await loadPartnerData();
     } finally {
       setProcessingIds(prev => { const s = new Set(prev); s.delete(reservation.id); return s; });
-    }
-  };
-
-  const handleValidateQR = async () => {
-    if (!qrInput.trim()) {
-  toast.error(t('partner.dashboard.toast.qrEnter'));
-      return;
-    }
-
-    try {
-      // Validate and automatically mark as picked up
-      const result = await validateQRCode(qrInput, true);
-      if (result.valid && result.reservation) {
-        setQrInput('');
-        setQrScannerOpen(false);
-        setLastQrResult('success');
-        toast.success(t('partner.dashboard.toast.pickupConfirmed'));
-        loadPartnerData(); // Refresh the dashboard
-      } else {
-  toast.error(result.error || t('partner.dashboard.toast.qrInvalid'));
-        setLastQrResult('error');
-      }
-    } catch (error) {
-  toast.error(t('partner.dashboard.toast.qrValidateFailed'));
-      setLastQrResult('error');
     }
   };
 
@@ -1224,115 +941,11 @@ export default function PartnerDashboard() {
               is24HourBusiness={is24HourBusiness}
               businessType={partner?.business_type || 'RESTAURANT'}
             />
-          <Dialog open={qrScannerOpen} onOpenChange={setQrScannerOpen}>
-            <DialogContent className="rounded-2xl max-w-lg">
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-transparent bg-clip-text">
-                  📱 {t('partner.dashboard.qr.validateTitle')}
-                </DialogTitle>
-                <DialogDescription className="text-base">{t('partner.dashboard.qr.descriptionPartner')}</DialogDescription>
-              </DialogHeader>
-
-              <Tabs defaultValue="camera" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 bg-gray-100">
-                  <TabsTrigger value="camera" aria-label={t('partner.dashboard.qr.aria.camera')} className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    {t('partner.dashboard.qr.tab.camera')}
-                  </TabsTrigger>
-                  <TabsTrigger value="manual" aria-label={t('partner.dashboard.qr.aria.manual')} className="flex items-center gap-2">
-                    <QrCode className="w-4 h-4" />
-                    {t('partner.dashboard.qr.tab.manual')}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="camera" className="space-y-4 mt-4">
-                  {isProcessingQR && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                      <span className="text-blue-700 font-medium">Processing QR code...</span>
-                    </div>
-                  )}
-                  <QRScanner
-                    onScan={async (code) => {
-                      // Use ref for immediate synchronous check to prevent race conditions
-                      if (isProcessingQRRef.current) {
-                        logger.log('⏸️ Already processing a QR code, ignoring...');
-                        toast.info('Please wait, processing previous scan...');
-                        return;
-                      }
-
-                      // Set ref immediately (synchronous) to block other scans
-                      isProcessingQRRef.current = true;
-                      setIsProcessingQR(true);
-                      logger.log('🔄 Starting QR validation process...');
-                      
-                      try {
-                        // Clean and normalize the scanned code
-                        const cleanCode = code.trim();
-                        logger.log('📋 QR Code received:', cleanCode);
-                        setQrInput(cleanCode);
-
-                        // Automatically validate and mark as picked up
-                        logger.log('🔍 Validating QR code:', cleanCode);
-                        const result = await validateQRCode(cleanCode, true);
-                        logger.log('📊 Validation result:', result);
-
-                        if (result.valid && result.reservation) {
-                          logger.log('✅ QR validation successful!');
-                          setQrInput('');
-                          setQrScannerOpen(false);
-                          toast.success(t('partner.dashboard.toast.pickupConfirmed'));
-                          setLastQrResult('success');
-                          await loadPartnerData(); // Refresh dashboard
-                        } else {
-                          logger.error('❌ QR validation failed:', result.error);
-                          toast.error(result.error || 'Invalid QR code');
-                          setLastQrResult('error');
-                        }
-                      } catch (error) {
-                        logger.error('💥 Error validating QR code:', error);
-                        toast.error(`Failed to validate QR code: ${error instanceof Error ? error.message : 'Unknown error'}`);
-                        setLastQrResult('error');
-                      } finally {
-                        // Reset processing flag - scanner is already stopped
-                        setTimeout(() => {
-                          isProcessingQRRef.current = false;
-                          setIsProcessingQR(false);
-                          logger.log('🏁 QR processing complete, ready for next scan');
-                        }, 500); // 0.5 second delay (scanner stops immediately anyway)
-                      }
-                    }}
-                    onError={(error) => {
-                      logger.error('📷 QR Scanner error:', error);
-                      toast.error(error);
-                    }}
-                  />
-                </TabsContent>
-
-                <TabsContent value="manual" className="space-y-4 mt-4">
-                  <div className="space-y-4">
-                    <Input
-                      aria-label="Enter QR code manually"
-                      placeholder="SP-2024-XY7K9"
-                      value={qrInput}
-                      onChange={(e) => setQrInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleValidateQR()}
-                      className="text-base py-6 rounded-xl border-[#DFF5ED] focus:border-[#00C896] focus:ring-[#00C896] font-mono"
-                    />
-                    <Button
-                      aria-label={t('partner.dashboard.qr.validateAction')}
-                      onClick={handleValidateQR}
-                      className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-6 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      {t('partner.dashboard.qr.validateAction')}
-                    </Button>
-                    {lastQrResult && <QRScanFeedback result={lastQrResult} />}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </DialogContent>
-          </Dialog>
+          <QRScannerDialog 
+            open={qrScannerOpen} 
+            onOpenChange={setQrScannerOpen}
+            onSuccess={loadPartnerData}
+          />
 
         {/* Content sections controlled by clickable stats cards */}
 
@@ -1362,7 +975,7 @@ export default function PartnerDashboard() {
           <div className="space-y-6 mb-6 md:mb-8">
             <EnhancedActiveReservations
               reservations={reservations}
-              onMarkAsPickedUp={handleMarkAsPickedUp}
+              onMarkAsPickedUp={(r) => reservationActions.handleMarkAsPickedUp(r, (id) => setReservations(prev => prev.filter(res => res.id !== id)))}
               onConfirmNoShow={handleConfirmNoShow}
               onForgiveCustomer={handleForgiveCustomer}
               processingIds={processingIds}
@@ -1443,11 +1056,11 @@ export default function PartnerDashboard() {
                   onCreateOffer={() => setIsCreateDialogOpen(true)}
                   onScanQR={() => setQrScannerOpen(true)}
                   onEditOffer={openEditDialog}
-                  onToggleOffer={handleToggleOffer}
-                  onDeleteOffer={handleDeleteOffer}
-                  onRefreshQuantity={handleRefreshQuantity}
-                  onCloneOffer={handleCreateNewFromOld}
-                  processingIds={processingIds}
+                  onToggleOffer={offerActions.handleToggleOffer}
+                  onDeleteOffer={offerActions.handleDeleteOffer}
+                  onRefreshQuantity={(offerId) => offerActions.handleRefreshQuantity(offerId, offers)}
+                  onCloneOffer={offerActions.handleDuplicateOffer}
+                  processingIds={offerActions.processingIds}
                 />
               )}
             </div>
@@ -1527,177 +1140,17 @@ export default function PartnerDashboard() {
       {!isPending && <div className="h-24 md:hidden" />}
 
       {/* Edit Offer Dialog - Minimalistic & Compact */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto rounded-3xl">
-          <DialogHeader className="pb-3">
-            <DialogTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <Edit className="w-5 h-5 text-teal-600" />
-              Edit Offer
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">Update your offer details</DialogDescription>
-          </DialogHeader>
-          {editingOffer && (
-            <form onSubmit={handleEditOffer} className="space-y-4">
-              {/* Basic Details */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <span className="text-base">📝</span>
-                  <span>Basic Details</span>
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_title" className="text-sm text-gray-600">
-                    Title / დასახელება
-                  </Label>
-                  <Input
-                    id="edit_title"
-                    name="title"
-                    required
-                    defaultValue={editingOffer.title}
-                    className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="edit_description" className="text-sm text-gray-600">
-                    Description / აღწერა
-                  </Label>
-                  <Textarea
-                    id="edit_description"
-                    name="description"
-                    required
-                    defaultValue={editingOffer.description}
-                    className="mt-1.5 min-h-[80px] rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500 resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Pricing & Quantity */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <span className="text-base">💰</span>
-                  <span>Pricing & Quantity</span>
-                </div>
-
-                {/* Quantity */}
-                <div>
-                  <Label htmlFor="edit_quantity" className="text-sm text-gray-600">Quantity *</Label>
-                  <Input
-                    id="edit_quantity"
-                    name="quantity"
-                    type="number"
-                    required
-                    min="1"
-                    defaultValue={editingOffer.quantity_total}
-                    className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                  />
-                </div>
-
-                {/* Prices - Side by Side */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label htmlFor="edit_original_price" className="text-sm text-gray-600">Original Price (₾)</Label>
-                    <Input
-                      id="edit_original_price"
-                      name="original_price"
-                      type="number"
-                      step="0.01"
-                      required
-                      defaultValue={editingOffer.original_price}
-                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="edit_smart_price" className="text-sm text-gray-600">Smart Price (₾)</Label>
-                    <Input
-                      id="edit_smart_price"
-                      name="smart_price"
-                      type="number"
-                      step="0.01"
-                      required
-                      defaultValue={editingOffer.smart_price}
-                      className="mt-1.5 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Current Image Preview - Compact */}
-              {editingOffer.images && editingOffer.images.length > 0 && (
-                <div>
-                  <Label className="text-sm text-gray-600 mb-2 block">Current Image</Label>
-                  <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-gray-200">
-                    <img
-                      src={resolveOfferImageUrl(editingOffer.images[0], editingOffer.category, { width: 400, quality: 80 })}
-                      alt="Current offer"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Choose Image Button */}
-              <button
-                type="button"
-                onClick={() => setShowImageModal(true)}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium text-sm transition-all duration-300 hover:shadow-lg"
-              >
-                📷 Choose New Image
-              </button>
-
-              {selectedLibraryImage && (
-                <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-teal-500">
-                  <img
-                    src={selectedLibraryImage}
-                    alt="Selected"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-teal-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                    ✓ New image
-                  </div>
-                </div>
-              )}
-
-              {/* Image Library Modal */}
-              <ImageLibraryModal
-                open={showImageModal}
-                category={partner?.business_type || 'RESTAURANT'}
-                onSelect={(url) => {
-                  setSelectedLibraryImage(url);
-                  setImageFiles([url]);
-                }}
-                onClose={() => setShowImageModal(false)}
-              />
-
-              {/* Action Buttons - Sticky Footer */}
-              <div className="sticky bottom-0 bg-white pt-4 pb-2 -mx-6 px-6 border-t border-gray-100">
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditDialogOpen(false);
-                      setSelectedLibraryImage(null);
-                      setImageFiles([]);
-                    }}
-                    className="rounded-xl border-gray-300 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all duration-300"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-1.5" />
-                    Update Offer
-                  </Button>
-                </div>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <EditOfferDialog
+        open={isEditDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setEditingOffer(null);
+        }}
+        offer={editingOffer}
+        partner={partner}
+        autoExpire6h={autoExpire6h}
+        onSuccess={loadPartnerData}
+      />
 
       {/* Quick Actions - Mobile Bottom Bar */}
       {!isPending && (
@@ -1722,87 +1175,14 @@ export default function PartnerDashboard() {
       )}
 
       {/* Purchase Offer Slot Dialog */}
-      <Dialog open={isPurchaseSlotDialogOpen} onOpenChange={setIsPurchaseSlotDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-3xl p-6">
-          <DialogHeader className="pb-4">
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 mx-auto mb-4">
-              <Wallet className="w-8 h-8 text-orange-600" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-gray-900 text-center mb-2">
-              🚀 Need More Listing Slots?
-            </DialogTitle>
-            <DialogDescription className="text-sm text-gray-600 text-center px-2">
-              You've reached your listing limit. Purchase additional slots to create more offers and grow your business!
-            </DialogDescription>
-          </DialogHeader>
-
-          {partnerPoints && (
-            <div className="space-y-5 pt-2">
-              {/* Current Status - Clean Card */}
-              <div className="bg-gradient-to-br from-teal-50 to-teal-100/30 rounded-2xl p-5 border border-teal-200/60">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-xs text-teal-700 mb-1.5 font-medium">Current Balance</p>
-                    <p className="text-3xl font-bold text-teal-600">{partnerPoints.balance} pts</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-teal-700 mb-1.5 font-medium">Current Slots</p>
-                    <p className="text-3xl font-bold text-teal-600">{partnerPoints.offer_slots}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Next Slot Cost - Prominent */}
-              <div className="flex items-center justify-between p-4 bg-white rounded-2xl border-2 border-gray-200">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 mb-0.5">Next Slot Cost</p>
-                  <p className="text-xs text-gray-500">Price increases with each slot</p>
-                </div>
-                <div className="text-3xl font-bold text-gray-900">{(partnerPoints.offer_slots - 3) * 50} pts</div>
-              </div>
-
-              {/* Insufficient Balance Alert - Only show when needed */}
-              {partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50 && (
-                <div className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl border border-orange-200">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-orange-900 mb-1">Insufficient Balance</p>
-                    <p className="text-xs text-orange-700">You need more points to purchase this slot</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsPurchaseSlotDialogOpen(false);
-                      setIsBuyPointsModalOpen(true);
-                    }}
-                    className="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 rounded-xl transition-all"
-                  >
-                    Buy Points
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="pt-6 border-t border-gray-100 mt-6">
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsPurchaseSlotDialogOpen(false)}
-                className="rounded-xl border-gray-300"
-              >
-                {t('partner.points.cancel')}
-              </Button>
-              <Button
-                onClick={handlePurchaseSlot}
-                disabled={isPurchasing || !partnerPoints || partnerPoints.balance < (partnerPoints.offer_slots - 3) * 50}
-                className="rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white"
-              >
-                {isPurchasing ? t('partner.points.purchasing') : t('partner.points.confirmPurchase')}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PurchaseSlotDialog 
+        open={isPurchaseSlotDialogOpen}
+        onOpenChange={setIsPurchaseSlotDialogOpen}
+        partnerPoints={partnerPoints}
+        isPurchasing={isPurchasing}
+        onPurchase={handlePurchaseSlot}
+        onBuyPoints={() => setIsBuyPointsModalOpen(true)}
+      />
 
       {/* Buy Partner Points Modal */}
       {partner && partnerPoints && (

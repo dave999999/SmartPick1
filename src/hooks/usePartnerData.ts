@@ -1,140 +1,153 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Partner, Offer, Reservation } from '@/lib/types';
-import type { PartnerPoints } from '@/lib/api';
+/**
+ * usePartnerData Hook - OPTIMIZED VERSION
+ * Consolidates all partner-related data fetching with React Query
+ * Eliminates the 36+ useState hooks in PartnerDashboard
+ */
+import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryClient';
 import {
   getPartnerByUserId,
   getPartnerOffers,
   getPartnerReservations,
   getPartnerStats,
-  getCurrentUser,
   getPartnerPoints,
+  type PartnerPoints,
 } from '@/lib/api';
-import { toast } from 'sonner';
-import { useI18n } from '@/lib/i18n';
-import { logger } from '@/lib/logger';
+import { usePartnersStore } from '@/stores';
+import type { Partner, Offer, Reservation } from '@/lib/types';
 
-interface PartnerStats {
-  activeOffers: number;
-  reservationsToday: number;
-  itemsPickedUp: number;
+interface PartnerDataResult {
+  partner: Partner | null;
+  offers: Offer[];
+  reservations: Reservation[];
+  stats: {
+    activeOffers: number;
+    reservationsToday: number;
+    itemsPickedUp: number;
+  } | null;
+  points: PartnerPoints | null;
+  isLoading: boolean;
+  error: Error | null;
+  refetchAll: () => void;
 }
 
-interface PartnerAnalytics {
-  totalOffers: number;
-  totalReservations: number;
-  itemsSold: number;
-  revenue: number;
-}
+/**
+ * Main hook for partner dashboard data
+ * Replaces 36+ individual useState hooks with React Query + Zustand
+ */
+export function usePartnerData(userId: string): PartnerDataResult {
+  const setCurrentPartner = usePartnersStore((state) => state.setCurrentPartner);
+  const setPartnerPoints = usePartnersStore((state) => state.setPartnerPoints);
 
-export function usePartnerData() {
-  const navigate = useNavigate();
-  const { t } = useI18n();
-
-  const [partner, setPartner] = useState<Partner | null>(null);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [allReservations, setAllReservations] = useState<Reservation[]>([]);
-  const [stats, setStats] = useState<PartnerStats>({
-    activeOffers: 0,
-    reservationsToday: 0,
-    itemsPickedUp: 0
+  // Fetch partner profile
+  const {
+    data: partner = null,
+    isLoading: partnerLoading,
+    error: partnerError,
+    refetch: refetchPartner,
+  } = useQuery({
+    queryKey: queryKeys.partners.detail(userId),
+    queryFn: async () => {
+      const data = await getPartnerByUserId(userId);
+      setCurrentPartner(data);
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
-  const [analytics, setAnalytics] = useState<PartnerAnalytics>({
-    totalOffers: 0,
-    totalReservations: 0,
-    itemsSold: 0,
-    revenue: 0
+
+  // Fetch partner offers
+  const {
+    data: offers = [],
+    isLoading: offersLoading,
+    refetch: refetchOffers,
+  } = useQuery({
+    queryKey: queryKeys.offers.byPartner(partner?.id || ''),
+    queryFn: () => getPartnerOffers(partner!.id),
+    enabled: !!partner?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
-  const [partnerPoints, setPartnerPoints] = useState<PartnerPoints | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const loadPartnerData = async () => {
-    try {
-      setIsLoading(true);
-      const { user } = await getCurrentUser();
+  // Fetch partner reservations
+  const {
+    data: reservations = [],
+    isLoading: reservationsLoading,
+    refetch: refetchReservations,
+  } = useQuery({
+    queryKey: queryKeys.reservations.byPartner(partner?.id || ''),
+    queryFn: () => getPartnerReservations(partner!.id),
+    enabled: !!partner?.id,
+    staleTime: 1 * 60 * 1000, // 1 minute
+  });
 
-      if (!user) {
-        navigate('/');
-        return;
-      }
+  // Fetch partner stats
+  const {
+    data: stats = null,
+    isLoading: statsLoading,
+  } = useQuery({
+    queryKey: [...queryKeys.partners.detail(userId), 'stats'],
+    queryFn: () => getPartnerStats(partner!.id),
+    enabled: !!partner?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-      const partnerData = await getPartnerByUserId(user.id);
+  // Fetch partner points
+  const {
+    data: points = null,
+    isLoading: pointsLoading,
+    refetch: refetchPoints,
+  } = useQuery({
+    queryKey: queryKeys.partners.points(userId),
+    queryFn: async () => {
+      const data = await getPartnerPoints(userId);
+      setPartnerPoints(data);
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-      if (!partnerData) {
-        toast.error(t('partner.dashboard.toast.partnerNotFound'));
-        navigate('/partner/apply');
-        return;
-      }
+  const isLoading =
+    partnerLoading ||
+    offersLoading ||
+    reservationsLoading ||
+    statsLoading ||
+    pointsLoading;
 
-      setPartner(partnerData);
-
-      // Normalize status to uppercase for comparison
-      const normalizedStatus = partnerData.status?.toUpperCase();
-
-      // If partner is pending, only load basic data
-      if (normalizedStatus === 'PENDING') {
-        setIsLoading(false);
-        return;
-      }
-
-      // If approved, load full dashboard data
-      if (normalizedStatus === 'APPROVED') {
-        const [offersData, reservationsData, statsData, pointsData] = await Promise.all([
-          getPartnerOffers(partnerData.id),
-          getPartnerReservations(partnerData.id),
-          getPartnerStats(partnerData.id),
-          getPartnerPoints(user.id),
-        ]);
-
-        setOffers(offersData);
-        setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
-        setAllReservations(reservationsData);
-        setStats(statsData);
-        setPartnerPoints(pointsData);
-
-        // Calculate analytics
-        const totalReservations = reservationsData.length;
-        const itemsSold = reservationsData
-          .filter(r => r.status === 'PICKED_UP')
-          .reduce((sum, r) => sum + r.quantity, 0);
-        const revenue = reservationsData
-          .filter(r => r.status === 'PICKED_UP')
-          .reduce((sum, r) => sum + r.total_price, 0);
-
-        setAnalytics({
-          totalOffers: offersData.length,
-          totalReservations,
-          itemsSold,
-          revenue
-        });
-      } else {
-        // Status is REJECTED or other
-        toast.error(t('partner.dashboard.toast.applicationRejected'));
-        navigate('/');
-        return;
-      }
-    } catch (error) {
-      logger.error('Error loading partner data:', error);
-      toast.error(t('partner.dashboard.toast.loadFail'));
-    } finally {
-      setIsLoading(false);
-    }
+  const refetchAll = () => {
+    refetchPartner();
+    refetchOffers();
+    refetchReservations();
+    refetchPoints();
   };
-
-  useEffect(() => {
-    loadPartnerData();
-  }, []);
 
   return {
     partner,
     offers,
     reservations,
-    allReservations,
     stats,
-    analytics,
-    partnerPoints,
+    points,
     isLoading,
-    loadPartnerData,
+    error: partnerError as Error | null,
+    refetchAll,
   };
+}
+
+/**
+ * Lightweight hook for just partner points
+ * Use when you only need points data (e.g., for slot purchasing)
+ */
+export function usePartnerPoints(userId: string) {
+  const setPartnerPoints = usePartnersStore((state) => state.setPartnerPoints);
+
+  return useQuery({
+    queryKey: queryKeys.partners.points(userId),
+    queryFn: async () => {
+      const data = await getPartnerPoints(userId);
+      setPartnerPoints(data);
+      return data;
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
 }

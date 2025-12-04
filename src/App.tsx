@@ -1,6 +1,6 @@
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -12,6 +12,7 @@ import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
 import { PenaltyModal } from './components/PenaltyModal';
 import type { UserPenalty, PenaltyDetails } from './lib/api/penalty';
 import { GoogleMapProvider } from './components/map/GoogleMapProvider';
+import { queryClient } from './lib/queryClient';
 
 // Initialize Sentry as early as possible
 initSentry();
@@ -66,8 +67,6 @@ const PageLoader = () => (
     </div>
   </div>
 );
-
-const queryClient = new QueryClient();
 
 const AppContent = () => {
   const [isAdmin, setIsAdmin] = useState(false);

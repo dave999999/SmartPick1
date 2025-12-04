@@ -155,6 +155,44 @@ export default function PartnerApplication() {
         
         if (session?.user) {
           logger.log('User already logged in:', session.user.id);
+          
+          // Check if user is admin
+          const { data: profile } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile?.role?.toUpperCase() === 'ADMIN') {
+            toast.error(
+              'Admin accounts cannot apply as partners',
+              {
+                description: 'Please use a different account or contact support to become a partner.',
+                duration: 8000,
+              }
+            );
+            navigate('/admin-dashboard');
+            return;
+          }
+          
+          // Check if user already has a partner application
+          const { data: existingPartner } = await supabase
+            .from('partners')
+            .select('id, status')
+            .eq('user_id', session.user.id)
+            .single();
+          
+          if (existingPartner) {
+            if (existingPartner.status === 'PENDING') {
+              toast.info('You already have a pending partner application');
+              navigate('/partner');
+            } else if (existingPartner.status === 'APPROVED') {
+              toast.info('You are already an approved partner');
+              navigate('/partner');
+            }
+            return;
+          }
+          
           setIsUserLoggedIn(true);
           setExistingUserId(session.user.id);
           
@@ -177,7 +215,7 @@ export default function PartnerApplication() {
     };
     
     checkExistingAuth();
-  }, []);
+  }, [navigate]);
 
   const [formData, setFormData] = useState({
     // Account fields
