@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Offer, Reservation, Partner } from '@/lib/types';
 import { extractErrorMessage } from '@/lib/utils/errors';
 import { calculatePickupEndTime, is24HourBusiness } from '@/lib/utils/businessHours';
+import { offerDataSchema, validateData, getValidationErrorMessage } from '@/lib/schemas';
 import {
   getPartnerByUserId,
   getPartnerById,
