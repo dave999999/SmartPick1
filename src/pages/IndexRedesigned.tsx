@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
 import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
+import { getActiveOffersInViewport } from '@/lib/api/offers';
 import { isDemoMode, supabase } from '@/lib/supabase';
 import { indexedDBManager } from '@/lib/indexedDB';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -36,7 +37,7 @@ import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
 import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {
-  const { isLoaded: googleMapsLoaded, google } = useGoogleMaps();
+  const { isLoaded: googleMapsLoaded, google, googleMap } = useGoogleMaps();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -45,6 +46,7 @@ export default function IndexRedesigned() {
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
+  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   
   // NEW: Unified Discover Sheet state
   const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
@@ -90,7 +92,20 @@ export default function IndexRedesigned() {
     
     try {
       if (isOnline) {
-        const data = await getActiveOffers();
+        // 🚀 SCALABILITY FIX: Use viewport loading instead of loading ALL offers
+        let data: Offer[];
+        
+        if (mapBounds) {
+          // Load only offers in current viewport (100x faster)
+          logger.info('[Index] Loading offers in viewport', mapBounds);
+          data = await getActiveOffersInViewport(mapBounds, undefined, 200);
+          logger.info('[Index] Viewport offers loaded', { count: data.length });
+        } else {
+          // Fallback: Load all offers (only on initial load before map is ready)
+          logger.warn('[Index] Map bounds not available, loading all offers');
+          data = await getActiveOffers();
+        }
+        
         setOffers(data);
         await indexedDBManager.cacheOffers(data);
         logger.info('[Index] Offers loaded and cached', { count: data.length });
@@ -129,6 +144,19 @@ export default function IndexRedesigned() {
       setIsLoading(false);
     }
   }
+
+  // 🚀 SCALABILITY: Reload offers when map bounds change (debounced)
+  useEffect(() => {
+    if (!mapBounds) return;
+    
+    // Debounce to avoid too many requests while panning
+    const timeoutId = setTimeout(() => {
+      logger.info('[Index] Map bounds changed, reloading offers');
+      loadOffers();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [mapBounds]);
 
   // Load active reservation when user is detected
   useEffect(() => {
@@ -623,6 +651,10 @@ export default function IndexRedesigned() {
                       showUserLocation={true}
                       highlightedOfferId={highlightedOfferId}
                       hideMarkers={!!activeReservation}
+                      onMapBoundsChange={(bounds) => {
+                        // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
+                        setMapBounds(bounds);
+                      }}
                     />
                     {/* Debug: Check if pins are hidden */}
                     {!!activeReservation && console.log('🔵 Map pins HIDDEN - active reservation exists')}

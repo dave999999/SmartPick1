@@ -37,6 +37,7 @@ interface SmartPickGoogleMapProps {
   selectedOffer?: Offer | null;
   highlightedOfferId?: string | null;
   hideMarkers?: boolean; // Hide all offer markers (e.g., during navigation)
+  onMapBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void; // 🚀 SCALABILITY: Viewport loading
 }
 
 interface GroupedLocation {
@@ -156,6 +157,7 @@ export default function SmartPickGoogleMap({
   selectedOffer,
   highlightedOfferId,
   hideMarkers = false,
+  onMapBoundsChange,
 }: SmartPickGoogleMapProps) {
   const { isLoaded, google, setGoogleMap } = useGoogleMaps();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -234,6 +236,38 @@ export default function SmartPickGoogleMap({
           onMarkerClick('', undefined, []);
         }
       });
+
+      // 🚀 SCALABILITY: Send initial bounds
+      if (onMapBoundsChange) {
+        const bounds = map.getBounds();
+        if (bounds) {
+          const ne = bounds.getNorthEast();
+          const sw = bounds.getSouthWest();
+          onMapBoundsChange({
+            north: ne.lat(),
+            south: sw.lat(),
+            east: ne.lng(),
+            west: sw.lng(),
+          });
+        }
+      }
+
+      // 🚀 SCALABILITY: Track bounds changes when map moves
+      if (onMapBoundsChange) {
+        map.addListener('idle', () => {
+          const bounds = map.getBounds();
+          if (bounds) {
+            const ne = bounds.getNorthEast();
+            const sw = bounds.getSouthWest();
+            onMapBoundsChange({
+              north: ne.lat(),
+              south: sw.lat(),
+              east: ne.lng(),
+              west: sw.lng(),
+            });
+          }
+        });
+      }
     } catch (error) {
       logger.error('Failed to initialize Google Map:', error);
       toast.error('Failed to load map');
