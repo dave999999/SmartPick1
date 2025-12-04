@@ -116,10 +116,25 @@ COMMENT ON FUNCTION get_offers_in_viewport IS
 -- ===============================================
 -- Add ALL fields that API expects
 
--- Drop all overloads of the function
-DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision, double precision, text, integer) CASCADE;
-DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision, double precision) CASCADE;
-DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision) CASCADE;
+-- Drop function by querying existing overloads first
+DO $$ 
+DECLARE
+    func_signature text;
+BEGIN
+    FOR func_signature IN 
+        SELECT format('%s.%s(%s)', 
+            n.nspname,
+            p.proname,
+            pg_get_function_identity_arguments(p.oid)
+        )
+        FROM pg_proc p
+        JOIN pg_namespace n ON p.pronamespace = n.oid
+        WHERE p.proname = 'get_offers_near_location'
+          AND n.nspname = 'public'
+    LOOP
+        EXECUTE 'DROP FUNCTION IF EXISTS ' || func_signature || ' CASCADE';
+    END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION get_offers_near_location(
   p_latitude double precision,
