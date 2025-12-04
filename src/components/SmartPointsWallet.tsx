@@ -44,19 +44,26 @@ export function SmartPointsWallet({ userId, compact = false }: SmartPointsWallet
     loadData();
   }, [loadData]);
 
-  // Real-time subscription to database changes
+  // Polling for balance updates (replaces realtime to stay under channel limits)
+  // Poll every 30 seconds for updates - more scalable than realtime subscriptions
   useEffect(() => {
-    const channel = subscribeToUserPoints(userId, (newBalance) => {
-      logger.log('Real-time update: New balance from Supabase:', newBalance);
-      setPoints(prev => prev ? { ...prev, balance: newBalance } : null);
-      // Reload transactions to show latest activity
-      getPointTransactions(userId, 5).then(setTransactions);
-    });
+    const interval = setInterval(async () => {
+      try {
+        const updatedPoints = await getUserPoints(userId);
+        if (updatedPoints && updatedPoints.balance !== points?.balance) {
+          logger.log('Polling update: New balance detected:', updatedPoints.balance);
+          setPoints(updatedPoints);
+          // Reload transactions to show latest activity
+          const txs = await getPointTransactions(userId, 5);
+          setTransactions(txs);
+        }
+      } catch (error) {
+        logger.error('Failed to poll points:', error);
+      }
+    }, 30000); // 30 seconds
 
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [userId]);
+    return () => clearInterval(interval);
+  }, [userId, points?.balance]);
 
   // Event bus listener for local app events
   useEffect(() => {

@@ -52,6 +52,8 @@ const VerifyRequested = lazy(() => import('./pages/VerifyRequested').then(module
 const FloatingBottomNavDemo = lazy(() => import('./pages/FloatingBottomNavDemo'));
 const ActiveReservationV2Demo = lazy(() => import('./pages/ActiveReservationV2Demo'));
 const DesignReference = lazy(() => import('./pages/DesignReference'));
+const OffersSheetDemo = lazy(() => import('./pages/OffersSheetDemo'));
+const OffersCardDemo = lazy(() => import('./pages/OffersCardDemo'));
 
 // (Removed unused loadLeafletCSS helper)
 
@@ -330,6 +332,9 @@ const AppContent = () => {
           <Route path="/verify-requested" element={<VerifyRequested />} />
           <Route path="/demo/bottom-nav" element={<FloatingBottomNavDemo />} />
           <Route path="/demo/reservation-v2" element={<ActiveReservationV2Demo />} />
+          <Route path="/demo/offers-sheet" element={<OffersSheetDemo />} />
+          <Route path="/demo/offers-card" element={<OffersCardDemo />} />
+          <Route path="/offers-card-demo" element={<OffersCardDemo />} />
           <Route path="/design-reference" element={<DesignReference />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

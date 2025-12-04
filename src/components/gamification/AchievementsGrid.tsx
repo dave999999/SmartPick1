@@ -18,7 +18,6 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
   const [loading, setLoading] = useState(true);
   const [userStats, setUserStats] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState('all');
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     loadAchievements();
@@ -59,30 +58,21 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
     }
   };
 
-  // Realtime: listen for new achievements
+  // Polling for new achievements (replaces realtime to stay under channel limits)
+  // Poll every 60 seconds - achievements don't need instant updates
   useEffect(() => {
     if (!userId) return;
-    // Cleanup existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    const channel = supabase
-      .channel(`achievements-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'user_achievements',
-          filter: `user_id=eq.${userId}`
-        },
-        async (payload) => {
-          // Refresh data
-          const [userAch, stats] = await Promise.all([
-            getUserAchievements(userId),
-            getUserStats(userId)
-          ]);
+    
+    const interval = setInterval(async () => {
+      try {
+        // Refresh data
+        const [userAch, stats] = await Promise.all([
+          getUserAchievements(userId),
+          getUserStats(userId)
+        ]);
+        
+        // Only update if data changed
+        if (JSON.stringify(userAch) !== JSON.stringify(userAchievements)) {
           setUserAchievements(userAch);
           setUserStats(stats);
           
@@ -96,23 +86,26 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
           }).length;
           onUnclaimedCountChange?.(unclaimedCount);
 
-          // Toast
-          const achievement = allAchievements.find(a => a.id === payload.new.achievement_id);
-          const name = achievement?.name || 'Achievement Unlocked';
-          const icon = achievement?.icon || '🎉';
-          const points = achievement?.reward_points || 0;
-          toast.success(`${icon} ${name} +${points} points`);
+          // Check for newly unlocked achievements to show toast
+          const newUnlocked = userAch.filter(ua => {
+            const wasUnlocked = userAchievements.some(prev => prev.achievement_id === ua.achievement_id);
+            return !wasUnlocked;
+          });
+          
+          newUnlocked.forEach(ua => {
+            const achievement = allAchievements.find(a => a.id === ua.achievement_id);
+            if (achievement) {
+              toast.success(`${achievement.icon} ${achievement.name} +${achievement.reward_points} points`);
+            }
+          });
         }
-      )
-      .subscribe((status) => {
-        // no-op, but could log if needed
-      });
-    channelRef.current = channel;
-    return () => {
-      if (channelRef.current) supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    };
-  }, [userId, allAchievements]);
+      } catch (error) {
+        console.error('Failed to poll achievements:', error);
+      }
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, [userId, allAchievements, userAchievements, onUnclaimedCountChange]);
 
   const getUserAchievementForDefinition = (defId: string): UserAchievement | undefined => {
     return userAchievements.find(ua => ua.achievement_id === defId);

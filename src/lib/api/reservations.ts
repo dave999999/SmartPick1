@@ -10,6 +10,7 @@ import { notifyPartnerNewReservation, notifyCustomerReservationConfirmed } from 
 import { logger } from '../logger';
 import { canUserReserve, getPenaltyDetails } from './penalty';
 import { getOfferById } from './offers';
+import { checkServerRateLimit } from '../rateLimiter-server';
 
 /**
  * Reservations Module
@@ -29,6 +30,12 @@ export const createReservation = async (
 ): Promise<Reservation> => {
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase to create reservations');
+  }
+
+  // ✅ RATE LIMITING: Prevent spam and abuse (10 reservations per hour)
+  const rateLimitCheck = await checkServerRateLimit('reservation', customerId);
+  if (!rateLimitCheck.allowed) {
+    throw new Error(rateLimitCheck.message || 'Too many reservation attempts. Please wait before trying again.');
   }
 
   // Check if user is banned

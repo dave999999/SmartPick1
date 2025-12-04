@@ -112,6 +112,8 @@ export interface Offer {
   is_featured?: boolean;
   featured_until?: string;
   admin_notes?: string;
+  // Popularity metrics
+  reservation_count?: number;
 }
 
 export interface Reservation {

@@ -33,7 +33,7 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   },
   realtime: {
     params: {
-      eventsPerSecond: 10,
+      eventsPerSecond: 2, // Reduced from 10 to 2 for better scalability
     },
   },
   global: {

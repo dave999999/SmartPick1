@@ -8,7 +8,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
-import { OffersSheet } from '@/components/discover/OffersSheet';
+import { OffersSheetNew } from '@/components/offers/OffersSheetNew';
 import { AnimatePresence } from 'framer-motion';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
@@ -654,37 +654,18 @@ export default function IndexRedesigned() {
         />
       </Suspense>
 
-      {/* NEW OFFERS SHEET - Premium Marketplace Design */}
-      <OffersSheet
+      {/* NEW OFFERS SHEET - Pixel-Perfect Redesign */}
+      <OffersSheetNew
         isOpen={discoverSheetOpen}
-        offers={filteredOffers.map(offer => ({
-          ...offer,
-          discount_percent: Math.round(
-            ((offer.original_price - offer.smart_price) / offer.original_price) * 100
-          ),
-        }))}
-        user={user}
-        userLocation={userLocation}
-        hasActiveReservation={!!activeReservation}
         onClose={() => {
           setDiscoverSheetOpen(false);
           setSelectedPartnerId(null);
         }}
-        onOfferSelect={(offerId) => {
-          const offer = filteredOffers.find(o => o.id === offerId);
-          if (offer) {
-            setSelectedOffer(offer);
-            setHighlightedOfferId(offerId);
-            // Open reservation modal or detail view
-            setShowNewReservationModal(true);
-          }
-        }}
-        onOfferReserve={(offerId) => {
-          const offer = filteredOffers.find(o => o.id === offerId);
-          if (offer) {
-            setSelectedOffer(offer);
-            setShowNewReservationModal(true);
-          }
+        onOfferSelect={(offer) => {
+          setSelectedOffer(offer);
+          setHighlightedOfferId(offer.id);
+          setShowNewReservationModal(true);
+          setDiscoverSheetOpen(false);
         }}
       />
 

@@ -27,6 +27,7 @@ import { CommunicationPanel } from '@/components/admin/CommunicationPanel';
 import { LiveMonitoring } from '@/components/admin/LiveMonitoring';
 import { AlertManagement } from '@/components/admin/AlertManagement';
 import ErrorMonitoring from '@/components/admin/ErrorMonitoring';
+import { PerformanceMonitoringPanel } from '@/components/admin/PerformanceMonitoringPanel';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -406,6 +407,9 @@ export default function AdminDashboard() {
                 <TabsTrigger value="health" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
                   ❤️ Health
                 </TabsTrigger>
+                <TabsTrigger value="performance" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
+                  ⚡ Performance
+                </TabsTrigger>
                 <TabsTrigger value="announce" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
                   📢 Announce
                 </TabsTrigger>
@@ -646,6 +650,10 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <AdminHealthPanel />
             </div>
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-4">
+            <PerformanceMonitoringPanel />
           </TabsContent>
 
           <TabsContent value="audit" className="space-y-4">

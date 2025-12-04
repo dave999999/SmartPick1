@@ -22,6 +22,14 @@ export interface QueuedRequest {
   maxRetries: number;
 }
 
+export interface CachedData<T = any> {
+  id: string;
+  data: T;
+  cached_at: number;
+  ttl: number; // milliseconds
+  version: string; // app version for invalidation
+}
+
 class IndexedDBManager {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
@@ -260,25 +268,65 @@ class IndexedDBManager {
     });
   }
 
-  // Cache offers
-  async cacheOffers(offers: any[]): Promise<void> {
+  // Cache offers with TTL and versioning
+  async cacheOffers(offers: any[], ttl: number = 5 * 60 * 1000): Promise<void> {
     await this.init();
     const transaction = this.db!.transaction([STORES.OFFERS], 'readwrite');
     const store = transaction.objectStore(STORES.OFFERS);
+    const version = (import.meta.env.VITE_APP_VERSION as string) || '1.0.0';
 
-    for (const offer of offers) {
-      store.put({ ...offer, cached_at: Date.now() });
-    }
+    // Create cached data wrapper
+    const cachedData: CachedData = {
+      id: 'offers',
+      data: offers,
+      cached_at: Date.now(),
+      ttl,
+      version
+    };
+
+    store.put(cachedData);
 
     return new Promise((resolve, reject) => {
-      transaction.oncomplete = () => resolve();
+      transaction.oncomplete = () => {
+        console.log(`[IndexedDB] Cached ${offers.length} offers (TTL: ${ttl}ms, Version: ${version})`);
+        resolve();
+      };
       transaction.onerror = () => reject(transaction.error);
     });
   }
 
-  // Get cached offers
-  async getCachedOffers(): Promise<any[]> {
-    return this.getAll(STORES.OFFERS);
+  // Get cached offers with TTL and version validation
+  async getCachedOffers(): Promise<any[] | null> {
+    try {
+      const cached = await this.get<CachedData>(STORES.OFFERS, 'offers');
+      
+      if (!cached) {
+        console.log('[IndexedDB] No cached offers found');
+        return null;
+      }
+      
+      // Check version
+      const currentVersion = (import.meta.env.VITE_APP_VERSION as string) || '1.0.0';
+      if (cached.version !== currentVersion) {
+        console.log(`[IndexedDB] Cache version mismatch (cached: ${cached.version}, current: ${currentVersion}), invalidating`);
+        await this.delete(STORES.OFFERS, 'offers');
+        return null;
+      }
+      
+      // Check TTL
+      const age = Date.now() - cached.cached_at;
+      if (age > cached.ttl) {
+        console.log(`[IndexedDB] Cache expired (age: ${Math.round(age/1000)}s, TTL: ${Math.round(cached.ttl/1000)}s)`);
+        await this.delete(STORES.OFFERS, 'offers');
+        return null;
+      }
+      
+      console.log(`[IndexedDB] Cache hit! Age: ${Math.round(age/1000)}s, ${cached.data.length} offers`);
+      return cached.data;
+    } catch (error) {
+      console.error('[IndexedDB] Error reading cached offers:', error);
+      return null;
+    }
   }
 
   // Queue a failed request
