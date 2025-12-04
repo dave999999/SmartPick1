@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer, Reservation, Partner } from '@/lib/types';
 import { extractErrorMessage } from '@/lib/utils/errors';
@@ -108,9 +108,6 @@ export default function PartnerDashboard() {
   const [autoExpire6h, setAutoExpire6h] = useState(true);
   const navigate = useNavigate();
 
-  // Action hooks
-  const offerActions = useOfferActions(partner, loadPartnerData);
-  const reservationActions = useReservationActions(loadPartnerData);
   // Admin impersonation support: if localStorage has impersonate_partner_id we load that partner instead
   const impersonatePartnerId = typeof window !== 'undefined' ? localStorage.getItem('impersonate_partner_id') : null;
   const isImpersonating = !!impersonatePartnerId;
@@ -121,9 +118,86 @@ export default function PartnerDashboard() {
   // Check if partner operates 24 hours
   const is24HourBusiness = partner?.open_24h === true;
 
+  // Define loadPartnerData with useCallback to avoid hoisting issues
+  const loadPartnerData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const { user } = await getCurrentUser();
+      if (!user && !isImpersonating) {
+        navigate('/');
+        return;
+      }
+
+      let partnerData: Partner | null = null;
+      if (isImpersonating && impersonatePartnerId) {
+        partnerData = await getPartnerById(impersonatePartnerId);
+      } else if (user) {
+        partnerData = await getPartnerByUserId(user.id);
+      }
+
+      if (!partnerData) {
+        toast.error(t('partner.dashboard.toast.partnerNotFound'));
+        navigate('/partner/apply');
+        return;
+      }
+
+      setPartner(partnerData);
+
+      const normalizedStatus = partnerData.status?.toUpperCase();
+      
+      if (!isImpersonating && normalizedStatus === 'PENDING') {
+        setIsLoading(false);
+        return;
+      }
+
+      if (normalizedStatus === 'APPROVED') {
+        const [offersData, reservationsData, statsData, pointsData] = await Promise.all([
+          getPartnerOffers(partnerData.id),
+          getPartnerReservations(partnerData.id),
+          getPartnerStats(partnerData.id),
+          user ? getPartnerPoints(user.id) : Promise.resolve(null),
+        ]);
+
+        setOffers(offersData);
+        setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
+        setAllReservations(reservationsData);
+        setStats(statsData);
+        setPartnerPoints(pointsData);
+
+        const totalReservations = reservationsData.length;
+        const itemsSold = reservationsData
+          .filter(r => r.status === 'PICKED_UP')
+          .reduce((sum, r) => sum + r.quantity, 0);
+        const revenue = reservationsData
+          .filter(r => r.status === 'PICKED_UP')
+          .reduce((sum, r) => sum + r.total_price, 0);
+
+        setAnalytics({
+          totalOffers: offersData.length,
+          totalReservations,
+          itemsSold,
+          revenue
+        });
+      } else {
+        toast.error(t('partner.dashboard.toast.applicationRejected'));
+        navigate('/');
+        return;
+      }
+    } catch (error) {
+      logger.error('Error loading partner data:', error);
+      toast.error(t('partner.dashboard.toast.loadFail'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isImpersonating, impersonatePartnerId, navigate, t]);
+
+  // Action hooks
+  const offerActions = useOfferActions(partner, loadPartnerData);
+  const reservationActions = useReservationActions(loadPartnerData);
+
   useEffect(() => {
     loadPartnerData();
-  }, []);
+  }, [loadPartnerData]);
 
   // Real-time subscription for new reservations
   useEffect(() => {
@@ -200,94 +274,6 @@ export default function PartnerDashboard() {
       supabase.removeChannel(channel);
     };
   }, [partner?.id]);
-
-
-
-  const loadPartnerData = async () => {
-    try {
-      setIsLoading(true);
-      const { user } = await getCurrentUser();
-      if (!user && !isImpersonating) {
-        navigate('/');
-        return;
-      }
-
-      let partnerData: Partner | null = null;
-      if (isImpersonating && impersonatePartnerId) {
-        partnerData = await getPartnerById(impersonatePartnerId);
-      } else if (user) {
-        partnerData = await getPartnerByUserId(user.id);
-      }
-      if (!partnerData) {
-  toast.error(t('partner.dashboard.toast.partnerNotFound'));
-        navigate('/partner/apply');
-        return;
-      }
-
-      setPartner(partnerData);
-      
-      // Normalize status to uppercase for comparison
-      const normalizedStatus = partnerData.status?.toUpperCase();
-      
-      // If partner is pending, only load basic data (no offers/reservations)
-      if (!isImpersonating && normalizedStatus === 'PENDING') {
-        setIsLoading(false);
-        return;
-      }
-
-      // If approved, load full dashboard data
-      if (normalizedStatus === 'APPROVED' || isImpersonating) {
-        const [offersData, reservationsData, statsData, pointsData] = await Promise.all([
-          getPartnerOffers(partnerData.id),
-          getPartnerReservations(partnerData.id),
-          getPartnerStats(partnerData.id),
-          getPartnerPoints(partnerData.user_id),
-        ]);
-
-        setOffers(offersData);
-        // In impersonation mode disallow mutating reservation quick actions - we still show active list
-        setReservations(reservationsData.filter(r => r.status === 'ACTIVE'));
-        setAllReservations(reservationsData); // All for analytics
-        setStats(statsData);
-        setPartnerPoints(pointsData);
-
-        // Calculate analytics
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const totalReservations = reservationsData.length;
-        const itemsSold = reservationsData.filter(r => r.status === 'PICKED_UP').reduce((sum, r) => sum + r.quantity, 0);
-        
-        // Calculate TODAY'S revenue (must match itemsPickedUp timeframe)
-        const todayRevenue = reservationsData
-          .filter(r => r.status === 'PICKED_UP' && r.picked_up_at && new Date(r.picked_up_at) >= today)
-          .reduce((sum, r) => sum + r.total_price, 0);
-        
-        setAnalytics({
-          totalOffers: offersData.length,
-          totalReservations,
-          itemsSold,
-          revenue: todayRevenue  // Changed from all-time revenue to today's revenue
-        });
-
-        // Show onboarding tour every time partner logs in, unless they opted out
-        const tourOptedOut = localStorage.getItem(`partner_tour_opted_out_${partnerData.id}`);
-        if (!isImpersonating && !tourOptedOut) {
-          setTimeout(() => setShowOnboardingTour(true), 800);
-        }
-      } else {
-        // Status is REJECTED or other
-  toast.error(t('partner.dashboard.toast.applicationRejected'));
-        navigate('/');
-        return;
-      }
-    } catch (error) {
-      logger.error('Error loading partner data:', error);
-  toast.error(t('partner.dashboard.toast.loadFail'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Wrapper for wizard submission
   const handleCreateOfferWizard = async (formData: FormData) => {
