@@ -4,6 +4,30 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 /**
  * Realtime Subscriptions Module
  * Handles real-time database subscriptions for live updates
+ * 
+ * ⚠️ CRITICAL: Always cleanup subscriptions to prevent memory leaks!
+ * 
+ * Example usage:
+ * ```typescript
+ * useEffect(() => {
+ *   if (!userId) return;
+ *   
+ *   const channel = subscribeToReservations(userId, (payload) => {
+ *     console.log('Update received:', payload);
+ *   });
+ *   
+ *   // ✅ REQUIRED: Cleanup on unmount
+ *   return () => {
+ *     channel.unsubscribe();
+ *   };
+ * }, [userId]);
+ * ```
+ * 
+ * 🚀 SCALABILITY LIMITS:
+ * - Max 200 concurrent realtime connections
+ * - Each subscription = 1 connection
+ * - Use polling for non-critical updates
+ * - Only use realtime for immediate notifications
  */
 
 /**

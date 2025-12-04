@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Coins, Plus, TrendingUp, TrendingDown, Clock, Info, Sparkles } from 'lucide-react';
-import { getUserPoints, getPointTransactions, formatTransactionReason, formatPointsChange, subscribeToUserPoints } from '@/lib/smartpoints-api';
+import { getUserPoints, getPointTransactions, formatTransactionReason, formatPointsChange } from '@/lib/smartpoints-api';
 import type { UserPoints, PointTransaction } from '@/lib/smartpoints-api';
 import { BuyPointsModal } from './BuyPointsModal';
 import { toast } from 'sonner';
