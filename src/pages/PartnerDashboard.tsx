@@ -1003,11 +1003,11 @@ export default function PartnerDashboard() {
                   onCreateOffer={() => setIsCreateDialogOpen(true)}
                   onScanQR={() => setQrScannerOpen(true)}
                   onEditOffer={openEditDialog}
-                  onToggleOffer={handleToggleOffer}
-                  onDeleteOffer={handleDeleteOffer}
-                  onRefreshQuantity={handleRefreshQuantity}
-                  onCloneOffer={handleCreateNewFromOld}
-                  processingIds={processingIds}
+                  onToggleOffer={offerActions.handleToggleOffer}
+                  onDeleteOffer={offerActions.handleDeleteOffer}
+                  onRefreshQuantity={(offerId) => offerActions.handleRefreshQuantity(offerId, offers)}
+                  onCloneOffer={offerActions.handleDuplicateOffer}
+                  processingIds={offerActions.processingIds}
                 />
               )}
             </div>
