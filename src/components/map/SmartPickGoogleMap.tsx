@@ -366,16 +366,15 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       const emoji = CATEGORY_EMOJIS[location.category] || '📍';
       const color = CATEGORY_COLORS[location.category] || '#6b7280';
       
-      // Create custom marker icon (use SVG as data URL)
+      // Create custom marker icon (use data URL instead of blob URL to avoid ERR_FILE_NOT_FOUND)
       const svgString = createCustomMarker(emoji, color);
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-      const svgUrl = URL.createObjectURL(svgBlob);
+      const svgDataUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgString)}`;
       
       // Create Google Maps marker
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
         icon: {
-          url: svgUrl,
+          url: svgDataUrl,
           scaledSize: new google.maps.Size(40, 40),
           anchor: new google.maps.Point(20, 20),
         },
@@ -469,15 +468,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       logger.log(`Added ${markers.length} markers with clustering to Google Map`);
     }
 
-    // Cleanup function
-    return () => {
-      markers.forEach(marker => {
-        const icon = marker.getIcon() as any;
-        if (icon?.url && icon.url.startsWith('blob:')) {
-          URL.revokeObjectURL(icon.url);
-        }
-      });
-    };
+    // No cleanup needed - using data URLs instead of blob URLs
   }, [groupedLocations, google, userLocation, onMarkerClick, hideMarkers]);
 
   // Update user location marker
