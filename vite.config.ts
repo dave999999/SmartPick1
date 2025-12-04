@@ -97,35 +97,64 @@ export default defineConfig({
         chunkFileNames: `assets/[name]-[hash].js`,
         assetFileNames: `assets/[name]-[hash].[ext]`,
         // Manual chunks for optimal code splitting
-        manualChunks: {
-          // Core React vendor chunk (~140 KB)
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        manualChunks(id) {
+          // Charts - lazy loaded for analytics (check first to avoid react-chartjs-2 going to react-vendor)
+          if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
+            return 'chart-vendor';
+          }
           
-          // UI Components vendor chunk (~200 KB)
-          'ui-vendor': [
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-select',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-tooltip',
-            '@radix-ui/react-label',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-separator',
-          ],
+          // Lucide icons - large icon library (check before react)
+          if (id.includes('lucide-react')) {
+            return 'icons-vendor';
+          }
           
-          // Map vendor chunk - MapLibre for vector maps (~180 KB)
-          'map-vendor': ['maplibre-gl'],
+          // React Query - data fetching (check before react)
+          if (id.includes('@tanstack/react-query')) {
+            return 'query-vendor';
+          }
           
-          // Charts vendor chunk - loaded only when needed (~150 KB)
-          'chart-vendor': ['chart.js', 'react-chartjs-2'],
+          // Core React libraries - only core packages
+          if (id.includes('node_modules/react/') || 
+              id.includes('node_modules/react-dom/') || 
+              id.includes('node_modules/react-router-dom/') ||
+              id.includes('node_modules/react-router/')) {
+            return 'react-vendor';
+          }
           
-          // Supabase client (~80 KB)
-          'supabase-vendor': ['@supabase/supabase-js'],
+          // Radix UI components - large UI library
+          if (id.includes('@radix-ui')) {
+            return 'ui-vendor';
+          }
           
-          // Query client
-          'query-vendor': ['@tanstack/react-query'],
+          // Supabase - database client
+          if (id.includes('@supabase')) {
+            return 'supabase-vendor';
+          }
+          
+          // Leaflet - map library (152 KB!)
+          if (id.includes('leaflet')) {
+            return 'leaflet-vendor';
+          }
+          
+          // Google Maps clustering
+          if (id.includes('@googlemaps')) {
+            return 'maps-vendor';
+          }
+          
+          // Framer Motion - animations
+          if (id.includes('framer-motion')) {
+            return 'animation-vendor';
+          }
+          
+          // Zod validation
+          if (id.includes('zod')) {
+            return 'validation-vendor';
+          }
+          
+          // Date utilities
+          if (id.includes('date-fns')) {
+            return 'date-vendor';
+          }
         }
       }
     },
