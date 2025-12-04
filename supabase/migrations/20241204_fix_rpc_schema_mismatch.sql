@@ -116,7 +116,10 @@ COMMENT ON FUNCTION get_offers_in_viewport IS
 -- ===============================================
 -- Add ALL fields that API expects
 
-DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision, double precision, text, integer);
+-- Drop all overloads of the function
+DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision, double precision, text, integer) CASCADE;
+DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision, double precision) CASCADE;
+DROP FUNCTION IF EXISTS get_offers_near_location(double precision, double precision) CASCADE;
 
 CREATE OR REPLACE FUNCTION get_offers_near_location(
   p_latitude double precision,
