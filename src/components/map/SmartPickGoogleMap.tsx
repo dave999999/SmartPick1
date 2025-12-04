@@ -213,7 +213,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       const map = new google.maps.Map(mapContainerRef.current, {
         center: { lat: 41.7151, lng: 44.8271 }, // Tbilisi
         zoom: 13,
-        mapId: '923c0e6030ce547166b44338', // Map ID with custom style (no POI icons)
         disableDefaultUI: true,
         zoomControl: false,
         mapTypeControl: false,
@@ -221,6 +220,40 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         fullscreenControl: false,
         gestureHandling: 'greedy',
         clickableIcons: false,
+        styles: [
+          {
+            featureType: "all",
+            stylers: [
+              { saturation: 0 },
+              { hue: "#e7ecf0" }
+            ]
+          },
+          {
+            featureType: "road",
+            stylers: [
+              { saturation: -70 }
+            ]
+          },
+          {
+            featureType: "transit",
+            stylers: [
+              { visibility: "off" }
+            ]
+          },
+          {
+            featureType: "poi",
+            stylers: [
+              { visibility: "off" }
+            ]
+          },
+          {
+            featureType: "water",
+            stylers: [
+              { visibility: "simplified" },
+              { saturation: -60 }
+            ]
+          }
+        ],
       });
 
       mapRef.current = map;
