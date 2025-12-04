@@ -56,7 +56,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-import { Plus, QrCode, LogOut, Lock, User, Home, Wallet, Edit, Star, Heart, UserCircle, Languages } from 'lucide-react';
+import { Plus, QrCode, LogOut, Lock, User, Home, Wallet, Edit, Star, Heart, UserCircle, Languages, CheckCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TelegramConnect } from '@/components/TelegramConnect';
 import EditPartnerProfile from '@/components/partner/EditPartnerProfile';
