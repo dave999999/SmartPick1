@@ -170,10 +170,10 @@ class PerformanceMonitor {
     try {
       // Test viewport query with Tbilisi coordinates
       const { data, error } = await supabase.rpc('get_offers_in_viewport', {
-        p_north: 41.8,
-        p_south: 41.6,
-        p_east: 44.9,
-        p_west: 44.7,
+        p_min_lat: 41.6,
+        p_min_lng: 44.7,
+        p_max_lat: 41.8,
+        p_max_lng: 44.9,
         p_category: null,
         p_limit: 10
       });
