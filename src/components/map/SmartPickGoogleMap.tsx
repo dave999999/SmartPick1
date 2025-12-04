@@ -279,6 +279,14 @@ export default function SmartPickGoogleMap({
 
     // Create markers for each location
     const markers = groupedLocations.map(location => {
+      // Validate coordinates
+      if (!location.lat || !location.lng || 
+          typeof location.lat !== 'number' || typeof location.lng !== 'number' ||
+          !isFinite(location.lat) || !isFinite(location.lng)) {
+        logger.warn('Invalid coordinates for marker:', location);
+        return null;
+      }
+
       // Check if expiring soon
       const now = new Date();
       const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
@@ -341,7 +349,7 @@ export default function SmartPickGoogleMap({
       });
 
       return marker;
-    });
+    }).filter((marker): marker is google.maps.Marker => marker !== null);
 
     // Store markers
     markersRef.current = markers;
@@ -468,10 +476,16 @@ export default function SmartPickGoogleMap({
 
     userMarkerRef.current = userMarker;
 
-    // Center map on user
-    map.panTo({ lat: userLocation[0], lng: userLocation[1] });
-    if (map.getZoom() < 13) {
-      map.setZoom(13);
+    // Validate and center map on user
+    const [lat, lng] = userLocation;
+    if (typeof lat === 'number' && typeof lng === 'number' && 
+        isFinite(lat) && isFinite(lng)) {
+      map.panTo({ lat, lng });
+      if (map.getZoom() < 13) {
+        map.setZoom(13);
+      }
+    } else {
+      logger.warn('Invalid user location coordinates:', userLocation);
     }
   }, [userLocation, google]);
 
@@ -482,7 +496,10 @@ export default function SmartPickGoogleMap({
     const map = mapRef.current;
     const { latitude, longitude } = selectedOffer.partner;
 
-    if (latitude && longitude) {
+    // Validate coordinates
+    if (latitude && longitude && 
+        typeof latitude === 'number' && typeof longitude === 'number' &&
+        isFinite(latitude) && isFinite(longitude)) {
       map.panTo({ lat: latitude, lng: longitude });
       
       // Show distance label if user location available
