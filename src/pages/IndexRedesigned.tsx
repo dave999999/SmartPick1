@@ -64,7 +64,6 @@ export default function IndexRedesigned() {
   const [isPostResNavigating, setIsPostResNavigating] = useState(false);
   const [showPickupSuccessModal, setShowPickupSuccessModal] = useState(false);
   const [pickupModalData, setPickupModalData] = useState<{ savedAmount: number; pointsEarned: number } | null>(null);
-  const { googleMap } = useGoogleMaps();
   
   // Enable GPS tracking when navigating
   const { position: gpsPosition } = useLiveGPS({ 
