@@ -396,17 +396,15 @@ const SmartPickMap = memo(({
   };
 
   // Use offers directly - they are already filtered by parent component
+  // Memoize filtered offers to prevent unnecessary recalculations
+  const memoizedOffers = useMemo(() => offers, [offers.length, offers.map(o => o.id).join(',')]);
+  
   useEffect(() => {
-    console.log('📍 Map received offers:', offers.length);
-    console.log('📦 Sample offers:', offers.slice(0, 3).map(o => ({ 
-      title: o.title, 
-      category: o.category,
-      hasLocation: !!(o.partner?.latitude && o.partner?.longitude)
-    })));
-    setFilteredOffers(offers);
-  }, [offers]);
+    console.log('📍 Map received offers:', memoizedOffers.length);
+    setFilteredOffers(memoizedOffers);
+  }, [memoizedOffers]);
 
-  // Group offers by location
+  // Group offers by location - memoized with stable dependency
   const groupedLocations = useMemo((): GroupedLocation[] => {
     const locationMap: Record<string, GroupedLocation> = {};
     
@@ -786,11 +784,18 @@ const SmartPickMap = memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
+  // Deep comparison for offers array to prevent unnecessary re-renders
+  const offersEqual = 
+    prevProps.offers.length === nextProps.offers.length &&
+    prevProps.offers.every((offer, index) => offer.id === nextProps.offers[index]?.id);
+  
   return (
-    prevProps.offers === nextProps.offers &&
+    offersEqual &&
     prevProps.selectedCategory === nextProps.selectedCategory &&
     prevProps.highlightedOfferId === nextProps.highlightedOfferId &&
-    prevProps.showUserLocation === nextProps.showUserLocation
+    prevProps.showUserLocation === nextProps.showUserLocation &&
+    prevProps.userLocation?.[0] === nextProps.userLocation?.[0] &&
+    prevProps.userLocation?.[1] === nextProps.userLocation?.[1]
   );
 });
 

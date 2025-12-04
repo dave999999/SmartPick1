@@ -15,7 +15,7 @@
  * - Custom light style matching SmartPick design
  */
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, memo } from 'react';
 import { Offer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Navigation, X } from 'lucide-react';
@@ -148,7 +148,7 @@ const SMARTPICK_MAP_STYLE = [
   }
 ];
 
-export default function SmartPickGoogleMap({
+const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   offers,
   onMarkerClick,
   userLocation: externalUserLocation,
@@ -662,4 +662,26 @@ export default function SmartPickGoogleMap({
       `}</style>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Deep comparison for offers array
+  const offersEqual = 
+    prevProps.offers.length === nextProps.offers.length &&
+    prevProps.offers.every((offer, index) => offer.id === nextProps.offers[index]?.id);
+  
+  // Compare user locations
+  const userLocationEqual = 
+    prevProps.userLocation?.[0] === nextProps.userLocation?.[0] &&
+    prevProps.userLocation?.[1] === nextProps.userLocation?.[1];
+  
+  // Compare other props
+  return (
+    offersEqual &&
+    userLocationEqual &&
+    prevProps.selectedOffer?.id === nextProps.selectedOffer?.id &&
+    prevProps.highlightedOfferId === nextProps.highlightedOfferId &&
+    prevProps.hideMarkers === nextProps.hideMarkers &&
+    prevProps.showUserLocation === nextProps.showUserLocation
+  );
+});
+
+export default SmartPickGoogleMap;

@@ -170,9 +170,14 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
               </>
             )}
 
-            {/* Offers Grid - Always show */}
+            {/* Featured Offers Grid */}
             {filteredOffers.length > 0 && (
               <div className="px-4 pt-4 pb-24">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-[18px] font-semibold text-gray-900">
+                    Featured Offers
+                  </h2>
+                </div>
                 <div className="grid grid-cols-2 gap-3">
                   {filteredOffers.map((offer: Offer) => (
                     <OfferListCard

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
 import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
@@ -37,7 +37,7 @@ import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
 import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {
-  const { isLoaded: googleMapsLoaded, google, googleMap } = useGoogleMaps();
+  const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
   const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -47,6 +47,16 @@ export default function IndexRedesigned() {
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
+  
+  // 🐛 DEBUG: Track what causes re-renders
+  logger.info('🔄 [IndexRedesigned] RENDER', {
+    offersCount: offers.length,
+    selectedCategory,
+    isLoading,
+    hasUser: !!user,
+    hasMapBounds: !!mapBounds,
+    hasUserLocation: !!userLocation
+  });
   
   // NEW: Unified Discover Sheet state
   const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
@@ -85,9 +95,17 @@ export default function IndexRedesigned() {
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
   const isOnline = useOnlineStatus();
+  
+  // Track last loaded bounds to prevent unnecessary reloads
+  const lastLoadedBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
+  const isInitialLoadRef = useRef(true);
 
   async function loadOffers() {
-    setIsLoading(true);
+    // Only show loading spinner on initial load, not on viewport changes
+    const shouldShowLoading = isInitialLoadRef.current || !mapBounds;
+    if (shouldShowLoading) {
+      setIsLoading(true);
+    }
     
     try {
       if (isOnline) {
@@ -108,6 +126,7 @@ export default function IndexRedesigned() {
         setOffers(data);
         await indexedDBManager.cacheOffers(data);
         logger.info('[Index] Offers loaded and cached', { count: data.length });
+        isInitialLoadRef.current = false;
       } else {
         const cachedOffers = await indexedDBManager.getCachedOffers();
         
@@ -140,19 +159,37 @@ export default function IndexRedesigned() {
         }
       }
     } finally {
-      setIsLoading(false);
+      if (shouldShowLoading) {
+        setIsLoading(false);
+      }
     }
   }
 
-  // 🚀 SCALABILITY: Reload offers when map bounds change (debounced)
+  // 🚀 SCALABILITY: Reload offers when map bounds change significantly (debounced)
   useEffect(() => {
     if (!mapBounds) return;
     
-    // Debounce to avoid too many requests while panning
+    // Check if bounds changed significantly (>10% of previous bounds)
+    const lastBounds = lastLoadedBoundsRef.current;
+    if (lastBounds) {
+      const latDiff = Math.abs(mapBounds.north - lastBounds.north) + Math.abs(mapBounds.south - lastBounds.south);
+      const lngDiff = Math.abs(mapBounds.east - lastBounds.east) + Math.abs(mapBounds.west - lastBounds.west);
+      const latRange = Math.abs(mapBounds.north - mapBounds.south);
+      const lngRange = Math.abs(mapBounds.east - mapBounds.west);
+      
+      // Only reload if bounds changed by more than 30% (prevents reload on small pans/zooms)
+      if (latDiff < latRange * 0.3 && lngDiff < lngRange * 0.3) {
+        logger.info('[Index] Map bounds changed minimally, skipping reload');
+        return;
+      }
+    }
+    
+    // Debounce to avoid too many requests while panning (increased to 1000ms)
     const timeoutId = setTimeout(() => {
-      logger.info('[Index] Map bounds changed, reloading offers');
+      logger.info('[Index] Map bounds changed significantly, reloading offers');
+      lastLoadedBoundsRef.current = mapBounds;
       loadOffers();
-    }, 500);
+    }, 1000);
     
     return () => clearTimeout(timeoutId);
   }, [mapBounds]);
@@ -573,6 +610,11 @@ export default function IndexRedesigned() {
     userLocation
   ]);
 
+  // Memoize userLocation object to prevent creating new reference on every render
+  const userLocationObject = useMemo(() => {
+    return userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null;
+  }, [userLocation?.[0], userLocation?.[1]]);
+
   const handleOfferClick = useCallback((offer: Offer) => {
     setSelectedOffer(offer);
     addRecentlyViewed(offer.id, 'offer');
@@ -618,27 +660,11 @@ export default function IndexRedesigned() {
 
       <div className="min-h-screen bg-sp-bg overflow-hidden fixed inset-0 safe-area">
         <div className="absolute inset-0 w-full h-full">
-          {isLoading ? (
-            <div className="w-full h-full bg-gradient-to-b from-sp-bg to-sp-surface1 relative">
-              <div className="absolute inset-0 flex items-center justify-center gap-8">
-                <div className="space-y-2">
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse"></div>
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-100"></div>
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-200"></div>
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 rounded-t-[28px] shadow-lg p-4 space-y-3 border-t border-sp-border-soft">
-                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse"></div>
-                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse delay-100"></div>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Full Screen Map - Google Maps */}
-              <div className="absolute inset-0 w-full h-full z-10">
-                {googleMapsLoaded ? (
-                  <>
-                    <SmartPickGoogleMap
+          {/* Full Screen Map - Always mounted to prevent re-initialization */}
+          <div className="absolute inset-0 w-full h-full z-10">
+            {googleMapsLoaded ? (
+              <>
+                <SmartPickGoogleMap
                       offers={mapFilteredOffers}
                       onOfferClick={handleOfferClick}
                       onMarkerClick={handleMarkerClick}
@@ -655,20 +681,34 @@ export default function IndexRedesigned() {
                         setMapBounds(bounds);
                       }}
                     />
-                    {/* Debug: Check if pins are hidden */}
-                    {!!activeReservation && console.log('🔵 Map pins HIDDEN - active reservation exists')}
-                  </>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                    <div className="text-center space-y-2">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-                      <p className="text-gray-600 text-sm">Loading map...</p>
-                    </div>
-                  </div>
-                )}
+                {/* Debug: Check if pins are hidden */}
+                {!!activeReservation && console.log('🔵 Map pins HIDDEN - active reservation exists')}
+              </>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                  <p className="text-gray-600 text-sm">Loading map...</p>
+                </div>
               </div>
+            )}
+          </div>
 
-            </>
+          {/* Loading overlay - shown over map instead of replacing it */}
+          {isLoading && (
+            <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-sp-bg to-sp-surface1 z-20 pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-center gap-8">
+                <div className="space-y-2">
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse"></div>
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-100"></div>
+                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-200"></div>
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 rounded-t-[28px] shadow-lg p-4 space-y-3 border-t border-sp-border-soft">
+                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse"></div>
+                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse delay-100"></div>
+              </div>
+            </div>
           )}
         </div>
 
@@ -759,7 +799,7 @@ export default function IndexRedesigned() {
                         activeReservation.partner?.address || 
                         activeReservation.offer?.partner?.address || 'Location',
             }}
-            userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
+            userLocation={userLocationObject}
             onNavigate={(reservation) => {
           // Option 1: Open Google Maps in new tab
           const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.pickupAddress)}`;
@@ -794,7 +834,7 @@ export default function IndexRedesigned() {
       <LiveRouteDrawer
         map={googleMap}
         reservation={activeReservation}
-        userLocation={userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null}
+        userLocation={userLocationObject}
         isNavigating={!!activeReservation}
       />
       
