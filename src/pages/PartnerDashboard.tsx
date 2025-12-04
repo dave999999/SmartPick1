@@ -20,6 +20,7 @@ import {
   partnerConfirmNoShow,
   partnerForgiveCustomer,
   duplicateOffer,
+  subscribeToPartnerReservations,
   type PartnerPoints,
 } from '@/lib/api';
 import { approveForgivenessRequest, denyForgivenessRequest } from '@/lib/api/partners';
@@ -200,79 +201,61 @@ export default function PartnerDashboard() {
     loadPartnerData();
   }, [loadPartnerData]);
 
-  // Real-time subscription for new reservations
+  // Real-time subscription for partner reservations (secure)
   useEffect(() => {
     if (!partner?.id) return;
 
-    const channel = supabase
-      .channel('partner-reservations')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'reservations',
-          filter: `partner_id=eq.${partner.id}`,
-        },
-        (payload) => {
-          // Add new reservation to the list if it's active
-          const newReservation = payload.new as Reservation;
-          if (newReservation.status === 'ACTIVE') {
-            setReservations(prev => [newReservation, ...prev]);
-            setAllReservations(prev => [newReservation, ...prev]);
-            
-            // Update stats - increment reservationsToday
-            setStats(prev => ({
-              ...prev,
-              reservationsToday: prev.reservationsToday + 1,
-            }));
-            
-            // Show toast notification
-            toast.success('New reservation received!', {
-              description: `${newReservation.quantity}x items reserved`,
-            });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'reservations',
-          filter: `partner_id=eq.${partner.id}`,
-        },
-        (payload) => {
-          const updatedReservation = payload.new as Reservation;
+    const channel = subscribeToPartnerReservations(partner.id, (payload: any) => {
+      const event = payload.eventType;
+      
+      if (event === 'INSERT') {
+        // Add new reservation to the list if it's active
+        const newReservation = payload.new as Reservation;
+        if (newReservation.status === 'ACTIVE') {
+          setReservations(prev => [newReservation, ...prev]);
+          setAllReservations(prev => [newReservation, ...prev]);
           
-          // Update in active reservations list
-          setReservations(prev => {
-            // If status changed from ACTIVE, remove from active list
-            if (updatedReservation.status !== 'ACTIVE') {
-              return prev.filter(r => r.id !== updatedReservation.id);
-            }
-            // Otherwise update the reservation
-            return prev.map(r => r.id === updatedReservation.id ? updatedReservation : r);
+          // Update stats - increment reservationsToday
+          setStats(prev => ({
+            ...prev,
+            reservationsToday: prev.reservationsToday + 1,
+          }));
+          
+          // Show toast notification
+          toast.success('New reservation received!', {
+            description: `${newReservation.quantity}x items reserved`,
           });
-          
-          // Update in all reservations list
-          setAllReservations(prev => 
-            prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
-          );
-          
-          // Update stats if picked up
-          if (updatedReservation.status === 'PICKED_UP') {
-            setStats(prev => ({
-              ...prev,
-              itemsPickedUp: prev.itemsPickedUp + updatedReservation.quantity,
-            }));
-          }
         }
-      )
-      .subscribe();
+      } else if (event === 'UPDATE') {
+        const updatedReservation = payload.new as Reservation;
+        
+        // Update in active reservations list
+        setReservations(prev => {
+          // If status changed from ACTIVE, remove from active list
+          if (updatedReservation.status !== 'ACTIVE') {
+            return prev.filter(r => r.id !== updatedReservation.id);
+          }
+          // Otherwise update the reservation
+          return prev.map(r => r.id === updatedReservation.id ? updatedReservation : r);
+        });
+        
+        // Update in all reservations list
+        setAllReservations(prev => 
+          prev.map(r => r.id === updatedReservation.id ? updatedReservation : r)
+        );
+        
+        // Update stats if picked up
+        if (updatedReservation.status === 'PICKED_UP') {
+          setStats(prev => ({
+            ...prev,
+            itemsPickedUp: prev.itemsPickedUp + updatedReservation.quantity,
+          }));
+        }
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      channel.unsubscribe();
     };
   }, [partner?.id]);
 
