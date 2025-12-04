@@ -366,23 +366,11 @@ export default function PartnerDashboard() {
       const pickupEnd: Date = calculatePickupEndTime(partner, shouldAutoExpire);
 
       // Images are library URLs only (custom uploads removed)
-      // Prefer imageFiles, but fall back to selectedLibraryImage if needed
-      let processedImages: string[] = imageFiles.filter((img): img is string => typeof img === 'string');
-      if (processedImages.length === 0 && selectedLibraryImage) {
-        processedImages = [selectedLibraryImage];
-      }
-      if (processedImages.length === 0) {
-        const formImages = formData
-          .getAll('images')
-          .map((value) => (typeof value === 'string' ? value.trim() : ''))
-          .filter((value): value is string => Boolean(value));
-        if (formImages.length > 0) {
-          processedImages = formImages;
-          setImageFiles(formImages);
-          setSelectedLibraryImage(formImages[0]);
-        }
-      }
-
+      // Get images from FormData
+      const processedImages = formData
+        .getAll('images')
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value): value is string => Boolean(value));
 
       // Ensure at least one image is selected
       if (processedImages.length === 0) {
@@ -452,10 +440,8 @@ export default function PartnerDashboard() {
 
         toast.success(t('partner.dashboard.toast.offerCreated'));
         setIsCreateDialogOpen(false);
-        setImageFiles([]);
         setFormErrors({});
         setAutoExpire6h(true);
-        setSelectedLibraryImage(null);
         loadPartnerData();
       }
     } catch (error) {
@@ -1143,7 +1129,6 @@ export default function PartnerDashboard() {
         <QuickActions
           onNewOffer={() => {
             setIsCreateDialogOpen(true);
-            setImageFiles([]);
             setFormErrors({});
           }}
           onScanQR={() => setQrScannerOpen(true)}
