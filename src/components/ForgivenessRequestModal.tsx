@@ -17,7 +17,7 @@ import { logger } from '@/lib/logger';
 interface ForgivenessRequestModalProps {
   penalty: UserPenalty & {
     partners?: { business_name: string };
-    reservations?: { offer_title: string; pickup_date: string };
+    reservations?: { offer_title: string; picked_up_at: string };
   };
   onClose: () => void;
   onSuccess: () => void;

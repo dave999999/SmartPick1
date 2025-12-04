@@ -181,7 +181,7 @@ export async function getUserPenaltyHistory(userId: string): Promise<UserPenalty
       .select(`
         *,
         partners!user_penalties_partner_id_fkey(business_name),
-        reservations!user_penalties_reservation_id_fkey(offer_title, pickup_date)
+        reservations!user_penalties_reservation_id_fkey(offer_title, picked_up_at)
       `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
@@ -603,7 +603,7 @@ export async function getPendingForgivenessRequests(partnerId: string) {
       .select(`
         *,
         users!user_penalties_user_id_fkey(id, name, email, reliability_score),
-        reservations!user_penalties_reservation_id_fkey(id, pickup_date, total_price, offer:offers(title))
+        reservations!user_penalties_reservation_id_fkey(id, picked_up_at, total_price, offer:offers(title))
       `)
       .eq('partner_id', partnerId)
       .eq('forgiveness_status', 'pending')

@@ -20,7 +20,7 @@ interface PenaltyModalProps {
   penalty: UserPenalty & {
     users?: { name: string; email: string; reliability_score: number };
     partners?: { business_name: string };
-    reservations?: { offer_title: string; pickup_date: string };
+    reservations?: { offer_title: string; picked_up_at: string };
   };
   userPoints: number;
   onClose: () => void;

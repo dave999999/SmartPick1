@@ -18,7 +18,7 @@ import { logger } from '@/lib/logger';
 interface PartnerForgivenessDecisionModalProps {
   penalty: UserPenalty & {
     users?: { id: string; name: string; email: string; reliability_score: number };
-    reservations?: { pickup_date: string; total_price: number; offer?: { title: string } };
+    reservations?: { picked_up_at: string; total_price: number; offer?: { title: string } };
   };
   partnerId: string;
   onClose: () => void;
