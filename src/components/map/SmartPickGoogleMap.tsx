@@ -80,33 +80,12 @@ const CATEGORY_COLORS: Record<string, string> = {
   'DRIVE': '#6366f1' // indigo
 };
 
-// Create simple circular marker with category color and emoji
-function createCustomMarker(emoji: string, color: string): string {
-  return `
-    <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <!-- Drop shadow -->
-      <defs>
-        <filter id="shadow">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
-        </filter>
-      </defs>
-      
-      <!-- Colored circle background -->
-      <circle cx="20" cy="20" r="18" fill="${color}" filter="url(#shadow)"/>
-      
-      <!-- White inner circle -->
-      <circle cx="20" cy="20" r="14" fill="white"/>
-      
-      <!-- Emoji text -->
-      <text x="20" y="20" 
-            font-size="20" 
-            text-anchor="middle" 
-            dominant-baseline="central" 
-            font-family="Arial, sans-serif">
-        ${emoji}
-      </text>
-    </svg>
-  `;
+// Create custom marker using category-specific pins
+function createCustomMarker(category: string): string {
+  // Use category-specific pin from map-pins folder
+  const pinFile = category === 'RESTAURANT' ? '22.png' : `${category}.png`;
+  const iconUrl = `/icons/map-pins/${pinFile}`;
+  return iconUrl;
 }
 
 // Light map style matching SmartPick design
@@ -362,25 +341,38 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         return expiresAt <= twoHoursFromNow;
       });
 
-      // Get category emoji and color
-      const emoji = CATEGORY_EMOJIS[location.category] || '📍';
-      const color = CATEGORY_COLORS[location.category] || '#6b7280';
+      // Get category icon URL
+      const iconUrl = createCustomMarker(location.category);
       
-      // Create custom marker icon (use data URL instead of blob URL to avoid ERR_FILE_NOT_FOUND)
-      const svgString = createCustomMarker(emoji, color);
-      const svgDataUrl = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svgString)}`;
+      // Create custom marker element with glossy effect
+      const markerDiv = document.createElement('div');
+      markerDiv.style.cssText = `
+        width: 56px;
+        height: 56px;
+        background-image: url(${iconUrl});
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        filter: brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+        transition: transform 0.2s ease, filter 0.2s ease;
+        cursor: pointer;
+      `;
       
-      // Create Google Maps marker
+      // Create Google Maps marker with custom HTML
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
         icon: {
-          url: svgDataUrl,
-          scaledSize: new google.maps.Size(40, 40),
-          anchor: new google.maps.Point(20, 20),
+          url: iconUrl,
+          scaledSize: new google.maps.Size(56, 56),
+          anchor: new google.maps.Point(28, 56),
         },
         title: location.partnerName,
+        optimized: false,
         // Don't set map yet - clusterer will handle it
       });
+      
+      // Note: For full glossy effect with hover, would need AdvancedMarkerElement
+      // Current implementation adds brightness via icon
 
       // Store location data on marker for click handler
       (marker as any).locationData = location;
@@ -425,7 +417,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       markerClustererRef.current = new MarkerClusterer({
         map,
         markers,
-        algorithm: new SuperClusterAlgorithm({ radius: 150, maxZoom: 16 }),
+        algorithm: new SuperClusterAlgorithm({ radius: 80, minZoom: 0, maxZoom: 14 }),
         renderer: {
           render: ({ count, position }) => {
             // Custom cluster icon

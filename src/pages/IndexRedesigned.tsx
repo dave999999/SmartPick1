@@ -10,6 +10,7 @@ import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
 import { OffersSheetNew } from '@/components/offers/OffersSheetNew';
+import { PartnerSheet } from '@/components/PartnerSheet';
 import { AnimatePresence } from 'framer-motion';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
@@ -62,6 +63,7 @@ export default function IndexRedesigned() {
   const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [highlightedOfferId, setHighlightedOfferId] = useState<string | null>(null);
+  const [showPartnerSheet, setShowPartnerSheet] = useState(false);
   
   // NEW: Google Maps navigation state
   const [showNewReservationModal, setShowNewReservationModal] = useState(false);
@@ -630,16 +632,16 @@ export default function IndexRedesigned() {
       setSearchQuery('');
       setSelectedOffer(null);
       setSelectedCategory('');
-      setDiscoverSheetOpen(false);
+      setShowPartnerSheet(false);
       return;
     }
     
-    // Open unified sheet in Partner Mode with partner's offers
+    // Open partner sheet with partner's info and offers
     if (partnerOffers.length > 0) {
       const partnerId = partnerOffers[0]?.partner_id;
       if (partnerId) {
         setSelectedPartnerId(partnerId);
-        setDiscoverSheetOpen(true);
+        setShowPartnerSheet(true);
         
         // Center map on partner
         if (googleMap && partnerOffers[0]?.partner?.location) {
@@ -725,9 +727,26 @@ export default function IndexRedesigned() {
         />
       </Suspense>
 
+      {/* PARTNER SHEET - Shows partner info and offers when clicking map pin */}
+      <PartnerSheet
+        isOpen={showPartnerSheet}
+        partnerId={selectedPartnerId}
+        onClose={() => {
+          setShowPartnerSheet(false);
+          setSelectedPartnerId(null);
+        }}
+        onOfferSelect={(offer) => {
+          setSelectedOffer(offer);
+          setHighlightedOfferId(offer.id);
+          setShowNewReservationModal(true);
+          setShowPartnerSheet(false);
+        }}
+      />
+
       {/* NEW OFFERS SHEET - Pixel-Perfect Redesign */}
       <OffersSheetNew
         isOpen={discoverSheetOpen}
+        selectedPartnerId={selectedPartnerId}
         onClose={() => {
           setDiscoverSheetOpen(false);
           setSelectedPartnerId(null);

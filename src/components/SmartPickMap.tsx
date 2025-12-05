@@ -47,7 +47,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   'DRIVE': '🚗'
 };
 
-// Create marker element with emoji
+// Create marker element with category pin image
 function createPulsingMarker(
   _map: maplibregl.Map,
   color: string = '#FF8A00',
@@ -61,14 +61,31 @@ function createPulsingMarker(
     el.setAttribute('data-category', category);
   }
   
-  // Inline styles for marker size (40% smaller)
-  el.style.fontSize = '18px'; // Reduced from ~30px to 18px (40% reduction)
+  // Use category-specific pin from map-pins folder
+  const pinFile = category === 'RESTAURANT' ? '22.png' : `${category}.png`;
+  const pinImage = category ? `/icons/map-pins/${pinFile}` : '/icons/map-pins/22.png';
+  
+  // Inline styles for marker with glossy effect
   el.style.cursor = 'pointer';
   el.style.userSelect = 'none';
+  el.style.width = '56px';
+  el.style.height = '56px';
+  el.style.backgroundImage = `url(${pinImage})`;
+  el.style.backgroundSize = 'contain';
+  el.style.backgroundRepeat = 'no-repeat';
+  el.style.backgroundPosition = 'center';
+  el.style.filter = 'brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.25))';
+  el.style.transition = 'transform 0.2s ease, filter 0.2s ease';
   
-  // Use emoji instead of image
-  const emoji = category ? CATEGORY_EMOJIS[category] || '📍' : '📍';
-  el.textContent = emoji;
+  // Add hover effect
+  el.addEventListener('mouseenter', () => {
+    el.style.transform = 'scale(1.1)';
+    el.style.filter = 'brightness(1.25) drop-shadow(0 4px 12px rgba(0,0,0,0.3))';
+  });
+  el.addEventListener('mouseleave', () => {
+    el.style.transform = 'scale(1)';
+    el.style.filter = 'brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.25))';
+  });
   
   return el;
 }

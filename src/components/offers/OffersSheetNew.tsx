@@ -18,9 +18,10 @@ interface OffersSheetNewProps {
   isOpen: boolean;
   onClose: () => void;
   onOfferSelect: (offer: Offer) => void;
+  selectedPartnerId?: string | null;
 }
 
-export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNewProps) {
+export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId }: OffersSheetNewProps) {
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,15 +39,16 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
     }
   };
 
-  // Filter offers based on category and search
+  // Filter offers based on partner, category and search
   const filteredOffers = offers.filter((offer: Offer) => {
+    const matchesPartner = !selectedPartnerId || offer.partner_id === selectedPartnerId;
     const matchesCategory = !selectedCategory || 
       offer.category === selectedCategory ||
       offer.category?.toUpperCase() === selectedCategory;
     const matchesSearch = !searchQuery || 
       offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       offer.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch && offer.status === 'ACTIVE';
+    return matchesPartner && matchesCategory && matchesSearch && offer.status === 'ACTIVE';
   });
 
   // Get featured offer (first offer with highest discount)
@@ -104,19 +106,22 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect }: OffersSheetNe
             </div>
 
             {/* Category Pills */}
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 py-1">
               {allCategories.map((category) => (
                 <button
                   key={category.value}
                   onClick={() => handleCategoryClick(category.value)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`flex-shrink-0 flex items-center justify-center w-[56px] h-[56px] rounded-2xl transition-all active:scale-95 ${
                     selectedCategory === category.value
-                      ? 'bg-[#FF7A1A] text-white'
-                      : 'bg-white text-gray-700 border border-gray-200'
+                      ? 'bg-[#FF7A1A] shadow-lg'
+                      : 'bg-white shadow-sm hover:shadow-md'
                   }`}
                 >
-                  <span className="mr-1.5">{category.emoji}</span>
-                  {category.label}
+                  <img 
+                    src={`/icons/categories/${category.value}.png`}
+                    alt={category.label}
+                    className="w-[52px] h-[52px] object-contain"
+                  />
                 </button>
               ))}
             </div>
