@@ -21,7 +21,16 @@ export function useOffers() {
       setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('offers')
-        .select('*')
+        .select(`
+          *,
+          partner:partners!inner(
+            id,
+            business_name,
+            location,
+            contact_number,
+            address
+          )
+        `)
         .eq('status', 'ACTIVE')
         .gt('quantity_available', 0)
         .order('created_at', { ascending: false });
