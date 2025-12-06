@@ -626,17 +626,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       // Bring to front
       marker.setZIndex(1000);
       
-      console.log('🎈 Starting subtle bounce animation');
-      // Subtle bounce animation (Google Maps BOUNCE is too aggressive, use DROP for gentler effect)
-      marker.setAnimation(google.maps.Animation.DROP);
-      
-      // Stop bounce after 0.7 seconds for subtle effect
-      setTimeout(() => {
-        if (marker) {
-          marker.setAnimation(null);
-          console.log('🛑 Stopped bounce');
-        }
-      }, 700);
+      console.log('🎈 Adding smooth floating effect');
+      // No built-in animation - we'll use CSS transform on the marker's div
+      // Google Maps animations are too aggressive, so skip them
       
       // Add pulsing shadow element below marker
       const markerPosition = marker.getPosition();
@@ -647,13 +639,14 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           const div = document.createElement('div');
           div.style.cssText = `
             position: absolute;
-            width: 40px;
-            height: 20px;
+            width: 50px;
+            height: 25px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 138, 0, 0.4) 0%, transparent 70%);
-            animation: markerPulse 1.5s ease-in-out infinite;
+            background: radial-gradient(ellipse, rgba(255, 138, 0, 0.5) 0%, rgba(255, 138, 0, 0.2) 40%, transparent 70%);
+            animation: markerPulse 2s ease-in-out infinite;
             pointer-events: none;
             transform: translate(-50%, -50%);
+            filter: blur(4px);
           `;
           
           const panes = this.getPanes();
@@ -736,14 +729,24 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   return (
     <div className="w-full h-full relative">
-      {/* Pulse animation for highlighted marker */}
+      {/* Animations for highlighted marker */}
       <style>{`
         @keyframes markerPulse {
           0%, 100% {
-            filter: drop-shadow(0 0 0px rgba(255, 138, 0, 0));
+            opacity: 0.4;
+            transform: translate(-50%, -50%) scale(1);
           }
           50% {
-            filter: drop-shadow(0 0 20px rgba(255, 138, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 138, 0, 0.4));
+            opacity: 0.7;
+            transform: translate(-50%, -50%) scale(1.3);
+          }
+        }
+        @keyframes markerFloat {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-8px);
           }
         }
       `}</style>
