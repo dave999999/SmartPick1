@@ -21,9 +21,10 @@ interface OffersSheetNewProps {
   onOfferSelect: (offer: Offer) => void;
   selectedPartnerId?: string | null;
   isMinimized?: boolean;
+  onCenteredOfferChange?: (offer: Offer | null) => void;
 }
 
-export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false }: OffersSheetNewProps) {
+export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange }: OffersSheetNewProps) {
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +103,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
       });
 
       setCenteredCardIndex(closestIndex);
+      
+      // Notify parent of centered offer change
+      if (onCenteredOfferChange) {
+        const centeredOffer = filteredOffers[closestIndex];
+        onCenteredOfferChange(centeredOffer || null);
+      }
     };
 
     const container = carouselRef.current;
@@ -109,7 +116,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     handleScroll(); // Initial check
 
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [isMinimized, filteredOffers]);
+  }, [isMinimized, filteredOffers, onCenteredOfferChange]);
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {

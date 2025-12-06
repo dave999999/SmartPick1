@@ -762,6 +762,17 @@ export default function IndexRedesigned() {
           setDiscoverSheetOpen(false);
           setIsSheetMinimized(false);
         }}
+        onCenteredOfferChange={(offer) => {
+          if (offer && googleMap && offer.partner?.location) {
+            // Pan map to centered offer's location smoothly
+            googleMap.panTo({
+              lat: offer.partner.location.latitude,
+              lng: offer.partner.location.longitude,
+            });
+            // Highlight the offer marker
+            setHighlightedOfferId(offer.id);
+          }
+        }}
       />
 
       {/* NEW: In-page Reservation Modal (replaces separate reservation page) */}
