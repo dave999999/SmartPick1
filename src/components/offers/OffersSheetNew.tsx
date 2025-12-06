@@ -4,8 +4,9 @@
  * Matches reference UI with search, categories, and grid layout
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Search, Mic } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { HeroOfferCard } from './HeroOfferCard';
 import { OfferListCard } from './OfferListCard';
@@ -27,7 +28,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [centeredCardIndex, setCenteredCardIndex] = useState(0);
   
   const { offers, loading } = useOffers();
   const { partners } = usePartners();
@@ -73,33 +76,116 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     return Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
   };
 
-  // If minimized, render carousel with same card design
+  // Track centered card in carousel
+  useEffect(() => {
+    if (!isMinimized || !carouselRef.current) return;
+
+    const handleScroll = () => {
+      const container = carouselRef.current;
+      if (!container) return;
+
+      const containerCenter = container.scrollLeft + container.offsetWidth / 2;
+      const cards = container.querySelectorAll('[data-card-index]');
+      
+      let closestIndex = 0;
+      let closestDistance = Infinity;
+
+      cards.forEach((card, index) => {
+        const cardElement = card as HTMLElement;
+        const cardCenter = cardElement.offsetLeft + cardElement.offsetWidth / 2;
+        const distance = Math.abs(containerCenter - cardCenter);
+        
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIndex = index;
+        }
+      });
+
+      setCenteredCardIndex(closestIndex);
+    };
+
+    const container = carouselRef.current;
+    container.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial check
+
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isMinimized, filteredOffers]);
+
+  // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {
     return (
       <div className="fixed bottom-24 left-0 right-0 z-40 px-4">
         <div className="relative">
           {/* Carousel Container */}
           <div 
-            className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            ref={carouselRef}
+            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth px-8"
             style={{ 
               scrollSnapType: 'x mandatory',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              scrollPaddingLeft: '32px',
+              scrollPaddingRight: '32px'
             }}
           >
-            {filteredOffers.slice(0, 10).map((offer: Offer) => (
-              <div 
-                key={offer.id}
-                className="flex-shrink-0 w-[140px] snap-center scale-[0.85]"
-              >
-                <OfferListCard
-                  title={offer.title}
-                  imageUrl={offer.images?.[0] || '/images/Map.jpg'}
-                  priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
-                  priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
-                  onClick={() => onOfferSelect(offer)}
-                />
-              </div>
-            ))}
+            {filteredOffers.slice(0, 10).map((offer: Offer, index: number) => {
+              const isCentered = index === centeredCardIndex;
+              
+              return (
+                <motion.div 
+                  key={offer.id}
+                  data-card-index={index}
+                  className="flex-shrink-0 snap-center"
+                  animate={{
+                    scale: isCentered ? 1 : 0.85,
+                    opacity: isCentered ? 1 : 0.7,
+                  }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30
+                  }}
+                  style={{
+                    width: '140px',
+                    filter: isCentered ? 'none' : 'brightness(0.9)',
+                  }}
+                >
+                  <div 
+                    className={`relative transition-all duration-300 ${
+                      isCentered 
+                        ? 'shadow-[0_8px_32px_rgba(255,90,0,0.25),0_4px_16px_rgba(0,0,0,0.15)]' 
+                        : 'shadow-[0_2px_8px_rgba(0,0,0,0.1)]'
+                    }`}
+                    style={{
+                      borderRadius: '16px',
+                      border: isCentered 
+                        ? '1.5px solid rgba(255,163,102,0.4)' 
+                        : '1px solid rgba(0,0,0,0.05)',
+                      background: isCentered 
+                        ? 'linear-gradient(135deg, rgba(255,163,102,0.03) 0%, rgba(255,90,0,0.02) 100%)' 
+                        : 'transparent'
+                    }}
+                  >
+                    {isCentered && (
+                      <div 
+                        className="absolute -inset-[2px] rounded-[18px] pointer-events-none"
+                        style={{
+                          background: 'linear-gradient(135deg, rgba(255,163,102,0.2), rgba(255,90,0,0.15))',
+                          filter: 'blur(8px)',
+                          zIndex: -1
+                        }}
+                      />
+                    )}
+                    <OfferListCard
+                      title={offer.title}
+                      imageUrl={offer.images?.[0] || '/images/Map.jpg'}
+                      priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
+                      priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
+                      onClick={() => onOfferSelect(offer)}
+                    />
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>
