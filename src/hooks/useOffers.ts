@@ -23,20 +23,16 @@ export function useOffers() {
         .from('offers')
         .select(`
           *,
-          partner:partners(
-            id,
-            business_name,
-            address,
-            latitude,
-            longitude,
-            phone
-          )
+          partner:partners(*)
         `)
         .eq('status', 'ACTIVE')
         .gt('quantity_available', 0)
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ Supabase error:', fetchError);
+        throw fetchError;
+      }
       
       // Transform flat lat/lng to location object for compatibility
       const offersWithLocation = data?.map(offer => ({
