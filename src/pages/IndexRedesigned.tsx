@@ -61,6 +61,7 @@ export default function IndexRedesigned() {
   
   // NEW: Unified Discover Sheet state
   const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
+  const [isSheetMinimized, setIsSheetMinimized] = useState(false);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [highlightedOfferId, setHighlightedOfferId] = useState<string | null>(null);
   const [showPartnerSheet, setShowPartnerSheet] = useState(false);
@@ -366,6 +367,7 @@ export default function IndexRedesigned() {
     const timer = setTimeout(() => {
       if (!activeReservation) {
         setDiscoverSheetOpen(true);
+        setIsSheetMinimized(false); // Open fully, not minimized
       }
     }, 1500);
 
@@ -746,9 +748,11 @@ export default function IndexRedesigned() {
       {/* NEW OFFERS SHEET - Pixel-Perfect Redesign */}
       <OffersSheetNew
         isOpen={discoverSheetOpen}
+        isMinimized={isSheetMinimized}
         selectedPartnerId={selectedPartnerId}
         onClose={() => {
           setDiscoverSheetOpen(false);
+          setIsSheetMinimized(false);
           setSelectedPartnerId(null);
         }}
         onOfferSelect={(offer) => {
@@ -756,6 +760,7 @@ export default function IndexRedesigned() {
           setHighlightedOfferId(offer.id);
           setShowNewReservationModal(true);
           setDiscoverSheetOpen(false);
+          setIsSheetMinimized(false);
         }}
       />
 
@@ -895,11 +900,18 @@ export default function IndexRedesigned() {
           // Don't open offers sheet if there's an active reservation
           if (activeReservation) return;
           
-          // Open new discover sheet in discover mode
-          if (discoverSheetOpen) {
+          // Toggle between open, minimized (carousel), and closed
+          if (discoverSheetOpen && !isSheetMinimized) {
+            // Sheet is fully open -> minimize to carousel
+            setIsSheetMinimized(true);
+          } else if (discoverSheetOpen && isSheetMinimized) {
+            // Sheet is minimized -> close it
             setDiscoverSheetOpen(false);
+            setIsSheetMinimized(false);
           } else {
+            // Sheet is closed -> open it fully
             setDiscoverSheetOpen(true);
+            setIsSheetMinimized(false);
             setSelectedPartnerId(null);
           }
         }}

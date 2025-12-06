@@ -19,13 +19,15 @@ interface OffersSheetNewProps {
   onClose: () => void;
   onOfferSelect: (offer: Offer) => void;
   selectedPartnerId?: string | null;
+  isMinimized?: boolean;
 }
 
-export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId }: OffersSheetNewProps) {
+export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false }: OffersSheetNewProps) {
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [carouselIndex, setCarouselIndex] = useState(0);
   
   const { offers, loading } = useOffers();
   const { partners } = usePartners();
@@ -70,6 +72,92 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     if (!offer.original_price || offer.original_price <= offer.smart_price) return null;
     return Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
   };
+
+  // If minimized, render carousel instead of sheet
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-24 left-4 right-4 z-40">
+        <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden">
+          {/* Carousel Container */}
+          <div 
+            className="flex transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+          >
+            {filteredOffers.slice(0, 10).map((offer: Offer, index: number) => (
+              <div 
+                key={offer.id}
+                className="min-w-full flex-shrink-0 p-4 cursor-pointer"
+                onClick={() => onOfferSelect(offer)}
+                onTouchStart={(e) => {
+                  const touchStart = e.touches[0].clientX;
+                  const handleTouchMove = (e: TouchEvent) => {
+                    const touchEnd = e.touches[0].clientX;
+                    const diff = touchStart - touchEnd;
+                    if (Math.abs(diff) > 50) {
+                      if (diff > 0 && carouselIndex < filteredOffers.length - 1) {
+                        setCarouselIndex(carouselIndex + 1);
+                      } else if (diff < 0 && carouselIndex > 0) {
+                        setCarouselIndex(carouselIndex - 1);
+                      }
+                      document.removeEventListener('touchmove', handleTouchMove);
+                    }
+                  };
+                  document.addEventListener('touchmove', handleTouchMove);
+                  document.addEventListener('touchend', () => {
+                    document.removeEventListener('touchmove', handleTouchMove);
+                  }, { once: true });
+                }}
+              >
+                <div className="flex gap-3">
+                  <img 
+                    src={offer.images?.[0] || '/images/Map.jpg'}
+                    alt={offer.title}
+                    className="w-20 h-20 rounded-xl object-cover"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm text-gray-900 line-clamp-1">
+                      {offer.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 line-clamp-1 mt-1">
+                      {offer.description}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-lg font-bold text-[#FF7A1A]">
+                        ₾{Math.round(offer.smart_price)}
+                      </span>
+                      {offer.original_price && offer.original_price > offer.smart_price && (
+                        <>
+                          <span className="text-sm text-gray-400 line-through">
+                            ₾{Math.round(offer.original_price)}
+                          </span>
+                          <span className="text-xs font-semibold text-[#FF7A1A]">
+                            {getDiscount(offer)}% OFF
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Carousel Indicators */}
+          <div className="flex justify-center gap-1 pb-3">
+            {filteredOffers.slice(0, 10).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCarouselIndex(index)}
+                className={`h-1.5 rounded-full transition-all ${
+                  index === carouselIndex ? 'w-6 bg-[#FF7A1A]' : 'w-1.5 bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
