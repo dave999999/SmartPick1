@@ -270,26 +270,95 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           </div>
 
           {/* Main Content */}
-          <div className="bg-[#F6F6F8]">
+          <div className="bg-white">
             {/* Show Featured & Popular only when NO category is selected */}
             {!selectedCategory && (
               <>
-                {/* Featured Offer */}
+                {/* Today's Special Offer */}
                 {featuredOffer && (
-                  <div className="px-4 pt-3 pb-2">
-                    <h2 className="text-[17px] font-semibold text-gray-900 mb-2">
+                  <div className="px-4 pt-6 pb-4">
+                    <h2 className="text-[18px] font-bold text-gray-900 mb-4">
                       Today's Special Offer
                     </h2>
-                    <HeroOfferCard
-                      title={featuredOffer.title}
-                      imageUrl={featuredOffer.images?.[0] || '/images/Map.jpg'}
-                      priceNow={`₾${Math.round(featuredOffer.smart_price).toLocaleString()}`}
-                      priceOld={featuredOffer.original_price ? `₾${Math.round(featuredOffer.original_price).toLocaleString()}` : undefined}
-                      discountLabel={getDiscount(featuredOffer) ? `${getDiscount(featuredOffer)}% off` : undefined}
-                      ctaLabel="Reserve Now"
+                    {/* Pixel-Perfect Special Offer Card */}
+                    <div
+                      className="relative rounded-3xl p-4 border border-white/20 cursor-pointer transition-transform active:scale-[0.98]"
                       onClick={() => onOfferSelect(featuredOffer)}
-                      onCtaClick={() => onOfferSelect(featuredOffer)}
-                    />
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Product Image */}
+                        <div
+                          className="flex-shrink-0 rounded-2xl overflow-hidden"
+                          style={{
+                            width: '76px',
+                            height: '76px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                          }}
+                        >
+                          <img
+                            src={featuredOffer.images?.[0] || '/images/Map.jpg'}
+                            alt={featuredOffer.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Content Stack */}
+                        <div className="flex-1 flex flex-col gap-1.5">
+                          {/* Title */}
+                          <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">
+                            {featuredOffer.title}
+                          </h3>
+
+                          {/* Price Row */}
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-[22px] font-bold leading-none" style={{ color: '#FF8A00' }}>
+                              ₾{Math.round(featuredOffer.smart_price)}
+                            </span>
+                            {getDiscount(featuredOffer) && (
+                              <div
+                                className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white leading-none"
+                                style={{
+                                  background: 'linear-gradient(135deg, #FF7A00 0%, #FF4E00 100%)',
+                                }}
+                              >
+                                {getDiscount(featuredOffer)}% off
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Old Price + Status */}
+                          <div className="flex items-center gap-2 text-xs">
+                            {featuredOffer.original_price && (
+                              <span className="line-through font-medium" style={{ color: '#9CA3AF' }}>
+                                ₾{Math.round(featuredOffer.original_price)}
+                              </span>
+                            )}
+                            <span className="text-gray-500">Now</span>
+                          </div>
+                        </div>
+
+                        {/* Reserve Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOfferSelect(featuredOffer);
+                          }}
+                          className="absolute bottom-4 right-4 px-5 py-2 rounded-full text-white text-sm font-semibold transition-transform active:scale-95"
+                          style={{
+                            background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
+                            boxShadow: '0 4px 16px rgba(255, 138, 0, 0.3)',
+                          }}
+                        >
+                          Reserve Now
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 
