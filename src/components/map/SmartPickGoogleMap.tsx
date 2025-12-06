@@ -301,6 +301,27 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     const map = mapRef.current;
 
+    // If markers should be hidden (e.g., during navigation), hide them without removing
+    if (hideMarkers) {
+      if (markerClustererRef.current) {
+        markerClustererRef.current.clearMarkers();
+      }
+      return;
+    }
+
+    // Only recreate markers if they don't exist or groupedLocations changed significantly
+    const needsRecreate = markersRef.current.length === 0 || 
+                          markersRef.current.length !== groupedLocations.length;
+
+    if (!needsRecreate) {
+      // Just update existing clusterer if it exists
+      if (markerClustererRef.current && markersRef.current.length > 0) {
+        markerClustererRef.current.clearMarkers();
+        markerClustererRef.current.addMarkers(markersRef.current);
+      }
+      return;
+    }
+
     // Clear existing clusterer
     if (markerClustererRef.current) {
       markerClustererRef.current.clearMarkers();
@@ -313,11 +334,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       if (marker.setMap) marker.setMap(null);
     });
     markersRef.current = [];
-
-    // If markers should be hidden (e.g., during navigation), don't render them
-    if (hideMarkers) {
-      return;
-    }
 
     // Create info window if not exists
     if (!infoWindowRef.current) {
@@ -622,12 +638,13 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       if (marker) {
         const currentIcon = marker.getIcon();
         if (currentIcon && typeof currentIcon === 'object') {
-          console.log('✨ Scaling marker up to 72px');
-          // Make marker bigger (1.3x scale = 72px from 56px) with proper anchor to prevent cutoff
+          console.log('✨ Scaling marker up to 70px');
+          // Make marker bigger (1.25x scale = 70px from 56px) with proper anchor to prevent cutoff
+          // Anchor needs extra padding at bottom to show pulse shadow
           marker.setIcon({
             ...currentIcon,
-            scaledSize: new google.maps.Size(72, 72),
-            anchor: new google.maps.Point(36, 72), // Center horizontally, anchor at bottom
+            scaledSize: new google.maps.Size(70, 70),
+            anchor: new google.maps.Point(35, 60), // Center horizontally, anchor above bottom to show pulse
           });
         }
         
