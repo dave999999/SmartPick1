@@ -143,7 +143,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
               scrollPaddingRight: '32px'
             }}
           >
-            {filteredOffers.slice(0, 10).map((offer: Offer, index: number) => {
+            {filteredOffers.map((offer: Offer, index: number) => {
               const isCentered = index === centeredCardIndex;
               
               return (
