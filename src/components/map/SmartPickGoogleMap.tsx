@@ -145,6 +145,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const markerClustererRef = useRef<MarkerClusterer | null>(null);
   const userMarkerRef = useRef<any>(null);
   const infoWindowRef = useRef<any>(null);
+  const pulseOverlayRef = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -580,6 +581,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // NEW: Highlight marker when card is scrolled into view
   useEffect(() => {
+    // Clean up previous pulse overlay
+    if (pulseOverlayRef.current) {
+      pulseOverlayRef.current.setMap(null);
+      pulseOverlayRef.current = null;
+    }
+
     if (!google || !highlightedOfferId || markersRef.current.length === 0) {
       console.log('⚠️ Marker highlight skipped:', { hasGoogle: !!google, highlightedOfferId, markerCount: markersRef.current.length });
       return;
@@ -601,89 +608,103 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     });
 
     // Find marker for highlighted offer (check locationData.offers)
-    const marker = markersRef.current.find((m: any) => {
-      const locationData = m.locationData;
-      if (!locationData || !locationData.offers) {
-        return false;
-      }
-      return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
-    });
+    const findAndHighlightMarker = () => {
+      const marker = markersRef.current.find((m: any) => {
+        const locationData = m.locationData;
+        if (!locationData || !locationData.offers) {
+          return false;
+        }
+        return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
+      });
 
-    console.log('🔍 Found marker:', !!marker);
+      console.log('🔍 Found marker:', !!marker);
 
-    if (marker) {
-      const currentIcon = marker.getIcon();
-      if (currentIcon && typeof currentIcon === 'object') {
-        console.log('✨ Scaling marker up to 72px');
-        // Make marker bigger (1.3x scale = 72px from 56px) with proper anchor to prevent cutoff
-        marker.setIcon({
-          ...currentIcon,
-          scaledSize: new google.maps.Size(72, 72),
-          anchor: new google.maps.Point(36, 72), // Center horizontally, anchor at bottom
-        });
-      }
-      
-      // Bring to front
-      marker.setZIndex(1000);
-      
-      console.log('🎈 Adding smooth floating effect');
-      // No built-in animation - we'll use CSS transform on the marker's div
-      // Google Maps animations are too aggressive, so skip them
-      
-      // Add pulsing shadow element below marker
-      const markerPosition = marker.getPosition();
-      if (markerPosition) {
-        // Create pulse shadow overlay
-        const pulseOverlay = new google.maps.OverlayView();
-        pulseOverlay.onAdd = function() {
-          const div = document.createElement('div');
-          div.style.cssText = `
-            position: absolute;
-            width: 50px;
-            height: 25px;
-            border-radius: 50%;
-            background: radial-gradient(ellipse, rgba(255, 138, 0, 0.5) 0%, rgba(255, 138, 0, 0.2) 40%, transparent 70%);
-            animation: markerPulse 2s ease-in-out infinite;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            filter: blur(4px);
-          `;
-          
-          const panes = this.getPanes();
-          if (panes) {
-            panes.overlayLayer.appendChild(div);
-          }
-          
-          this.div = div;
-        };
+      if (marker) {
+        const currentIcon = marker.getIcon();
+        if (currentIcon && typeof currentIcon === 'object') {
+          console.log('✨ Scaling marker up to 72px');
+          // Make marker bigger (1.3x scale = 72px from 56px) with proper anchor to prevent cutoff
+          marker.setIcon({
+            ...currentIcon,
+            scaledSize: new google.maps.Size(72, 72),
+            anchor: new google.maps.Point(36, 72), // Center horizontally, anchor at bottom
+          });
+        }
         
-        pulseOverlay.draw = function() {
-          const projection = this.getProjection();
-          if (projection && markerPosition && this.div) {
-            const point = projection.fromLatLngToDivPixel(markerPosition);
-            if (point) {
-              this.div.style.left = point.x + 'px';
-              this.div.style.top = (point.y + 10) + 'px'; // Position below marker
+        // Bring to front
+        marker.setZIndex(1000);
+        
+        console.log('🎈 Adding continuous pulsing effect');
+        
+        // Add pulsing shadow element below marker (continuous - doesn't auto-remove)
+        const markerPosition = marker.getPosition();
+        if (markerPosition) {
+          const pulseOverlay = new google.maps.OverlayView();
+          pulseOverlay.onAdd = function() {
+            const div = document.createElement('div');
+            div.style.cssText = `
+              position: absolute;
+              width: 50px;
+              height: 25px;
+              border-radius: 50%;
+              background: radial-gradient(ellipse, rgba(255, 138, 0, 0.5) 0%, rgba(255, 138, 0, 0.2) 40%, transparent 70%);
+              animation: markerPulse 2s ease-in-out infinite;
+              pointer-events: none;
+              transform: translate(-50%, -50%);
+              filter: blur(4px);
+              opacity: 0;
+              transition: opacity 0.3s ease-in;
+            `;
+            
+            const panes = this.getPanes();
+            if (panes) {
+              panes.overlayLayer.appendChild(div);
+              // Fade in after a brief delay
+              setTimeout(() => {
+                div.style.opacity = '1';
+              }, 50);
             }
-          }
-        };
-        
-        pulseOverlay.onRemove = function() {
-          if (this.div && this.div.parentNode) {
-            this.div.parentNode.removeChild(this.div);
-          }
-        };
-        
-        pulseOverlay.setMap(mapRef.current);
-        
-        // Remove pulse after 3 seconds
-        setTimeout(() => {
-          pulseOverlay.setMap(null);
-        }, 3000);
+            
+            this.div = div;
+          };
+          
+          pulseOverlay.draw = function() {
+            const projection = this.getProjection();
+            if (projection && markerPosition && this.div) {
+              const point = projection.fromLatLngToDivPixel(markerPosition);
+              if (point) {
+                this.div.style.left = point.x + 'px';
+                this.div.style.top = (point.y + 10) + 'px'; // Position below marker
+              }
+            }
+          };
+          
+          pulseOverlay.onRemove = function() {
+            if (this.div && this.div.parentNode) {
+              this.div.parentNode.removeChild(this.div);
+            }
+          };
+          
+          pulseOverlay.setMap(mapRef.current);
+          pulseOverlayRef.current = pulseOverlay;
+        }
+      } else {
+        console.warn('❌ No marker found for offer:', highlightedOfferId);
+        // Retry after a short delay in case marker is still loading
+        setTimeout(findAndHighlightMarker, 300);
       }
-    } else {
-      console.warn('❌ No marker found for offer:', highlightedOfferId);
-    }
+    };
+
+    // Try immediately and retry if needed
+    findAndHighlightMarker();
+
+    // Cleanup function
+    return () => {
+      if (pulseOverlayRef.current) {
+        pulseOverlayRef.current.setMap(null);
+        pulseOverlayRef.current = null;
+      }
+    };
   }, [highlightedOfferId, google]);
 
   // Handle "Near Me" button
