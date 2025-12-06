@@ -73,85 +73,32 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     return Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
   };
 
-  // If minimized, render carousel instead of sheet
+  // If minimized, render carousel with same card design
   if (isMinimized) {
     return (
-      <div className="fixed bottom-24 left-4 right-4 z-40">
-        <div className="relative bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="fixed bottom-24 left-0 right-0 z-40 px-4">
+        <div className="relative">
           {/* Carousel Container */}
           <div 
-            className="flex transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${carouselIndex * 100}%)` }}
+            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            style={{ 
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch'
+            }}
           >
-            {filteredOffers.slice(0, 10).map((offer: Offer, index: number) => (
+            {filteredOffers.slice(0, 10).map((offer: Offer) => (
               <div 
                 key={offer.id}
-                className="min-w-full flex-shrink-0 p-4 cursor-pointer"
-                onClick={() => onOfferSelect(offer)}
-                onTouchStart={(e) => {
-                  const touchStart = e.touches[0].clientX;
-                  const handleTouchMove = (e: TouchEvent) => {
-                    const touchEnd = e.touches[0].clientX;
-                    const diff = touchStart - touchEnd;
-                    if (Math.abs(diff) > 50) {
-                      if (diff > 0 && carouselIndex < filteredOffers.length - 1) {
-                        setCarouselIndex(carouselIndex + 1);
-                      } else if (diff < 0 && carouselIndex > 0) {
-                        setCarouselIndex(carouselIndex - 1);
-                      }
-                      document.removeEventListener('touchmove', handleTouchMove);
-                    }
-                  };
-                  document.addEventListener('touchmove', handleTouchMove);
-                  document.addEventListener('touchend', () => {
-                    document.removeEventListener('touchmove', handleTouchMove);
-                  }, { once: true });
-                }}
+                className="flex-shrink-0 w-[280px] snap-center"
               >
-                <div className="flex gap-3">
-                  <img 
-                    src={offer.images?.[0] || '/images/Map.jpg'}
-                    alt={offer.title}
-                    className="w-20 h-20 rounded-xl object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-sm text-gray-900 line-clamp-1">
-                      {offer.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 line-clamp-1 mt-1">
-                      {offer.description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-lg font-bold text-[#FF7A1A]">
-                        ₾{Math.round(offer.smart_price)}
-                      </span>
-                      {offer.original_price && offer.original_price > offer.smart_price && (
-                        <>
-                          <span className="text-sm text-gray-400 line-through">
-                            ₾{Math.round(offer.original_price)}
-                          </span>
-                          <span className="text-xs font-semibold text-[#FF7A1A]">
-                            {getDiscount(offer)}% OFF
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <OfferListCard
+                  title={offer.title}
+                  imageUrl={offer.images?.[0] || '/images/Map.jpg'}
+                  priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
+                  priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
+                  onClick={() => onOfferSelect(offer)}
+                />
               </div>
-            ))}
-          </div>
-          
-          {/* Carousel Indicators */}
-          <div className="flex justify-center gap-1 pb-3">
-            {filteredOffers.slice(0, 10).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCarouselIndex(index)}
-                className={`h-1.5 rounded-full transition-all ${
-                  index === carouselIndex ? 'w-6 bg-[#FF7A1A]' : 'w-1.5 bg-gray-300'
-                }`}
-              />
             ))}
           </div>
         </div>
