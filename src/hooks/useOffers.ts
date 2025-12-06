@@ -26,9 +26,10 @@ export function useOffers() {
           partner:partners(
             id,
             business_name,
-            location,
-            contact_number,
-            address
+            address,
+            latitude,
+            longitude,
+            phone
           )
         `)
         .eq('status', 'ACTIVE')
@@ -37,10 +38,22 @@ export function useOffers() {
 
       if (fetchError) throw fetchError;
       
-      console.log('📦 Loaded offers with partner data:', data?.length, 'offers');
-      console.log('🔍 Sample offer:', data?.[0]);
+      // Transform flat lat/lng to location object for compatibility
+      const offersWithLocation = data?.map(offer => ({
+        ...offer,
+        partner: offer.partner ? {
+          ...offer.partner,
+          location: {
+            latitude: offer.partner.latitude,
+            longitude: offer.partner.longitude
+          }
+        } : null
+      }));
       
-      setOffers(data || []);
+      console.log('📦 Loaded offers with partner data:', offersWithLocation?.length, 'offers');
+      console.log('🔍 Sample offer:', offersWithLocation?.[0]);
+      
+      setOffers(offersWithLocation || []);
     } catch (err) {
       console.error('❌ Error fetching offers:', err);
       setError(err as Error);
