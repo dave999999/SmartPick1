@@ -233,9 +233,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
           Discover Deals and Offers
         </SheetTitle>
-        <div className="h-full overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
+        <div className="h-full overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#F8F9FB] to-[#FFFFFF]" ref={scrollContainerRef}>
           {/* Search Bar & Categories */}
-          <div className="bg-white px-4 pt-4 pb-3">
+          <div className="px-4 pt-4 pb-3">
             {/* Search Bar */}
             <div className="relative flex items-center h-11 bg-[#F5F5F5] rounded-xl mb-3">
               <Search className="absolute left-3 w-4 h-4 text-gray-400" />
@@ -274,7 +274,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           </div>
 
           {/* Main Content */}
-          <div className="bg-[#FAFAFA]">
+          <div>
             {/* Show Featured & Popular only when NO category is selected */}
             {!selectedCategory && (
               <>
@@ -293,8 +293,15 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                           <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
                             {/* Pixel-Perfect Special Offer Card */}
                             <div
-                              className="relative rounded-3xl p-4 bg-white cursor-pointer transition-transform active:scale-[0.98] shadow-md"
+                              className="relative rounded-3xl p-4 cursor-pointer transition-transform active:scale-[0.98]"
                               onClick={() => onOfferSelect(offer)}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.7)',
+                                backdropFilter: 'blur(20px)',
+                                WebkitBackdropFilter: 'blur(20px)',
+                                boxShadow: '0 8px 32px rgba(31, 38, 135, 0.15)',
+                                border: '1px solid rgba(255, 255, 255, 0.18)'
+                              }}
                             >
                               <div className="flex items-start gap-3">
                                 {/* Product Image */}
