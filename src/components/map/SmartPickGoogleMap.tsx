@@ -582,6 +582,19 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   useEffect(() => {
     if (!google || !highlightedOfferId || markersRef.current.length === 0) return;
 
+    // Reset all markers to normal size first
+    markersRef.current.forEach((m: any) => {
+      const currentIcon = m.getIcon();
+      if (currentIcon && typeof currentIcon === 'object') {
+        m.setIcon({
+          ...currentIcon,
+          scaledSize: new google.maps.Size(56, 56),
+          anchor: new google.maps.Point(28, 56),
+        });
+      }
+      m.setZIndex(1);
+    });
+
     // Find marker for highlighted offer
     const marker = markersRef.current.find((m: any) => {
       const offers = m.offers || [];
@@ -589,13 +602,26 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     });
 
     if (marker) {
-      // Bounce animation
+      const currentIcon = marker.getIcon();
+      if (currentIcon && typeof currentIcon === 'object') {
+        // Make marker bigger (1.4x scale = 78px from 56px)
+        marker.setIcon({
+          ...currentIcon,
+          scaledSize: new google.maps.Size(78, 78),
+          anchor: new google.maps.Point(39, 78),
+        });
+      }
+      
+      // Bring to front
+      marker.setZIndex(1000);
+      
+      // Bounce animation for emphasis
       marker.setAnimation(google.maps.Animation.BOUNCE);
       
-      // Stop after 1 second
+      // Stop bounce after 1.5 seconds
       setTimeout(() => {
         if (marker) marker.setAnimation(null);
-      }, 1000);
+      }, 1500);
     }
   }, [highlightedOfferId, google]);
 
@@ -642,6 +668,17 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   return (
     <div className="w-full h-full relative">
+      {/* Pulse animation for highlighted marker */}
+      <style>{`
+        @keyframes markerPulse {
+          0%, 100% {
+            filter: drop-shadow(0 0 0px rgba(255, 138, 0, 0));
+          }
+          50% {
+            filter: drop-shadow(0 0 20px rgba(255, 138, 0, 0.8)) drop-shadow(0 0 40px rgba(255, 138, 0, 0.4));
+          }
+        }
+      `}</style>
       <div
         ref={mapContainerRef}
         className="w-full h-full rounded-2xl"
