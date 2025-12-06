@@ -273,13 +273,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             </div>
           </div>
 
-          {/* Main Content - Gradient background for glass effect */}
-          <div 
-            className="min-h-screen relative"
-            style={{
-              background: 'linear-gradient(135deg, #FFF5EB 0%, #FFE8D6 25%, #FFF9F5 50%, #F0F4FF 75%, #FFFFFF 100%)',
-            }}
-          >
+          {/* Main Content */}
+          <div className="bg-[#FAFAFA]">
             {/* Show Featured & Popular only when NO category is selected */}
             {!selectedCategory && (
               <>
@@ -298,14 +293,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                           <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
                             {/* Pixel-Perfect Special Offer Card */}
                             <div
-                              className="relative rounded-3xl p-4 border border-white/20 cursor-pointer transition-transform active:scale-[0.98]"
+                              className="relative rounded-3xl p-4 bg-white cursor-pointer transition-transform active:scale-[0.98] shadow-md"
                               onClick={() => onOfferSelect(offer)}
-                              style={{
-                                background: 'rgba(255, 255, 255, 0.4)',
-                                backdropFilter: 'blur(24px)',
-                                WebkitBackdropFilter: 'blur(24px)',
-                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-                              }}
                             >
                               <div className="flex items-start gap-3">
                                 {/* Product Image */}
