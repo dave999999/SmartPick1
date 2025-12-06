@@ -74,7 +74,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   };
 
   // If minimized, render carousel with same card design
-  if (isMinimized) {
+  if (isOpen && isMinimized) {
     return (
       <div className="fixed bottom-24 left-0 right-0 z-40 px-4">
         <div className="relative">
@@ -104,6 +104,11 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         </div>
       </div>
     );
+  }
+  
+  // If closed, don't render anything
+  if (!isOpen) {
+    return null;
   }
 
   return (
