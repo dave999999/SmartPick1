@@ -89,7 +89,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             {filteredOffers.slice(0, 10).map((offer: Offer) => (
               <div 
                 key={offer.id}
-                className="flex-shrink-0 w-[110px] snap-center scale-[0.7] -mx-2"
+                className="flex-shrink-0 w-[140px] snap-center scale-[0.85] -mx-4"
               >
                 <OfferListCard
                   title={offer.title}
