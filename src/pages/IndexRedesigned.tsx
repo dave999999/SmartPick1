@@ -773,11 +773,13 @@ export default function IndexRedesigned() {
           
           if (offer && googleMap && offer.partner?.location) {
             console.log('✅ Panning map to:', offer.partner.location);
-            // Pan map to centered offer's location smoothly
+            // Pan map to centered offer's location smoothly and zoom in
             googleMap.panTo({
               lat: offer.partner.location.latitude,
               lng: offer.partner.location.longitude,
             });
+            // Zoom in to focus on individual offer (16-17 is street level, avoids cluster view)
+            googleMap.setZoom(16);
             // Highlight the offer marker
             setHighlightedOfferId(offer.id);
           } else {
