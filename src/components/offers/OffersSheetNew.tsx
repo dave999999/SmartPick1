@@ -102,12 +102,21 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         }
       });
 
-      setCenteredCardIndex(closestIndex);
-      
-      // Notify parent of centered offer change
-      if (onCenteredOfferChange) {
-        const centeredOffer = filteredOffers[closestIndex];
-        onCenteredOfferChange(centeredOffer || null);
+      if (closestIndex !== centeredCardIndex) {
+        setCenteredCardIndex(closestIndex);
+        
+        // Notify parent of centered offer change
+        if (onCenteredOfferChange) {
+          const centeredOffer = filteredOffers[closestIndex];
+          console.log('🎯 Centered offer changed:', {
+            index: closestIndex,
+            offerId: centeredOffer?.id,
+            title: centeredOffer?.title,
+            hasPartner: !!centeredOffer?.partner,
+            location: centeredOffer?.partner?.location
+          });
+          onCenteredOfferChange(centeredOffer || null);
+        }
       }
     };
 
@@ -116,7 +125,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     handleScroll(); // Initial check
 
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [isMinimized, filteredOffers, onCenteredOfferChange]);
+  }, [isMinimized, filteredOffers, onCenteredOfferChange, centeredCardIndex]);
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {

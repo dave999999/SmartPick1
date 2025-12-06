@@ -763,7 +763,16 @@ export default function IndexRedesigned() {
           setIsSheetMinimized(false);
         }}
         onCenteredOfferChange={(offer) => {
+          console.log('🗺️ Map sync - Centered offer:', {
+            offerId: offer?.id,
+            hasGoogleMap: !!googleMap,
+            hasPartner: !!offer?.partner,
+            hasLocation: !!offer?.partner?.location,
+            location: offer?.partner?.location
+          });
+          
           if (offer && googleMap && offer.partner?.location) {
+            console.log('✅ Panning map to:', offer.partner.location);
             // Pan map to centered offer's location smoothly
             googleMap.panTo({
               lat: offer.partner.location.latitude,
@@ -771,6 +780,8 @@ export default function IndexRedesigned() {
             });
             // Highlight the offer marker
             setHighlightedOfferId(offer.id);
+          } else {
+            console.warn('❌ Cannot pan map - missing data');
           }
         }}
       />
