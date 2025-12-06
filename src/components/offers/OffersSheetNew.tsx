@@ -57,17 +57,21 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     return matchesPartner && matchesCategory && matchesSearch && offer.status === 'ACTIVE';
   });
 
-  // Get featured offer (first offer with highest discount)
-  const featuredOffer = filteredOffers
+  // Get special offers (50% or more discount)
+  const specialOffers = filteredOffers
+    .filter((offer: Offer) => {
+      const discount = getDiscount(offer);
+      return discount && discount >= 50;
+    })
     .sort((a: Offer, b: Offer) => {
       const discountA = ((a.original_price - a.smart_price) / a.original_price) * 100;
       const discountB = ((b.original_price - b.smart_price) / b.original_price) * 100;
       return discountB - discountA;
-    })[0];
+    });
 
   // Get popular offers sorted by reservation_count
   const popularOffers = [...filteredOffers]
-    .filter(offer => offer.id !== featuredOffer?.id)
+    .filter(offer => !specialOffers.some(special => special.id === offer.id))
     .sort((a: Offer, b: Offer) => (b.reservation_count || 0) - (a.reservation_count || 0))
     .slice(0, 10);
 
@@ -274,89 +278,100 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             {/* Show Featured & Popular only when NO category is selected */}
             {!selectedCategory && (
               <>
-                {/* Today's Special Offer */}
-                {featuredOffer && (
-                  <div className="px-4 pt-6 pb-4">
-                    <h2 className="text-[18px] font-bold text-gray-900 mb-4">
-                      Today's Special Offer
-                    </h2>
-                    {/* Pixel-Perfect Special Offer Card */}
-                    <div
-                      className="relative rounded-3xl p-4 border border-white/20 cursor-pointer transition-transform active:scale-[0.98]"
-                      onClick={() => onOfferSelect(featuredOffer)}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.4)',
-                        backdropFilter: 'blur(24px)',
-                        WebkitBackdropFilter: 'blur(24px)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-                      }}
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* Product Image */}
-                        <div
-                          className="flex-shrink-0 rounded-2xl overflow-hidden"
-                          style={{
-                            width: '76px',
-                            height: '76px',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                          }}
-                        >
-                          <img
-                            src={featuredOffer.images?.[0] || '/images/Map.jpg'}
-                            alt={featuredOffer.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                {/* Today's Special Offers (50%+ discount) - Swipable Carousel */}
+                {specialOffers.length > 0 && (
+                  <div className="pt-6 pb-4">
+                    <div className="px-4 mb-4">
+                      <h2 className="text-[18px] font-bold text-gray-900">
+                        Today's Special Offer
+                      </h2>
+                    </div>
+                    {/* Horizontal Scrollable Cards */}
+                    <div className="overflow-x-auto scrollbar-hide">
+                      <div className="flex gap-4 px-4 snap-x snap-mandatory">
+                        {specialOffers.map((offer: Offer) => (
+                          <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
+                            {/* Pixel-Perfect Special Offer Card */}
+                            <div
+                              className="relative rounded-3xl p-4 border border-white/20 cursor-pointer transition-transform active:scale-[0.98]"
+                              onClick={() => onOfferSelect(offer)}
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.4)',
+                                backdropFilter: 'blur(24px)',
+                                WebkitBackdropFilter: 'blur(24px)',
+                                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                              }}
+                            >
+                              <div className="flex items-start gap-3">
+                                {/* Product Image */}
+                                <div
+                                  className="flex-shrink-0 rounded-2xl overflow-hidden"
+                                  style={{
+                                    width: '76px',
+                                    height: '76px',
+                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                  }}
+                                >
+                                  <img
+                                    src={offer.images?.[0] || '/images/Map.jpg'}
+                                    alt={offer.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
 
-                        {/* Content Stack */}
-                        <div className="flex-1 flex flex-col gap-1.5">
-                          {/* Title */}
-                          <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">
-                            {featuredOffer.title}
-                          </h3>
+                                {/* Content Stack */}
+                                <div className="flex-1 flex flex-col gap-1.5">
+                                  {/* Title */}
+                                  <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">
+                                    {offer.title}
+                                  </h3>
 
-                          {/* Price Row */}
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-[22px] font-bold leading-none" style={{ color: '#FF8A00' }}>
-                              ₾{Math.round(featuredOffer.smart_price)}
-                            </span>
-                            {getDiscount(featuredOffer) && (
-                              <div
-                                className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white leading-none"
-                                style={{
-                                  background: 'linear-gradient(135deg, #FF7A00 0%, #FF4E00 100%)',
-                                }}
-                              >
-                                {getDiscount(featuredOffer)}% off
+                                  {/* Price Row */}
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-[22px] font-bold leading-none" style={{ color: '#FF8A00' }}>
+                                      ₾{Math.round(offer.smart_price)}
+                                    </span>
+                                    {getDiscount(offer) && (
+                                      <div
+                                        className="px-2 py-0.5 rounded-full text-[10px] font-semibold text-white leading-none"
+                                        style={{
+                                          background: 'linear-gradient(135deg, #FF7A00 0%, #FF4E00 100%)',
+                                        }}
+                                      >
+                                        {getDiscount(offer)}% off
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Old Price + Status */}
+                                  <div className="flex items-center gap-2 text-xs">
+                                    {offer.original_price && (
+                                      <span className="line-through font-medium" style={{ color: '#9CA3AF' }}>
+                                        ₾{Math.round(offer.original_price)}
+                                      </span>
+                                    )}
+                                    <span className="text-gray-500">Now</span>
+                                  </div>
+                                </div>
+
+                                {/* Reserve Button */}
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOfferSelect(offer);
+                                  }}
+                                  className="absolute bottom-4 right-4 px-5 py-2 rounded-full text-white text-sm font-semibold transition-transform active:scale-95"
+                                  style={{
+                                    background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
+                                    boxShadow: '0 4px 16px rgba(255, 138, 0, 0.3)',
+                                  }}
+                                >
+                                  Reserve Now
+                                </button>
                               </div>
-                            )}
+                            </div>
                           </div>
-
-                          {/* Old Price + Status */}
-                          <div className="flex items-center gap-2 text-xs">
-                            {featuredOffer.original_price && (
-                              <span className="line-through font-medium" style={{ color: '#9CA3AF' }}>
-                                ₾{Math.round(featuredOffer.original_price)}
-                              </span>
-                            )}
-                            <span className="text-gray-500">Now</span>
-                          </div>
-                        </div>
-
-                        {/* Reserve Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOfferSelect(featuredOffer);
-                          }}
-                          className="absolute bottom-4 right-4 px-5 py-2 rounded-full text-white text-sm font-semibold transition-transform active:scale-95"
-                          style={{
-                            background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
-                            boxShadow: '0 4px 16px rgba(255, 138, 0, 0.3)',
-                          }}
-                        >
-                          Reserve Now
-                        </button>
+                        ))}
                       </div>
                     </div>
                   </div>
