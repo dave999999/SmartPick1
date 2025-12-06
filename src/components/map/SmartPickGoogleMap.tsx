@@ -580,7 +580,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // NEW: Highlight marker when card is scrolled into view
   useEffect(() => {
-    if (!google || !highlightedOfferId || markersRef.current.length === 0) return;
+    if (!google || !highlightedOfferId || markersRef.current.length === 0) {
+      console.log('⚠️ Marker highlight skipped:', { hasGoogle: !!google, highlightedOfferId, markerCount: markersRef.current.length });
+      return;
+    }
+
+    console.log('🎯 Highlighting marker for offer:', highlightedOfferId);
 
     // Reset all markers to normal size first
     markersRef.current.forEach((m: any) => {
@@ -595,15 +600,21 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       m.setZIndex(1);
     });
 
-    // Find marker for highlighted offer
+    // Find marker for highlighted offer (check locationData.offers)
     const marker = markersRef.current.find((m: any) => {
-      const offers = m.offers || [];
-      return offers.some((offer: Offer) => offer.id === highlightedOfferId);
+      const locationData = m.locationData;
+      if (!locationData || !locationData.offers) {
+        return false;
+      }
+      return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
     });
+
+    console.log('🔍 Found marker:', !!marker);
 
     if (marker) {
       const currentIcon = marker.getIcon();
       if (currentIcon && typeof currentIcon === 'object') {
+        console.log('✨ Scaling marker up to 78px');
         // Make marker bigger (1.4x scale = 78px from 56px)
         marker.setIcon({
           ...currentIcon,
@@ -615,13 +626,19 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       // Bring to front
       marker.setZIndex(1000);
       
+      console.log('🎈 Starting bounce animation');
       // Bounce animation for emphasis
       marker.setAnimation(google.maps.Animation.BOUNCE);
       
       // Stop bounce after 1.5 seconds
       setTimeout(() => {
-        if (marker) marker.setAnimation(null);
+        if (marker) {
+          marker.setAnimation(null);
+          console.log('🛑 Stopped bounce');
+        }
       }, 1500);
+    } else {
+      console.warn('❌ No marker found for offer:', highlightedOfferId);
     }
   }, [highlightedOfferId, google]);
 
