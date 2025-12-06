@@ -221,19 +221,20 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[82vh] max-h-[720px] p-0 border-none bg-[#FAFAFA] rounded-t-[24px] overflow-hidden z-40"
+        className="h-[82vh] max-h-[720px] p-0 border-none rounded-t-[24px] overflow-hidden z-40"
         style={{
           left: '8px',
           right: '8px',
           bottom: '8px',
           width: 'calc(100% - 16px)',
           maxWidth: '100%',
+          background: 'linear-gradient(180deg, #F5F7FA 0%, #FFFFFF 100%)',
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
           Discover Deals and Offers
         </SheetTitle>
-        <div className="h-full overflow-y-auto overflow-x-hidden bg-gradient-to-b from-[#F8F9FB] to-[#FFFFFF]" ref={scrollContainerRef}>
+        <div className="h-full overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
           {/* Search Bar & Categories */}
           <div className="px-4 pt-4 pb-3">
             {/* Search Bar */}
