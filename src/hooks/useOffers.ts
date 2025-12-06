@@ -23,7 +23,7 @@ export function useOffers() {
         .from('offers')
         .select(`
           *,
-          partner:partners!inner(
+          partner:partners(
             id,
             business_name,
             location,
@@ -36,8 +36,13 @@ export function useOffers() {
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
+      
+      console.log('📦 Loaded offers with partner data:', data?.length, 'offers');
+      console.log('🔍 Sample offer:', data?.[0]);
+      
       setOffers(data || []);
     } catch (err) {
+      console.error('❌ Error fetching offers:', err);
       setError(err as Error);
     } finally {
       setLoading(false);
