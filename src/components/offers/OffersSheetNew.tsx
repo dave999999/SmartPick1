@@ -80,7 +80,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         <div className="relative">
           {/* Carousel Container */}
           <div 
-            className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            className="flex gap-1 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
             style={{ 
               scrollSnapType: 'x mandatory',
               WebkitOverflowScrolling: 'touch'
