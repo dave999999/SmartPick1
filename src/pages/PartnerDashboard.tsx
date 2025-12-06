@@ -28,7 +28,7 @@ import { supabase } from '@/lib/supabase';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { AnnouncementPopup } from '@/components/AnnouncementPopup';
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { BottomNavBar as FloatingBottomNav } from '@/components/navigation/BottomNavBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

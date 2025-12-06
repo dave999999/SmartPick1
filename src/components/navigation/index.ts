@@ -1,12 +1,13 @@
 /**
  * Bottom Navigation Components - SmartPick Navigation System
  * 
- * Three premium variants for different use cases:
+ * Premium Apple-style floating 3D glass dock:
  * 
- * 1. BottomNavPremium (RECOMMENDED)
- *    - iOS-style glassmorphism with backdrop blur
- *    - Premium feel for flagship experience
- *    - 60px floating center button with glow
+ * 1. BottomNavBar (NEW - RECOMMENDED)
+ *    - VisionOS-inspired floating glass dock
+ *    - Frosted glass with 3D cosmic orange bubble
+ *    - Superellipse radius, 64px height
+ *    - Also exported as BottomNavPremium for compatibility
  * 
  * 2. BottomNavStandard
  *    - Clean white design with subtle shadows
@@ -19,9 +20,9 @@
  *    - 48px inline center button
  */
 
-export { BottomNavPremium } from './BottomNavPremium';
+export { BottomNavBar, BottomNavPremium } from './BottomNavBar';
 export { BottomNavStandard } from './BottomNavStandard';
 export { BottomNavMinimal } from './BottomNavMinimal';
 
-// Default export: Premium variant (recommended)
-export { BottomNavPremium as default } from './BottomNavPremium';
+// Default export: New glass dock (recommended)
+export { BottomNavBar as default } from './BottomNavBar';

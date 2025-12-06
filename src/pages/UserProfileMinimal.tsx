@@ -8,7 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Avatar } from '../components/ui/avatar';
-import { BottomNavPremium } from '../components/navigation/BottomNavPremium';
+import { BottomNavBar as BottomNavPremium } from '../components/navigation/BottomNavBar';
 
 // Types (same as Premium)
 interface UserStats {

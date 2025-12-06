@@ -7,7 +7,7 @@ import { User as UserIcon, Coins, Trophy, Users, HelpCircle, Bell, Lock, Globe, 
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Avatar } from '../components/ui/avatar';
-import { BottomNavPremium } from '../components/navigation/BottomNavPremium';
+import { BottomNavBar as BottomNavPremium } from '../components/navigation/BottomNavBar';
 
 // Types
 interface UserStats {

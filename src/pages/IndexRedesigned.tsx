@@ -34,7 +34,7 @@ import { getReservationById, cancelReservation } from '@/lib/api/reservations';
 import { Reservation } from '@/lib/types';
 
 // Premium Navigation Components
-import { BottomNavPremium as FloatingBottomNav } from '@/components/navigation';
+import { BottomNavBar as FloatingBottomNav } from '@/components/navigation/BottomNavBar';
 import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {

@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { BottomNavPremium, BottomNavStandard, BottomNavMinimal } from '@/components/navigation';
+import { BottomNavBar as BottomNavPremium, BottomNavStandard, BottomNavMinimal } from '@/components/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 

@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar } from '../components/ui/avatar';
-import { BottomNavPremium } from '../components/navigation/BottomNavPremium';
+import { BottomNavBar as BottomNavPremium } from '../components/navigation/BottomNavBar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
