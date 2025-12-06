@@ -614,29 +614,80 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     if (marker) {
       const currentIcon = marker.getIcon();
       if (currentIcon && typeof currentIcon === 'object') {
-        console.log('✨ Scaling marker up to 78px');
-        // Make marker bigger (1.4x scale = 78px from 56px)
+        console.log('✨ Scaling marker up to 72px');
+        // Make marker bigger (1.3x scale = 72px from 56px) with proper anchor to prevent cutoff
         marker.setIcon({
           ...currentIcon,
-          scaledSize: new google.maps.Size(78, 78),
-          anchor: new google.maps.Point(39, 78),
+          scaledSize: new google.maps.Size(72, 72),
+          anchor: new google.maps.Point(36, 72), // Center horizontally, anchor at bottom
         });
       }
       
       // Bring to front
       marker.setZIndex(1000);
       
-      console.log('🎈 Starting bounce animation');
-      // Bounce animation for emphasis
-      marker.setAnimation(google.maps.Animation.BOUNCE);
+      console.log('🎈 Starting subtle bounce animation');
+      // Subtle bounce animation (Google Maps BOUNCE is too aggressive, use DROP for gentler effect)
+      marker.setAnimation(google.maps.Animation.DROP);
       
-      // Stop bounce after 1.5 seconds
+      // Stop bounce after 0.7 seconds for subtle effect
       setTimeout(() => {
         if (marker) {
           marker.setAnimation(null);
           console.log('🛑 Stopped bounce');
         }
-      }, 1500);
+      }, 700);
+      
+      // Add pulsing shadow element below marker
+      const markerPosition = marker.getPosition();
+      if (markerPosition) {
+        // Create pulse shadow overlay
+        const pulseOverlay = new google.maps.OverlayView();
+        pulseOverlay.onAdd = function() {
+          const div = document.createElement('div');
+          div.style.cssText = `
+            position: absolute;
+            width: 40px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 138, 0, 0.4) 0%, transparent 70%);
+            animation: markerPulse 1.5s ease-in-out infinite;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+          `;
+          
+          const panes = this.getPanes();
+          if (panes) {
+            panes.overlayLayer.appendChild(div);
+          }
+          
+          this.div = div;
+        };
+        
+        pulseOverlay.draw = function() {
+          const projection = this.getProjection();
+          if (projection && markerPosition && this.div) {
+            const point = projection.fromLatLngToDivPixel(markerPosition);
+            if (point) {
+              this.div.style.left = point.x + 'px';
+              this.div.style.top = (point.y + 10) + 'px'; // Position below marker
+            }
+          }
+        };
+        
+        pulseOverlay.onRemove = function() {
+          if (this.div && this.div.parentNode) {
+            this.div.parentNode.removeChild(this.div);
+          }
+        };
+        
+        pulseOverlay.setMap(mapRef.current);
+        
+        // Remove pulse after 3 seconds
+        setTimeout(() => {
+          pulseOverlay.setMap(null);
+        }, 3000);
+      }
     } else {
       console.warn('❌ No marker found for offer:', highlightedOfferId);
     }
