@@ -80,7 +80,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         <div className="relative">
           {/* Carousel Container */}
           <div 
-            className="flex gap-0 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
+            className="flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth"
             style={{ 
               scrollSnapType: 'x mandatory',
               WebkitOverflowScrolling: 'touch'
@@ -89,7 +89,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             {filteredOffers.slice(0, 10).map((offer: Offer) => (
               <div 
                 key={offer.id}
-                className="flex-shrink-0 w-[140px] snap-center scale-[0.85] -mx-4"
+                className="flex-shrink-0 w-[140px] snap-center scale-[0.85]"
               >
                 <OfferListCard
                   title={offer.title}
