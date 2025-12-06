@@ -275,9 +275,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
           {/* Main Content - Gradient background for glass effect */}
           <div 
-            className="min-h-screen"
+            className="min-h-screen relative"
             style={{
-              background: 'linear-gradient(180deg, #F8F9FA 0%, #FFFFFF 100%)',
+              background: 'linear-gradient(135deg, #FFF5EB 0%, #FFE8D6 25%, #FFF9F5 50%, #F0F4FF 75%, #FFFFFF 100%)',
             }}
           >
             {/* Show Featured & Popular only when NO category is selected */}
