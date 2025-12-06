@@ -45,6 +45,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     }
   };
 
+  // Calculate discount percentage
+  const getDiscount = (offer: Offer) => {
+    if (!offer.original_price || offer.original_price <= offer.smart_price) return null;
+    return Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
+  };
+
   // Filter offers based on partner, category and search
   const filteredOffers = offers.filter((offer: Offer) => {
     const matchesPartner = !selectedPartnerId || offer.partner_id === selectedPartnerId;
@@ -74,12 +80,6 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     .filter(offer => !specialOffers.some(special => special.id === offer.id))
     .sort((a: Offer, b: Offer) => (b.reservation_count || 0) - (a.reservation_count || 0))
     .slice(0, 10);
-
-  // Calculate discount percentage
-  const getDiscount = (offer: Offer) => {
-    if (!offer.original_price || offer.original_price <= offer.smart_price) return null;
-    return Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100);
-  };
 
   // Track centered card in carousel
   useEffect(() => {
