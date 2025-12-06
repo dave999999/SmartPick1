@@ -124,7 +124,7 @@ export function BottomNavBar({ onCenterClick }: BottomNavBarProps) {
                       <img 
                         src="/favicon_io/smartpick icon.ico" 
                         alt="SmartPick"
-                        className="w-[160px] h-auto max-[360px]:w-[140px]"
+                        className="w-[100px] h-auto max-[360px]:w-[90px]"
                       />
                     </motion.button>
                   </div>
