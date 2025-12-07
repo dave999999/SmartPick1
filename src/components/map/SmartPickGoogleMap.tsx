@@ -503,10 +503,10 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     const pulseOverlay = document.createElement('div');
     pulseOverlay.style.cssText = `
       position: absolute;
-      width: 80px;
-      height: 80px;
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(66, 133, 244, 0.4) 0%, rgba(66, 133, 244, 0) 70%);
+      background: radial-gradient(circle, rgba(34, 197, 94, 0.6) 0%, rgba(34, 197, 94, 0) 70%);
       pointer-events: none;
       transform: translate(-50%, -50%);
       animation: pulse 2s ease-in-out infinite;
@@ -520,11 +520,11 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         @keyframes pulse {
           0%, 100% {
             transform: translate(-50%, -50%) scale(1);
-            opacity: 0.6;
+            opacity: 0.7;
           }
           50% {
-            transform: translate(-50%, -50%) scale(1.3);
-            opacity: 0.3;
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0.2;
           }
         }
       `;
@@ -575,8 +575,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       map: map,
       icon: {
         url: '/icons/map-pins/user.png',
-        scaledSize: new google.maps.Size(48, 48), // User pin size
-        anchor: new google.maps.Point(24, 48), // Center horizontally, anchor at bottom
+        scaledSize: new google.maps.Size(32, 32), // Smaller user pin size
+        anchor: new google.maps.Point(16, 32), // Center horizontally, anchor at bottom
         optimized: false
       },
       zIndex: 9999, // Keep user marker on top
