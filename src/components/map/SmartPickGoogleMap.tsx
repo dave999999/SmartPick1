@@ -38,6 +38,7 @@ interface SmartPickGoogleMapProps {
   highlightedOfferId?: string | null;
   hideMarkers?: boolean; // Hide all offer markers (e.g., during navigation)
   onMapBoundsChange?: (bounds: { north: number; south: number; east: number; west: number }) => void; // 🚀 SCALABILITY: Viewport loading
+  activeReservation?: any | null; // Active reservation for route drawing
 }
 
 interface GroupedLocation {
@@ -80,11 +81,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   'DRIVE': '#6366f1' // indigo
 };
 
-// Create custom marker using category-specific pins
+// Create custom marker - using universal pin for all categories
 function createCustomMarker(category: string): string {
-  // Use category-specific pin from map-pins folder
-  const pinFile = category === 'RESTAURANT' ? '22.png' : `${category}.png`;
-  const iconUrl = `/icons/map-pins/${pinFile}`;
+  // Use universal pin for all categories
+  const iconUrl = `/icons/map-pins/all.png?v=2`;
   return iconUrl;
 }
 
@@ -137,6 +137,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   highlightedOfferId,
   hideMarkers = false,
   onMapBoundsChange,
+  activeReservation,
 }: SmartPickGoogleMapProps) {
   const { isLoaded, google, setGoogleMap } = useGoogleMaps();
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -144,8 +145,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const markersRef = useRef<any[]>([]);
   const markerClustererRef = useRef<MarkerClusterer | null>(null);
   const userMarkerRef = useRef<any>(null);
-  const infoWindowRef = useRef<any>(null);
   const pulseOverlayRef = useRef<any>(null);
+  const routePolylineRef = useRef<google.maps.Polyline | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -157,7 +158,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     }
   }, [externalUserLocation]);
 
-  // Group offers by location
+  // Group offers by location - memoize by offer IDs to prevent unnecessary recreations
+  const offerIds = useMemo(() => offers.map(o => o.id).sort().join(','), [offers]);
+  
   const groupedLocations = useMemo((): GroupedLocation[] => {
     const locationMap: Record<string, GroupedLocation> = {};
     
@@ -182,7 +185,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     });
     
     return Object.values(locationMap);
-  }, [offers]);
+  }, [offerIds]);
 
   // Initialize map
   useEffect(() => {
@@ -242,9 +245,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
       // Clear selection on map click
       map.addListener('click', () => {
-        if (infoWindowRef.current) {
-          infoWindowRef.current.close();
-        }
         if (onMarkerClick) {
           onMarkerClick('', undefined, []);
         }
@@ -314,11 +314,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
                           markersRef.current.length !== groupedLocations.length;
 
     if (!needsRecreate) {
-      // Just update existing clusterer if it exists
-      if (markerClustererRef.current && markersRef.current.length > 0) {
-        markerClustererRef.current.clearMarkers();
-        markerClustererRef.current.addMarkers(markersRef.current);
-      }
       return;
     }
 
@@ -329,17 +324,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       markerClustererRef.current = null;
     }
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => {
-      if (marker.setMap) marker.setMap(null);
-    });
-    markersRef.current = [];
-
-    // Create info window if not exists
-    if (!infoWindowRef.current) {
-      infoWindowRef.current = new google.maps.InfoWindow();
-    }
-
+    // Clear existing markers (but keep them briefly to avoid flicker during updates)
+    const oldMarkers = markersRef.current;
+    
     // Create markers for each location
     const markers = groupedLocations.map(location => {
       // Validate coordinates
@@ -358,34 +345,17 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         return expiresAt <= twoHoursFromNow;
       });
 
-      // Get category icon URL
-      const iconUrl = createCustomMarker(location.category);
-      
-      // Create custom marker element with glossy effect
-      const markerDiv = document.createElement('div');
-      markerDiv.style.cssText = `
-        width: 56px;
-        height: 56px;
-        background-image: url(${iconUrl});
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: center;
-        filter: brightness(1.15) drop-shadow(0 2px 8px rgba(0,0,0,0.25));
-        transition: transform 0.2s ease, filter 0.2s ease;
-        cursor: pointer;
-      `;
-      
-      // Create Google Maps marker with custom HTML
+      // Create Google Maps marker with custom icon
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
         icon: {
-          url: iconUrl,
-          scaledSize: new google.maps.Size(56, 56),
-          anchor: new google.maps.Point(28, 56),
+          url: '/icons/map-pins/all.png?v=2',
+          scaledSize: new google.maps.Size(64, 64),
+          anchor: new google.maps.Point(32, 64),
+          optimized: false
         },
         title: location.partnerName,
-        optimized: false,
-        // Don't set map yet - clusterer will handle it
+        zIndex: 100
       });
       
       // Note: For full glossy effect with hover, would need AdvancedMarkerElement
@@ -402,19 +372,20 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           const to: LatLng = { lat: location.lat, lng: location.lng };
           const { distanceText, durationText } = getDistanceAndETA(from, to);
 
-          const content = `
-            <div style="padding: 8px; min-width: 150px;">
-              <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-                ${location.partnerName}
-              </div>
-              <div style="color: #666; font-size: 12px;">
-                📍 ${distanceText} • ${durationText}
-              </div>
-            </div>
-          `;
-
-          infoWindowRef.current.setContent(content);
-          infoWindowRef.current.open(map, marker);
+          // Info window disabled - removed popup card on marker click
+          // const content = `
+          //   <div style="padding: 8px; min-width: 150px;">
+          //     <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
+          //       ${location.partnerName}
+          //     </div>
+          //     <div style="color: #666; font-size: 12px;">
+          //       📍 ${distanceText} • ${durationText}
+          //     </div>
+          //   </div>
+          // `;
+          //
+          // infoWindowRef.current.setContent(content);
+          // infoWindowRef.current.open(map, marker);
         }
 
         // Filter offers by this partner
@@ -429,7 +400,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     // Store markers
     markersRef.current = markers;
 
-    // Create marker clusterer for efficient rendering at scale
+    // Clustering disabled - show all individual pins
+    // Marker clustering code commented out to show all pins individually
+    /*
     if (markers.length > 0) {
       markerClustererRef.current = new MarkerClusterer({
         map,
@@ -437,7 +410,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         algorithm: new SuperClusterAlgorithm({ radius: 80, minZoom: 0, maxZoom: 14 }),
         renderer: {
           render: ({ count, position }) => {
-            // Custom cluster icon
             return new google.maps.Marker({
               position,
               icon: {
@@ -473,8 +445,23 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           },
         },
       });
-
       logger.log(`Added ${markers.length} markers with clustering to Google Map`);
+    }
+    */
+
+    // Add all markers directly to map (no clustering)
+    if (markers.length > 0) {
+      markers.forEach(marker => {
+        marker.setMap(map);
+      });
+      markersRef.current = markers;
+      
+      // Now remove old markers after new ones are visible (prevents flicker)
+      setTimeout(() => {
+        oldMarkers.forEach(marker => {
+          if (marker.setMap) marker.setMap(null);
+        });
+      }, 100);
     }
 
     // No cleanup needed - using data URLs instead of blob URLs
@@ -491,55 +478,19 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       userMarkerRef.current.setMap(null);
     }
 
-    // Create user marker
-    const userMarkerDiv = document.createElement('div');
-    userMarkerDiv.style.cssText = `
-      width: 16px;
-      height: 16px;
-      background: #FF8A00;
-      border: 3px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      position: relative;
-    `;
-
-    // Pulsing ring
-    const ring = document.createElement('div');
-    ring.style.cssText = `
-      position: absolute;
-      width: 36px;
-      height: 36px;
-      background: rgba(255, 138, 0, 0.3);
-      border-radius: 50%;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: pulse 2s infinite;
-    `;
-    userMarkerDiv.appendChild(ring);
-
-    // Use Overlay for user marker
-    const userMarker = new google.maps.OverlayView();
-    userMarker.onAdd = function() {
-      this.getPanes()!.overlayMouseTarget.appendChild(userMarkerDiv);
-    };
-    userMarker.draw = function() {
-      const projection = this.getProjection();
-      const position = projection.fromLatLngToDivPixel(
-        new google.maps.LatLng(userLocation[0], userLocation[1])
-      );
-      if (position) {
-        userMarkerDiv.style.position = 'absolute';
-        userMarkerDiv.style.left = (position.x - 8) + 'px';
-        userMarkerDiv.style.top = (position.y - 8) + 'px';
-      }
-    };
-    userMarker.onRemove = function() {
-      if (userMarkerDiv.parentNode) {
-        userMarkerDiv.parentNode.removeChild(userMarkerDiv);
-      }
-    };
-    userMarker.setMap(map);
+    // Create user marker with custom icon
+    const userMarker = new google.maps.Marker({
+      position: { lat: userLocation[0], lng: userLocation[1] },
+      map: map,
+      icon: {
+        url: '/icons/map-pins/user.png',
+        scaledSize: new google.maps.Size(48, 48), // User pin size
+        anchor: new google.maps.Point(24, 48), // Center horizontally, anchor at bottom
+        optimized: false
+      },
+      zIndex: 9999, // Keep user marker on top
+      title: 'Your location'
+    });
 
     userMarkerRef.current = userMarker;
 
@@ -569,46 +520,41 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         isFinite(latitude) && isFinite(longitude)) {
       map.panTo({ lat: latitude, lng: longitude });
       
-      // Show distance label if user location available
-      if (userLocation) {
-        const from: LatLng = { lat: userLocation[0], lng: userLocation[1] };
-        const to: LatLng = { lat: latitude, lng: longitude };
-        const { distanceText, durationText } = getDistanceAndETA(from, to);
-
-        const content = `
-          <div style="padding: 8px; min-width: 150px;">
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">
-              ${selectedOffer.partner.business_name}
-            </div>
-            <div style="color: #666; font-size: 12px;">
-              📍 ${distanceText} • ${durationText}
-            </div>
-          </div>
-        `;
-
-        if (infoWindowRef.current) {
-          infoWindowRef.current.setContent(content);
-          infoWindowRef.current.setPosition({ lat: latitude, lng: longitude });
-          infoWindowRef.current.open(map);
-        }
-      }
+      // Info window disabled - using partner sheet instead
     }
   }, [selectedOffer, google, userLocation]);
 
   // NEW: Highlight marker when card is scrolled into view
   useEffect(() => {
-    // Clean up previous pulse overlay
+    // Clean up previous overlays
     if (pulseOverlayRef.current) {
       pulseOverlayRef.current.setMap(null);
       pulseOverlayRef.current = null;
     }
 
-    if (!google || !highlightedOfferId || markersRef.current.length === 0) {
-      console.log('⚠️ Marker highlight skipped:', { hasGoogle: !!google, highlightedOfferId, markerCount: markersRef.current.length });
+    // Skip partner card if active reservation exists
+    if (!google || !highlightedOfferId || activeReservation) {
       return;
     }
 
-    console.log('🎯 Highlighting marker for offer:', highlightedOfferId);
+    // Always wait a moment for markers to be ready after groupedLocations change
+    const highlightTimer = setTimeout(() => {
+      // Still no markers after waiting? Skip silently
+      if (markersRef.current.length === 0) {
+        return;
+      }
+
+      highlightMarker();
+    }, 200); // Small delay to ensure markers are created
+
+    return () => clearTimeout(highlightTimer);
+  }, [highlightedOfferId, google, userLocation, activeReservation]);
+
+  // Extracted highlighting logic
+  const highlightMarker = () => {
+    if (!google || !highlightedOfferId || markersRef.current.length === 0) {
+      return;
+    }
 
     // Reset all markers to normal size first
     markersRef.current.forEach((m: any) => {
@@ -616,113 +562,195 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       if (currentIcon && typeof currentIcon === 'object') {
         m.setIcon({
           ...currentIcon,
-          scaledSize: new google.maps.Size(56, 56),
-          anchor: new google.maps.Point(28, 56),
+          scaledSize: new google.maps.Size(64, 64),
+          anchor: new google.maps.Point(32, 64),
         });
       }
       m.setZIndex(1);
     });
 
-    // Find marker for highlighted offer (check locationData.offers)
-    const findAndHighlightMarker = () => {
-      const marker = markersRef.current.find((m: any) => {
-        const locationData = m.locationData;
-        if (!locationData || !locationData.offers) {
-          return false;
-        }
-        return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
-      });
+    // Find marker for highlighted offer
+    const marker = markersRef.current.find((m: any) => {
+      const locationData = m.locationData;
+      if (!locationData || !locationData.offers) {
+        return false;
+      }
+      return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
+    });
 
-      console.log('🔍 Found marker:', !!marker);
+    if (marker) {
+      const currentIcon = marker.getIcon();
+      if (currentIcon && typeof currentIcon === 'object') {
+        // Make marker bigger
+        marker.setIcon({
+          ...currentIcon,
+          scaledSize: new google.maps.Size(80, 80),
+          anchor: new google.maps.Point(40, 76),
+        });
+      }
+      
+      // Bring to front
+      marker.setZIndex(1000);
+      
+      // Get partner info from marker
+      const locationData = (marker as any).locationData;
+      const partnerName = locationData?.partnerName || 'Partner';
+      const offersCount = locationData?.offers?.length || 0;
+      
+      // Add pulsing shadow and info card above marker
+      const markerPosition = marker.getPosition();
+      if (markerPosition) {
+        const pulseOverlay = new google.maps.OverlayView();
+        pulseOverlay.onAdd = function() {
+          // Create container for both pulse and info card
+          const container = document.createElement('div');
+          
+          // Pulsing shadow
+          const pulseDiv = document.createElement('div');
+          pulseDiv.style.cssText = `
+            position: absolute;
+            width: 80px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(255, 138, 0, 0.8) 0%, rgba(255, 138, 0, 0.5) 30%, rgba(255, 138, 0, 0.2) 60%, transparent 80%);
+            animation: markerPulse 1.5s ease-in-out infinite;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            filter: blur(6px);
+            left: 0;
+            top: 10px;
+          `;
+          
+          // Info card above pin
+          const infoCard = document.createElement('div');
+          infoCard.style.cssText = `
+            position: absolute;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+            transform: translate(-50%, -100%);
+            left: 0;
+            top: -85px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in;
+          `;
+          infoCard.innerHTML = `
+            <div style="font-weight: 600; margin-bottom: 2px;">${partnerName}</div>
+            <div style="font-size: 11px; color: #666;">${offersCount} offer${offersCount !== 1 ? 's' : ''} available</div>
+          `;
+          
+          container.appendChild(pulseDiv);
+          container.appendChild(infoCard);
+          
+          const panes = this.getPanes();
+          if (panes) {
+            panes.overlayLayer.appendChild(container);
+            setTimeout(() => {
+              pulseDiv.style.opacity = '1';
+              infoCard.style.opacity = '1';
+            }, 50);
+          }
+          
+          (this as any).div = container;
+        };
+        
+        pulseOverlay.draw = function() {
+          const projection = this.getProjection();
+          if (projection && markerPosition && this.div) {
+            const point = projection.fromLatLngToDivPixel(markerPosition);
+            if (point) {
+              this.div.style.left = point.x + 'px';
+              this.div.style.top = (point.y + 10) + 'px';
+            }
+          }
+        };
+        
+        pulseOverlay.onRemove = function() {
+          if (this.div && this.div.parentNode) {
+            this.div.parentNode.removeChild(this.div);
+          }
+        };
+        
+        pulseOverlay.setMap(mapRef.current);
+        pulseOverlayRef.current = pulseOverlay;
+      }
+    }
+  };
 
-      if (marker) {
-        const currentIcon = marker.getIcon();
-        if (currentIcon && typeof currentIcon === 'object') {
-          console.log('✨ Scaling marker up to 70px');
-          // Make marker bigger (1.25x scale = 70px from 56px) with proper anchor to prevent cutoff
-          // Anchor needs extra padding at bottom to show pulse shadow
-          marker.setIcon({
-            ...currentIcon,
-            scaledSize: new google.maps.Size(70, 70),
-            anchor: new google.maps.Point(35, 60), // Center horizontally, anchor above bottom to show pulse
+  // NEW: Draw route for active reservations
+  useEffect(() => {
+    // Clean up previous route
+    if (routePolylineRef.current) {
+      routePolylineRef.current.setMap(null);
+      routePolylineRef.current = null;
+    }
+
+    if (!google || !mapRef.current || !activeReservation || !userLocation) {
+      return;
+    }
+
+    const partner = activeReservation.offer?.partner;
+    if (!partner?.latitude || !partner?.longitude) {
+      logger.warn('⚠️ No partner location for route drawing');
+      return;
+    }
+
+    const origin = new google.maps.LatLng(userLocation[0], userLocation[1]);
+    const destination = new google.maps.LatLng(partner.latitude, partner.longitude);
+
+    const directionsService = new google.maps.DirectionsService();
+    
+    directionsService.route(
+      {
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK && result) {
+          // Draw polyline manually for better styling
+          const route = result.routes[0];
+          const path = route.overview_path;
+
+          const polyline = new google.maps.Polyline({
+            path,
+            geodesic: true,
+            strokeColor: '#FF8A00',
+            strokeOpacity: 0.9,
+            strokeWeight: 6,
+            map: mapRef.current,
           });
+
+          routePolylineRef.current = polyline;
+
+          // Fit map to show entire route
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend(origin);
+          bounds.extend(destination);
+          mapRef.current.fitBounds(bounds, { top: 100, bottom: 200, left: 50, right: 50 });
+
+          logger.log('✅ Route drawn successfully');
+        } else {
+          logger.error('❌ Directions request failed:', status);
         }
-        
-        // Bring to front
-        marker.setZIndex(1000);
-        
-        console.log('🎈 Adding continuous pulsing effect');
-        
-        // Add pulsing shadow element below marker (continuous - doesn't auto-remove)
-        const markerPosition = marker.getPosition();
-        if (markerPosition) {
-          const pulseOverlay = new google.maps.OverlayView();
-          pulseOverlay.onAdd = function() {
-            const div = document.createElement('div');
-            div.style.cssText = `
-              position: absolute;
-              width: 50px;
-              height: 25px;
-              border-radius: 50%;
-              background: radial-gradient(ellipse, rgba(255, 138, 0, 0.5) 0%, rgba(255, 138, 0, 0.2) 40%, transparent 70%);
-              animation: markerPulse 2s ease-in-out infinite;
-              pointer-events: none;
-              transform: translate(-50%, -50%);
-              filter: blur(4px);
-              opacity: 0;
-              transition: opacity 0.3s ease-in;
-            `;
-            
-            const panes = this.getPanes();
-            if (panes) {
-              panes.overlayLayer.appendChild(div);
-              // Fade in after a brief delay
-              setTimeout(() => {
-                div.style.opacity = '1';
-              }, 50);
-            }
-            
-            this.div = div;
-          };
-          
-          pulseOverlay.draw = function() {
-            const projection = this.getProjection();
-            if (projection && markerPosition && this.div) {
-              const point = projection.fromLatLngToDivPixel(markerPosition);
-              if (point) {
-                this.div.style.left = point.x + 'px';
-                this.div.style.top = (point.y + 10) + 'px'; // Position below marker
-              }
-            }
-          };
-          
-          pulseOverlay.onRemove = function() {
-            if (this.div && this.div.parentNode) {
-              this.div.parentNode.removeChild(this.div);
-            }
-          };
-          
-          pulseOverlay.setMap(mapRef.current);
-          pulseOverlayRef.current = pulseOverlay;
-        }
-      } else {
-        console.warn('❌ No marker found for offer:', highlightedOfferId);
-        // Retry after a short delay in case marker is still loading
-        setTimeout(findAndHighlightMarker, 300);
       }
-    };
+    );
 
-    // Try immediately and retry if needed
-    findAndHighlightMarker();
-
-    // Cleanup function
+    // Cleanup
     return () => {
-      if (pulseOverlayRef.current) {
-        pulseOverlayRef.current.setMap(null);
-        pulseOverlayRef.current = null;
+      if (routePolylineRef.current) {
+        routePolylineRef.current.setMap(null);
+        routePolylineRef.current = null;
       }
     };
-  }, [highlightedOfferId, google]);
+  }, [activeReservation, userLocation, google]);
 
   // Handle "Near Me" button
   const handleNearMe = () => {

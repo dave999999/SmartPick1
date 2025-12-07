@@ -85,13 +85,15 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   useEffect(() => {
     if (!isMinimized || !carouselRef.current) return;
 
+    let scrollTimeout: NodeJS.Timeout | null = null;
+
     const handleScroll = () => {
       const container = carouselRef.current;
       if (!container) return;
 
       const containerCenter = container.scrollLeft + container.offsetWidth / 2;
       const cards = container.querySelectorAll('[data-card-index]');
-      
+
       let closestIndex = 0;
       let closestDistance = Infinity;
 
@@ -99,37 +101,37 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         const cardElement = card as HTMLElement;
         const cardCenter = cardElement.offsetLeft + cardElement.offsetWidth / 2;
         const distance = Math.abs(containerCenter - cardCenter);
-        
+
         if (distance < closestDistance) {
           closestDistance = distance;
           closestIndex = index;
         }
       });
 
-      if (closestIndex !== centeredCardIndex) {
-        setCenteredCardIndex(closestIndex);
-        
-        // Notify parent of centered offer change
+      setCenteredCardIndex(closestIndex);
+
+      // Debounce the parent callback to avoid rapid map updates
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      scrollTimeout = setTimeout(() => {
         if (onCenteredOfferChange) {
           const centeredOffer = filteredOffers[closestIndex];
-          console.log('🎯 Centered offer changed:', {
-            index: closestIndex,
-            offerId: centeredOffer?.id,
-            title: centeredOffer?.title,
-            hasPartner: !!centeredOffer?.partner,
-            location: centeredOffer?.partner?.location
-          });
           onCenteredOfferChange(centeredOffer || null);
         }
-      }
+      }, 100); // Reduced debounce for more responsive map updates
     };
 
     const container = carouselRef.current;
     container.addEventListener('scroll', handleScroll);
     handleScroll(); // Initial check
 
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [isMinimized, filteredOffers, onCenteredOfferChange, centeredCardIndex]);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [isMinimized, filteredOffers, onCenteredOfferChange]);
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {
@@ -221,12 +223,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[82vh] max-h-[720px] p-0 overflow-hidden z-40"
+        className="h-[85vh] sm:h-[82vh] max-h-none sm:max-h-[720px] p-0 overflow-hidden z-40"
         style={{
-          left: '8px',
-          right: '8px',
-          bottom: '8px',
-          width: 'calc(100% - 16px)',
+          left: '0',
+          right: '0',
+          bottom: '0',
+          width: '100%',
           maxWidth: '100%',
           background: 'rgba(255, 255, 255, 0.18)',
           backdropFilter: 'blur(18px) saturate(140%)',
@@ -240,10 +242,13 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           Discover Deals and Offers
         </SheetTitle>
         <div className="h-full overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
+          {/* Hidden dummy input to prevent search bar from getting focus */}
+          <input type="text" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} tabIndex={-1} />
+          
           {/* Search Bar & Categories */}
-          <div className="px-4 pt-4 pb-3">
+          <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 sm:pb-3">
             {/* Search Bar */}
-            <div className="relative flex items-center h-11 rounded-xl mb-3" style={{
+            <div className="relative flex items-center h-10 sm:h-11 rounded-xl mb-2 sm:mb-3" style={{
               background: 'rgba(255, 255, 255, 0.95)',
               boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
               border: '1px solid rgba(255, 255, 255, 0.9)',
@@ -255,9 +260,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                 placeholder="Enter a dish name e.g. Egusi soup"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-10 text-sm bg-transparent outline-none placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-0"
+                className="flex-1 px-10 text-sm bg-transparent outline-none placeholder:text-gray-400"
                 autoFocus={false}
-                onFocus={(e) => e.target.blur()}
+                tabIndex={-1}
               />
               <button className="absolute right-3">
                 <Mic className="w-4 h-4 text-gray-400" />
@@ -265,27 +270,30 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             </div>
 
             {/* Category Pills */}
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide px-1 py-1">
+            <div className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-hide px-1 py-1">
               {allCategories.map((category) => (
                 <button
                   key={category.value}
                   onClick={() => handleCategoryClick(category.value)}
-                  className="flex-shrink-0 flex items-center justify-center w-[56px] h-[56px] rounded-2xl transition-all active:scale-95"
+                  className="flex-shrink-0 flex items-center justify-center w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-2xl transition-all active:scale-95"
                   style={{
                     background: selectedCategory === category.value 
                       ? 'linear-gradient(135deg, #FF7A1A 0%, #FF5A00 100%)'
-                      : 'rgba(255, 255, 255, 0.95)',
+                      : 'transparent',
                     boxShadow: selectedCategory === category.value
                       ? '0 6px 20px rgba(255, 122, 26, 0.35), 0 2px 8px rgba(255, 122, 26, 0.2)'
-                      : '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.9)',
+                      : '0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1)',
+                    border: selectedCategory === category.value
+                      ? '1px solid rgba(255, 255, 255, 0.9)'
+                      : 'none',
                     transform: 'translateZ(0)'
                   }}
                 >
                   <img 
                     src={`/icons/categories/${category.value}.png`}
                     alt={category.label}
-                    className="w-[52px] h-[52px] object-contain"
+                    className="w-[44px] h-[44px] sm:w-[52px] sm:h-[52px] object-contain"
+                    style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))' }}
                   />
                 </button>
               ))}
@@ -365,14 +373,13 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                     )}
                                   </div>
 
-                                  {/* Old Price + Status */}
+                                  {/* Old Price */}
                                   <div className="flex items-center gap-2 text-xs">
                                     {offer.original_price && (
                                       <span className="line-through font-medium" style={{ color: '#9CA3AF' }}>
                                         ₾{Math.round(offer.original_price)}
                                       </span>
                                     )}
-                                    <span className="text-gray-500">Now</span>
                                   </div>
                                 </div>
 
@@ -382,7 +389,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                     e.stopPropagation();
                                     onOfferSelect(offer);
                                   }}
-                                  className="absolute bottom-4 right-4 px-5 py-2 rounded-full text-white text-sm font-semibold transition-transform active:scale-95"
+                                  className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-white text-xs sm:text-sm font-semibold transition-transform active:scale-95"
                                   style={{
                                     background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
                                     boxShadow: '0 4px 16px rgba(255, 138, 0, 0.3)',
@@ -406,9 +413,6 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                       <h2 className="text-[17px] font-semibold text-gray-900">
                         Popular Now
                       </h2>
-                      <button className="text-[13px] font-medium text-[#FF7A1A]">
-                        SEE FULL MENU →
-                      </button>
                     </div>
                     <div className="overflow-x-auto scrollbar-hide">
                       <div className="flex gap-3 px-4">

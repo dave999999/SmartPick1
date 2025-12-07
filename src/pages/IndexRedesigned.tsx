@@ -74,6 +74,7 @@ export default function IndexRedesigned() {
 
   // NEW: Post-Reservation System State
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  const [isReservationLoading, setIsReservationLoading] = useState(true); // Track reservation loading state
   const [isPostResNavigating, setIsPostResNavigating] = useState(false);
   const [showPickupSuccessModal, setShowPickupSuccessModal] = useState(false);
   const [pickupModalData, setPickupModalData] = useState<{ savedAmount: number; pointsEarned: number } | null>(null);
@@ -168,7 +169,10 @@ export default function IndexRedesigned() {
     }
   }
 
-  // 🚀 SCALABILITY: Reload offers when map bounds change significantly (debounced)
+  // 🚀 SCALABILITY: Disabled viewport-based reloading to prevent marker disappearing
+  // Load all offers once on mount instead of reloading based on map bounds
+  // This prevents markers from disappearing during carousel navigation
+  /*
   useEffect(() => {
     if (!mapBounds) return;
     
@@ -180,8 +184,8 @@ export default function IndexRedesigned() {
       const latRange = Math.abs(mapBounds.north - mapBounds.south);
       const lngRange = Math.abs(mapBounds.east - mapBounds.west);
       
-      // Only reload if bounds changed by more than 30% (prevents reload on small pans/zooms)
-      if (latDiff < latRange * 0.3 && lngDiff < lngRange * 0.3) {
+      // Only reload if bounds changed by more than 80% (prevents reload during carousel navigation)
+      if (latDiff < latRange * 0.8 && lngDiff < lngRange * 0.8) {
         logger.info('[Index] Map bounds changed minimally, skipping reload');
         return;
       }
@@ -196,6 +200,7 @@ export default function IndexRedesigned() {
     
     return () => clearTimeout(timeoutId);
   }, [mapBounds]);
+  */
 
   // Load active reservation when user is detected
   useEffect(() => {
@@ -219,6 +224,7 @@ export default function IndexRedesigned() {
       cleanupOldCelebrations();
     } else {
       setActiveReservation(null);
+      setIsReservationLoading(false); // No user = no reservation to load
     }
   }, [user]);
 
@@ -303,8 +309,12 @@ export default function IndexRedesigned() {
   }, [activeReservation?.id]);
 
   const loadActiveReservation = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setIsReservationLoading(false);
+      return;
+    }
     
+    setIsReservationLoading(true);
     try {
       const { getCustomerReservations } = await import('@/lib/api/reservations');
       const reservations = await getCustomerReservations(user.id);
@@ -358,21 +368,32 @@ export default function IndexRedesigned() {
       }
     } catch (error) {
       logger.error('Failed to load active reservation:', error);
+    } finally {
+      setIsReservationLoading(false);
     }
   };
 
-  // Auto-open OffersSheet after 1.5 seconds - give user time to see homepage first
-  // BUT: Don't auto-open if there's an active reservation
+  // Auto-open OffersSheet after reservation check completes
+  // Only open if NO active reservation exists
   useEffect(() => {
+    // Wait for reservation loading to complete
+    if (isReservationLoading) {
+      return;
+    }
+
+    // Add a small delay for better UX (let user see homepage briefly)
     const timer = setTimeout(() => {
-      if (!activeReservation) {
+      if (!activeReservation && !discoverSheetOpen) {
         setDiscoverSheetOpen(true);
-        setIsSheetMinimized(false); // Open fully, not minimized
+        setIsSheetMinimized(false);
+        logger.log('✅ Auto-opening offers sheet (no active reservation)');
+      } else if (activeReservation) {
+        logger.log('❌ NOT auto-opening sheet (active reservation exists)');
       }
-    }, 1500);
+    }, 1000);
 
     return () => clearTimeout(timer);
-  }, [activeReservation]); // Only run when activeReservation changes
+  }, [isReservationLoading, activeReservation]); // Depend on reservation loading state
 
   useEffect(() => {
     loadOffers();
@@ -629,6 +650,11 @@ export default function IndexRedesigned() {
   }, [user, addRecentlyViewed]);
 
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
+    // Skip if active reservation exists - no partner sheet during navigation
+    if (activeReservation) {
+      return;
+    }
+    
     // If empty partner name, clear filters (map clicked on empty area)
     if (!partnerName || partnerOffers.length === 0) {
       setSearchQuery('');
@@ -655,7 +681,7 @@ export default function IndexRedesigned() {
         }
       }
     }
-  }, [googleMap]);
+  }, [googleMap, activeReservation]);
 
   return (
     <>
@@ -680,6 +706,7 @@ export default function IndexRedesigned() {
                       showUserLocation={true}
                       highlightedOfferId={highlightedOfferId}
                       hideMarkers={!!activeReservation}
+                      activeReservation={activeReservation}
                       onMapBoundsChange={(bounds) => {
                         // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
                         setMapBounds(bounds);
@@ -762,17 +789,20 @@ export default function IndexRedesigned() {
           setDiscoverSheetOpen(false);
           setIsSheetMinimized(false);
         }}
-        onCenteredOfferChange={(offer) => {
-          console.log('🗺️ Map sync - Centered offer:', {
-            offerId: offer?.id,
-            hasGoogleMap: !!googleMap,
-            hasPartner: !!offer?.partner,
-            hasLocation: !!offer?.partner?.location,
-            location: offer?.partner?.location
-          });
+        onCenteredOfferChange={useCallback((offer: Offer | null) => {
+          // Validate all required data before attempting map sync
+          if (!offer || !googleMap) {
+            return;
+          }
           
-          if (offer && googleMap && offer.partner?.location) {
-            console.log('✅ Panning map to:', offer.partner.location);
+          const hasValidLocation = offer.partner?.location?.latitude && 
+                                   offer.partner?.location?.longitude &&
+                                   typeof offer.partner.location.latitude === 'number' &&
+                                   typeof offer.partner.location.longitude === 'number' &&
+                                   isFinite(offer.partner.location.latitude) &&
+                                   isFinite(offer.partner.location.longitude);
+          
+          if (hasValidLocation && offer.partner?.location) {
             // Pan map to centered offer's location smoothly and zoom in moderately
             googleMap.panTo({
               lat: offer.partner.location.latitude,
@@ -782,10 +812,8 @@ export default function IndexRedesigned() {
             googleMap.setZoom(14);
             // Highlight the offer marker
             setHighlightedOfferId(offer.id);
-          } else {
-            console.warn('❌ Cannot pan map - missing data');
           }
-        }}
+        }, [googleMap])}
       />
 
       {/* NEW: In-page Reservation Modal (replaces separate reservation page) */}

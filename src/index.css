@@ -599,6 +599,18 @@
   }
 }
 
+/* Partner Card Overlay - Fade in with scale */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
 .animate-bubbleTap {
   animation: bubbleTap 180ms ease-out;
 }
