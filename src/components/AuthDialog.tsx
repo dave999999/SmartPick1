@@ -437,7 +437,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {open && (
+      {open && !showTermsDialog && (
         <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
           <div 
             className="relative"
