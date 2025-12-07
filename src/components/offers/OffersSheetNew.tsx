@@ -320,7 +320,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                           <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
                             {/* Pixel-Perfect Special Offer Card */}
                             <div
-                              className="relative rounded-3xl p-4 cursor-pointer transition-all duration-200"
+                              className="relative rounded-3xl overflow-hidden cursor-pointer transition-all duration-200"
                               onClick={() => onOfferSelect(offer)}
                               style={{
                                 background: 'rgba(255, 255, 255, 0.95)',
@@ -332,14 +332,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                               onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
                               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
                             >
-                              <div className="flex items-start gap-3">
-                                {/* Product Image */}
+                              <div className="flex items-stretch">
+                                {/* Product Image - Full height on left */}
                                 <div
-                                  className="flex-shrink-0 rounded-2xl overflow-hidden"
+                                  className="flex-shrink-0 overflow-hidden"
                                   style={{
-                                    width: '96px',
-                                    height: '96px',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                    width: '120px',
                                   }}
                                 >
                                   <img
@@ -350,7 +348,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                 </div>
 
                                 {/* Content Stack */}
-                                <div className="flex-1 flex flex-col gap-1.5">
+                                <div className="flex-1 flex flex-col gap-1.5 p-4">
                                   {/* Title */}
                                   <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">
                                     {offer.title}
