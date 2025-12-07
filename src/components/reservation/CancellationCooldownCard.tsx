@@ -60,6 +60,13 @@ export function CancellationCooldownCard({
 
             {/* Content */}
             <div className="relative z-10 space-y-3">
+              {/* Alert Banner - Active Reservation Canceled */}
+              <div className="bg-red-50/80 border border-red-200/60 rounded-lg px-3 py-2 text-center">
+                <p className="text-xs font-semibold text-red-700">
+                  ⚠️ Active Reservation Canceled
+                </p>
+              </div>
+
               {/* Header - Compact */}
               <div className="text-center">
                 <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
