@@ -16,11 +16,11 @@ CREATE TABLE IF NOT EXISTS public.user_cancellation_tracking (
 );
 
 -- Add index for quick lookups
-CREATE INDEX idx_cancellation_tracking_user_id_cancelled_at 
+CREATE INDEX IF NOT EXISTS idx_cancellation_tracking_user_id_cancelled_at 
 ON public.user_cancellation_tracking(user_id, cancelled_at DESC);
 
 -- Add index for checking recent cancellations
-CREATE INDEX idx_cancellation_tracking_user_created 
+CREATE INDEX IF NOT EXISTS idx_cancellation_tracking_user_created 
 ON public.user_cancellation_tracking(user_id, created_at DESC);
 
 -- Enable RLS
