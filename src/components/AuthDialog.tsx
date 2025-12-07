@@ -448,9 +448,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         }}
       >
         {/* Premium Header with 3D Logo */}
-        <div className="px-6 pt-10 pb-6 text-center relative">
+        <div className="px-6 pt-6 pb-4 text-center relative">
           {/* Logo */}
-          <div className="flex justify-center mb-5 relative">
+          <div className="flex justify-center mb-3 relative">
             <div 
               className="relative"
               style={{
@@ -469,7 +469,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               <img 
                 src="/smartpick-logo.svg" 
                 alt="SmartPick" 
-                className="h-28 w-28 relative z-10"
+                className="h-20 w-20 relative z-10"
                 style={{
                   filter: 'drop-shadow(0 4px 12px rgba(255,140,0,0.35))',
                 }}
@@ -479,7 +479,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
           {/* Title & Subtitle - SF Pro Style */}
           <DialogTitle 
-            className="text-2xl font-bold mb-1.5 tracking-tight"
+            className="text-xl font-bold mb-1 tracking-tight"
             style={{
               color: '#1A1A1A',
               fontWeight: 700,
@@ -489,7 +489,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             Welcome to SmartPick
           </DialogTitle>
           <DialogDescription 
-            className="text-[15px] font-medium"
+            className="text-sm font-medium"
             style={{
               color: '#6E7075',
             }}
@@ -498,7 +498,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           </DialogDescription>
         </div>
 
-        <div className="px-6 py-7 overflow-y-auto flex-1">
+        <div className="px-6 py-4 overflow-y-auto flex-1">
           {error && (
             <Alert variant={partnerStatus ? 'default' : 'destructive'} className={`mb-4 ${partnerStatus === 'pending' ? 'bg-yellow-50 border-yellow-200' : partnerStatus === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-red-50 border-red-200'}`}>
               {partnerStatus === 'pending' ? (
@@ -516,7 +516,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList 
-              className="grid w-full grid-cols-2 p-1 rounded-2xl mb-6"
+              className="grid w-full grid-cols-2 p-1 rounded-2xl mb-4"
               style={{
                 background: 'rgba(255,255,255,0.35)',
                 backdropFilter: 'blur(10px)',
@@ -537,7 +537,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="signin" className="space-y-5 mt-0">
+            <TabsContent value="signin" className="space-y-3 mt-0">
               {/* Glass Google Sign-In */}
               <Button
                 type="button"
@@ -561,7 +561,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               </Button>
 
               {/* Glass Divider */}
-              <div className="relative my-6">
+              <div className="relative my-4">
                 <div 
                   className="absolute inset-0 flex items-center"
                   style={{
@@ -583,7 +583,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
               </div>
 
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSignIn} className="space-y-3">
                 {/* Frosted Email Input */}
                 <div className="space-y-2">
                   <Label htmlFor="signin-email" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
