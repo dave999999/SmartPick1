@@ -200,18 +200,6 @@ export default function ReservationModalNew({
       <div className="fixed inset-0 z-[51] flex items-center justify-center p-3 pointer-events-none">
         <div className="relative w-full max-w-[300px] pointer-events-auto animate-in zoom-in-95 duration-200">
 
-          {/* COOLDOWN CARD - Show if user is in cooldown (positioned above modal) */}
-          {cooldown.isInCooldown && (
-            <div className="absolute -top-24 left-0 right-0 z-20 px-2 pointer-events-auto">
-              <CancellationCooldownCard
-                isVisible={true}
-                timeUntilUnlock={cooldown.timeUntilUnlock}
-                cancellationCount={cooldown.cancellationCount}
-                unlockTime={cooldown.unlockTime}
-              />
-            </div>
-          )}
-
           {/* Close Button */}
           <button
             onClick={onClose}
@@ -417,6 +405,18 @@ export default function ReservationModalNew({
               <p className="text-[11px] text-gray-700 text-center font-medium leading-relaxed">
                 Reserve now, pay on pickup. Your discount is guaranteed.
               </p>
+
+              {/* COOLDOWN CARD - Show if user is in cooldown (at bottom) */}
+              {cooldown.isInCooldown && (
+                <div className="px-2 pointer-events-auto">
+                  <CancellationCooldownCard
+                    isVisible={true}
+                    timeUntilUnlock={cooldown.timeUntilUnlock}
+                    cancellationCount={cooldown.cancellationCount}
+                    unlockTime={cooldown.unlockTime}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
