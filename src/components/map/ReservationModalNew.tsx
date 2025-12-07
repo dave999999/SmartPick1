@@ -405,22 +405,24 @@ export default function ReservationModalNew({
               <p className="text-[11px] text-gray-700 text-center font-medium leading-relaxed">
                 Reserve now, pay on pickup. Your discount is guaranteed.
               </p>
-
-              {/* COOLDOWN CARD - Show if user is in cooldown (at bottom) */}
-              {cooldown.isInCooldown && (
-                <div className="px-2 pointer-events-auto">
-                  <CancellationCooldownCard
-                    isVisible={true}
-                    timeUntilUnlock={cooldown.timeUntilUnlock}
-                    cancellationCount={cooldown.cancellationCount}
-                    unlockTime={cooldown.unlockTime}
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* INDEPENDENT COOLDOWN CARD OVERLAY - Centered on screen */}
+      {cooldown.isInCooldown && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto">
+            <CancellationCooldownCard
+              isVisible={true}
+              timeUntilUnlock={cooldown.timeUntilUnlock}
+              cancellationCount={cooldown.cancellationCount}
+              unlockTime={cooldown.unlockTime}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       {showPenaltyModal && penaltyData && (
