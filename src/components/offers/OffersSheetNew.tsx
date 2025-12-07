@@ -317,7 +317,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                     <div className="overflow-x-auto scrollbar-hide">
                       <div className="flex gap-4 px-4 snap-x snap-mandatory">
                         {specialOffers.map((offer: Offer) => (
-                          <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
+                          <div key={offer.id} className="flex-shrink-0 w-[calc(100%-64px)] max-w-[340px] snap-center">
                             {/* Pixel-Perfect Special Offer Card */}
                             <div
                               className="relative rounded-3xl overflow-hidden cursor-pointer transition-all duration-200"
