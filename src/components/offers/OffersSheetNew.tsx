@@ -307,8 +307,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
               <>
                 {/* Today's Special Offers (50%+ discount) - Swipable Carousel */}
                 {specialOffers.length > 0 && (
-                  <div className="pb-4">
-                    <div className="px-4 mb-4">
+                  <div className="pb-2">
+                    <div className="px-4 mb-3">
                       <h2 className="text-[18px] font-bold text-gray-900">
                         Today's Special Offer
                       </h2>
