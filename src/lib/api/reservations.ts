@@ -572,11 +572,15 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .eq('id', reservation.offer_id);
 
     // Get customer name for notification
-    const { data: customer } = await supabase
+    const { data: customer, error: customerError } = await supabase
       .from('users')
       .select('full_name')
       .eq('id', reservation.customer_id)
       .single();
+    
+    if (customerError) {
+      logger.warn('Failed to fetch customer name:', customerError);
+    }
 
     // Notify partner about cancellation (fire-and-forget)
     if (offer.partner_id && customer) {

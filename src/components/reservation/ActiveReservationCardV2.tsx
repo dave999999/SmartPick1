@@ -62,7 +62,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapPin, Navigation, X, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { useLiveRoute } from '@/hooks/useLiveRoute';
 
 // ============================================
@@ -358,6 +359,10 @@ function QRModal({ isOpen, onClose, qrPayload, offerTitle, partnerName, expiresI
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[340px] p-0 border-none bg-transparent shadow-none overflow-visible">
+        <VisuallyHidden>
+          <DialogTitle>Reservation QR Code</DialogTitle>
+          <DialogDescription>Scan this QR code at the partner location to pick up your order</DialogDescription>
+        </VisuallyHidden>
         <motion.div
           initial={{ scale: 0.92, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -599,21 +604,24 @@ export function ActiveReservationCard({
       {/* Apple-Style Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+          <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
+            Cancel Reservation?
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirm if you want to cancel your reservation. You will need to make a new reservation if you change your mind.
+          </DialogDescription>
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 30, stiffness: 400 }}
           >
             {/* Icon & Header */}
-            <div className="px-5 pt-5 pb-3 text-center">
+            <div className="px-5 pt-0 pb-3 text-center">
               <div className="flex justify-center mb-3">
                 <div className="text-[56px] leading-none">
                   🤔
                 </div>
               </div>
-              <h2 className="text-[17px] font-semibold text-gray-900 leading-tight">
-                Cancel Reservation?
-              </h2>
               <p className="text-[13px] text-gray-600 leading-relaxed mt-2 px-2">
                 Hey! Just want to make sure — you're about to cancel your <span className="font-semibold text-gray-900">{reservation.offerTitle}</span> at <span className="font-semibold text-gray-900">{reservation.partnerName}</span>.
                 <br /><br />
