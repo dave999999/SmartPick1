@@ -221,16 +221,19 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[82vh] max-h-[720px] p-0 rounded-t-[24px] overflow-hidden z-40 bg-white/20 border border-white/30"
+        className="h-[82vh] max-h-[720px] p-0 overflow-hidden z-40"
         style={{
           left: '8px',
           right: '8px',
           bottom: '8px',
           width: 'calc(100% - 16px)',
           maxWidth: '100%',
-          backdropFilter: 'blur(20px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-          boxShadow: '0 8px 25px rgba(0, 0, 0, 0.12)',
+          background: 'rgba(255, 255, 255, 0.18)',
+          backdropFilter: 'blur(18px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(140%)',
+          borderRadius: '36px 36px 0 0',
+          border: '1px solid rgba(255, 255, 255, 0.25)',
+          boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.5)',
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
@@ -240,7 +243,11 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           {/* Search Bar & Categories */}
           <div className="px-4 pt-4 pb-3">
             {/* Search Bar */}
-            <div className="relative flex items-center h-11 bg-[#F5F5F5] rounded-xl mb-3">
+            <div className="relative flex items-center h-11 rounded-xl mb-3" style={{
+              background: 'rgba(255, 255, 255, 0.95)',
+              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.8)'
+            }}>
               <Search className="absolute left-3 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -261,11 +268,16 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                 <button
                   key={category.value}
                   onClick={() => handleCategoryClick(category.value)}
-                  className={`flex-shrink-0 flex items-center justify-center w-[56px] h-[56px] rounded-2xl transition-all active:scale-95 ${
-                    selectedCategory === category.value
-                      ? 'bg-[#FF7A1A] shadow-lg'
-                      : 'bg-white shadow-sm hover:shadow-md'
-                  }`}
+                  className="flex-shrink-0 flex items-center justify-center w-[56px] h-[56px] rounded-2xl transition-all active:scale-95"
+                  style={{
+                    background: selectedCategory === category.value 
+                      ? 'linear-gradient(135deg, #FF7A1A 0%, #FF5A00 100%)'
+                      : 'rgba(255, 255, 255, 0.95)',
+                    boxShadow: selectedCategory === category.value
+                      ? '0 4px 16px rgba(255, 122, 26, 0.3)'
+                      : '0 2px 12px rgba(0, 0, 0, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.8)'
+                  }}
                 >
                   <img 
                     src={`/icons/categories/${category.value}.png`}
@@ -297,13 +309,16 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                           <div key={offer.id} className="flex-shrink-0 w-[calc(100%-32px)] max-w-[400px] snap-center">
                             {/* Pixel-Perfect Special Offer Card */}
                             <div
-                              className="relative rounded-3xl p-4 cursor-pointer transition-transform active:scale-[0.98]"
+                              className="relative rounded-3xl p-4 cursor-pointer transition-all duration-200"
                               onClick={() => onOfferSelect(offer)}
                               style={{
-                                background: 'transparent',
-                                boxShadow: 'none',
-                                border: 'none'
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+                                border: '1px solid rgba(255, 255, 255, 0.8)'
                               }}
+                              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+                              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                             >
                               <div className="flex items-start gap-3">
                                 {/* Product Image */}

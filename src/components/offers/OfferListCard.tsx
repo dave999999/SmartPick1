@@ -46,13 +46,16 @@ export function OfferListCard({
     <div
       onClick={handleCardClick}
       className={cn(
-        'w-full',
-        'bg-white rounded-xl overflow-hidden',
-        'shadow-sm',
+        'w-full rounded-xl overflow-hidden',
         'transition-all duration-150 ease-out',
-        onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-md',
-        onClick && 'active:scale-[0.98] active:shadow-sm'
+        onClick && 'cursor-pointer hover:scale-[1.02]',
+        onClick && 'active:scale-[0.98]'
       )}
+      style={{
+        background: 'rgba(255, 255, 255, 0.95)',
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
+        border: '1px solid rgba(255, 255, 255, 0.8)'
+      }}
     >
       {/* Image Section */}
       <div className="relative w-full pb-[100%] bg-gray-100 overflow-hidden">
