@@ -332,7 +332,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                               onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
                               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
                             >
-                              <div className="flex items-stretch">
+                              <div className="flex items-stretch h-[140px]">
                                 {/* Product Image - Full height on left */}
                                 <div
                                   className="flex-shrink-0 overflow-hidden"
