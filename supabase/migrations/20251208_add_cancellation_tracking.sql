@@ -15,6 +15,11 @@ CREATE TABLE IF NOT EXISTS public.user_cancellation_tracking (
   UNIQUE(reservation_id)
 );
 
+-- Backfill columns if table already existed without them
+ALTER TABLE public.user_cancellation_tracking
+  ADD COLUMN IF NOT EXISTS reset_cooldown_used BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS cooldown_duration_minutes INTEGER DEFAULT 30;
+
 -- Add index for quick lookups
 CREATE INDEX IF NOT EXISTS idx_cancellation_tracking_user_id_cancelled_at 
 ON public.user_cancellation_tracking(user_id, cancelled_at DESC);
