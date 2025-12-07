@@ -40,6 +40,9 @@ CREATE POLICY user_cancellation_tracking_insert ON public.user_cancellation_trac
   FOR INSERT
   WITH CHECK (TRUE);
 
+-- Drop old function if it exists (to recreate with new return type)
+DROP FUNCTION IF EXISTS get_user_consecutive_cancellations(uuid);
+
 -- Create function to get user's consecutive cancellation count
 CREATE OR REPLACE FUNCTION get_user_consecutive_cancellations(p_user_id UUID)
 RETURNS TABLE(
