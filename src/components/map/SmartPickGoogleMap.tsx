@@ -317,7 +317,13 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     const map = mapRef.current;
 
-    // If markers should be hidden (e.g., during navigation), hide them without removing
+    // Clear all existing markers first
+    markersRef.current.forEach(marker => {
+      if (marker.setMap) marker.setMap(null);
+    });
+    markersRef.current = [];
+
+    // If markers should be hidden (e.g., during navigation), return after clearing
     if (hideMarkers) {
       if (markerClustererRef.current) {
         markerClustererRef.current.clearMarkers();
@@ -325,9 +331,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       return;
     }
 
-    // Only recreate markers if they don't exist or groupedLocations changed significantly
-    const needsRecreate = markersRef.current.length === 0 || 
-                          markersRef.current.length !== groupedLocations.length;
+    // Recreate markers based on current groupedLocations
+    const needsRecreate = true;
 
     if (!needsRecreate) {
       return;
