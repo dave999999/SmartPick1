@@ -26,11 +26,15 @@ DECLARE
   v_cooldown_duration INTEGER;
 BEGIN
   -- Get cancellation count and reset status in last active cooldown period
-  SELECT COUNT(*), MIN(cancelled_at), MAX(CASE WHEN reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN, MAX(cooldown_duration_minutes)
+  SELECT
+    COUNT(*) AS cancellation_count,
+    MIN(u.cancelled_at) AS oldest_time,
+    MAX(CASE WHEN u.reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN AS reset_used,
+    MAX(u.cooldown_duration_minutes) AS cooldown_minutes
   INTO v_count, v_oldest_time, v_reset_used, v_cooldown_duration
-  FROM user_cancellation_tracking
-  WHERE user_id = p_user_id
-    AND cancelled_at > NOW() - INTERVAL '45 minutes'; -- Check up to 45 min window
+  FROM user_cancellation_tracking u
+  WHERE u.user_id = p_user_id
+    AND u.cancelled_at > NOW() - INTERVAL '45 minutes'; -- Check up to 45 min window
 
   -- Use cooldown duration from database (30 or 45 min)
   v_cooldown_duration := COALESCE(v_cooldown_duration, 30);
@@ -65,10 +69,10 @@ DECLARE
 BEGIN
   -- Check if user has active cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking
-    WHERE user_id = p_user_id
-      AND reset_cooldown_used = FALSE
-      AND cancelled_at > NOW() - (cooldown_duration_minutes || ' minutes')::INTERVAL
+    SELECT 1 FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = FALSE
+      AND u.cancelled_at > NOW() - (u.cooldown_duration_minutes || ' minutes')::INTERVAL
     LIMIT 1
   ) INTO v_has_active_cooldown;
 
@@ -79,10 +83,10 @@ BEGIN
 
   -- Check if user already used reset for this cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking
-    WHERE user_id = p_user_id
-      AND reset_cooldown_used = TRUE
-      AND cancelled_at > NOW() - INTERVAL '45 minutes'
+    SELECT 1 FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = TRUE
+      AND u.cancelled_at > NOW() - INTERVAL '45 minutes'
     LIMIT 1
   ) INTO v_already_used_reset;
 
@@ -94,11 +98,14 @@ BEGIN
   -- Mark the reset as used on the oldest active cancellation record
   UPDATE user_cancellation_tracking
   SET reset_cooldown_used = TRUE
-  WHERE user_id = p_user_id
-    AND reset_cooldown_used = FALSE
-    AND cancelled_at > NOW() - INTERVAL '45 minutes'
-  ORDER BY cancelled_at ASC
-  LIMIT 1;
+  WHERE id = (
+    SELECT id FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = FALSE
+      AND u.cancelled_at > NOW() - INTERVAL '45 minutes'
+    ORDER BY u.cancelled_at ASC
+    LIMIT 1
+  );
 
   RETURN QUERY SELECT TRUE, 'Cooldown reset successfully. Be careful - next cancellation will result in 45-minute ban';
 END;
@@ -117,12 +124,12 @@ DECLARE
   v_reset_was_used BOOLEAN;
 BEGIN
   -- Check if user had used reset before this cancellation
-  SELECT MAX(reset_cooldown_used)
+  SELECT MAX(CASE WHEN u.reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN
   INTO v_reset_was_used
-  FROM user_cancellation_tracking
-  WHERE user_id = NEW.customer_id
-    AND reset_cooldown_used = TRUE
-    AND cancelled_at > NOW() - INTERVAL '45 minutes';
+  FROM user_cancellation_tracking u
+  WHERE u.user_id = NEW.customer_id
+    AND u.reset_cooldown_used = TRUE
+    AND u.cancelled_at > NOW() - INTERVAL '45 minutes';
 
   -- If reset was used, escalate new cancellation to 45 minutes
   IF v_reset_was_used THEN
@@ -155,11 +162,11 @@ DECLARE
   v_cooldown_duration INTEGER;
 BEGIN
   -- Get cancellation count and duration in last 45 minutes
-  SELECT COUNT(*), MIN(cancelled_at), MAX(cooldown_duration_minutes)
+  SELECT COUNT(*), MIN(u.cancelled_at), MAX(u.cooldown_duration_minutes)
   INTO v_count, v_oldest_time, v_cooldown_duration
-  FROM user_cancellation_tracking
-  WHERE user_id = p_user_id
-    AND cancelled_at > NOW() - INTERVAL '45 minutes';
+  FROM user_cancellation_tracking u
+  WHERE u.user_id = p_user_id
+    AND u.cancelled_at > NOW() - INTERVAL '45 minutes';
 
   v_cooldown_duration := COALESCE(v_cooldown_duration, 30);
 
@@ -188,12 +195,12 @@ BEGIN
   -- Only track if status changed to CANCELLED
   IF NEW.status = 'CANCELLED' AND (OLD.status IS NULL OR OLD.status != 'CANCELLED') THEN
     -- Check if user had used reset before this cancellation
-    SELECT MAX(reset_cooldown_used)
+    SELECT MAX(CASE WHEN u.reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN
     INTO v_reset_was_used
-    FROM user_cancellation_tracking
-    WHERE user_id = NEW.customer_id
-      AND reset_cooldown_used = TRUE
-      AND cancelled_at > NOW() - INTERVAL '45 minutes';
+    FROM user_cancellation_tracking u
+    WHERE u.user_id = NEW.customer_id
+      AND u.reset_cooldown_used = TRUE
+      AND u.cancelled_at > NOW() - INTERVAL '45 minutes';
 
     -- Insert into cancellation tracking with escalated duration if needed
     INSERT INTO user_cancellation_tracking (
