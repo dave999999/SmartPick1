@@ -25,43 +25,43 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-gradient-to-br from-white via-slate-50 to-gray-50">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl text-gray-900">
-            <FileText className="h-5 w-5 text-teal-600" />
+      <DialogContent className="max-w-lg sm:max-w-3xl max-h-[90vh] flex flex-col bg-gradient-to-br from-white via-slate-50 to-gray-50 p-4 sm:p-6">
+        <DialogHeader className="space-y-1">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600" />
             {t('terms.dialog.title')}
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-xs sm:text-sm text-gray-600">
             {t('terms.dialog.description')}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="terms" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200">
-            <TabsTrigger value="terms" className="flex items-center gap-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
-              <FileText className="h-4 w-4" />
+          <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200 h-9">
+            <TabsTrigger value="terms" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
               {t('terms.tab.terms')}
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
-              <Shield className="h-4 w-4" />
+            <TabsTrigger value="privacy" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+              <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
               {t('terms.tab.privacy')}
             </TabsTrigger>
           </TabsList>
 
           {/* Terms Content */}
-          <TabsContent value="terms" className="mt-4">
-            <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
-              <div className="space-y-4 text-sm text-gray-900">
-                <Alert className="border-teal-200 bg-teal-50">
-                  <AlertCircle className="h-4 w-4 text-teal-600" />
-                  <AlertDescription className="text-sm text-gray-900">
+          <TabsContent value="terms" className="mt-2">
+            <div className="h-[50vh] overflow-y-auto pr-2 sm:pr-4 bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+              <div className="space-y-3 text-xs sm:text-sm text-gray-900">
+                <Alert className="border-teal-200 bg-teal-50 py-2">
+                  <AlertCircle className="h-3 w-3 sm:h-4 sm:w-4 text-teal-600" />
+                  <AlertDescription className="text-xs sm:text-sm text-gray-900">
                     <strong>{t('terms.welcome.title')} 👋</strong> {t('terms.welcome.description')}
                   </AlertDescription>
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('terms.howItWorks.title')}</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-900">
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('terms.howItWorks.title')}</h3>
+                  <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 text-gray-900">
                     <li>
                       <strong>🎯 {t('terms.smartPoints.title')}</strong> {t('terms.smartPoints.description')}
                     </li>
@@ -87,7 +87,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('terms.goodToKnow.title')}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('terms.goodToKnow.title')}</h3>
                   <div className="space-y-3">
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1">✨ {t('terms.cancellation.title')}</p>
@@ -125,19 +125,19 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           </TabsContent>
 
           {/* Privacy Content */}
-          <TabsContent value="privacy" className="mt-4">
-            <div className="h-[50vh] overflow-y-auto pr-4 bg-white rounded-lg border border-gray-200 p-4">
-              <div className="space-y-4 text-sm text-gray-900">
-                <Alert className="border-green-200 bg-green-50">
-                  <Shield className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-sm text-gray-900">
+          <TabsContent value="privacy" className="mt-2">
+            <div className="h-[50vh] overflow-y-auto pr-2 sm:pr-4 bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
+              <div className="space-y-3 text-xs sm:text-sm text-gray-900">
+                <Alert className="border-green-200 bg-green-50 py-2">
+                  <Shield className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                  <AlertDescription className="text-xs sm:text-sm text-gray-900">
                     <strong>{t('privacy.title')} 🔒</strong> {t('privacy.description')}
                   </AlertDescription>
                 </Alert>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('privacy.collect.title')}</h3>
-                  <ul className="list-disc pl-5 space-y-2 text-gray-900">
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('privacy.collect.title')}</h3>
+                  <ul className="list-disc pl-4 sm:pl-5 space-y-1.5 text-gray-900">
                     <li>
                       <strong>👤 {t('privacy.profile.title')}</strong> {t('privacy.profile.description')}
                     </li>
@@ -154,7 +154,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('privacy.useFor.title')}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('privacy.useFor.title')}</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       t('privacy.use.manageAccount'),
@@ -175,7 +175,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('privacy.rights.title')}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('privacy.rights.title')}</h3>
                   <div className="space-y-2">
                     <div className="p-3 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-gray-200">
                       <p className="font-semibold text-gray-900 mb-1 text-xs">{t('privacy.rights.access.title')}</p>
@@ -193,7 +193,7 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-base mb-2 text-gray-900">{t('privacy.sharing.title')}</h3>
+                  <h3 className="font-semibold text-sm sm:text-base mb-1.5 text-gray-900">{t('privacy.sharing.title')}</h3>
                   <ul className="list-disc pl-5 space-y-1 text-gray-900 text-xs">
                     <li>{t('privacy.sharing.partners')}</li>
                     <li>{t('privacy.sharing.payment')}</li>
@@ -223,21 +223,21 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 bg-white/60 backdrop-blur-sm rounded-b-lg px-6 py-4">
+        <DialogFooter className="flex-col sm:flex-row gap-2 pt-3 border-t border-gray-200 bg-white/60 backdrop-blur-sm rounded-b-lg px-4 py-3">
           {!alreadyAccepted ? (
             <>
-              <div className="flex-1 text-xs text-gray-700">
+              <div className="flex-1 text-[10px] sm:text-xs text-gray-700 leading-tight">
                 {t('terms.accept.description')}
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" onClick={() => onOpenChange(false)} className="text-xs h-9 flex-1 sm:flex-none">
                   {t('terms.accept.cancel')}
                 </Button>
                 <Button
                   onClick={handleAccept}
-                  className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                  className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-xs h-9 flex-1 sm:flex-none"
                 >
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="mr-1.5 h-3 w-3 sm:h-4 sm:w-4" />
                   {t('terms.accept.button')}
                 </Button>
               </div>
