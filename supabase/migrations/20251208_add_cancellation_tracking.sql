@@ -63,7 +63,7 @@ DECLARE
   v_cooldown_duration INTEGER;
 BEGIN
   -- Get cancellation count and reset status in last active cooldown period
-  SELECT COUNT(*), MIN(cancelled_at), MAX(reset_cooldown_used), MAX(cooldown_duration_minutes)
+  SELECT COUNT(*), MIN(cancelled_at), MAX(CASE WHEN reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN, MAX(cooldown_duration_minutes)
   INTO v_count, v_oldest_time, v_reset_used, v_cooldown_duration
   FROM user_cancellation_tracking
   WHERE user_id = p_user_id
