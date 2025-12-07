@@ -477,29 +477,29 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         }}
       >
         {/* Premium Header */}
-        <div className="px-6 pt-6 pb-4 text-center relative">
+        <div className="px-6 pt-4 pb-3 text-center relative">
           {/* Title & Subtitle */}
           <DialogTitle 
-            className="text-xl font-bold mb-1 tracking-tight"
+            className="text-base font-bold mb-0.5 tracking-tight"
             style={{
               color: '#FFFFFF',
               fontWeight: 700,
               letterSpacing: '-0.02em',
             }}
           >
-            Welcome to SmartPick
+            Join SmartPick
           </DialogTitle>
           <DialogDescription 
-            className="text-sm font-medium"
+            className="text-xs font-medium"
             style={{
               color: 'rgba(255,255,255,0.7)',
             }}
           >
-            Smart choices every day ✨
+            Get exclusive deals and earn SmartPoints
           </DialogDescription>
         </div>
 
-        <div className="px-6 py-4 overflow-y-auto flex-1">
+        <div className="px-6 py-2 overflow-y-auto flex-1">
           {error && (
             <Alert variant={partnerStatus ? 'default' : 'destructive'} className={`mb-4 ${partnerStatus === 'pending' ? 'bg-yellow-50 border-yellow-200' : partnerStatus === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-red-50 border-red-200'}`}>
               {partnerStatus === 'pending' ? (
@@ -517,24 +517,25 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList 
-              className="grid w-full grid-cols-2 p-1 rounded-2xl mb-4"
-              style={{
-                background: 'rgba(80,80,80,0.3)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
-              }}
+              className="grid w-full grid-cols-2 gap-3 mb-4 bg-transparent p-0"
             >
               <TabsTrigger 
                 value="signin" 
-                className="glass-tab-active rounded-xl font-semibold transition-all duration-200 h-10 data-[state=inactive]:text-gray-500 data-[state=inactive]:bg-transparent data-[state=inactive]:shadow-none"
+                className="rounded-2xl font-semibold transition-all duration-200 h-11 data-[state=inactive]:text-white data-[state=inactive]:opacity-70 border border-white/30"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                }}
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="signup" 
-                className="glass-tab-active rounded-xl font-semibold transition-all duration-200 h-10 data-[state=inactive]:text-gray-500 data-[state=inactive]:bg-transparent data-[state=inactive]:shadow-none"
+                className="rounded-2xl font-semibold transition-all duration-200 h-11 data-[state=inactive]:text-white data-[state=inactive]:opacity-70 border border-white/30"
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                }}
               >
-                Sign Up
+                Create Account
               </TabsTrigger>
             </TabsList>
 

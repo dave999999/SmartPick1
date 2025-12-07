@@ -653,8 +653,9 @@
 
 /* Glass Tab Active State Override */
 .glass-tab-active[data-state="active"] {
-  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%) !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.5) inset !important;
-  color: #1A1A1A !important;
+  background: rgba(255,255,255,0.25) !important;
+  border-color: rgba(255,255,255,0.5) !important;
+  color: #FFFFFF !important;
+  opacity: 1 !important;
   animation: slideInTab 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
