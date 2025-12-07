@@ -68,11 +68,15 @@ DECLARE
   v_cooldown_duration INTEGER;
 BEGIN
   -- Get cancellation count and reset status in last active cooldown period
-  SELECT COUNT(*), MIN(cancelled_at), MAX(CASE WHEN reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN, MAX(cooldown_duration_minutes)
+  SELECT
+    COUNT(*) AS cancellation_count,
+    MIN(u.cancelled_at) AS oldest_time,
+    MAX(CASE WHEN u.reset_cooldown_used THEN 1 ELSE 0 END)::BOOLEAN AS reset_used,
+    MAX(u.cooldown_duration_minutes) AS cooldown_minutes
   INTO v_count, v_oldest_time, v_reset_used, v_cooldown_duration
-  FROM user_cancellation_tracking
-  WHERE user_id = p_user_id
-    AND cancelled_at > NOW() - INTERVAL '45 minutes'; -- Check up to 45 min window
+  FROM user_cancellation_tracking u
+  WHERE u.user_id = p_user_id
+    AND u.cancelled_at > NOW() - INTERVAL '45 minutes'; -- Check up to 45 min window
 
   -- Use cooldown duration from database (30 or 45 min)
   v_cooldown_duration := COALESCE(v_cooldown_duration, 30);
@@ -107,10 +111,10 @@ DECLARE
 BEGIN
   -- Check if user has active cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking
-    WHERE user_id = p_user_id
-      AND reset_cooldown_used = FALSE
-      AND cancelled_at > NOW() - (cooldown_duration_minutes || ' minutes')::INTERVAL
+    SELECT 1 FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = FALSE
+      AND u.cancelled_at > NOW() - (u.cooldown_duration_minutes || ' minutes')::INTERVAL
     LIMIT 1
   ) INTO v_has_active_cooldown;
 
@@ -121,10 +125,10 @@ BEGIN
 
   -- Check if user already used reset for this cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking
-    WHERE user_id = p_user_id
-      AND reset_cooldown_used = TRUE
-      AND cancelled_at > NOW() - INTERVAL '45 minutes'
+    SELECT 1 FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = TRUE
+      AND u.cancelled_at > NOW() - INTERVAL '45 minutes'
     LIMIT 1
   ) INTO v_already_used_reset;
 
@@ -137,11 +141,11 @@ BEGIN
   UPDATE user_cancellation_tracking
   SET reset_cooldown_used = TRUE
   WHERE id = (
-    SELECT id FROM user_cancellation_tracking
-    WHERE user_id = p_user_id
-      AND reset_cooldown_used = FALSE
-      AND cancelled_at > NOW() - INTERVAL '45 minutes'
-    ORDER BY cancelled_at ASC
+    SELECT id FROM user_cancellation_tracking u
+    WHERE u.user_id = p_user_id
+      AND u.reset_cooldown_used = FALSE
+      AND u.cancelled_at > NOW() - INTERVAL '45 minutes'
+    ORDER BY u.cancelled_at ASC
     LIMIT 1
   );
 
