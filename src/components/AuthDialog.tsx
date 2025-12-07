@@ -437,51 +437,51 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {/* Floating Logo Above Modal */}
+      <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
+        <div 
+          className="relative"
+          style={{
+            animation: 'floatLogo 3s ease-in-out infinite',
+          }}
+        >
+          {/* Bright Glow effect */}
+          <div 
+            className="absolute inset-0 animate-pulse"
+            style={{
+              background: 'radial-gradient(circle, rgba(255,140,0,0.6), rgba(255,140,0,0.3) 50%, transparent 70%)',
+              filter: 'blur(30px)',
+              transform: 'scale(2)',
+            }}
+          />
+          <img 
+            src="/smartpick-logo.svg" 
+            alt="SmartPick" 
+            className="h-24 w-24 relative z-10"
+            style={{
+              filter: 'drop-shadow(0 8px 24px rgba(255,140,0,0.5)) drop-shadow(0 0 40px rgba(255,140,0,0.3))',
+            }}
+          />
+        </div>
+      </div>
+
       <DialogContent 
-        className="sm:max-w-md border-none p-0 overflow-hidden max-h-[90vh] flex flex-col"
+        className="sm:max-w-md border-none p-0 overflow-hidden max-h-[85vh] flex flex-col mt-[100px]"
         style={{
-          borderRadius: '32px',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.25) 100%)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          boxShadow: '0 6px 30px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset',
+          borderRadius: '28px',
+          background: 'linear-gradient(180deg, rgba(120,120,120,0.25) 0%, rgba(80,80,80,0.2) 100%)',
+          backdropFilter: 'blur(60px)',
+          WebkitBackdropFilter: 'blur(60px)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.15) inset',
         }}
       >
-        {/* Premium Header with 3D Logo */}
+        {/* Premium Header */}
         <div className="px-6 pt-6 pb-4 text-center relative">
-          {/* Logo */}
-          <div className="flex justify-center mb-3 relative">
-            <div 
-              className="relative"
-              style={{
-                animation: 'floatLogo 3s ease-in-out infinite',
-              }}
-            >
-              {/* Glow effect */}
-              <div 
-                className="absolute inset-0 animate-pulse"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255,140,0,0.3), transparent 70%)',
-                  filter: 'blur(20px)',
-                  transform: 'scale(1.5)',
-                }}
-              />
-              <img 
-                src="/smartpick-logo.svg" 
-                alt="SmartPick" 
-                className="h-20 w-32 relative z-10"
-                style={{
-                  filter: 'drop-shadow(0 4px 12px rgba(255,140,0,0.35))',
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Title & Subtitle - SF Pro Style */}
+          {/* Title & Subtitle */}
           <DialogTitle 
             className="text-xl font-bold mb-1 tracking-tight"
             style={{
-              color: '#1A1A1A',
+              color: '#FFFFFF',
               fontWeight: 700,
               letterSpacing: '-0.02em',
             }}
@@ -491,7 +491,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           <DialogDescription 
             className="text-sm font-medium"
             style={{
-              color: '#6E7075',
+              color: 'rgba(255,255,255,0.7)',
             }}
           >
             Smart choices every day ✨
@@ -518,9 +518,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             <TabsList 
               className="grid w-full grid-cols-2 p-1 rounded-2xl mb-4"
               style={{
-                background: 'rgba(255,255,255,0.35)',
+                background: 'rgba(80,80,80,0.3)',
                 backdropFilter: 'blur(10px)',
-                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)',
               }}
             >
               <TabsTrigger 
@@ -545,10 +545,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 disabled={isLoading}
                 className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 group relative overflow-hidden border-none"
                 style={{
-                  background: 'rgba(255,255,255,0.5)',
+                  background: 'rgba(255,255,255,0.9)',
                   backdropFilter: 'blur(12px)',
-                  boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset',
-                  color: '#1A1A1A',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.3) inset',
+                  color: '#FFFFFF',
                 }}
               >
                 <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">
@@ -565,7 +565,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 <div 
                   className="absolute inset-0 flex items-center"
                   style={{
-                    background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06) 50%, transparent)',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15) 50%, transparent)',
                     height: '1px',
                   }}
                 />
@@ -573,9 +573,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <span 
                     className="px-4 py-1.5 rounded-full font-medium"
                     style={{
-                      background: 'rgba(255,255,255,0.4)',
+                      background: 'rgba(80,80,80,0.4)',
                       backdropFilter: 'blur(8px)',
-                      color: '#8E8E93',
+                      color: 'rgba(255,255,255,0.7)',
                     }}
                   >
                     Or sign in with email
@@ -586,7 +586,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               <form onSubmit={handleSignIn} className="space-y-3">
                 {/* Frosted Email Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="signin-email" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Email
                   </Label>
                   <div className="relative">
@@ -612,10 +612,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       disabled={isLoading}
                       className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -624,7 +624,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 {/* Frosted Password Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="signin-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    <Label htmlFor="signin-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                       Password
                     </Label>
                     <Link 
@@ -657,10 +657,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       disabled={isLoading}
                       className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -774,7 +774,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       background: 'rgba(255,255,255,0.5)',
                       backdropFilter: 'blur(12px)',
                       boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset',
-                      color: '#1A1A1A',
+                      color: '#FFFFFF',
                     }}
                   >
                     <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">
@@ -799,7 +799,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       <span 
                         className="px-4 py-1.5 rounded-full font-medium"
                         style={{
-                          background: 'rgba(255,255,255,0.4)',
+                          background: 'rgba(255,255,255,0.12)',
                           backdropFilter: 'blur(8px)',
                           color: '#8E8E93',
                         }}
@@ -812,7 +812,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <form onSubmit={handleSignUp} className="space-y-3">
                 {/* Full Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="signup-name" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Full Name
                   </Label>
                   <div className="relative">
@@ -837,10 +837,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       disabled={isLoading}
                       className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -848,7 +848,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="signup-email" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Email
                   </Label>
                   <div className="relative">
@@ -874,10 +874,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       disabled={isLoading}
                       className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -885,7 +885,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="signup-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Password
                   </Label>
                   <div className="relative">
@@ -911,10 +911,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       minLength={12}
                       className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -925,7 +925,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
                 {/* Confirm Password */}
                 <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Confirm Password
                   </Label>
                   <div className="relative">
@@ -950,10 +950,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       minLength={12}
                       className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                     />
                   </div>
@@ -961,7 +961,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
                 {/* Referral Code */}
                 <div className="space-y-2">
-                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     <Gift className="w-4 h-4" style={{ color: '#FF8A00' }} />
                     Referral Code (Optional)
                   </Label>
@@ -979,10 +979,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       disabled={isLoading}
                       className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200 uppercase"
                       style={{
-                        background: 'rgba(255,255,255,0.4)',
+                        background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
-                        color: '#1A1A1A',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
+                        color: '#FFFFFF',
                       }}
                       maxLength={6}
                     />
