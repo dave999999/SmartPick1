@@ -210,6 +210,32 @@ AFTER UPDATE ON public.reservations
 FOR EACH ROW
 EXECUTE FUNCTION track_reservation_cancellation();
 
+-- Function to reset cancellation tracking after a successful reservation (clears counts and reset usage)
+CREATE OR REPLACE FUNCTION reset_cancellation_tracking_on_success()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- When reservation moves to a successful state, clear all recent cancellations for that user
+  IF NEW.status IN ('CONFIRMED', 'COMPLETED') AND (OLD.status IS DISTINCT FROM NEW.status) THEN
+    DELETE FROM user_cancellation_tracking
+    WHERE user_id = NEW.customer_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS trg_reset_cancellation_on_success ON public.reservations;
+
+-- Create trigger to clear cooldown after success
+CREATE TRIGGER trg_reset_cancellation_on_success
+AFTER UPDATE ON public.reservations
+FOR EACH ROW
+EXECUTE FUNCTION reset_cancellation_tracking_on_success();
+
 -- Add comment
 COMMENT ON TABLE public.user_cancellation_tracking IS
   'Tracks user reservation cancellations. After 3 cancellations in 30 minutes, user cannot reserve.';
