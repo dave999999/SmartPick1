@@ -245,8 +245,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
             {/* Search Bar */}
             <div className="relative flex items-center h-11 rounded-xl mb-3" style={{
               background: 'rgba(255, 255, 255, 0.95)',
-              boxShadow: '0 2px 12px rgba(0, 0, 0, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.8)'
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.9)',
+              transform: 'translateZ(0)'
             }}>
               <Search className="absolute left-3 w-4 h-4 text-gray-400" />
               <input
@@ -274,9 +275,10 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                       ? 'linear-gradient(135deg, #FF7A1A 0%, #FF5A00 100%)'
                       : 'rgba(255, 255, 255, 0.95)',
                     boxShadow: selectedCategory === category.value
-                      ? '0 4px 16px rgba(255, 122, 26, 0.3)'
-                      : '0 2px 12px rgba(0, 0, 0, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.8)'
+                      ? '0 6px 20px rgba(255, 122, 26, 0.35), 0 2px 8px rgba(255, 122, 26, 0.2)'
+                      : '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.9)',
+                    transform: 'translateZ(0)'
                   }}
                 >
                   <img 
@@ -313,12 +315,13 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                               onClick={() => onOfferSelect(offer)}
                               style={{
                                 background: 'rgba(255, 255, 255, 0.95)',
-                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
-                                border: '1px solid rgba(255, 255, 255, 0.8)'
+                                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.06)',
+                                border: '1px solid rgba(255, 255, 255, 0.9)',
+                                transform: 'translateZ(0)'
                               }}
-                              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                              onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98) translateZ(0)'}
+                              onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
+                              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateZ(0)'}
                             >
                               <div className="flex items-start gap-3">
                                 {/* Product Image */}

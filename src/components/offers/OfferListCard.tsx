@@ -48,13 +48,14 @@ export function OfferListCard({
       className={cn(
         'w-full rounded-xl overflow-hidden',
         'transition-all duration-150 ease-out',
-        onClick && 'cursor-pointer hover:scale-[1.02]',
+        onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-2xl',
         onClick && 'active:scale-[0.98]'
       )}
       style={{
         background: 'rgba(255, 255, 255, 0.95)',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06)',
-        border: '1px solid rgba(255, 255, 255, 0.8)'
+        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.06)',
+        border: '1px solid rgba(255, 255, 255, 0.9)',
+        transform: 'translateZ(0)'
       }}
     >
       {/* Image Section */}
