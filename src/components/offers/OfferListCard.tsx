@@ -88,7 +88,7 @@ export function OfferListCard({
       </div>
 
       {/* Text Section */}
-      <div className="px-2 py-2 text-center">
+      <div className="px-2 py-1.5 text-center">
         <h4 className="text-[12px] font-medium text-[#111827] line-clamp-1 leading-tight">
           {title}
         </h4>

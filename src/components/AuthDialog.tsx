@@ -438,7 +438,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       {open && !showTermsDialog && (
-        <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
+        <div className="fixed top-[8vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
           <div 
             className="relative"
             style={{
@@ -467,7 +467,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       )}
 
       <DialogContent 
-        className="sm:max-w-md border-none p-0 overflow-hidden max-h-[85vh] flex flex-col mt-[100px]"
+        className="sm:max-w-md border-none p-0 overflow-hidden max-h-[90vh] flex flex-col mt-[80px]"
         style={{
           borderRadius: '28px',
           background: 'linear-gradient(180deg, rgba(120,120,120,0.25) 0%, rgba(80,80,80,0.2) 100%)',
@@ -477,7 +477,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         }}
       >
         {/* Premium Header */}
-        <div className="px-6 pt-4 pb-3 text-center relative">
+        <div className="px-6 pt-3 pb-2 text-center relative">
           {/* Title & Subtitle */}
           <DialogTitle 
             className="text-base font-bold mb-0.5 tracking-tight"
@@ -499,7 +499,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           </DialogDescription>
         </div>
 
-        <div className="px-6 py-2 overflow-y-auto flex-1">
+        <div className="px-6 py-1 pb-12 overflow-y-auto flex-1">
           {error && (
             <Alert variant={partnerStatus ? 'default' : 'destructive'} className={`mb-4 ${partnerStatus === 'pending' ? 'bg-yellow-50 border-yellow-200' : partnerStatus === 'rejected' ? 'bg-red-50 border-red-200' : 'bg-red-50 border-red-200'}`}>
               {partnerStatus === 'pending' ? (
@@ -787,10 +787,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     />
                   </div>
 
-                  <form onSubmit={handleSignUp} className="space-y-3">
-                {/* Full Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  <form onSubmit={handleSignUp} className="space-y-1">
+                    {/* Full Name */}
+                    <div className="space-y-1">
+                  <Label htmlFor="signup-name" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Full Name
                   </Label>
                   <div className="relative">
@@ -813,7 +813,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
                         background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
@@ -825,8 +825,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-1">
+                  <Label htmlFor="signup-email" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Email
                   </Label>
                   <div className="relative">
@@ -850,7 +850,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
                         background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
@@ -862,8 +862,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-1">
+                  <Label htmlFor="signup-password" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Password
                   </Label>
                   <div className="relative">
@@ -887,7 +887,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       required
                       disabled={isLoading}
                       minLength={12}
-                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
                         background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
@@ -896,14 +896,14 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                     />
                   </div>
-                  <p className="text-xs" style={{ color: '#8E8E93' }}>
+                  <p className="text-[10px]" style={{ color: '#000000' }}>
                     Min 12 characters with uppercase, lowercase, number
                   </p>
                 </div>
 
                 {/* Confirm Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-1">
+                  <Label htmlFor="signup-confirm-password" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     Confirm Password
                   </Label>
                   <div className="relative">
@@ -926,7 +926,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       required
                       disabled={isLoading}
                       minLength={12}
-                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
                       style={{
                         background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
@@ -938,8 +938,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Referral Code */}
-                <div className="space-y-2">
-                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-1">
+                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
                     <Gift className="w-4 h-4" style={{ color: '#FF8A00' }} />
                     Referral Code (Optional)
                   </Label>
@@ -955,7 +955,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                       disabled={isLoading}
-                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200 uppercase"
+                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200 uppercase"
                       style={{
                         background: 'rgba(255,255,255,0.12)',
                         backdropFilter: 'blur(10px)',
@@ -982,9 +982,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Terms & Conditions */}
-                <div className="space-y-1.5 pt-1">
+                <div className="space-y-1.5 pt-0">
                   <div 
-                    className="flex items-start space-x-2.5 p-3 rounded-xl transition-colors"
+                    className="flex items-start space-x-2.5 p-2 rounded-xl transition-colors"
                     style={{
                       background: 'rgba(255,255,255,0.3)',
                       border: `2px solid ${termsAccepted ? '#FF8A00' : error && !termsAccepted ? '#EF4444' : 'rgba(0,0,0,0.08)'}`,
@@ -1052,7 +1052,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* CAPTCHA - Compact */}
-                <div className="flex justify-center py-2">
+                <div className="flex justify-center py-1">
                   <Turnstile
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKnWhPNRi7fs'}
                     onSuccess={(token) => {
@@ -1072,7 +1072,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 {/* Cosmic-Orange Primary Button */}
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-2xl font-bold text-base relative overflow-hidden group border-none active:scale-[0.97] transition-transform duration-150"
+                  className="w-full h-11 rounded-2xl font-bold text-base relative overflow-hidden group border-none active:scale-[0.97] transition-transform duration-150"
                   disabled={isLoading || !captchaToken || !isOnline || !termsAccepted}
                   style={{
                     background: 'linear-gradient(135deg, #FF8A00 0%, #FF6B00 100%)',

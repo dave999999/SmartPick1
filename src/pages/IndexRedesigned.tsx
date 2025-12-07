@@ -131,7 +131,7 @@ export default function IndexRedesigned() {
       } else {
         const cachedOffers = await indexedDBManager.getCachedOffers();
         
-        if (cachedOffers.length > 0) {
+        if (cachedOffers && cachedOffers.length > 0) {
           setOffers(cachedOffers);
           toast.info('📡 Showing cached offers (offline mode)', {
             description: 'Some data may be outdated',
@@ -147,7 +147,7 @@ export default function IndexRedesigned() {
       
       try {
         const cachedOffers = await indexedDBManager.getCachedOffers();
-        if (cachedOffers.length > 0) {
+        if (cachedOffers && cachedOffers.length > 0) {
           setOffers(cachedOffers);
           toast.warning('Loaded cached offers due to network error');
         } else if (!isDemoMode) {
@@ -420,8 +420,68 @@ export default function IndexRedesigned() {
 
     window.addEventListener('reservation-synced', handleReservationSynced);
 
+    // Set up real-time subscription for new offers
+    const offersChannel = supabase
+      .channel('offers-realtime-index')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'offers',
+        },
+        async (payload) => {
+          logger.info('🔔 Offer changed on map:', payload.eventType);
+
+          if (payload.eventType === 'INSERT') {
+            const newOffer = payload.new as any;
+            
+            // Only add if it meets our criteria
+            if (
+              newOffer.status === 'ACTIVE' &&
+              newOffer.quantity_available > 0 &&
+              new Date(newOffer.expires_at) > new Date()
+            ) {
+              // Reload offers to get full data with partner info
+              loadOffers();
+              toast.success(`🎉 New offer available: ${newOffer.title}`, { duration: 3000 });
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedOffer = payload.new as any;
+            
+            // Check if offer should be shown or hidden
+            const shouldShow = 
+              updatedOffer.status === 'ACTIVE' &&
+              updatedOffer.quantity_available > 0 &&
+              new Date(updatedOffer.expires_at) > new Date();
+
+            const wasShown = offers.some(o => o.id === updatedOffer.id);
+
+            if (shouldShow !== wasShown) {
+              // Offer visibility changed, reload
+              loadOffers();
+              if (!shouldShow) {
+                toast.info('An offer is no longer available');
+              }
+            } else if (shouldShow) {
+              // Update offer details in place
+              setOffers(prev => prev.map(o => 
+                o.id === updatedOffer.id ? { ...o, ...updatedOffer } : o
+              ));
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Remove deleted offer
+            const deletedId = payload.old.id;
+            setOffers(prev => prev.filter(o => o.id !== deletedId));
+            toast.info('An offer has been removed');
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener('reservation-synced', handleReservationSynced);
+      offersChannel.unsubscribe();
     };
   }, []);
 
@@ -855,8 +915,8 @@ export default function IndexRedesigned() {
           imageUrl: activeReservation.offer?.images?.[0] || '/images/Map.jpg',
           quantity: activeReservation.quantity,
           expiresAt: activeReservation.expires_at,
-          pickupWindowStart: activeReservation.offer?.pickup_start_time || new Date().toISOString(),
-          pickupWindowEnd: activeReservation.offer?.pickup_end_time || new Date().toISOString(),
+          pickupWindowStart: activeReservation.offer?.pickup_start || new Date().toISOString(),
+          pickupWindowEnd: activeReservation.offer?.pickup_end || new Date().toISOString(),
           qrPayload: activeReservation.qr_code || activeReservation.id,
           partnerLocation: {
             lat: activeReservation.offer?.partner?.location?.latitude || 
@@ -868,8 +928,7 @@ export default function IndexRedesigned() {
                  activeReservation.partner?.location?.longitude || 
                  activeReservation.partner?.longitude || 44.8271,
           },
-          pickupAddress: activeReservation.offer?.pickup_location || 
-                        activeReservation.partner?.address || 
+          pickupAddress: activeReservation.partner?.address || 
                         activeReservation.offer?.partner?.address || 'Location',
             }}
             userLocation={userLocationObject}

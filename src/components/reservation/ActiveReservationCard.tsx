@@ -486,107 +486,141 @@ export function ActiveReservationCard({
 
   return (
     <>
-      {/* Ultra-Compact Modal (50% height max) */}
+      {/* QR Circle - Positioned to overflow 50% above modal */}
+      <div 
+        className="fixed left-0 right-0 flex justify-center pointer-events-auto z-[62]"
+        style={{ 
+          bottom: 'clamp(200px, 40vh - 80px, 280px)', // Responsive positioning with min/max constraints
+        }}
+      >
+        <FloatingQRModule
+          expiresAt={reservation.expiresAt}
+          qrPayload={reservation.qrPayload}
+          onTap={() => setShowQRModal(true)}
+          variant={variant}
+        />
+      </div>
+
+      {/* Compact Modal Frame - Shortened to allow QR overflow */}
       <motion.div
         initial={{ y: '100%', opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 26, stiffness: 350 }}
-        className="fixed bottom-0 left-0 right-0 z-[60] overflow-visible pointer-events-auto"
+        transition={{ type: 'spring', damping: 28, stiffness: 380 }}
+        className="fixed bottom-0 left-0 right-0 z-[60] overflow-visible pointer-events-auto pb-safe"
         style={{
-          maxHeight: '40vh',
+          height: 'clamp(280px, 40vh, 360px)', // Min 280px, max 360px, ideal 40vh
           background: isGlossy 
-            ? 'linear-gradient(135deg, #F8F8F8 0%, #FFFFFF 100%)'
-            : '#FFFFFF',
-          backdropFilter: 'blur(18px) saturate(180%)',
-          borderTopLeftRadius: 28,
-          borderTopRightRadius: 28,
-          boxShadow: '0 -12px 32px rgba(0, 0, 0, 0.12), 0 -2px 8px rgba(0, 0, 0, 0.06)',
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(250,252,252,0.96) 100%)'
+            : 'rgba(255,255,255,0.97)',
+          backdropFilter: 'blur(40px) saturate(180%)',
+          borderTopLeftRadius: 32,
+          borderTopRightRadius: 32,
+          boxShadow: '0 -16px 48px rgba(0, 0, 0, 0.15), 0 -4px 12px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255,255,255,0.4)',
         }}
       >
-        {/* Floating QR Module (Wolt-style overlap) */}
+        {/* Top gloss highlight */}
         <div 
-          className="absolute left-0 right-0 flex justify-center pointer-events-auto"
-          style={{ top: -75 }}
-        >
-          <FloatingQRModule
-            expiresAt={reservation.expiresAt}
-            qrPayload={reservation.qrPayload}
-            onTap={() => setShowQRModal(true)}
-            variant={variant}
-          />
-        </div>
+          className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+          style={{
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
+            borderTopLeftRadius: 32,
+            borderTopRightRadius: 32,
+          }}
+        />
 
-        {/* Modal Body (Ultra-Compact) */}
-        <div className="pt-[80px] px-4 pb-3 space-y-2">
+        {/* Modal Content - starts below QR space */}
+        <div className="relative h-full flex flex-col pt-[85px] sm:pt-[90px] px-4 sm:px-5 pb-3 sm:pb-4">
           {/* iOS Drag Handle */}
-          <div className="flex justify-center -mt-2 mb-2">
-            <div className="w-10 h-1 bg-[#D1D1D6] rounded-full" />
+          <div className="absolute top-2 sm:top-3 left-0 right-0 flex justify-center">
+            <div className="w-10 h-1 bg-[#D1D1D6] rounded-full opacity-60" />
           </div>
 
-          {/* Huge Timer (SF Rounded Style) */}
-          <div className="text-center">
-            <div className={`text-[48px] font-bold font-mono tracking-tight leading-none ${colorClass}`}>
+          {/* Timer Section - Large & Bold */}
+          <div className="text-center mb-2 sm:mb-3">
+            <div className={`text-[48px] sm:text-[56px] font-bold font-mono tracking-tighter leading-none ${colorClass}`}
+              style={{
+                fontFeatureSettings: '"tnum"',
+                letterSpacing: '-0.02em'
+              }}
+            >
               {formatted}
             </div>
-            <div className="text-[9px] text-[#86868B] uppercase tracking-[0.15em] font-semibold mt-0.5">
+            <div className="text-[9px] sm:text-[10px] text-[#86868B] uppercase tracking-[0.18em] font-bold mt-0.5 sm:mt-1">
               EXPIRES
             </div>
           </div>
 
-          {/* Apple Wallet Card (Ultra-Compact) */}
+          {/* Reserved Offer Card - Wallet Style */}
           <div 
-            className="rounded-2xl p-2.5 space-y-1.5"
+            className="rounded-[16px] sm:rounded-[20px] p-2.5 sm:p-3 mb-3 sm:mb-4 flex items-center gap-2.5 sm:gap-3"
             style={{
               background: isGlossy
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4))'
-                : 'rgba(255,255,255,0.5)',
-              backdropFilter: 'blur(16px)',
-              boxShadow: isGlossy ? '0 4px 16px rgba(0,0,0,0.06)' : '0 2px 8px rgba(0,0,0,0.04)',
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(248,250,252,0.75) 100%)'
+                : 'rgba(255,255,255,0.7)',
+              backdropFilter: 'blur(24px)',
+              boxShadow: isGlossy 
+                ? '0 8px 24px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.5)'
+                : '0 4px 16px rgba(0,0,0,0.06)',
+              border: '1px solid rgba(255,255,255,0.6)',
             }}
           >
-            {/* Title & Partner */}
-            <div className="text-center">
-              <p className="text-[13px] font-semibold text-[#1D1D1F] leading-tight">
-                {reservation.offerTitle}
-              </p>
-              <p className="text-[11px] text-[#86868B] mt-0.5">{reservation.partnerName}</p>
+            {/* Offer Image */}
+            <div 
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl bg-gray-100 overflow-hidden flex-shrink-0"
+              style={{
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              <img 
+                src={reservation.imageUrl} 
+                alt={reservation.offerTitle}
+                className="w-full h-full object-cover"
+              />
             </div>
 
-            {/* Info Row */}
-            <div className="flex items-center justify-center gap-2 text-[11px]">
-              <span className="font-semibold text-[#1D1D1F]">
-                {reservation.quantity} item{reservation.quantity > 1 ? 's' : ''}
-              </span>
+            {/* Offer Details */}
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] sm:text-[14px] font-semibold text-[#1D1D1F] leading-snug truncate">
+                {reservation.offerTitle} ({reservation.quantity})
+              </p>
+              <p className="text-[11px] sm:text-[12px] text-[#86868B] mt-0.5 truncate flex items-center gap-1">
+                <MapPin className="w-3 h-3" strokeWidth={2.5} />
+                {reservation.partnerName}
+              </p>
             </div>
           </div>
 
-          {/* Action Buttons (44px iOS Standard) */}
-          <div className="flex gap-2.5">
+          {/* Action Buttons - iOS Standard */}
+          <div className="flex gap-2.5 sm:gap-3 mt-auto">
             <motion.button
               onClick={() => setShowCancelDialog(true)}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 400, duration: 0.14 }}
-              className="flex-1 h-9 rounded-full border-2 border-[#FF7A00]/60 text-[#FF7A00] font-semibold text-[13px] hover:bg-orange-50/50 hover:border-[#FF7A00] transition-all shadow-sm"
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 420 }}
+              className="flex-1 h-10 sm:h-11 rounded-[12px] sm:rounded-[14px] font-semibold text-[14px] sm:text-[15px] transition-all"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                color: '#FF7A00',
+                border: '1.5px solid rgba(255,122,0,0.3)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8)',
+              }}
             >
               Cancel
             </motion.button>
 
             <motion.button
               onClick={() => onNavigate(reservation)}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 400, duration: 0.14 }}
-              className="flex-1 h-9 rounded-full text-white font-semibold text-[13px] flex items-center justify-center gap-2 transition-all"
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 420 }}
+              className="flex-1 h-10 sm:h-11 rounded-[12px] sm:rounded-[14px] text-white font-bold text-[14px] sm:text-[15px] flex items-center justify-center gap-1.5 sm:gap-2 transition-all"
               style={{
                 background: isGlossy
-                  ? 'linear-gradient(135deg, #FF7A00 0%, #FF8A1F 100%)'
+                  ? 'linear-gradient(135deg, #FF8A00 0%, #FF7000 100%)'
                   : '#FF7A00',
-                boxShadow: isGlossy
-                  ? '0 6px 20px rgba(255,122,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2)'
-                  : '0 4px 12px rgba(255,122,0,0.25)',
+                boxShadow: '0 10px 20px rgba(255,122,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
               }}
             >
-              <Navigation className="w-4 h-4" strokeWidth={2.5} />
+              <Navigation className="w-[16px] h-[16px] sm:w-[18px] sm:h-[18px]" strokeWidth={2.5} />
               Navigate
             </motion.button>
           </div>

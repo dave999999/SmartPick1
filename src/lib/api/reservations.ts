@@ -332,7 +332,10 @@ export const getCustomerReservations = async (customerId: string): Promise<Reser
     .from('reservations')
     .select(`
       *,
-      offer:offers(*),
+      offer:offers(
+        *,
+        partner:partners(*)
+      ),
       partner:partners(*)
     `)
     .eq('customer_id', customerId)
@@ -571,23 +574,16 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .update({ quantity_available: offer.quantity_available + reservation.quantity })
       .eq('id', reservation.offer_id);
 
-    // Get customer name for notification
-    const { data: customer, error: customerError } = await supabase
-      .from('users')
-      .select('full_name')
-      .eq('id', reservation.customer_id)
-      .single();
-    
-    if (customerError) {
-      logger.warn('Failed to fetch customer name:', customerError);
-    }
+    // Get customer name for notification from auth.users
+    const { data: authUser } = await supabase.auth.admin.getUserById(reservation.customer_id);
+    const customerName = authUser?.user?.user_metadata?.name || authUser?.user?.email?.split('@')[0] || 'Customer';
 
     // Notify partner about cancellation (fire-and-forget)
-    if (offer.partner_id && customer) {
+    if (offer.partner_id) {
       const { notifyPartnerReservationCancelled } = await import('@/lib/telegram');
       notifyPartnerReservationCancelled(
         offer.partner_id,
-        customer.full_name || 'Unknown Customer',
+        customerName,
         offer.title,
         reservation.quantity
       ).catch(err => {

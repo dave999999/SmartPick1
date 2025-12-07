@@ -146,6 +146,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const markerClustererRef = useRef<MarkerClusterer | null>(null);
   const userMarkerRef = useRef<any>(null);
   const pulseOverlayRef = useRef<any>(null);
+  const directionsRendererRef = useRef<any>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -327,13 +328,97 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     const map = mapRef.current;
 
+    console.log('🗺️ Markers effect running:', { 
+      hideMarkers, 
+      hasActiveReservation: !!activeReservation,
+      hasPartner: !!activeReservation?.offer?.partner,
+      userLocation: userLocation,
+    });
+
     // Clear all existing markers first
     markersRef.current.forEach(marker => {
       if (marker.setMap) marker.setMap(null);
     });
     markersRef.current = [];
 
-    // If markers should be hidden (e.g., during navigation), return after clearing
+    // Clear any existing directions renderer
+    if (directionsRendererRef.current) {
+      directionsRendererRef.current.setMap(null);
+      directionsRendererRef.current = null;
+    }
+    
+    // If markers should be hidden but there's an active reservation, show only partner marker and route
+    if (hideMarkers && activeReservation) {
+      if (markerClustererRef.current) {
+        markerClustererRef.current.clearMarkers();
+      }
+      
+      // Show only the partner marker for the active reservation
+      if (activeReservation?.offer?.partner && userLocation) {
+        const partner = activeReservation.offer.partner;
+        const partnerLat = partner.latitude;
+        const partnerLng = partner.longitude;
+        
+        console.log('🎯 Active Reservation Partner:', {
+          name: partner.business_name,
+          lat: partnerLat,
+          lng: partnerLng,
+          category: activeReservation.offer.category,
+        });
+        
+        if (typeof partnerLat === 'number' && typeof partnerLng === 'number' && 
+            isFinite(partnerLat) && isFinite(partnerLng)) {
+          
+          console.log('✅ Creating partner marker at:', partnerLat, partnerLng);
+          
+          // Create partner marker using the same icon as regular markers
+          const partnerMarker = new google.maps.Marker({
+            position: { lat: partnerLat, lng: partnerLng },
+            map: mapRef.current,
+            title: partner.business_name,
+            icon: {
+              url: '/icons/map-pins/all.png?v=2',
+              scaledSize: new google.maps.Size(64, 64),
+              anchor: new google.maps.Point(32, 64),
+              optimized: false
+            },
+            zIndex: 10000,
+            animation: google.maps.Animation.DROP,
+          });
+          
+          markersRef.current.push(partnerMarker);
+          console.log('✅ Partner marker created with standard map pin icon');
+          
+          // Draw route between user and partner
+          const directionsService = new google.maps.DirectionsService();
+          directionsRendererRef.current = new google.maps.DirectionsRenderer({
+            map: mapRef.current,
+            suppressMarkers: true,
+            polylineOptions: {
+              strokeColor: '#4285F4',
+              strokeWeight: 5,
+              strokeOpacity: 0.9,
+            },
+          });
+          
+          directionsService.route({
+            origin: { lat: userLocation[0], lng: userLocation[1] },
+            destination: { lat: partnerLat, lng: partnerLng },
+            travelMode: google.maps.TravelMode.DRIVING,
+          }, (result, status) => {
+            if (status === 'OK' && result) {
+              directionsRendererRef.current?.setDirections(result);
+            } else {
+              console.error('Directions request failed:', status);
+            }
+          });
+        }
+      }
+      
+      return;
+    }
+    
+    // If markers should be hidden (no active reservation), return after clearing
     if (hideMarkers) {
       if (markerClustererRef.current) {
         markerClustererRef.current.clearMarkers();
@@ -496,7 +581,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     }
 
     // No cleanup needed - using data URLs instead of blob URLs
-  }, [groupedLocations, google, userLocation, onMarkerClick, hideMarkers]);
+  }, [groupedLocations, google, userLocation, onMarkerClick, hideMarkers, activeReservation]);
 
   // Update user location marker
   useEffect(() => {

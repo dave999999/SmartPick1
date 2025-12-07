@@ -55,6 +55,8 @@ const ActiveReservationV2Demo = lazy(() => import('./pages/ActiveReservationV2De
 const DesignReference = lazy(() => import('./pages/DesignReference'));
 const OffersSheetDemo = lazy(() => import('./pages/OffersSheetDemo'));
 const OffersCardDemo = lazy(() => import('./pages/OffersCardDemo'));
+const ReservationModalDemo = lazy(() => import('./pages/reservation-demo'));
+const OfferConfirmationDemo = lazy(() => import('./pages/offer-confirmation-demo'));
 
 // (Removed unused loadLeafletCSS helper)
 
@@ -334,6 +336,8 @@ const AppContent = () => {
           <Route path="/demo/offers-sheet" element={<OffersSheetDemo />} />
           <Route path="/demo/offers-card" element={<OffersCardDemo />} />
           <Route path="/offers-card-demo" element={<OffersCardDemo />} />
+          <Route path="/demo/reservation-modal" element={<ReservationModalDemo />} />
+          <Route path="/demo/offer-confirmation" element={<OfferConfirmationDemo />} />
           <Route path="/design-reference" element={<DesignReference />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

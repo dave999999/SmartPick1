@@ -100,6 +100,9 @@ export function OffersSheet({
   const filteredOffers = useMemo(() => {
     let filtered = [...offers];
 
+    // Filter out expired offers
+    filtered = filtered.filter(o => !o.expires_at || new Date(o.expires_at) > new Date());
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(

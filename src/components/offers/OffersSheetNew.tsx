@@ -60,7 +60,11 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     const matchesSearch = !searchQuery || 
       offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       offer.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesPartner && matchesCategory && matchesSearch && offer.status === 'ACTIVE';
+    
+    // Check if offer is not expired
+    const isNotExpired = !offer.expires_at || new Date(offer.expires_at) > new Date();
+    
+    return matchesPartner && matchesCategory && matchesSearch && offer.status === 'ACTIVE' && isNotExpired;
   });
 
   // Get special offers (50% or more discount)
@@ -406,14 +410,14 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
                 {/* Popular Now - Horizontal Scroll */}
                 {popularOffers.length > 0 && (
-                  <div>
+                  <div className="mb-4">
                     <div className="flex items-center justify-between px-4 mb-2">
                       <h2 className="text-[17px] font-semibold text-gray-900">
                         Popular Now
                       </h2>
                     </div>
                     <div className="overflow-x-auto scrollbar-hide">
-                      <div className="flex gap-3 px-4">
+                      <div className="flex gap-3 px-4 pb-1">
                         {popularOffers.map((offer: Offer) => (
                           <div key={offer.id} className="flex-shrink-0 w-[110px]">
                             <OfferListCard
