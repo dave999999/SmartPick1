@@ -437,33 +437,34 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Floating Logo Above Modal */}
-      <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
-        <div 
-          className="relative"
-          style={{
-            animation: 'floatLogo 3s ease-in-out infinite',
-          }}
-        >
-          {/* Bright Glow effect */}
+      {open && (
+        <div className="fixed top-[15vh] left-1/2 -translate-x-1/2 z-[10001] pointer-events-none">
           <div 
-            className="absolute inset-0 animate-pulse"
+            className="relative"
             style={{
-              background: 'radial-gradient(circle, rgba(255,140,0,0.6), rgba(255,140,0,0.3) 50%, transparent 70%)',
-              filter: 'blur(30px)',
-              transform: 'scale(2)',
+              animation: 'floatLogo 3s ease-in-out infinite',
             }}
-          />
-          <img 
-            src="/smartpick-logo.svg" 
-            alt="SmartPick" 
-            className="h-24 w-24 relative z-10"
-            style={{
-              filter: 'drop-shadow(0 8px 24px rgba(255,140,0,0.5)) drop-shadow(0 0 40px rgba(255,140,0,0.3))',
-            }}
-          />
+          >
+            {/* Bright Glow effect */}
+            <div 
+              className="absolute inset-0 animate-pulse"
+              style={{
+                background: 'radial-gradient(circle, rgba(255,140,0,0.6), rgba(255,140,0,0.3) 50%, transparent 70%)',
+                filter: 'blur(30px)',
+                transform: 'scale(2)',
+              }}
+            />
+            <img 
+              src="/smartpick-logo.svg" 
+              alt="SmartPick" 
+              className="h-24 w-24 relative z-10"
+              style={{
+                filter: 'drop-shadow(0 8px 24px rgba(255,140,0,0.5)) drop-shadow(0 0 40px rgba(255,140,0,0.3))',
+              }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       <DialogContent 
         className="sm:max-w-md border-none p-0 overflow-hidden max-h-[85vh] flex flex-col mt-[100px]"
@@ -569,18 +570,6 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     height: '1px',
                   }}
                 />
-                <div className="relative flex justify-center text-xs">
-                  <span 
-                    className="px-4 py-1.5 rounded-full font-medium"
-                    style={{
-                      background: 'rgba(80,80,80,0.4)',
-                      backdropFilter: 'blur(8px)',
-                      color: 'rgba(255,255,255,0.7)',
-                    }}
-                  >
-                    Or sign in with email
-                  </span>
-                </div>
               </div>
 
               <form onSubmit={handleSignIn} className="space-y-3">
@@ -795,18 +784,6 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                         height: '1px',
                       }}
                     />
-                    <div className="relative flex justify-center text-xs">
-                      <span 
-                        className="px-4 py-1.5 rounded-full font-medium"
-                        style={{
-                          background: 'rgba(255,255,255,0.12)',
-                          backdropFilter: 'blur(8px)',
-                          color: '#8E8E93',
-                        }}
-                      >
-                        Or create account with email
-                      </span>
-                    </div>
                   </div>
 
                   <form onSubmit={handleSignUp} className="space-y-3">
