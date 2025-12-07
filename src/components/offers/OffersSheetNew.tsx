@@ -255,8 +255,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                 placeholder="Enter a dish name e.g. Egusi soup"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 px-10 text-sm bg-transparent outline-none placeholder:text-gray-400"
+                className="flex-1 px-10 text-sm bg-transparent outline-none placeholder:text-gray-400 focus:outline-none focus:ring-0 focus:border-0"
                 autoFocus={false}
+                onFocus={(e) => e.target.blur()}
               />
               <button className="absolute right-3">
                 <Mic className="w-4 h-4 text-gray-400" />
