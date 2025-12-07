@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Mail, Clock, XCircle, Gift, Shield, FileText } from 'lucide-react';
+import { AlertCircle, Mail, Clock, XCircle, Gift, Shield, FileText, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { OnboardingDialog } from './OnboardingDialog';
@@ -437,22 +437,81 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl p-0 overflow-y-auto max-h-[90vh] flex flex-col bg-gradient-to-b from-white via-gray-50 to-white">
-        {/* Header with Elegant Gradient Background */}
-        <div className="bg-gradient-to-br from-teal-400 via-emerald-400 to-cyan-400 px-6 pt-8 pb-8 text-center relative overflow-hidden flex-shrink-0">
-          {/* Decorative animated gradient circles */}
-          <div className="absolute -top-16 -right-16 w-40 h-40 bg-gradient-to-br from-white/20 to-emerald-300/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-gradient-to-tr from-cyan-300/20 to-white/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent"></div>
-          
+      <DialogContent 
+        className="sm:max-w-md border-none p-0 overflow-hidden max-h-[90vh] flex flex-col"
+        style={{
+          borderRadius: '32px',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.25) 100%)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)',
+          boxShadow: '0 6px 30px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset',
+        }}
+      >
+        {/* Premium Header with 3D Logo */}
+        <div className="px-6 pt-10 pb-6 text-center relative">
+          {/* Glossy 3D Logo Bubble */}
           <div className="flex justify-center mb-5 relative">
-            <div className="bg-white/30 backdrop-blur-md rounded-full p-4 shadow-2xl ring-2 ring-white/30">
-              <img src="/icon1.png" alt="SmartPick" className="h-16 w-16 drop-shadow-lg" />
+            <div 
+              className="relative"
+              style={{
+                animation: 'floatLogo 3s ease-in-out infinite',
+              }}
+            >
+              {/* Glow effect */}
+              <div 
+                className="absolute inset-0 rounded-full animate-pulse"
+                style={{
+                  background: 'radial-gradient(circle, rgba(255,140,0,0.4), transparent 70%)',
+                  filter: 'blur(20px)',
+                  transform: 'scale(1.5)',
+                }}
+              />
+              {/* Logo container with cosmic-orange neon rim */}
+              <div 
+                className="relative w-20 h-20 rounded-full flex items-center justify-center"
+                style={{
+                  background: 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
+                  boxShadow: '0 8px 32px rgba(255,140,0,0.3), 0 0 0 3px rgba(255,140,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <img 
+                  src="/icon1.png" 
+                  alt="SmartPick" 
+                  className="h-12 w-12 relative z-10"
+                  style={{
+                    filter: 'drop-shadow(0 2px 8px rgba(255,140,0,0.3))',
+                  }}
+                />
+                {/* Inner rim highlight */}
+                <div 
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 50%)',
+                  }}
+                />
+              </div>
             </div>
           </div>
-          <DialogTitle className="text-2xl sm:text-3xl font-extrabold text-white mb-2 tracking-tight drop-shadow-md">Welcome to SmartPick</DialogTitle>
-          <DialogDescription className="text-white/95 text-sm sm:text-base font-medium drop-shadow-sm">
-            Quality meals, incredible value ✨
+
+          {/* Title & Subtitle - SF Pro Style */}
+          <DialogTitle 
+            className="text-2xl font-bold mb-1.5 tracking-tight"
+            style={{
+              color: '#1A1A1A',
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Welcome to SmartPick
+          </DialogTitle>
+          <DialogDescription 
+            className="text-[15px] font-medium"
+            style={{
+              color: '#6E7075',
+            }}
+          >
+            Smart choices every day ✨
           </DialogDescription>
         </div>
 
@@ -473,31 +532,43 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           )}
 
           <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-teal-50 via-emerald-50 to-cyan-50 p-1.5 rounded-2xl mb-8 border border-teal-100 shadow-sm">
+            <TabsList 
+              className="grid w-full grid-cols-2 p-1 rounded-2xl mb-6"
+              style={{
+                background: 'rgba(255,255,255,0.35)',
+                backdropFilter: 'blur(10px)',
+                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+              }}
+            >
               <TabsTrigger 
                 value="signin" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-teal-600 data-[state=active]:border data-[state=active]:border-teal-200 font-semibold transition-all duration-300 text-gray-600 hover:text-teal-600"
+                className="glass-tab-active rounded-xl font-semibold transition-all duration-200 h-10 data-[state=inactive]:text-gray-500 data-[state=inactive]:bg-transparent data-[state=inactive]:shadow-none"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="signup" 
-                className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-teal-600 data-[state=active]:border data-[state=active]:border-teal-200 font-semibold transition-all duration-300 text-gray-600 hover:text-teal-600"
+                className="glass-tab-active rounded-xl font-semibold transition-all duration-200 h-10 data-[state=inactive]:text-gray-500 data-[state=inactive]:bg-transparent data-[state=inactive]:shadow-none"
               >
                 Sign Up
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin" className="space-y-5 mt-0">
-              {/* PROMINENT GOOGLE SIGN-IN */}
+              {/* Glass Google Sign-In */}
               <Button
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
-                className="w-full h-13 bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg rounded-2xl font-semibold shadow-md transition-all duration-300 group relative overflow-hidden"
+                className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 group relative overflow-hidden border-none"
+                style={{
+                  background: 'rgba(255,255,255,0.5)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset',
+                  color: '#1A1A1A',
+                }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-teal-50/0 via-teal-50/50 to-teal-50/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-300 relative z-10" viewBox="0 0 24 24">
+                <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -506,65 +577,110 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 <span className="relative z-10">Continue with Google</span>
               </Button>
 
-              <div className="relative my-7">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                </div>
+              {/* Glass Divider */}
+              <div className="relative my-6">
+                <div 
+                  className="absolute inset-0 flex items-center"
+                  style={{
+                    background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06) 50%, transparent)',
+                    height: '1px',
+                  }}
+                />
                 <div className="relative flex justify-center text-xs">
-                  <span className="bg-gradient-to-r from-gray-50 via-white to-gray-50 px-4 py-1 text-gray-500 font-medium rounded-full">Or sign in with email</span>
+                  <span 
+                    className="px-4 py-1.5 rounded-full font-medium"
+                    style={{
+                      background: 'rgba(255,255,255,0.4)',
+                      backdropFilter: 'blur(8px)',
+                      color: '#8E8E93',
+                    }}
+                  >
+                    Or sign in with email
+                  </span>
                 </div>
               </div>
 
               <form onSubmit={handleSignIn} className="space-y-4">
+                {/* Frosted Email Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-sm font-semibold text-gray-700">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="your@email.com"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('signin-password')?.focus();
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    className="h-12 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
+                  <Label htmlFor="signin-email" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="your@email.com"
+                      value={signInEmail}
+                      onChange={(e) => setSignInEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById('signin-password')?.focus();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
                 </div>
 
+                {/* Frosted Password Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="signin-password" className="text-sm font-semibold text-gray-700">Password</Label>
+                    <Label htmlFor="signin-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                      Password
+                    </Label>
                     <Link 
                       to="/forgot-password" 
-                      className="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline decoration-2 underline-offset-2 transition-all"
+                      className="text-xs font-semibold transition-all hover:opacity-70"
+                      style={{ color: '#FF8A00' }}
                       onClick={() => setTimeout(() => onOpenChange(false), 0)}
                     >
-                      Forgot password?
+                      Forgot?
                     </Link>
                   </div>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={signInPassword}
-                    onChange={(e) => setSignInPassword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.currentTarget.blur(); // Dismiss keyboard
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    className="h-12 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
+                  <div className="relative">
+                    <Lock 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signin-password"
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      value={signInPassword}
+                      onChange={(e) => setSignInPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* CAPTCHA - Compact */}
@@ -582,13 +698,27 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   />
                 </div>
 
+                {/* Cosmic-Orange Primary Button */}
                 <Button
                   type="submit"
-                  className="w-full h-13 bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-600 hover:via-emerald-600 hover:to-cyan-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-base relative overflow-hidden group"
+                  className="w-full h-12 rounded-2xl font-bold text-base relative overflow-hidden group border-none active:scale-[0.97] transition-transform duration-150"
                   disabled={isLoading || (showCaptcha && !captchaToken) || !isOnline}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF8A00 0%, #FF6B00 100%)',
+                    boxShadow: '0 4px 16px rgba(255,138,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
+                    color: '#FFFFFF',
+                  }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  <span className="relative z-10">{isLoading ? '🔄 Signing in...' : !isOnline ? '📡 Offline' : '✨ Sign In'}</span>
+                  <span className="relative z-10 font-bold tracking-wide">
+                    {isLoading ? 'Signing in...' : !isOnline ? 'Offline' : 'Sign In'}
+                  </span>
+                  {/* Convex highlight */}
+                  <div 
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%)',
+                    }}
+                  />
                 </Button>
               </form>
             </TabsContent>
@@ -651,15 +781,20 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
               ) : (
                 <>
-                  {/* PROMINENT GOOGLE SIGN-UP */}
+                  {/* Glass Google Sign-Up */}
                   <Button
                     type="button"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
-                    className="w-full h-13 bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 hover:border-teal-400 hover:shadow-lg rounded-2xl font-semibold shadow-md transition-all duration-300 group relative overflow-hidden"
+                    className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 group relative overflow-hidden border-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.5)',
+                      backdropFilter: 'blur(12px)',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset',
+                      color: '#1A1A1A',
+                    }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-teal-50/0 via-teal-50/50 to-teal-50/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-300 relative z-10" viewBox="0 0 24 24">
+                    <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">
                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                       <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -668,134 +803,230 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     <span className="relative z-10">Continue with Google</span>
                   </Button>
 
-                  <div className="relative my-7">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                    </div>
+                  {/* Glass Divider */}
+                  <div className="relative my-6">
+                    <div 
+                      className="absolute inset-0 flex items-center"
+                      style={{
+                        background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.06) 50%, transparent)',
+                        height: '1px',
+                      }}
+                    />
                     <div className="relative flex justify-center text-xs">
-                      <span className="bg-gradient-to-r from-gray-50 via-white to-gray-50 px-4 py-1 text-gray-500 font-medium rounded-full">Or create account with email</span>
+                      <span 
+                        className="px-4 py-1.5 rounded-full font-medium"
+                        style={{
+                          background: 'rgba(255,255,255,0.4)',
+                          backdropFilter: 'blur(8px)',
+                          color: '#8E8E93',
+                        }}
+                      >
+                        Or create account with email
+                      </span>
                     </div>
                   </div>
 
                   <form onSubmit={handleSignUp} className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-name" className="text-sm font-semibold text-gray-700">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="John Doe"
-                    value={signUpName}
-                    onChange={(e) => setSignUpName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('signup-email')?.focus();
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    className="h-11 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    Full Name
+                  </Label>
+                  <div className="relative">
+                    <User 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      autoComplete="name"
+                      placeholder="John Doe"
+                      value={signUpName}
+                      onChange={(e) => setSignUpName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById('signup-email')?.focus();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-email" className="text-sm font-semibold text-gray-700">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    placeholder="your@email.com"
-                    value={signUpEmail}
-                    onChange={(e) => setSignUpEmail(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('signup-password')?.focus();
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    className="h-11 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    Email
+                  </Label>
+                  <div className="relative">
+                    <Mail 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      inputMode="email"
+                      autoComplete="email"
+                      placeholder="your@email.com"
+                      value={signUpEmail}
+                      onChange={(e) => setSignUpEmail(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById('signup-password')?.focus();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-password" className="text-sm font-semibold text-gray-700">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="••••••••••••"
-                    value={signUpPassword}
-                    onChange={(e) => setSignUpPassword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('signup-confirm-password')?.focus();
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    minLength={12}
-                    className="h-11 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
-                  <p className="text-xs text-gray-500">
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Lock 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="••••••••••••"
+                      value={signUpPassword}
+                      onChange={(e) => setSignUpPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          document.getElementById('signup-confirm-password')?.focus();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      minLength={12}
+                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs" style={{ color: '#8E8E93' }}>
                     Min 12 characters with uppercase, lowercase, number
                   </p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold text-gray-700">Confirm Password</Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="••••••••••••"
-                    value={signUpConfirmPassword}
-                    onChange={(e) => setSignUpConfirmPassword(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.currentTarget.blur(); // Dismiss keyboard before submit
-                      }
-                    }}
-                    required
-                    disabled={isLoading}
-                    minLength={12}
-                    className="h-11 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors"
-                  />
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    Confirm Password
+                  </Label>
+                  <div className="relative">
+                    <Lock 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="signup-confirm-password"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="••••••••••••"
+                      value={signUpConfirmPassword}
+                      onChange={(e) => setSignUpConfirmPassword(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      required
+                      disabled={isLoading}
+                      minLength={12}
+                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                    <Gift className="w-4 h-4 text-teal-500" />
+                {/* Referral Code */}
+                <div className="space-y-2">
+                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: '#3C3C43' }}>
+                    <Gift className="w-4 h-4" style={{ color: '#FF8A00' }} />
                     Referral Code (Optional)
                   </Label>
-                  <Input
-                    id="referral-code"
-                    type="text"
-                    placeholder="FRIEND123"
-                    value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                    disabled={isLoading}
-                    className="h-11 rounded-xl border-2 border-gray-200 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 bg-white hover:border-teal-300 transition-colors uppercase"
-                    maxLength={6}
-                  />
+                  <div className="relative">
+                    <Gift 
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
+                      style={{ color: '#8E8E93' }}
+                    />
+                    <Input
+                      id="referral-code"
+                      type="text"
+                      placeholder="FRIEND123"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      disabled={isLoading}
+                      className="h-11 rounded-2xl pl-11 font-medium border-none transition-all duration-200 uppercase"
+                      style={{
+                        background: 'rgba(255,255,255,0.4)',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)',
+                        color: '#1A1A1A',
+                      }}
+                      maxLength={6}
+                    />
+                  </div>
                   {referralCode && (
-                    <div className="flex items-center gap-1.5 p-1.5 bg-teal-50 rounded-lg border border-teal-200">
-                      <Gift className="w-3 h-3 text-teal-600 flex-shrink-0" />
-                      <p className="text-[10px] text-teal-700 font-medium leading-tight">
+                    <div 
+                      className="flex items-center gap-1.5 p-2 rounded-xl"
+                      style={{
+                        background: 'rgba(255,140,0,0.1)',
+                        border: '1px solid rgba(255,140,0,0.2)',
+                      }}
+                    >
+                      <Gift className="w-3 h-3 flex-shrink-0" style={{ color: '#FF8A00' }} />
+                      <p className="text-[10px] font-medium leading-tight" style={{ color: '#FF6B00' }}>
                         You and your friend will both get bonus points!
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* LEGAL REQUIREMENT: Terms & Conditions Acceptance */}
+                {/* Terms & Conditions */}
                 <div className="space-y-1.5 pt-1">
-                  <div className="flex items-start space-x-2.5 p-3 border-2 rounded-xl transition-colors" style={{
-                    borderColor: termsAccepted ? 'rgb(20 184 166)' : error && !termsAccepted ? 'rgb(239 68 68)' : 'rgb(229 231 235)',
+                  <div 
+                    className="flex items-start space-x-2.5 p-3 rounded-xl transition-colors"
+                    style={{
+                      background: 'rgba(255,255,255,0.3)',
+                      border: `2px solid ${termsAccepted ? '#FF8A00' : error && !termsAccepted ? '#EF4444' : 'rgba(0,0,0,0.08)'}`,
                     backgroundColor: termsAccepted ? 'rgb(240 253 250)' : error && !termsAccepted ? 'rgb(254 242 242)' : 'transparent'
                   }}>
                     <Checkbox
@@ -826,7 +1057,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                             e.preventDefault();
                             setShowTermsDialog(true);
                           }}
-                          className="text-teal-600 hover:text-teal-700 underline font-medium"
+                          className="underline font-medium transition-opacity hover:opacity-70"
+                          style={{ color: '#FF8A00' }}
                         >
                           Terms & Conditions
                         </button>
@@ -837,7 +1069,8 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                             e.preventDefault();
                             setShowTermsDialog(true);
                           }}
-                          className="text-teal-600 hover:text-teal-700 underline font-medium"
+                          className="underline font-medium transition-opacity hover:opacity-70"
+                          style={{ color: '#FF8A00' }}
                         >
                           Privacy Policy
                         </button>
@@ -875,13 +1108,27 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   />
                 </div>
 
+                {/* Cosmic-Orange Primary Button */}
                 <Button
                   type="submit"
-                  className="w-full h-13 bg-gradient-to-r from-teal-500 via-emerald-500 to-cyan-500 hover:from-teal-600 hover:via-emerald-600 hover:to-cyan-600 text-white rounded-2xl font-bold shadow-lg hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 text-base relative overflow-hidden group"
+                  className="w-full h-12 rounded-2xl font-bold text-base relative overflow-hidden group border-none active:scale-[0.97] transition-transform duration-150"
                   disabled={isLoading || !captchaToken || !isOnline || !termsAccepted}
+                  style={{
+                    background: 'linear-gradient(135deg, #FF8A00 0%, #FF6B00 100%)',
+                    boxShadow: '0 4px 16px rgba(255,138,0,0.35), inset 0 1px 0 rgba(255,255,255,0.3)',
+                    color: '#FFFFFF',
+                  }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                  <span className="relative z-10">{isLoading ? '🎉 Creating account...' : !isOnline ? '📡 Offline' : '✨ Create Account'}</span>
+                  <span className="relative z-10 font-bold tracking-wide">
+                    {isLoading ? 'Creating account...' : !isOnline ? 'Offline' : 'Create Account'}
+                  </span>
+                  {/* Convex highlight */}
+                  <div 
+                    className="absolute inset-0 rounded-2xl"
+                    style={{
+                      background: 'linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%)',
+                    }}
+                  />
                 </Button>
               </form>
                 </>

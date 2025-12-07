@@ -624,3 +624,37 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* ============================================
+   AUTH DIALOG - GLASS MORPHISM ANIMATIONS
+   ============================================ */
+
+/* 3D Logo Float Animation */
+@keyframes floatLogo {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Glass Segmented Control Tab Slide */
+@keyframes slideInTab {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Glass Tab Active State Override */
+.glass-tab-active[data-state="active"] {
+  background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(255,255,255,0.5) inset !important;
+  color: #1A1A1A !important;
+  animation: slideInTab 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
