@@ -67,7 +67,8 @@ export function LiveRouteDrawer({
       hasMap: !!map, 
       hasUserLocation: !!userLocation, 
       isNavigating, 
-      hasReservation: !!reservation 
+      hasReservation: !!reservation,
+      reservationId: reservation?.id
     });
     
     if (!map || !userLocation || !isNavigating || !reservation) {
@@ -76,9 +77,10 @@ export function LiveRouteDrawer({
         directionsRendererRef.current.setDirections({ routes: [] } as any);
       }
       if (partnerMarkerRef.current) {
-        partnerMarkerRef.current.map = null;
+        partnerMarkerRef.current.setMap(null);
         partnerMarkerRef.current = null;
       }
+      lastUpdateRef.current = null; // Reset on clear
       return;
     }
 
@@ -92,20 +94,26 @@ export function LiveRouteDrawer({
                       reservation.offer?.partner?.longitude || 
                       reservation.offer?.partner?.location?.longitude;
 
-    if (!partnerLat || !partnerLng) return;
+    if (!partnerLat || !partnerLng) {
+      console.log('⚠️ No partner coordinates found');
+      return;
+    }
 
-    // Check if user moved significantly (> 50 meters)
-    if (lastUpdateRef.current) {
+    // Check if user moved significantly (> 50 meters) - but skip check on first draw
+    if (lastUpdateRef.current && lastUpdateRef.current.reservationId === reservation.id) {
       const distance = calculateDistanceMeters(
         lastUpdateRef.current.lat,
         lastUpdateRef.current.lng,
         userLocation.lat,
         userLocation.lng
       );
-      if (distance < 50) return; // Don't update if moved < 50m
+      if (distance < 50) {
+        console.log('⏭️ Skipping route update - user moved < 50m');
+        return; // Don't update if moved < 50m
+      }
     }
 
-    lastUpdateRef.current = userLocation;
+    lastUpdateRef.current = { ...userLocation, reservationId: reservation.id } as any;
 
     // Request directions
     const request: google.maps.DirectionsRequest = {
