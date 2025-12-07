@@ -164,10 +164,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     // During active reservation, only show the reserved offer's location
     if (activeReservation?.offer?.partner) {
       const partner = activeReservation.offer.partner;
-      if (partner.latitude && partner.longitude) {
+      const lat = partner.latitude;
+      const lng = partner.longitude;
+      if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
         return [{
-          lat: partner.latitude,
-          lng: partner.longitude,
+          lat: lat,
+          lng: lng,
           partnerId: activeReservation.offer.partner_id,
           partnerName: partner.business_name,
           partnerAddress: partner.address,
@@ -181,16 +183,24 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     const locationMap: Record<string, GroupedLocation> = {};
     
     offers.forEach(offer => {
-      if (!offer.partner?.latitude || !offer.partner?.longitude) return;
+      // Strict validation: must be valid finite numbers
+      const lat = offer.partner?.latitude;
+      const lng = offer.partner?.longitude;
+      if (typeof lat !== 'number' || typeof lng !== 'number' || !isFinite(lat) || !isFinite(lng)) {
+        if (offer.partner) {
+          logger.warn(`Invalid coordinates for partner ${offer.partner.business_name}:`, { lat, lng, offerId: offer.id });
+        }
+        return;
+      }
       
-      const key = `${offer.partner.latitude.toFixed(6)},${offer.partner.longitude.toFixed(6)}`;
+      const key = `${lat.toFixed(6)},${lng.toFixed(6)}`;
       
       if (locationMap[key]) {
         locationMap[key].offers.push(offer);
       } else {
         locationMap[key] = {
-          lat: offer.partner.latitude,
-          lng: offer.partner.longitude,
+          lat: lat,
+          lng: lng,
           partnerId: offer.partner_id,
           partnerName: offer.partner.business_name,
           partnerAddress: offer.partner.address,
