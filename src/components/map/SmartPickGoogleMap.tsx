@@ -499,7 +499,77 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       userMarkerRef.current.setMap(null);
     }
 
-    // Create user marker with custom icon
+    // Create pulsing glow overlay for user location
+    const pulseOverlay = document.createElement('div');
+    pulseOverlay.style.cssText = `
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(66, 133, 244, 0.4) 0%, rgba(66, 133, 244, 0) 70%);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      animation: pulse 2s ease-in-out infinite;
+    `;
+
+    // Add keyframes for pulse animation
+    if (!document.getElementById('user-marker-pulse-animation')) {
+      const style = document.createElement('style');
+      style.id = 'user-marker-pulse-animation';
+      style.textContent = `
+        @keyframes pulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.6;
+          }
+          50% {
+            transform: translate(-50%, -50%) scale(1.3);
+            opacity: 0.3;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Create custom overlay for the pulse effect
+    class PulseOverlay extends google.maps.OverlayView {
+      private position: google.maps.LatLng;
+      private div: HTMLElement;
+
+      constructor(position: google.maps.LatLng, div: HTMLElement) {
+        super();
+        this.position = position;
+        this.div = div;
+      }
+
+      onAdd() {
+        const panes = this.getPanes();
+        panes?.overlayLayer.appendChild(this.div);
+      }
+
+      draw() {
+        const projection = this.getProjection();
+        const point = projection.fromLatLngToDivPixel(this.position);
+        if (point) {
+          this.div.style.left = point.x + 'px';
+          this.div.style.top = point.y + 'px';
+        }
+      }
+
+      onRemove() {
+        if (this.div.parentNode) {
+          this.div.parentNode.removeChild(this.div);
+        }
+      }
+    }
+
+    const pulseOverlayInstance = new PulseOverlay(
+      new google.maps.LatLng(userLocation[0], userLocation[1]),
+      pulseOverlay
+    );
+    pulseOverlayInstance.setMap(map);
+
+    // Create user marker with custom icon and glow
     const userMarker = new google.maps.Marker({
       position: { lat: userLocation[0], lng: userLocation[1] },
       map: map,
@@ -526,6 +596,11 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     } else {
       logger.warn('Invalid user location coordinates:', userLocation);
     }
+
+    // Cleanup function to remove pulse overlay
+    return () => {
+      pulseOverlayInstance.setMap(null);
+    };
   }, [userLocation, google]);
 
   // Center on selected offer
