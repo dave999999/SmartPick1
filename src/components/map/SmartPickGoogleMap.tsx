@@ -354,16 +354,20 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       }
       
       // Show only the partner marker for the active reservation
-      if (activeReservation?.offer?.partner && userLocation) {
-        const partner = activeReservation.offer.partner;
-        const partnerLat = partner.latitude;
-        const partnerLng = partner.longitude;
+      // Try multiple sources for partner location data
+      const partner = activeReservation?.offer?.partner || activeReservation?.partner;
+      
+      if (partner && userLocation) {
+        const partnerLat = partner.latitude || partner.location?.latitude;
+        const partnerLng = partner.longitude || partner.location?.longitude;
         
         console.log('🎯 Active Reservation Partner:', {
           name: partner.business_name,
           lat: partnerLat,
           lng: partnerLng,
-          category: activeReservation.offer.category,
+          category: activeReservation.offer?.category,
+          hasPartnerData: !!partner,
+          hasLocation: !!(partner.latitude || partner.location?.latitude),
         });
         
         if (typeof partnerLat === 'number' && typeof partnerLng === 'number' && 
@@ -390,6 +394,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           console.log('✅ Partner marker created with standard map pin icon');
           
           // Draw route between user and partner
+          console.log('🗺️ Drawing route from user to partner...');
           const directionsService = new google.maps.DirectionsService();
           directionsRendererRef.current = new google.maps.DirectionsRenderer({
             map: mapRef.current,
@@ -408,11 +413,25 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           }, (result, status) => {
             if (status === 'OK' && result) {
               directionsRendererRef.current?.setDirections(result);
+              console.log('✅ Route drawn successfully');
             } else {
-              console.error('Directions request failed:', status);
+              console.error('❌ Directions request failed:', status);
             }
           });
+          
+          // Center map to show both user and partner locations
+          const bounds = new google.maps.LatLngBounds();
+          bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
+          bounds.extend({ lat: partnerLat, lng: partnerLng });
+          map.fitBounds(bounds, { padding: 80 });
+        } else {
+          console.warn('⚠️ Invalid partner coordinates:', { partnerLat, partnerLng });
         }
+      } else {
+        console.warn('⚠️ Missing partner or user location data:', {
+          hasPartner: !!partner,
+          hasUserLocation: !!userLocation,
+        });
       }
       
       return;
@@ -697,6 +716,83 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       pulseOverlayInstance.setMap(null);
     };
   }, [userLocation, google]);
+
+  // Dedicated effect for active reservation route - ensures route is drawn when reservation is created
+  useEffect(() => {
+    if (!mapRef.current || !google || !activeReservation || !userLocation) {
+      console.log('🗺️ Route effect skipped:', {
+        hasMap: !!mapRef.current,
+        hasGoogle: !!google,
+        hasActiveReservation: !!activeReservation,
+        hasUserLocation: !!userLocation,
+      });
+      return;
+    }
+
+    console.log('🎯 Active reservation route effect triggered');
+    
+    // Get partner location from multiple possible sources
+    const partner = activeReservation?.offer?.partner || activeReservation?.partner;
+    
+    if (!partner) {
+      console.warn('⚠️ No partner data in active reservation');
+      return;
+    }
+
+    const partnerLat = partner.latitude || partner.location?.latitude;
+    const partnerLng = partner.longitude || partner.location?.longitude;
+
+    if (typeof partnerLat !== 'number' || typeof partnerLng !== 'number' || 
+        !isFinite(partnerLat) || !isFinite(partnerLng)) {
+      console.warn('⚠️ Invalid partner coordinates in route effect:', { partnerLat, partnerLng });
+      return;
+    }
+
+    console.log('✅ Drawing route:', {
+      from: userLocation,
+      to: [partnerLat, partnerLng],
+      partnerName: partner.business_name,
+    });
+
+    // Create directions service and renderer
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+      map: mapRef.current,
+      suppressMarkers: true,
+      polylineOptions: {
+        strokeColor: '#4285F4',
+        strokeWeight: 5,
+        strokeOpacity: 0.9,
+      },
+    });
+
+    // Request route
+    directionsService.route({
+      origin: { lat: userLocation[0], lng: userLocation[1] },
+      destination: { lat: partnerLat, lng: partnerLng },
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (result, status) => {
+      if (status === 'OK' && result) {
+        directionsRenderer.setDirections(result);
+        console.log('✅ Route drawn successfully from dedicated effect');
+        
+        // Fit map to show both locations
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
+        bounds.extend({ lat: partnerLat, lng: partnerLng });
+        mapRef.current?.fitBounds(bounds, { padding: 80 });
+      } else {
+        console.error('❌ Directions request failed in dedicated effect:', status);
+      }
+    });
+
+    // Cleanup when reservation changes or is cleared
+    return () => {
+      if (directionsRenderer) {
+        directionsRenderer.setMap(null);
+      }
+    };
+  }, [activeReservation?.id, userLocation, google]); // Only depend on reservation ID to avoid re-renders
 
   // Center on selected offer
   useEffect(() => {

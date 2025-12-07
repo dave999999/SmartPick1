@@ -1,10 +1,6 @@
 /**
- * ReservationModalNew - Compact Beige Glass Modal (Reference Match)
- *
- * EXACT MATCH to reference design with:
- * - Beige-tinted frosted glass
- * - Ultra-compact spacing
- * - Dark map background visible
+ * ReservationModalNew - EXACT 1:1 Reference Match
+ * Beige compact glass modal over dark map background
  */
 
 import { useState, useEffect } from 'react';
@@ -191,32 +187,45 @@ export default function ReservationModalNew({
 
   return (
     <>
-      {/* Dark backdrop showing map */}
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px]" onClick={onClose} />
+      {/* Dark Backdrop - Map Visible */}
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" onClick={onClose} />
 
-      {/* Modal centered */}
-      <div className="fixed inset-0 z-[51] flex items-center justify-center p-4 pointer-events-none">
-        <div className="relative w-full max-w-[320px] pointer-events-auto animate-in zoom-in-95 duration-200">
-          {/* Close button */}
+      {/* Modal Container */}
+      <div className="fixed inset-0 z-[51] flex items-center justify-center p-3 pointer-events-none">
+        <div className="relative w-full max-w-[300px] pointer-events-auto animate-in zoom-in-95 duration-200">
+
+          {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute -top-2 -right-2 z-10 w-8 h-8 rounded-full bg-white/95 flex items-center justify-center text-gray-800 hover:bg-white shadow-lg transition-all active:scale-95"
+            className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-white flex items-center justify-center text-gray-900 shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
             <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
 
-          {/* Beige Glass Card - EXACT REFERENCE MATCH */}
-          <div className="bg-gradient-to-br from-[#D8C8B8]/85 via-[#C8B8A8]/80 to-[#B8A898]/75 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden border border-white/30">
-            {/* Content - Ultra Compact */}
-            <div className="p-4 space-y-2.5">
+          {/* MAIN CARD - Beige Glass Exact Match */}
+          <div
+            className="relative overflow-hidden rounded-[32px] shadow-[0_10px_60px_rgba(0,0,0,0.25)]"
+            style={{
+              background: 'linear-gradient(135deg, rgba(216,200,184,0.85) 0%, rgba(200,184,168,0.80) 50%, rgba(184,168,152,0.75) 100%)',
+              backdropFilter: 'blur(30px)',
+              WebkitBackdropFilter: 'blur(30px)',
+            }}
+          >
+            {/* Content - EXACT SPACING */}
+            <div className="p-5 space-y-3">
 
-              {/* TOP: Image + Title + Badge */}
+              {/* TOP: Image + Title + Reserve Badge */}
               <div className="flex items-start gap-3">
-                {/* Food Image - Square */}
-                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md flex-shrink-0 border-2 border-white/40">
+                {/* Food Image 72x72 */}
+                <div
+                  className="w-[72px] h-[72px] rounded-[20px] overflow-hidden flex-shrink-0 border-2 border-white/40"
+                  style={{
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+                  }}
+                >
                   {offer.images && offer.images.length > 0 && (
                     <img
-                      src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 128, quality: 85 })}
+                      src={resolveOfferImageUrl(offer.images[0], offer.category, { width: 144, quality: 90 })}
                       alt={offer.title}
                       className="w-full h-full object-cover"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/images/Map.jpg'; }}
@@ -224,81 +233,115 @@ export default function ReservationModalNew({
                   )}
                 </div>
 
-                {/* Title + Badge */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-[15px] font-bold text-gray-900 leading-tight mb-0.5">
+                {/* Title Stack */}
+                <div className="flex-1 min-w-0 pt-1">
+                  <h3 className="text-[17px] font-semibold text-gray-900 leading-tight mb-1">
                     {offer.title}
                   </h3>
-                  <p className="text-[11px] text-gray-700 font-medium mb-1.5">
+                  <p className="text-[13px] text-gray-600 font-medium mb-2">
                     {offer.partner?.business_name || offer.category}
                   </p>
-                  {/* Orange Points Badge */}
-                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 shadow-sm">
-                    <Sparkles className="w-3 h-3 text-white" />
-                    <span className="text-[11px] font-bold text-white">Reserve with {POINTS_PER_UNIT} Points</span>
+                  {/* Orange Badge */}
+                  <div
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
+                      boxShadow: '0 2px 8px rgba(255,80,0,0.3)',
+                    }}
+                  >
+                    <Sparkles className="w-3 h-3 text-white" strokeWidth={2.5} />
+                    <span className="text-[13px] font-medium text-white">Reserve with {POINTS_PER_UNIT} Points</span>
                   </div>
                 </div>
               </div>
 
-              {/* Price Display - Inline Style */}
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-3 py-2 border border-white/50 shadow-sm">
-                <div className="flex items-center justify-between">
+              {/* PRICE + BALANCE ROW - Side by Side */}
+              <div
+                className="rounded-[20px] p-3 border border-white/40"
+                style={{
+                  background: 'rgba(255,255,255,0.7)',
+                  backdropFilter: 'blur(15px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  {/* Left: Price */}
                   <div>
-                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wider mb-0.5">Pickup Price</p>
-                    <p className="text-[22px] font-black text-gray-900">${offer.smart_price.toFixed(2)}</p>
+                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Pickup Price</p>
+                    <p className="text-[18px] font-black text-gray-900">${offer.smart_price.toFixed(2)}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wider mb-0.5">Reserve with Points</p>
-                    <p className="text-[22px] font-black text-orange-600">{totalPoints} pts</p>
-                  </div>
+                  {/* Right: Add Points */}
+                  <button
+                    onClick={() => setShowBuyPointsModal(true)}
+                    className="px-3 py-1 rounded-full text-[12px] font-semibold shadow-sm transition-all active:scale-95"
+                    style={{
+                      background: 'rgba(204,252,235,0.5)',
+                      border: '1px solid rgba(22,220,168,0.3)',
+                      color: '#0A8A5E',
+                    }}
+                  >
+                    Add Points
+                  </button>
                 </div>
-                <p className="text-[9px] text-gray-600 mt-1 text-center">Balance: <span className="font-bold text-teal-700">{userPoints} pts</span></p>
+                {/* Balance */}
+                <p className="text-[12px] text-gray-700">
+                  Balance: <span className="font-bold text-teal-700">{userPoints} pts</span>
+                </p>
               </div>
 
-              {/* Add Points Button - If needed */}
-              {!hasEnoughPoints && (
-                <button
-                  onClick={() => setShowBuyPointsModal(true)}
-                  className="w-full py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold shadow-md hover:shadow-lg active:scale-95 transition-all"
-                >
-                  Add Points
-                </button>
-              )}
-
-              {/* Quantity Selector - Inline Compact */}
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl px-3 py-2 border border-white/50 shadow-sm flex items-center justify-between">
+              {/* QUANTITY SELECTOR - Centered Capsule */}
+              <div
+                className="flex items-center justify-between rounded-[28px] px-4 py-2.5 border border-white/40"
+                style={{
+                  background: 'rgba(255,255,255,0.5)',
+                  backdropFilter: 'blur(15px)',
+                  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)',
+                }}
+              >
                 <button
                   onClick={() => quantity > 1 && setQuantity(quantity - 1)}
                   disabled={quantity <= 1}
-                  className="w-7 h-7 rounded-full border-2 border-gray-400 text-gray-700 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 flex items-center justify-center"
+                  className="w-9 h-9 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
                 >
-                  <Minus className="w-3.5 h-3.5" strokeWidth={3} />
+                  <Minus className="w-4 h-4" strokeWidth={3} />
                 </button>
+
                 <div className="flex-1 text-center">
-                  <span className="text-[20px] font-black text-gray-900">{quantity}</span>
-                  <p className="text-[8px] text-gray-500 font-medium">Max {maxQuantity} left</p>
+                  <span className="text-[16px] font-semibold text-gray-900">{quantity}</span>
+                  <p className="text-[10px] text-gray-500 font-medium">Max {maxQuantity} left</p>
                 </div>
+
                 <button
                   onClick={() => quantity < maxQuantity && setQuantity(quantity + 1)}
                   disabled={quantity >= maxQuantity}
-                  className="w-7 h-7 rounded-full bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-30 disabled:bg-gray-300 transition-all active:scale-90 flex items-center justify-center shadow-sm"
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 shadow-md"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
+                  }}
                 >
-                  <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+                  <Plus className="w-4 h-4" strokeWidth={3} />
                 </button>
               </div>
 
-              {/* Pickup Window + Location - Single Block */}
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/50 shadow-sm">
+              {/* PICKUP INFO BLOCK */}
+              <div
+                className="rounded-[24px] overflow-hidden border border-white/40"
+                style={{
+                  background: 'rgba(255,255,255,0.6)',
+                  backdropFilter: 'blur(15px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                }}
+              >
                 {/* Pickup Window */}
                 {pickupStart && pickupEnd && (
                   <>
-                    <div className="px-3 py-2 flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                        <Clock className="w-3.5 h-3.5 text-orange-600" strokeWidth={2.5} />
+                    <div className="px-4 py-2.5 flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-100">
+                        <Clock className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                       </div>
                       <div className="flex-1">
-                        <p className="text-[8px] font-bold text-gray-600 uppercase tracking-wide">Pickup Window</p>
-                        <p className="text-[12px] font-black text-gray-900">
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Pickup Window</p>
+                        <p className="text-[14px] font-black text-gray-900">
                           {formatTime(pickupStart)} - {formatTime(pickupEnd)}
                         </p>
                       </div>
@@ -308,38 +351,42 @@ export default function ReservationModalNew({
                 )}
 
                 {/* Location */}
-                <div className="px-3 py-2 flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-3.5 h-3.5 text-orange-600" strokeWidth={2.5} />
+                <div className="px-4 py-2.5 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-100">
+                    <MapPin className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[8px] font-bold text-gray-600 uppercase tracking-wide">Location</p>
-                    <p className="text-[12px] font-black text-gray-900">{partnerAddress}</p>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Location</p>
+                    <p className="text-[14px] font-black text-gray-900">{partnerAddress}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Reserve Button - Full Width Orange */}
+              {/* RESERVE BUTTON - Final Cosmic Orange */}
               <button
                 onClick={handleReserve}
                 disabled={isReserving || !hasEnoughPoints || !isOnline}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-[14px] font-bold shadow-xl hover:shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                style={{
+                  background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
+                  boxShadow: '0 6px 16px rgba(255,120,0,0.35), 0 10px 30px rgba(0,0,0,0.18)',
+                }}
               >
                 {isReserving ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Reserving...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="w-5 h-5" strokeWidth={2.5} />
                     Reserve for {totalPoints} SmartPoints
                   </>
                 )}
               </button>
 
               {/* Helper Text */}
-              <p className="text-[9px] text-gray-600 text-center leading-relaxed font-medium">
+              <p className="text-[11px] text-gray-600 text-center font-medium leading-relaxed">
                 Reserve now, pay on pickup. Your discount is guaranteed.
               </p>
             </div>
