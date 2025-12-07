@@ -21,7 +21,7 @@ export function LiveRouteDrawer({
 }: LiveRouteDrawerProps) {
   const directionsServiceRef = useRef<google.maps.DirectionsService | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const partnerMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const partnerMarkerRef = useRef<google.maps.Marker | null>(null);
   const lastUpdateRef = useRef<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
@@ -121,10 +121,25 @@ export function LiveRouteDrawer({
         console.log('✅ Drawing route on map');
         directionsRendererRef.current?.setDirections(result);
 
-        // Google will automatically show:
-        // - 'A' marker at origin (user location)
-        // - 'B' marker at destination (partner location)
-        // - Blue route line connecting them
+        // Create custom partner marker (since we suppressed default A/B markers)
+        if (partnerMarkerRef.current) {
+          partnerMarkerRef.current.setMap(null);
+        }
+        
+        const partnerMarker = new google.maps.Marker({
+          position: { lat: partnerLat, lng: partnerLng },
+          map: map,
+          icon: {
+            url: '/icons/map-pins/all.png?v=2',
+            scaledSize: new google.maps.Size(64, 64),
+            anchor: new google.maps.Point(32, 64),
+            optimized: false
+          },
+          title: reservation.partner?.business_name || 'Partner Location',
+          zIndex: 1000
+        });
+        
+        partnerMarkerRef.current = partnerMarker as any;
 
         // Auto-center map on route with padding
         const bounds = new google.maps.LatLngBounds();
