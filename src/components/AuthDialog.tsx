@@ -469,7 +469,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
               <img 
                 src="/smartpick-logo.svg" 
                 alt="SmartPick" 
-                className="h-20 w-20 relative z-10"
+                className="h-20 w-32 relative z-10"
                 style={{
                   filter: 'drop-shadow(0 4px 12px rgba(255,140,0,0.35))',
                 }}
