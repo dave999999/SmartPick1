@@ -281,7 +281,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
               <>
                 {/* Today's Special Offers (50%+ discount) - Swipable Carousel */}
                 {specialOffers.length > 0 && (
-                  <div className="pt-6 pb-4">
+                  <div className="pb-4">
                     <div className="px-4 mb-4">
                       <h2 className="text-[18px] font-bold text-gray-900">
                         Today's Special Offer
@@ -381,7 +381,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
                 {/* Popular Now - Horizontal Scroll */}
                 {popularOffers.length > 0 && (
-                  <div className="pb-2">
+                  <div>
                     <div className="flex items-center justify-between px-4 mb-2">
                       <h2 className="text-[17px] font-semibold text-gray-900">
                         Popular Now
@@ -412,7 +412,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
             {/* Featured Offers Grid */}
             {filteredOffers.length > 0 && (
-              <div className="px-4 pt-3 pb-20">
+              <div className="px-4 pb-20">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-[17px] font-semibold text-gray-900">
                     Featured Offers
