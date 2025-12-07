@@ -301,11 +301,9 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                               className="relative rounded-3xl p-4 cursor-pointer transition-transform active:scale-[0.98]"
                               onClick={() => onOfferSelect(offer)}
                               style={{
-                                background: 'rgba(255, 255, 255, 0.7)',
-                                backdropFilter: 'blur(20px)',
-                                WebkitBackdropFilter: 'blur(20px)',
-                                boxShadow: '0 8px 32px rgba(31, 38, 135, 0.15)',
-                                border: '1px solid rgba(255, 255, 255, 0.18)'
+                                background: 'transparent',
+                                boxShadow: 'none',
+                                border: 'none'
                               }}
                             >
                               <div className="flex items-start gap-3">
