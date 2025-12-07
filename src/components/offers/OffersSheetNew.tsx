@@ -337,8 +337,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                 <div
                                   className="flex-shrink-0 rounded-2xl overflow-hidden"
                                   style={{
-                                    width: '76px',
-                                    height: '76px',
+                                    width: '96px',
+                                    height: '96px',
                                     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                                   }}
                                 >
