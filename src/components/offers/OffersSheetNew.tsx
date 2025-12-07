@@ -221,18 +221,16 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent 
         side="bottom" 
-        className="h-[82vh] max-h-[720px] p-0 border-none rounded-t-[24px] overflow-hidden z-40"
+        className="h-[82vh] max-h-[720px] p-0 rounded-t-[24px] overflow-hidden z-40 bg-white/20 border border-white/30"
         style={{
           left: '8px',
           right: '8px',
           bottom: '8px',
           width: 'calc(100% - 16px)',
           maxWidth: '100%',
-          background: 'rgba(255, 255, 255, 0.25)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: '0 8px 25px rgba(0, 0, 0, 0.12)',
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
