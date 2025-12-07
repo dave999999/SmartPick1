@@ -64,7 +64,6 @@ import { MapPin, Navigation, X, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
-import { useLiveRoute } from '@/hooks/useLiveRoute';
 
 // ============================================
 // TYPES
@@ -468,12 +467,6 @@ export function ActiveReservationCard({
   const [showQRModal, setShowQRModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { formatted, isExpired, minutes } = useCountdown(reservation?.expiresAt || null);
-  
-  const { distanceInMeters, etaInMinutes } = useLiveRoute(
-    userLocation,
-    reservation?.partnerLocation || null,
-    { enabled: !!reservation }
-  );
 
   // Auto-expire handler
   useEffect(() => {
@@ -483,13 +476,6 @@ export function ActiveReservationCard({
   }, [isExpired, reservation, onExpired]);
 
   if (!reservation) return null;
-
-  // Format distance
-  const distanceText = distanceInMeters 
-    ? distanceInMeters < 1000 
-      ? `${Math.round(distanceInMeters)}m`
-      : `${(distanceInMeters / 1000).toFixed(1)}km`
-    : '—';
 
   // Color coding
   let colorClass = 'text-[#2ECC71]';
@@ -569,13 +555,6 @@ export function ActiveReservationCard({
 
             {/* Info Row */}
             <div className="flex items-center justify-center gap-2 text-[11px]">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-[#FF7A00]" strokeWidth={2.5} />
-                <span className="font-medium text-[#555]">
-                  {distanceText} · {etaInMinutes} min
-                </span>
-              </div>
-              <div className="w-1 h-1 rounded-full bg-[#D1D1D6]" />
               <span className="font-semibold text-[#1D1D1F]">
                 {reservation.quantity} item{reservation.quantity > 1 ? 's' : ''}
               </span>

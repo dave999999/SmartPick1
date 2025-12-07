@@ -15,7 +15,6 @@ import { AnimatePresence } from 'framer-motion';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
 import ReservationModalNew from '@/components/map/ReservationModalNew';
-import NavigationMode from '@/components/map/NavigationMode';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
@@ -26,7 +25,6 @@ import PickupSuccessModal from '@/components/PickupSuccessModal';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
 
 // NEW: Post-Reservation Experience Components
-import { LiveRouteDrawer } from '@/components/reservation/LiveRouteDrawer';
 import { ActiveReservationCard } from '@/components/reservation/ActiveReservationCard';
 import type { ActiveReservation } from '@/components/reservation/ActiveReservationCard';
 import { useLiveGPS } from '@/hooks/useLiveGPS';
@@ -69,7 +67,6 @@ export default function IndexRedesigned() {
   // NEW: Google Maps navigation state
   const [showNewReservationModal, setShowNewReservationModal] = useState(false);
   const [reservationQuantity, setReservationQuantity] = useState(1);
-  const [navigationMode, setNavigationMode] = useState(false);
   const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
 
   // NEW: Post-Reservation System State
@@ -905,33 +902,6 @@ export default function IndexRedesigned() {
           />
         )}
       </AnimatePresence>
-      
-      {/* NEW: Live Route Drawing on Map */}
-      <LiveRouteDrawer
-        map={googleMap}
-        reservation={activeReservation}
-        userLocation={userLocationObject}
-        isNavigating={!!activeReservation}
-      />
-      
-      {/* NEW: Navigation Mode - Live GPS tracking with route */}
-      {navigationMode && selectedOffer?.partner && userLocation && googleMapsLoaded && (
-        <NavigationMode
-          mapInstance={(window as any).__smartPickMapInstance}
-          destination={{
-            lat: selectedOffer.partner.latitude!,
-            lng: selectedOffer.partner.longitude!,
-            name: selectedOffer.partner.business_name,
-          }}
-          userLocation={userLocation}
-          onStop={() => {
-            setNavigationMode(false);
-            setActiveReservationId(null);
-            setShowBottomSheet(true);
-            toast.info('Navigation stopped');
-          }}
-        />
-      )}
 
       {/* Pickup Success Modal with confetti and achievements */}
       {pickupModalData && (
