@@ -8,15 +8,17 @@ import { Offer, User } from '@/lib/types';
 import { createReservation } from '@/lib/api';
 import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useReservationCooldown } from '@/hooks/useReservationCooldown';
 import { requestQueue } from '@/lib/requestQueue';
 import { indexedDBManager, STORES } from '@/lib/indexedDB';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { toast } from 'sonner';
-import { Clock, MapPin, Minus, Plus, Sparkles, X } from 'lucide-react';
+import { Clock, MapPin, Minus, Plus, X } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { PenaltyModal } from '@/components/PenaltyModal';
 import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
+import { CancellationCooldownCard } from '@/components/reservation/CancellationCooldownCard';
 import { supabase } from '@/lib/supabase';
 
 interface ReservationModalProps {
@@ -44,6 +46,9 @@ export default function ReservationModalNew({
   const [penaltyData, setPenaltyData] = useState<any>(null);
   const [userPoints, setUserPoints] = useState(0);
   const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
+  
+  // Cooldown state
+  const cooldown = useReservationCooldown(user);
 
   useEffect(() => {
     if (open) setQuantity(initialQuantity);
@@ -53,6 +58,7 @@ export default function ReservationModalNew({
     if (open && user) {
       checkPenaltyStatus();
       fetchUserPoints();
+      cooldown.refetch();
     }
   }, [open, user]);
 
@@ -202,17 +208,27 @@ export default function ReservationModalNew({
             <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
 
-          {/* MAIN CARD - Beige Glass Exact Match */}
+          {/* MAIN CARD - Transparent Glass */}
           <div
-            className="relative overflow-hidden rounded-[32px] shadow-[0_10px_60px_rgba(0,0,0,0.25)]"
+            className="relative overflow-hidden rounded-[32px] shadow-[0_10px_60px_rgba(0,0,0,0.25)] border border-white/20"
             style={{
-              background: 'linear-gradient(135deg, rgba(216,200,184,0.85) 0%, rgba(200,184,168,0.80) 50%, rgba(184,168,152,0.75) 100%)',
+              background: 'rgba(255,255,255,0.15)',
               backdropFilter: 'blur(30px)',
               WebkitBackdropFilter: 'blur(30px)',
             }}
           >
             {/* Content - EXACT SPACING */}
             <div className="p-5 space-y-3">
+
+              {/* COOLDOWN CARD - Show if user is in cooldown */}
+              {cooldown.isInCooldown && (
+                <CancellationCooldownCard
+                  isVisible={true}
+                  timeUntilUnlock={cooldown.timeUntilUnlock}
+                  cancellationCount={cooldown.cancellationCount}
+                  unlockTime={cooldown.unlockTime}
+                />
+              )}
 
               {/* TOP: Image + Title + Reserve Badge */}
               <div className="flex items-start gap-3">
@@ -238,20 +254,9 @@ export default function ReservationModalNew({
                   <h3 className="text-[17px] font-semibold text-gray-900 leading-tight mb-1">
                     {offer.title}
                   </h3>
-                  <p className="text-[13px] text-gray-600 font-medium mb-2">
+                  <p className="text-[13px] text-gray-700 font-medium">
                     {offer.partner?.business_name || offer.category}
                   </p>
-                  {/* Orange Badge */}
-                  <div
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full"
-                    style={{
-                      background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
-                      boxShadow: '0 2px 8px rgba(255,80,0,0.3)',
-                    }}
-                  >
-                    <Sparkles className="w-3 h-3 text-white" strokeWidth={2.5} />
-                    <span className="text-[13px] font-medium text-white">Reserve with {POINTS_PER_UNIT} Points</span>
-                  </div>
                 </div>
               </div>
 
@@ -267,8 +272,8 @@ export default function ReservationModalNew({
                 <div className="flex items-start justify-between mb-2">
                   {/* Left: Price */}
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-0.5">Pickup Price</p>
-                    <p className="text-[18px] font-black text-gray-900">${offer.smart_price.toFixed(2)}</p>
+                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide mb-0.5">Pickup Price</p>
+                    <p className="text-[18px] font-black text-gray-900">₾{offer.smart_price.toFixed(2)}</p>
                   </div>
                   {/* Right: Add Points */}
                   <button
@@ -283,10 +288,25 @@ export default function ReservationModalNew({
                     Add Points
                   </button>
                 </div>
-                {/* Balance */}
-                <p className="text-[12px] text-gray-700">
-                  Balance: <span className="font-bold text-teal-700">{userPoints} pts</span>
-                </p>
+
+                <div className="flex items-center justify-between">
+                  {/* Balance */}
+                  <p className="text-[12px] text-gray-700">
+                    Balance: <span className="font-bold text-teal-700">{userPoints} pts</span>
+                  </p>
+
+                  {/* Reserve Badge */}
+                  <div
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
+                      boxShadow: '0 2px 8px rgba(255,80,0,0.3)',
+                    }}
+                  >
+                    <img src="/icons/button.png" alt="" className="w-4 h-4" />
+                    <span className="text-[11px] font-medium text-white">{POINTS_PER_UNIT} pts</span>
+                  </div>
+                </div>
               </div>
 
               {/* QUANTITY SELECTOR - Centered Capsule */}
@@ -308,7 +328,7 @@ export default function ReservationModalNew({
 
                 <div className="flex-1 text-center">
                   <span className="text-[16px] font-semibold text-gray-900">{quantity}</span>
-                  <p className="text-[10px] text-gray-500 font-medium">Max {maxQuantity} left</p>
+                  <p className="text-[10px] text-gray-600 font-medium">Max {maxQuantity} left</p>
                 </div>
 
                 <button
@@ -340,7 +360,7 @@ export default function ReservationModalNew({
                         <Clock className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                       </div>
                       <div className="flex-1">
-                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Pickup Window</p>
+                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">Pickup Window</p>
                         <p className="text-[14px] font-black text-gray-900">
                           {formatTime(pickupStart)} - {formatTime(pickupEnd)}
                         </p>
@@ -356,7 +376,7 @@ export default function ReservationModalNew({
                     <MapPin className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wide mb-0.5">Location</p>
+                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">Location</p>
                     <p className="text-[14px] font-black text-gray-900">{partnerAddress}</p>
                   </div>
                 </div>
@@ -365,28 +385,34 @@ export default function ReservationModalNew({
               {/* RESERVE BUTTON - Final Cosmic Orange */}
               <button
                 onClick={handleReserve}
-                disabled={isReserving || !hasEnoughPoints || !isOnline}
+                disabled={isReserving || !hasEnoughPoints || !isOnline || cooldown.isInCooldown}
                 className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 style={{
                   background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
                   boxShadow: '0 6px 16px rgba(255,120,0,0.35), 0 10px 30px rgba(0,0,0,0.18)',
                 }}
+                title={cooldown.isInCooldown ? 'You are in cooldown period - try again in ' + Math.ceil(cooldown.timeUntilUnlock / 1000) + ' seconds' : ''}
               >
                 {isReserving ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Reserving...
                   </>
+                ) : cooldown.isInCooldown ? (
+                  <>
+                    <Clock className="w-5 h-5" />
+                    In cooldown
+                  </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" strokeWidth={2.5} />
-                    Reserve for {totalPoints} SmartPoints
+                    <img src="/icons/button.png" alt="" className="w-12 h-12" />
+                    Reserve price now
                   </>
                 )}
               </button>
 
               {/* Helper Text */}
-              <p className="text-[11px] text-gray-600 text-center font-medium leading-relaxed">
+              <p className="text-[11px] text-gray-700 text-center font-medium leading-relaxed">
                 Reserve now, pay on pickup. Your discount is guaranteed.
               </p>
             </div>
