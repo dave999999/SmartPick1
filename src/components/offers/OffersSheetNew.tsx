@@ -228,7 +228,10 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           bottom: '8px',
           width: 'calc(100% - 16px)',
           maxWidth: '100%',
-          background: 'linear-gradient(180deg, #F5F7FA 0%, #FFFFFF 100%)',
+          background: 'rgba(255, 255, 255, 0.7)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.18)',
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
