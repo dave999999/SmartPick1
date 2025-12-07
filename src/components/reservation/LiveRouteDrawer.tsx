@@ -41,7 +41,7 @@ export function LiveRouteDrawer({
     if (!directionsRendererRef.current) {
       directionsRendererRef.current = new google.maps.DirectionsRenderer({
         map,
-        suppressMarkers: false, // Use Google's default markers (blue line, A/B pins)
+        suppressMarkers: true, // Hide A/B markers, only show custom markers
         polylineOptions: {
           strokeColor: '#4285F4', // Google Maps blue
           strokeWeight: 5,

@@ -162,6 +162,23 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const offerIds = useMemo(() => offers.map(o => o.id).sort().join(','), [offers]);
   
   const groupedLocations = useMemo((): GroupedLocation[] => {
+    // During active reservation, only show the reserved offer's location
+    if (activeReservation?.offer?.partner) {
+      const partner = activeReservation.offer.partner;
+      if (partner.latitude && partner.longitude) {
+        return [{
+          lat: partner.latitude,
+          lng: partner.longitude,
+          partnerId: activeReservation.offer.partner_id,
+          partnerName: partner.business_name,
+          partnerAddress: partner.address,
+          offers: [activeReservation.offer],
+          category: activeReservation.offer.category,
+        }];
+      }
+      return [];
+    }
+    
     const locationMap: Record<string, GroupedLocation> = {};
     
     offers.forEach(offer => {
@@ -185,7 +202,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     });
     
     return Object.values(locationMap);
-  }, [offerIds]);
+  }, [offerIds, activeReservation]);
 
   // Initialize map
   useEffect(() => {
@@ -722,9 +739,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           const polyline = new google.maps.Polyline({
             path,
             geodesic: true,
-            strokeColor: '#FF8A00',
+            strokeColor: '#4285F4',
             strokeOpacity: 0.9,
-            strokeWeight: 6,
+            strokeWeight: 5,
             map: mapRef.current,
           });
 
