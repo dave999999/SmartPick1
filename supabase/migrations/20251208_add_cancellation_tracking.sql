@@ -26,6 +26,10 @@ ON public.user_cancellation_tracking(user_id, created_at DESC);
 -- Enable RLS
 ALTER TABLE public.user_cancellation_tracking ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS user_cancellation_tracking_select ON public.user_cancellation_tracking;
+DROP POLICY IF EXISTS user_cancellation_tracking_insert ON public.user_cancellation_tracking;
+
 -- RLS Policy: Users can only see their own cancellation history
 CREATE POLICY user_cancellation_tracking_select ON public.user_cancellation_tracking
   FOR SELECT
