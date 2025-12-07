@@ -1,42 +1,12 @@
--- Add cancellation tracking to prevent abuse
--- After 3 consecutive cancellations, user cannot reserve for 30 minutes
+-- Add cooldown reset functionality
+-- Allows users to reset one-time with escalation to 45 minutes if they cancel again
 
--- Create cancellation tracking table
-CREATE TABLE IF NOT EXISTS public.user_cancellation_tracking (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  reservation_id UUID NOT NULL REFERENCES public.reservations(id) ON DELETE CASCADE,
-  cancelled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  reset_cooldown_used BOOLEAN DEFAULT FALSE, -- Tracks if user used their one reset
-  cooldown_duration_minutes INTEGER DEFAULT 30, -- Tracks escalation (30 or 45 min)
-  
-  -- Unique constraint to prevent duplicate cancellations
-  UNIQUE(reservation_id)
-);
+-- Add columns to track reset (if not already present)
+ALTER TABLE public.user_cancellation_tracking
+ADD COLUMN IF NOT EXISTS reset_cooldown_used BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS cooldown_duration_minutes INTEGER DEFAULT 30;
 
--- Add index for quick lookups
-CREATE INDEX idx_cancellation_tracking_user_id_cancelled_at 
-ON public.user_cancellation_tracking(user_id, cancelled_at DESC);
-
--- Add index for checking recent cancellations
-CREATE INDEX idx_cancellation_tracking_user_created 
-ON public.user_cancellation_tracking(user_id, created_at DESC);
-
--- Enable RLS
-ALTER TABLE public.user_cancellation_tracking ENABLE ROW LEVEL SECURITY;
-
--- RLS Policy: Users can only see their own cancellation history
-CREATE POLICY user_cancellation_tracking_select ON public.user_cancellation_tracking
-  FOR SELECT
-  USING (auth.uid() = user_id);
-
--- RLS Policy: Only system can insert (via trigger)
-CREATE POLICY user_cancellation_tracking_insert ON public.user_cancellation_tracking
-  FOR INSERT
-  WITH CHECK (TRUE);
-
--- Create function to get user's consecutive cancellation count
+-- Update existing function to include reset and duration info
 CREATE OR REPLACE FUNCTION get_user_consecutive_cancellations(p_user_id UUID)
 RETURNS TABLE(
   cancellation_count INTEGER,
@@ -80,7 +50,7 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
+-- Grant execute permission
 GRANT EXECUTE ON FUNCTION get_user_consecutive_cancellations TO authenticated;
 
 -- Create function to reset user's cooldown (one-time use)
@@ -134,7 +104,46 @@ BEGIN
 END;
 $$;
 
--- Create function to check if user is in cooldown
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION reset_user_cooldown TO authenticated;
+
+-- Create function to escalate cooldown to 45 minutes when user cancels after reset
+CREATE OR REPLACE FUNCTION escalate_cooldown_on_cancel()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_reset_was_used BOOLEAN;
+BEGIN
+  -- Check if user had used reset before this cancellation
+  SELECT MAX(reset_cooldown_used)
+  INTO v_reset_was_used
+  FROM user_cancellation_tracking
+  WHERE user_id = NEW.customer_id
+    AND reset_cooldown_used = TRUE
+    AND cancelled_at > NOW() - INTERVAL '45 minutes';
+
+  -- If reset was used, escalate new cancellation to 45 minutes
+  IF v_reset_was_used THEN
+    UPDATE user_cancellation_tracking
+    SET cooldown_duration_minutes = 45
+    WHERE id = (
+      SELECT id FROM user_cancellation_tracking
+      WHERE user_id = NEW.customer_id
+        AND reservation_id = NEW.id
+      LIMIT 1
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+-- Grant execute permission
+GRANT EXECUTE ON FUNCTION escalate_cooldown_on_cancel TO authenticated;
+
+-- Update is_user_in_cooldown to use variable cooldown duration
 CREATE OR REPLACE FUNCTION is_user_in_cooldown(p_user_id UUID)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
@@ -143,16 +152,19 @@ AS $$
 DECLARE
   v_count INTEGER;
   v_oldest_time TIMESTAMPTZ;
+  v_cooldown_duration INTEGER;
 BEGIN
-  -- Get cancellation count in last 30 minutes
-  SELECT COUNT(*), MIN(cancelled_at)
-  INTO v_count, v_oldest_time
+  -- Get cancellation count and duration in last 45 minutes
+  SELECT COUNT(*), MIN(cancelled_at), MAX(cooldown_duration_minutes)
+  INTO v_count, v_oldest_time, v_cooldown_duration
   FROM user_cancellation_tracking
   WHERE user_id = p_user_id
-    AND cancelled_at > NOW() - INTERVAL '30 minutes';
+    AND cancelled_at > NOW() - INTERVAL '45 minutes';
 
-  -- User is in cooldown if they have 3+ cancellations and 30 min haven't passed since oldest
-  IF v_count >= 3 AND v_oldest_time + INTERVAL '30 minutes' > NOW() THEN
+  v_cooldown_duration := COALESCE(v_cooldown_duration, 30);
+
+  -- User is in cooldown if they have 3+ cancellations and the cooldown period hasn't passed
+  IF v_count >= 3 AND v_oldest_time + (v_cooldown_duration || ' minutes')::INTERVAL > NOW() THEN
     RETURN TRUE;
   END IF;
 
@@ -160,21 +172,42 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission to authenticated users
+-- Grant execute permission
 GRANT EXECUTE ON FUNCTION is_user_in_cooldown TO authenticated;
 
--- Create function to track cancellation when reservation is cancelled
+-- Update track_reservation_cancellation trigger to handle escalation
 CREATE OR REPLACE FUNCTION track_reservation_cancellation()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  v_reset_was_used BOOLEAN;
+  v_new_record_id UUID;
 BEGIN
   -- Only track if status changed to CANCELLED
   IF NEW.status = 'CANCELLED' AND (OLD.status IS NULL OR OLD.status != 'CANCELLED') THEN
-    -- Insert into cancellation tracking
-    INSERT INTO user_cancellation_tracking (user_id, reservation_id, cancelled_at)
-    VALUES (NEW.customer_id, NEW.id, NOW())
+    -- Check if user had used reset before this cancellation
+    SELECT MAX(reset_cooldown_used)
+    INTO v_reset_was_used
+    FROM user_cancellation_tracking
+    WHERE user_id = NEW.customer_id
+      AND reset_cooldown_used = TRUE
+      AND cancelled_at > NOW() - INTERVAL '45 minutes';
+
+    -- Insert into cancellation tracking with escalated duration if needed
+    INSERT INTO user_cancellation_tracking (
+      user_id, 
+      reservation_id, 
+      cancelled_at,
+      cooldown_duration_minutes
+    )
+    VALUES (
+      NEW.customer_id, 
+      NEW.id, 
+      NOW(),
+      CASE WHEN v_reset_was_used THEN 45 ELSE 30 END
+    )
     ON CONFLICT (reservation_id) DO NOTHING;
   END IF;
 
@@ -182,21 +215,9 @@ BEGIN
 END;
 $$;
 
--- Drop existing trigger if it exists
-DROP TRIGGER IF EXISTS trg_track_cancellation ON public.reservations;
-
--- Create trigger to track cancellations
-CREATE TRIGGER trg_track_cancellation
-AFTER UPDATE ON public.reservations
-FOR EACH ROW
-EXECUTE FUNCTION track_reservation_cancellation();
-
 -- Add comment
-COMMENT ON TABLE public.user_cancellation_tracking IS
-  'Tracks user reservation cancellations. After 3 cancellations in 30 minutes, user cannot reserve.';
+COMMENT ON FUNCTION reset_user_cooldown IS
+  'Allows user to reset their active cooldown once. Next cancellation will escalate to 45-minute ban.';
 
-COMMENT ON FUNCTION get_user_consecutive_cancellations IS
-  'Returns consecutive cancellation count and time until cooldown ends.';
-
-COMMENT ON FUNCTION is_user_in_cooldown IS
-  'Returns true if user has 3+ cancellations in last 30 minutes.';
+COMMENT ON FUNCTION escalate_cooldown_on_cancel IS
+  'Escalates cooldown to 45 minutes if user cancels after using reset.';

@@ -12,6 +12,8 @@ export interface CooldownInfo {
   cancellationCount: number;
   timeUntilUnlock: number; // milliseconds
   unlockTime: Date | null;
+  resetCooldownUsed: boolean;
+  cooldownDurationMinutes: number;
 }
 
 export function useReservationCooldown(user: User | null) {
@@ -20,8 +22,11 @@ export function useReservationCooldown(user: User | null) {
     cancellationCount: 0,
     timeUntilUnlock: 0,
     unlockTime: null,
+    resetCooldownUsed: false,
+    cooldownDurationMinutes: 30,
   });
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -30,6 +35,8 @@ export function useReservationCooldown(user: User | null) {
         cancellationCount: 0,
         timeUntilUnlock: 0,
         unlockTime: null,
+        resetCooldownUsed: false,
+        cooldownDurationMinutes: 30,
       });
       return;
     }
@@ -61,7 +68,13 @@ export function useReservationCooldown(user: User | null) {
       }
 
       if (data && data.length > 0) {
-        const { cancellation_count, oldest_cancellation_time, time_until_unlock } = data[0];
+        const { 
+          cancellation_count, 
+          oldest_cancellation_time, 
+          time_until_unlock,
+          reset_cooldown_used,
+          cooldown_duration_minutes
+        } = data[0];
         
         // Parse the interval result
         const timeUntilMs = parseIntervalToMs(time_until_unlock);
@@ -71,8 +84,10 @@ export function useReservationCooldown(user: User | null) {
           cancellationCount: cancellation_count || 0,
           timeUntilUnlock: timeUntilMs,
           unlockTime: oldest_cancellation_time 
-            ? new Date(new Date(oldest_cancellation_time).getTime() + 30 * 60 * 1000)
+            ? new Date(new Date(oldest_cancellation_time).getTime() + (cooldown_duration_minutes || 30) * 60 * 1000)
             : null,
+          resetCooldownUsed: reset_cooldown_used || false,
+          cooldownDurationMinutes: cooldown_duration_minutes || 30,
         });
       }
     } catch (err) {
@@ -86,7 +101,44 @@ export function useReservationCooldown(user: User | null) {
     await checkCooldownStatus();
   };
 
-  return { ...cooldownInfo, loading, refetch };
+  const resetCooldown = async (): Promise<{ success: boolean; message: string }> => {
+    if (!user?.id) {
+      return { success: false, message: 'User not found' };
+    }
+
+    setResetLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('reset_user_cooldown', {
+        p_user_id: user.id,
+      });
+
+      if (error) {
+        console.error('Error resetting cooldown:', error);
+        return { success: false, message: 'Failed to reset cooldown' };
+      }
+
+      if (data && data.length > 0) {
+        const { success, message } = data[0];
+        
+        // Refetch cooldown status after reset
+        if (success) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          await checkCooldownStatus();
+        }
+
+        return { success, message };
+      }
+
+      return { success: false, message: 'Unexpected response from server' };
+    } catch (err) {
+      console.error('Error resetting cooldown:', err);
+      return { success: false, message: 'An error occurred while resetting cooldown' };
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  return { ...cooldownInfo, loading, resetLoading, refetch, resetCooldown };
 }
 
 /**

@@ -419,6 +419,9 @@ export default function ReservationModalNew({
               timeUntilUnlock={cooldown.timeUntilUnlock}
               cancellationCount={cooldown.cancellationCount}
               unlockTime={cooldown.unlockTime}
+              resetCooldownUsed={cooldown.resetCooldownUsed}
+              onResetCooldown={cooldown.resetCooldown}
+              isResetting={cooldown.resetLoading}
             />
           </div>
         </div>
