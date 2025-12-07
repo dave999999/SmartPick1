@@ -504,7 +504,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       position: { lat: userLocation[0], lng: userLocation[1] },
       map: map,
       icon: {
-        url: '/icons/map-pins/user.ico',
+        url: '/icons/map-pins/user.png',
         scaledSize: new google.maps.Size(48, 48), // User pin size
         anchor: new google.maps.Point(24, 48), // Center horizontally, anchor at bottom
         optimized: false
