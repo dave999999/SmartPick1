@@ -131,11 +131,14 @@ BEGIN
   -- Mark the reset as used on the oldest active cancellation record
   UPDATE user_cancellation_tracking
   SET reset_cooldown_used = TRUE
-  WHERE user_id = p_user_id
-    AND reset_cooldown_used = FALSE
-    AND cancelled_at > NOW() - INTERVAL '45 minutes'
-  ORDER BY cancelled_at ASC
-  LIMIT 1;
+  WHERE id = (
+    SELECT id FROM user_cancellation_tracking
+    WHERE user_id = p_user_id
+      AND reset_cooldown_used = FALSE
+      AND cancelled_at > NOW() - INTERVAL '45 minutes'
+    ORDER BY cancelled_at ASC
+    LIMIT 1
+  );
 
   RETURN QUERY SELECT TRUE, 'Cooldown reset successfully. Be careful - next cancellation will result in 45-minute ban';
 END;
