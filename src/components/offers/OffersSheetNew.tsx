@@ -228,10 +228,11 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           bottom: '8px',
           width: 'calc(100% - 16px)',
           maxWidth: '100%',
-          background: 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.18)',
+          background: 'rgba(255, 255, 255, 0.25)',
+          backdropFilter: 'blur(40px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
