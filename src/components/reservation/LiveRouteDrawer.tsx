@@ -61,7 +61,7 @@ export function LiveRouteDrawer({
     };
   }, [map]);
 
-  // Draw route when navigation starts or user moves
+  // Draw route when reservation exists or navigation starts
   useEffect(() => {
     console.log('🧭 LiveRouteDrawer effect:', { 
       hasMap: !!map, 
@@ -71,8 +71,8 @@ export function LiveRouteDrawer({
       reservationId: reservation?.id
     });
     
-    if (!map || !userLocation || !isNavigating || !reservation) {
-      // Clear route when not navigating
+    if (!map || !userLocation || !reservation) {
+      // Clear route when no reservation
       if (directionsRendererRef.current) {
         directionsRendererRef.current.setDirections({ routes: [] } as any);
       }
@@ -99,8 +99,10 @@ export function LiveRouteDrawer({
       return;
     }
 
-    // Check if user moved significantly (> 50 meters) - but skip check on first draw
-    if (lastUpdateRef.current && lastUpdateRef.current.reservationId === reservation.id) {
+    // Check if this is a new reservation or user moved significantly (> 50 meters)
+    const isNewReservation = !lastUpdateRef.current || lastUpdateRef.current.reservationId !== reservation.id;
+    
+    if (!isNewReservation && lastUpdateRef.current) {
       const distance = calculateDistanceMeters(
         lastUpdateRef.current.lat,
         lastUpdateRef.current.lng,
@@ -113,6 +115,7 @@ export function LiveRouteDrawer({
       }
     }
 
+    console.log(isNewReservation ? '🆕 Drawing route for new reservation' : '🔄 Updating route - user moved > 50m');
     lastUpdateRef.current = { ...userLocation, reservationId: reservation.id } as any;
 
     // Request directions
