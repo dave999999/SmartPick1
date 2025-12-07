@@ -37,12 +37,12 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
         </DialogHeader>
 
         <Tabs defaultValue="terms" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-2 bg-white border border-gray-200 h-9">
-            <TabsTrigger value="terms" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+          <TabsList className="flex flex-col sm:grid sm:grid-cols-2 w-full gap-2 sm:gap-0 bg-white border border-gray-200 h-auto sm:h-9 p-1">
+            <TabsTrigger value="terms" className="flex items-center justify-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 h-8 sm:h-auto">
               <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
               {t('terms.tab.terms')}
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="flex items-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700">
+            <TabsTrigger value="privacy" className="flex items-center justify-center gap-1 text-xs sm:text-sm data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 h-8 sm:h-auto">
               <Shield className="h-3 w-3 sm:h-4 sm:w-4" />
               {t('terms.tab.privacy')}
             </TabsTrigger>
