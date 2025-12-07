@@ -26,12 +26,12 @@ export function TermsAcceptanceDialog({ open, onOpenChange, onAccept, alreadyAcc
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg sm:max-w-3xl max-h-[90vh] flex flex-col bg-gradient-to-br from-white via-slate-50 to-gray-50 p-4 sm:p-6">
-        <DialogHeader className="space-y-1">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg text-gray-900">
-            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600" />
-            {t('terms.dialog.title')}
+        <DialogHeader className="space-y-1.5">
+          <DialogTitle className="flex items-start gap-2 text-sm sm:text-base text-gray-900 leading-tight">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-teal-600 flex-shrink-0 mt-0.5" />
+            <span className="break-words">{t('terms.dialog.title')}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm text-gray-600">
+          <DialogDescription className="text-[11px] sm:text-xs text-gray-600 leading-relaxed">
             {t('terms.dialog.description')}
           </DialogDescription>
         </DialogHeader>
