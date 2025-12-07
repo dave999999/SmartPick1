@@ -449,7 +449,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       >
         {/* Premium Header with 3D Logo */}
         <div className="px-6 pt-10 pb-6 text-center relative">
-          {/* Glossy 3D Logo Bubble */}
+          {/* Logo */}
           <div className="flex justify-center mb-5 relative">
             <div 
               className="relative"
@@ -459,38 +459,21 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
             >
               {/* Glow effect */}
               <div 
-                className="absolute inset-0 rounded-full animate-pulse"
+                className="absolute inset-0 animate-pulse"
                 style={{
-                  background: 'radial-gradient(circle, rgba(255,140,0,0.4), transparent 70%)',
+                  background: 'radial-gradient(circle, rgba(255,140,0,0.3), transparent 70%)',
                   filter: 'blur(20px)',
                   transform: 'scale(1.5)',
                 }}
               />
-              {/* Logo container with cosmic-orange neon rim */}
-              <div 
-                className="relative w-20 h-20 rounded-full flex items-center justify-center"
+              <img 
+                src="/smartpick-logo.svg" 
+                alt="SmartPick" 
+                className="h-20 w-20 relative z-10"
                 style={{
-                  background: 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6))',
-                  boxShadow: '0 8px 32px rgba(255,140,0,0.3), 0 0 0 3px rgba(255,140,0,0.2), inset 0 2px 4px rgba(255,255,255,0.8)',
-                  backdropFilter: 'blur(10px)',
+                  filter: 'drop-shadow(0 4px 12px rgba(255,140,0,0.35))',
                 }}
-              >
-                <img 
-                  src="/smartpick-logo.svg" 
-                  alt="SmartPick" 
-                  className="h-12 w-12 relative z-10"
-                  style={{
-                    filter: 'drop-shadow(0 2px 8px rgba(255,140,0,0.3))',
-                  }}
-                />
-                {/* Inner rim highlight */}
-                <div 
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 50%)',
-                  }}
-                />
-              </div>
+              />
             </div>
           </div>
 
