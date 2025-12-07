@@ -304,7 +304,7 @@ export default function ReservationModalNew({
                     }}
                   >
                     <img src="/icons/button.png" alt="" className="w-4 h-4" />
-                    <span className="text-[11px] font-medium text-white">{POINTS_PER_UNIT} pts</span>
+                    <span className="text-[11px] font-medium text-white">{totalPoints} pts</span>
                   </div>
                 </div>
               </div>
