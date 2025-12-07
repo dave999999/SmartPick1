@@ -146,7 +146,6 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const markerClustererRef = useRef<MarkerClusterer | null>(null);
   const userMarkerRef = useRef<any>(null);
   const pulseOverlayRef = useRef<any>(null);
-  const routePolylineRef = useRef<google.maps.Polyline | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -701,73 +700,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     }
   };
 
-  // NEW: Draw route for active reservations
-  useEffect(() => {
-    // Clean up previous route
-    if (routePolylineRef.current) {
-      routePolylineRef.current.setMap(null);
-      routePolylineRef.current = null;
-    }
-
-    if (!google || !mapRef.current || !activeReservation || !userLocation) {
-      return;
-    }
-
-    const partner = activeReservation.offer?.partner;
-    if (!partner?.latitude || !partner?.longitude) {
-      logger.warn('⚠️ No partner location for route drawing');
-      return;
-    }
-
-    const origin = new google.maps.LatLng(userLocation[0], userLocation[1]);
-    const destination = new google.maps.LatLng(partner.latitude, partner.longitude);
-
-    const directionsService = new google.maps.DirectionsService();
-    
-    directionsService.route(
-      {
-        origin,
-        destination,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
-          // Draw polyline manually for better styling
-          const route = result.routes[0];
-          const path = route.overview_path;
-
-          const polyline = new google.maps.Polyline({
-            path,
-            geodesic: true,
-            strokeColor: '#4285F4',
-            strokeOpacity: 0.9,
-            strokeWeight: 5,
-            map: mapRef.current,
-          });
-
-          routePolylineRef.current = polyline;
-
-          // Fit map to show entire route
-          const bounds = new google.maps.LatLngBounds();
-          bounds.extend(origin);
-          bounds.extend(destination);
-          mapRef.current.fitBounds(bounds, { top: 100, bottom: 200, left: 50, right: 50 });
-
-          logger.log('✅ Route drawn successfully');
-        } else {
-          logger.error('❌ Directions request failed:', status);
-        }
-      }
-    );
-
-    // Cleanup
-    return () => {
-      if (routePolylineRef.current) {
-        routePolylineRef.current.setMap(null);
-        routePolylineRef.current = null;
-      }
-    };
-  }, [activeReservation, userLocation, google]);
+  // NOTE: Route drawing is now handled by LiveRouteDrawer component
+  // This old route drawing code is disabled to avoid duplicate routes
+  // LiveRouteDrawer provides more features including live updates as user moves
 
   // Handle "Near Me" button
   const handleNearMe = () => {
