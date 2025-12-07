@@ -47,8 +47,10 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   };
 
   const openAuth = (tab: 'signin' | 'signup') => {
+    // Set auth state first
     setAuthDefaultTab(tab);
     setAuthOpen(true);
+    // Close menu immediately - auth dialog will appear on top with higher z-index
     onClose();
   };
 
@@ -57,18 +59,34 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
     onClose();
   };
 
-  if (!open) return null;
-
   return (
     <>
-      {/* Premium Backdrop with Blur */}
-      <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] animate-in fade-in duration-[180ms]"
-        onClick={onClose}
-        style={{
-          animation: 'fadeInBackdrop 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+      {/* Auth dialog - rendered outside menu so it persists when menu closes */}
+      <AuthDialog
+        open={authOpen}
+        onOpenChange={setAuthOpen}
+        defaultTab={authDefaultTab}
+        onSuccess={async () => {
+          const { user } = await getCurrentUser();
+          setUser(user as any);
+          if (user?.id) {
+            const partner = await getPartnerByUserId(user.id);
+            setIsPartnerApproved(!!partner && partner.status === 'APPROVED');
+          }
         }}
       />
+
+      {/* Menu Drawer - only render when open */}
+      {open && (
+        <>
+          {/* Premium Backdrop with Blur */}
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] animate-in fade-in duration-[180ms]"
+            onClick={onClose}
+            style={{
+              animation: 'fadeInBackdrop 180ms cubic-bezier(0.32, 0.72, 0, 1)',
+            }}
+          />
 
       {/* Premium Glass Morphism Drawer */}
       <div 
@@ -495,21 +513,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </div>
         </div>
       </div>
-
-      {/* Auth dialog */}
-      <AuthDialog
-        open={authOpen}
-        onOpenChange={setAuthOpen}
-        defaultTab={authDefaultTab}
-        onSuccess={async () => {
-          const { user } = await getCurrentUser();
-          setUser(user as any);
-          if (user?.id) {
-            const partner = await getPartnerByUserId(user.id);
-            setIsPartnerApproved(!!partner && partner.status === 'APPROVED');
-          }
-        }}
-      />
+        </>
+      )}
     </>
   );
 }
