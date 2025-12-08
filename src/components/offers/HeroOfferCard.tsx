@@ -75,6 +75,7 @@ export function HeroOfferCard({
             onClick={handleFavoriteClick}
             role="button"
             tabIndex={0}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.stopPropagation();
@@ -89,6 +90,7 @@ export function HeroOfferCard({
                 isFavorite ? 'fill-[#FF7A1A] text-[#FF7A1A]' : 'text-gray-600 fill-none'
               )}
               strokeWidth={1.5}
+              aria-hidden="true"
             />
           </div>
         </div>

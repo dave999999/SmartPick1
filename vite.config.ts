@@ -1,10 +1,14 @@
 import { defineConfig, Plugin } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import fs from 'fs'
 
+// SSG mode detection - enable with `pnpm build:ssg`
+const isSsgBuild = process.env.VITE_SSG === 'true'
+
 /**
- * Plugin to inject build version into service worker and index.html
+ * Plugin to inject build version into index.html
  * This ensures cache invalidation on every deployment
  */
 function injectBuildVersion(): Plugin {
@@ -19,28 +23,8 @@ function injectBuildVersion(): Plugin {
   return {
     name: 'inject-build-version',
 
-    // Transform service-worker.js during build
-    transform(code: string, id: string) {
-      if (id.includes('service-worker.js')) {
-        const transformed = code.replace(/__BUILD_VERSION__/g, buildVersion);
-        console.log('✅ Injected version into service-worker.js');
-        return transformed;
-      }
-      return null;
-    },
-
-    // Also update the public/service-worker.js in dist after build
+    // Update index.html version meta tag
     closeBundle() {
-      const swPath = path.resolve(__dirname, 'dist/service-worker.js');
-
-      if (fs.existsSync(swPath)) {
-        let content = fs.readFileSync(swPath, 'utf-8');
-        content = content.replace(/__BUILD_VERSION__/g, buildVersion);
-        fs.writeFileSync(swPath, content, 'utf-8');
-        console.log('✅ Updated service-worker.js in dist with version:', buildVersion);
-      }
-
-      // Update index.html version meta tag
       const htmlPath = path.resolve(__dirname, 'dist/index.html');
       if (fs.existsSync(htmlPath)) {
         let html = fs.readFileSync(htmlPath, 'utf-8');
@@ -56,9 +40,140 @@ function injectBuildVersion(): Plugin {
 }
 
 export default defineConfig({
+  // SSG mode uses vite-ssg's preset, standard mode uses custom plugins
+  ssgOptions: isSsgBuild ? {
+    script: 'async',
+    formatting: 'prettify',
+    crittersOptions: {
+      reduceInlineStyles: false,
+    },
+    // Only prerender public pages (no auth required)
+    includedRoutes: [
+      '/',
+      '/terms',
+      '/privacy',
+      '/contact',
+      '/partner-application',
+    ],
+    onBeforePageRender: (_route: string, _indexHTML: string, { transformState }: any) => {
+      // Clear any auth state before SSG
+      transformState((state: any) => {
+        delete state?.user
+        delete state?.isAuthenticated
+        return state
+      })
+    },
+  } : undefined,
   plugins: [
     react(),
-    injectBuildVersion()
+    injectBuildVersion(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'grain.png'],
+      manifest: {
+        name: 'SmartPick - Save Money on Food',
+        short_name: 'SmartPick',
+        description: 'Discover surplus food deals from local restaurants and shops',
+        theme_color: '#10b981',
+        background_color: '#ffffff',
+        display: 'standalone',
+        icons: [
+          {
+            src: '/apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}'],
+        globIgnores: ['**/1.png', '**/grain.png'], // Exclude large images
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
+        runtimeCaching: [
+          {
+            // Supabase API - Network First (fresh data priority)
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-api',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 // 1 hour
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            // Google Maps API - Cache First (tiles rarely change)
+            urlPattern: /^https:\/\/maps\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-maps-api',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Google Maps tiles - Cache First (static images)
+            urlPattern: /^https:\/\/maps\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-maps-tiles',
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Image assets - Cache First with fallback
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 1 week
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            // Font files - Cache First (static)
+            urlPattern: /\.(?:woff|woff2|ttf|otf)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'font-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ],
+        navigateFallback: null, // Let app handle routing
+        cleanupOutdatedCaches: true
+      },
+      devOptions: {
+        enabled: false // Disable in development for faster reload
+      }
+    })
   ],
   optimizeDeps: {
     exclude: ['@marsidev/react-turnstile'],

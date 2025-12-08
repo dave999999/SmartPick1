@@ -7,25 +7,18 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { getCurrentUser } from './lib/api';
 // supabase dynamically imported to reduce initial bundle size
 import { useActivityTracking } from './hooks/useActivityTracking';
-import { initSentry } from './lib/sentry';
 import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
-import { PenaltyModal } from './components/PenaltyModal';
-import type { UserPenalty, PenaltyDetails } from './lib/api/penalty';
+import type { UserPenalty } from './lib/api/penalty';
 import { GoogleMapProvider } from './components/map/GoogleMapProvider';
 import { queryClient } from './lib/queryClient';
-
-// Initialize Sentry as early as possible
-initSentry();
+import { OverlayOrchestrator } from './components/OverlayOrchestrator';
 
 // Eager load: Only Index page (main landing) and essential components
 import Index from './pages/Index';
 import IndexRedesigned from './pages/IndexRedesigned';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
-import { OfflineBanner } from './components/OfflineBanner';
-import { QueueStatus } from './components/QueueStatus';
 import TopRightMenu from './components/layout/TopRightMenu';
-import { CookieConsent } from './components/CookieConsent';
 
 // Lazy load: All other routes for code splitting (~300 KB savings on initial load)
 const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard'));
@@ -75,7 +68,7 @@ const AppContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
-  const [penaltyData, setPenaltyData] = useState<PenaltyDetails | null>(null);
+  const [penaltyData, setPenaltyData] = useState<UserPenalty | null>(null);
   const [userPoints, setUserPoints] = useState(0);
 
   // Track user activity for real-time monitoring
@@ -283,6 +276,10 @@ const AppContent = () => {
         v7_relativeSplatPath: true,
       }}
     >
+      {/* Skip to main content link - hidden until focused */}
+      <a href="#main-content" className="skip-to-main">
+        Skip to main content
+      </a>
       {/* Global quick actions menu (top-right) */}
       <TopRightMenu />
       <Suspense fallback={<PageLoader />}>
@@ -345,34 +342,28 @@ const AppContent = () => {
       {/* PWA Install Prompts */}
       <InstallPWA />
       <IOSInstallPrompt />
-      {/* Offline Banner */}
-      <OfflineBanner />
-      {/* Queue Status Indicator */}
-      <QueueStatus />
-      {/* Cookie Consent Banner */}
-      <CookieConsent />
-      {/* Penalty Modal (shown on app load if user has active penalty) */}
-      {showPenaltyModal && penaltyData && (
-        <PenaltyModal
-          penalty={penaltyData}
-          userPoints={userPoints}
-          onClose={() => setShowPenaltyModal(false)}
-          onPenaltyLifted={async () => {
-            setShowPenaltyModal(false);
-            // Refresh user points after lifting
-            const { user } = await getCurrentUser();
-            if (user) {
-              const { supabase } = await import('./lib/supabase');
-              const { data: userPoints } = await supabase
-                .from('user_points')
-                .select('balance')
-                .eq('user_id', (user as any).id)
-                .single();
-              setUserPoints(userPoints?.balance || 0);
-            }
-          }}
-        />
-      )}
+      
+      {/* Smart Overlay Orchestrator - Priority-based overlay management */}
+      <OverlayOrchestrator
+        showPenaltyModal={showPenaltyModal}
+        penaltyData={penaltyData}
+        userPoints={userPoints}
+        onPenaltyClose={() => setShowPenaltyModal(false)}
+        onPenaltyLifted={async () => {
+          setShowPenaltyModal(false);
+          // Refresh user points after lifting
+          const { user } = await getCurrentUser();
+          if (user) {
+            const { supabase } = await import('./lib/supabase');
+            const { data: userPoints } = await supabase
+              .from('user_points')
+              .select('balance')
+              .eq('user_id', (user as any).id)
+              .single();
+            setUserPoints(userPoints?.balance || 0);
+          }
+        }}
+      />
     </BrowserRouter>
   );
 };

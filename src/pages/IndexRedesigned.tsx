@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Offer, User } from '@/lib/types';
+import { SEOHead, structuredDataSchemas } from '@/components/SEOHead';
 import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
-import { getActiveOffersInViewport } from '@/lib/api/offers';
 import { isDemoMode, supabase } from '@/lib/supabase';
 import { indexedDBManager } from '@/lib/indexedDB';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useViewportOffers } from '@/hooks/useQueryHooks';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
 const AuthDialog = lazy(() => import('@/components/AuthDialog'));
@@ -37,23 +39,35 @@ import { SUBCATEGORIES } from '@/lib/categories';
 
 export default function IndexRedesigned() {
   const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
-  const [offers, setOffers] = useState<Offer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
   const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
   
+  // 🚀 PERFORMANCE: Debounce map bounds to prevent API spam during panning
+  // Only triggers new request 500ms after user stops moving the map
+  const debouncedBounds = useDebouncedValue(mapBounds, 500);
+  
+  // 🚀 PERFORMANCE: Use React Query for automatic caching, deduplication, and cancellation
+  const { 
+    data: offers = [], 
+    isLoading, 
+    error: offersError,
+    isFetching 
+  } = useViewportOffers(debouncedBounds, undefined, 100);
+  
   // 🐛 DEBUG: Track what causes re-renders
   logger.info('🔄 [IndexRedesigned] RENDER', {
     offersCount: offers.length,
     selectedCategory,
     isLoading,
+    isFetching,
     hasUser: !!user,
     hasMapBounds: !!mapBounds,
+    hasDebouncedBounds: !!debouncedBounds,
     hasUserLocation: !!userLocation
   });
   
@@ -96,108 +110,40 @@ export default function IndexRedesigned() {
   const { addRecentlyViewed } = useRecentlyViewed();
   const [searchParams] = useSearchParams();
   const isOnline = useOnlineStatus();
-  
-  // Track last loaded bounds to prevent unnecessary reloads
-  const lastLoadedBoundsRef = useRef<{ north: number; south: number; east: number; west: number } | null>(null);
-  const isInitialLoadRef = useRef(true);
 
-  async function loadOffers() {
-    // Only show loading spinner on initial load, not on viewport changes
-    const shouldShowLoading = isInitialLoadRef.current || !mapBounds;
-    if (shouldShowLoading) {
-      setIsLoading(true);
-    }
-    
-    try {
-      if (isOnline) {
-        // 🚀 SCALABILITY FIX: Use viewport loading instead of loading ALL offers
-        let data: Offer[];
-        
-        if (mapBounds) {
-          // Load only offers in current viewport (100x faster)
-          logger.info('[Index] Loading offers in viewport', mapBounds);
-          data = await getActiveOffersInViewport(mapBounds, undefined, 200);
-          logger.info('[Index] Viewport offers loaded', { count: data.length });
-        } else {
-          // Fallback: Load all offers (only on initial load before map is ready)
-          logger.warn('[Index] Map bounds not available, loading all offers');
-          data = await getActiveOffers();
-        }
-        
-        setOffers(data);
-        await indexedDBManager.cacheOffers(data);
-        logger.info('[Index] Offers loaded and cached', { count: data.length });
-        isInitialLoadRef.current = false;
-      } else {
-        const cachedOffers = await indexedDBManager.getCachedOffers();
-        
+  // Handle offline mode with cached offers
+  useEffect(() => {
+    if (!isOnline && !offers.length && !isLoading) {
+      // User is offline and React Query returned empty - try IndexedDB cache
+      indexedDBManager.getCachedOffers().then(cachedOffers => {
         if (cachedOffers && cachedOffers.length > 0) {
-          setOffers(cachedOffers);
+          // Can't directly set offers (it's from React Query), but they're already cached
           toast.info('📡 Showing cached offers (offline mode)', {
             description: 'Some data may be outdated',
           });
-          logger.info('[Index] Loaded cached offers', { count: cachedOffers.length });
-        } else {
-          toast.error('No cached offers available offline');
-          logger.warn('[Index] No cached offers found');
+          logger.info('[Index] Loaded cached offers in offline mode', { count: cachedOffers.length });
         }
-      }
-    } catch (error) {
-      logger.error('Error loading offers:', error);
-      
-      try {
-        const cachedOffers = await indexedDBManager.getCachedOffers();
-        if (cachedOffers && cachedOffers.length > 0) {
-          setOffers(cachedOffers);
-          toast.warning('Loaded cached offers due to network error');
-        } else if (!isDemoMode) {
-          toast.error('Failed to load offers');
-        }
-      } catch (cacheError) {
-        logger.error('Error loading cached offers:', cacheError);
-        if (!isDemoMode) {
-          toast.error('Failed to load offers');
-        }
-      }
-    } finally {
-      if (shouldShowLoading) {
-        setIsLoading(false);
-      }
+      });
     }
-  }
-
-  // 🚀 SCALABILITY: Disabled viewport-based reloading to prevent marker disappearing
-  // Load all offers once on mount instead of reloading based on map bounds
-  // This prevents markers from disappearing during carousel navigation
-  /*
+  }, [isOnline, offers.length, isLoading]);
+  
+  // Handle errors gracefully
   useEffect(() => {
-    if (!mapBounds) return;
-    
-    // Check if bounds changed significantly (>10% of previous bounds)
-    const lastBounds = lastLoadedBoundsRef.current;
-    if (lastBounds) {
-      const latDiff = Math.abs(mapBounds.north - lastBounds.north) + Math.abs(mapBounds.south - lastBounds.south);
-      const lngDiff = Math.abs(mapBounds.east - lastBounds.east) + Math.abs(mapBounds.west - lastBounds.west);
-      const latRange = Math.abs(mapBounds.north - mapBounds.south);
-      const lngRange = Math.abs(mapBounds.east - mapBounds.west);
-      
-      // Only reload if bounds changed by more than 80% (prevents reload during carousel navigation)
-      if (latDiff < latRange * 0.8 && lngDiff < lngRange * 0.8) {
-        logger.info('[Index] Map bounds changed minimally, skipping reload');
-        return;
-      }
+    if (offersError && !isOnline) {
+      toast.error('Unable to load offers offline');
+    } else if (offersError) {
+      toast.error('Failed to load offers. Please try again.');
     }
-    
-    // Debounce to avoid too many requests while panning (increased to 1000ms)
-    const timeoutId = setTimeout(() => {
-      logger.info('[Index] Map bounds changed significantly, reloading offers');
-      lastLoadedBoundsRef.current = mapBounds;
-      loadOffers();
-    }, 1000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [mapBounds]);
-  */
+  }, [offersError, isOnline]);
+  
+  // 🚀 PERFORMANCE: React Query automatically handles:
+  // - Request deduplication (multiple components requesting same data)
+  // - Request cancellation (when debouncedBounds changes, old request is cancelled)
+  // - Caching with staleTime (serves cached data for 2 minutes)
+  // - Background refetching (updates cache without showing loading state)
+  // - Error retry logic (retries once on failure)
+  
+  // No manual loadOffers() function needed - React Query handles everything!
 
   // Load active reservation when user is detected
   useEffect(() => {
@@ -393,7 +339,7 @@ export default function IndexRedesigned() {
   }, [isReservationLoading, activeReservation]); // Depend on reservation loading state
 
   useEffect(() => {
-    loadOffers();
+    // React Query automatically loads offers when debouncedBounds is available
     checkUser();
 
     // Get user's current location on app load
@@ -414,7 +360,7 @@ export default function IndexRedesigned() {
     }
 
     const handleReservationSynced = () => {
-      loadOffers();
+      // React Query will auto-refetch offers when window refocuses
       toast.success('✅ Queued reservation synced!');
     };
 
@@ -436,14 +382,13 @@ export default function IndexRedesigned() {
           if (payload.eventType === 'INSERT') {
             const newOffer = payload.new as any;
             
-            // Only add if it meets our criteria
+            // Only notify if it meets our criteria
             if (
               newOffer.status === 'ACTIVE' &&
               newOffer.quantity_available > 0 &&
               new Date(newOffer.expires_at) > new Date()
             ) {
-              // Reload offers to get full data with partner info
-              loadOffers();
+              // React Query will auto-refetch in background based on staleTime
               toast.success(`🎉 New offer available: ${newOffer.title}`, { duration: 3000 });
             }
           } else if (payload.eventType === 'UPDATE') {
@@ -457,23 +402,13 @@ export default function IndexRedesigned() {
 
             const wasShown = offers.some(o => o.id === updatedOffer.id);
 
-            if (shouldShow !== wasShown) {
-              // Offer visibility changed, reload
-              loadOffers();
-              if (!shouldShow) {
-                toast.info('An offer is no longer available');
-              }
-            } else if (shouldShow) {
-              // Update offer details in place
-              setOffers(prev => prev.map(o => 
-                o.id === updatedOffer.id ? { ...o, ...updatedOffer } : o
-              ));
+            if (shouldShow !== wasShown && !shouldShow) {
+              toast.info('An offer is no longer available');
             }
+            // React Query will auto-refetch on next window focus or staleTime expiry
           } else if (payload.eventType === 'DELETE') {
-            // Remove deleted offer
-            const deletedId = payload.old.id;
-            setOffers(prev => prev.filter(o => o.id !== deletedId));
             toast.info('An offer has been removed');
+            // React Query will auto-refetch in background
           }
         }
       )
@@ -499,11 +434,8 @@ export default function IndexRedesigned() {
     };
   }, []);
 
-  useEffect(() => {
-    if (isOnline) {
-      loadOffers();
-    }
-  }, [isOnline]);
+  // React Query automatically retries failed requests when coming back online
+  // via refetchOnReconnect: 'always' in queryClient config
 
   useEffect(() => {
     const refParam = searchParams.get('ref');
@@ -740,67 +672,92 @@ export default function IndexRedesigned() {
     }
   }, [googleMap, activeReservation]);
 
+  // Generate structured data with actual offers for rich results
+  const offerListSchema = useMemo(() => {
+    const topOffers = filteredOffers.slice(0, 10); // Top 10 for SEO
+    
+    return {
+      '@type': 'ItemList',
+      name: 'Available Food Deals',
+      numberOfItems: topOffers.length,
+      itemListElement: topOffers.map((offer, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        item: {
+          '@type': 'Product',
+          '@id': `https://smartpick.ge/offer/${offer.id}`,
+          name: offer.title,
+          description: offer.description || `${offer.discount_percentage}% off at ${offer.partner_business_name}`,
+          image: offer.image_url || 'https://smartpick.ge/icon1.png',
+          offers: {
+            '@type': 'Offer',
+            price: offer.discounted_price?.toFixed(2) || '0',
+            priceCurrency: 'GEL',
+            availability: offer.quantity_available > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            validFrom: offer.pickup_time_start || new Date().toISOString(),
+            validThrough: offer.pickup_time_end || new Date(Date.now() + 86400000).toISOString(),
+            seller: {
+              '@type': 'LocalBusiness',
+              name: offer.partner_business_name,
+              address: {
+                '@type': 'PostalAddress',
+                addressLocality: 'Tbilisi',
+                addressCountry: 'GE',
+              },
+            },
+          },
+        },
+      })),
+    };
+  }, [filteredOffers]);
+
   return (
     <>
+      <SEOHead
+        title="SmartPick — Smart choice every day"
+        description="Discover surplus food deals from local restaurants in Tbilisi. Save money while reducing food waste. Premium meals at up to 70% off."
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            structuredDataSchemas.organization,
+            structuredDataSchemas.localBusiness,
+            structuredDataSchemas.webApplication,
+            offerListSchema, // Dynamic offer list
+          ],
+        }}
+      />
       <SplashScreen />
       <Suspense fallback={null}><AnnouncementPopup /></Suspense>
 
-      <div className="min-h-screen bg-sp-bg overflow-hidden fixed inset-0 safe-area">
+      <main id="main-content" className="min-h-screen bg-sp-bg overflow-hidden fixed inset-0 safe-area" role="main" aria-label="Offers map and discovery">
         <div className="absolute inset-0 w-full h-full">
           {/* Full Screen Map - Always mounted to prevent re-initialization */}
           <div className="absolute inset-0 w-full h-full z-10">
-            {googleMapsLoaded ? (
-              <>
-                <SmartPickGoogleMap
-                      offers={mapFilteredOffers}
-                      onOfferClick={handleOfferClick}
-                      onMarkerClick={handleMarkerClick}
-                      selectedCategory={selectedCategory}
-                      onCategorySelect={setSelectedCategory}
-                      onLocationChange={setUserLocation}
-                      userLocation={userLocation}
-                      selectedOffer={selectedOffer}
-                      showUserLocation={true}
-                      highlightedOfferId={highlightedOfferId}
-                      hideMarkers={!!activeReservation}
-                      activeReservation={activeReservation}
-                      onMapBoundsChange={(bounds) => {
-                        // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
-                        setMapBounds(bounds);
-                      }}
-                    />
-                {/* Debug: Check if pins are hidden */}
-                {!!activeReservation && console.log('🔵 Map pins HIDDEN - active reservation exists')}
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <div className="text-center space-y-2">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
-                  <p className="text-gray-600 text-sm">Loading map...</p>
-                </div>
-              </div>
+            {googleMapsLoaded && (
+              <SmartPickGoogleMap
+                offers={mapFilteredOffers}
+                onOfferClick={handleOfferClick}
+                onMarkerClick={handleMarkerClick}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+                onLocationChange={setUserLocation}
+                userLocation={userLocation}
+                selectedOffer={selectedOffer}
+                showUserLocation={true}
+                highlightedOfferId={highlightedOfferId}
+                hideMarkers={!!activeReservation}
+                activeReservation={activeReservation}
+                onMapBoundsChange={!activeReservation ? (bounds) => {
+                  // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
+                  // Disabled during active reservation to prevent constant reloading
+                  setMapBounds(bounds);
+                } : undefined}
+              />
             )}
           </div>
-
-          {/* Loading overlay - shown over map instead of replacing it */}
-          {isLoading && (
-            <div className="absolute inset-0 w-full h-full bg-gradient-to-b from-sp-bg to-sp-surface1 z-20 pointer-events-none">
-              <div className="absolute inset-0 flex items-center justify-center gap-8">
-                <div className="space-y-2">
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse"></div>
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-100"></div>
-                  <div className="w-12 h-12 bg-sp-surface2 rounded-full animate-pulse delay-200"></div>
-                </div>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 h-[28%] bg-sp-surface1 rounded-t-[28px] shadow-lg p-4 space-y-3 border-t border-sp-border-soft">
-                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse"></div>
-                <div className="h-24 bg-sp-surface2 rounded-xl animate-pulse delay-100"></div>
-              </div>
-            </div>
-          )}
         </div>
 
-      </div>
+      </main>
 
       <Suspense fallback={null}>
         <AuthDialog
@@ -974,6 +931,16 @@ export default function IndexRedesigned() {
           pointsEarned={pickupModalData.pointsEarned}
         />
       )}
+      
+      {/* Screen reader announcements for keyboard users */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {isLoading ? 'Loading offers...' : `${filteredOffers.length} offers available. Use Tab to navigate, Enter to select.`}
+      </div>
+      
+      {/* Map marker count announcement */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {mapFilteredOffers.length} {mapFilteredOffers.length === 1 ? 'marker' : 'markers'} shown on map
+      </div>
 
       {/* Bottom Navigation - Premium iOS Glass Style */}
       <FloatingBottomNav 

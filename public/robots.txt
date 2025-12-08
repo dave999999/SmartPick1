@@ -1,2 +1,23 @@
+# SmartPick - Food Waste Reduction Platform
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://smartpick.ge/sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
+
+# Disallow admin and user-specific pages
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /profile
+Disallow: /my-picks
+Disallow: /reservation/*
+
+# Allow public pages
+Allow: /
+Allow: /terms
+Allow: /privacy
+Allow: /contact
+Allow: /partner-application

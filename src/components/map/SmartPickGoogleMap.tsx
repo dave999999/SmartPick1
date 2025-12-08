@@ -15,7 +15,7 @@
  * - Custom light style matching SmartPick design
  */
 
-import { useEffect, useRef, useState, useMemo, memo } from 'react';
+import { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
 import { Offer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Navigation, X } from 'lucide-react';
@@ -147,6 +147,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const userMarkerRef = useRef<any>(null);
   const pulseOverlayRef = useRef<any>(null);
   const directionsRendererRef = useRef<any>(null);
+  const hasInitiallyFitBoundsRef = useRef<string | null>(null); // Track if we've already fit bounds for this reservation
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -232,36 +233,159 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         clickableIcons: false,
         styles: [
           {
-            featureType: "all",
-            stylers: [
-              { saturation: 0 },
-              { hue: "#e7ecf0" }
-            ]
+            featureType: "administrative",
+            elementType: "geometry.fill",
+            stylers: [{ visibility: "on" }, { color: "#ffffff" }]
           },
           {
-            featureType: "road",
-            stylers: [
-              { saturation: -70 }
-            ]
+            featureType: "administrative",
+            elementType: "labels.text.fill",
+            stylers: [{ gamma: "0.00" }, { weight: "0.01" }, { visibility: "on" }, { color: "#8c8c8c" }]
           },
           {
-            featureType: "transit",
-            stylers: [
-              { visibility: "off" }
-            ]
+            featureType: "administrative.neighborhood",
+            elementType: "labels.text",
+            stylers: [{ visibility: "on" }]
+          },
+          {
+            featureType: "administrative.neighborhood",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#898989" }]
+          },
+          {
+            featureType: "administrative.neighborhood",
+            elementType: "labels.text.stroke",
+            stylers: [{ color: "#ffffff" }, { weight: "4.00" }]
+          },
+          {
+            featureType: "landscape",
+            elementType: "all",
+            stylers: [{ color: "#ffffff" }]
+          },
+          {
+            featureType: "landscape.man_made",
+            elementType: "geometry.fill",
+            stylers: [{ visibility: "simplified" }, { color: "#ffffff" }]
+          },
+          {
+            featureType: "landscape.natural",
+            elementType: "geometry",
+            stylers: [{ visibility: "on" }]
+          },
+          {
+            featureType: "landscape.natural",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#8d8d8d" }]
+          },
+          {
+            featureType: "landscape.natural.terrain",
+            elementType: "geometry.stroke",
+            stylers: [{ visibility: "on" }]
           },
           {
             featureType: "poi",
-            stylers: [
-              { visibility: "off" }
-            ]
+            elementType: "all",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "poi.park",
+            elementType: "geometry.fill",
+            stylers: [{ color: "#cef8d5" }, { visibility: "on" }]
+          },
+          {
+            featureType: "poi.park",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "on" }, { color: "#60b36c" }]
+          },
+          {
+            featureType: "poi.park",
+            elementType: "labels.text.stroke",
+            stylers: [{ visibility: "on" }, { color: "#ffffff" }]
+          },
+          {
+            featureType: "poi.park",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road",
+            elementType: "all",
+            stylers: [{ saturation: "-100" }, { lightness: "32" }, { visibility: "on" }]
+          },
+          {
+            featureType: "road",
+            elementType: "geometry.fill",
+            stylers: [{ color: "#f3f3f3" }]
+          },
+          {
+            featureType: "road",
+            elementType: "geometry.stroke",
+            stylers: [{ color: "#e1e1e1" }]
+          },
+          {
+            featureType: "road",
+            elementType: "labels.text",
+            stylers: [{ visibility: "on" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "all",
+            stylers: [{ visibility: "simplified" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "geometry",
+            stylers: [{ visibility: "on" }, { lightness: "63" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "geometry.fill",
+            stylers: [{ color: "#f3f3f3" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "geometry.stroke",
+            stylers: [{ color: "#e1e1e1" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "labels.text",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.highway",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "road.arterial",
+            elementType: "labels.icon",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "transit",
+            elementType: "all",
+            stylers: [{ visibility: "off" }]
+          },
+          {
+            featureType: "transit.station",
+            elementType: "all",
+            stylers: [{ visibility: "off" }]
           },
           {
             featureType: "water",
-            stylers: [
-              { visibility: "simplified" },
-              { saturation: -60 }
-            ]
+            elementType: "all",
+            stylers: [{ visibility: "on" }, { color: "#eeeeee" }]
+          },
+          {
+            featureType: "water",
+            elementType: "geometry.fill",
+            stylers: [{ color: "#cce4ff" }]
+          },
+          {
+            featureType: "water",
+            elementType: "labels.text.fill",
+            stylers: [{ visibility: "on" }, { color: "#6095a5" }]
           }
         ],
       });
@@ -347,6 +471,11 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       directionsRendererRef.current = null;
     }
     
+    // Reset fitBounds tracking when reservation ends
+    if (!activeReservation) {
+      hasInitiallyFitBoundsRef.current = null;
+    }
+    
     // If markers should be hidden but there's an active reservation, show only partner marker and route
     if (hideMarkers && activeReservation) {
       if (markerClustererRef.current) {
@@ -376,6 +505,24 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           console.log('✅ Creating partner marker at:', partnerLat, partnerLng);
           
           // Create partner marker using the same icon as regular markers
+          // Create user marker at route start
+          const userMarker = new google.maps.Marker({
+            position: { lat: userLocation[0], lng: userLocation[1] },
+            map: mapRef.current,
+            title: 'Your location (route start)',
+            icon: {
+              url: '/icons/map-pins/user.png',
+              scaledSize: new google.maps.Size(32, 32),
+              anchor: new google.maps.Point(16, 32),
+              optimized: false
+            },
+            zIndex: 10001, // Higher than partner to show on top
+          });
+          
+          markersRef.current.push(userMarker);
+          console.log('✅ User marker created at route start');
+          
+          // Create partner marker at route end
           const partnerMarker = new google.maps.Marker({
             position: { lat: partnerLat, lng: partnerLng },
             map: mapRef.current,
@@ -391,14 +538,14 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           });
           
           markersRef.current.push(partnerMarker);
-          console.log('✅ Partner marker created with standard map pin icon');
+          console.log('✅ Partner marker created at route end');
           
           // Draw route between user and partner
           console.log('🗺️ Drawing route from user to partner...');
           const directionsService = new google.maps.DirectionsService();
           directionsRendererRef.current = new google.maps.DirectionsRenderer({
             map: mapRef.current,
-            suppressMarkers: true,
+            suppressMarkers: true, // We're using our own custom markers
             polylineOptions: {
               strokeColor: '#4285F4',
               strokeWeight: 5,
@@ -419,11 +566,18 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
             }
           });
           
-          // Center map to show both user and partner locations
-          const bounds = new google.maps.LatLngBounds();
-          bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
-          bounds.extend({ lat: partnerLat, lng: partnerLng });
-          map.fitBounds(bounds, { padding: 80 });
+          // Center map to show both user and partner locations (only once per reservation)
+          const reservationId = activeReservation?.id || 'no-id';
+          if (hasInitiallyFitBoundsRef.current !== reservationId) {
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
+            bounds.extend({ lat: partnerLat, lng: partnerLng });
+            map.fitBounds(bounds, { padding: 80 });
+            hasInitiallyFitBoundsRef.current = reservationId;
+            console.log('✅ Initial bounds fitted for reservation:', reservationId);
+          } else {
+            console.log('⏭️ Skipping fitBounds - already centered for this reservation');
+          }
         } else {
           console.warn('⚠️ Invalid partner coordinates:', { partnerLat, partnerLng });
         }
@@ -586,8 +740,25 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     // Add all markers directly to map (no clustering)
     if (markers.length > 0) {
-      markers.forEach(marker => {
+      console.log('🗺️ Creating markers:', {
+        totalMarkers: markers.length,
+        locations: groupedLocations.map(loc => ({
+          lat: loc.lat,
+          lng: loc.lng,
+          partner: loc.partnerName,
+          offerIds: loc.offers.map((o: Offer) => o.id)
+        }))
+      });
+      
+      markers.forEach((marker, index) => {
         marker.setMap(map);
+        const locationData = (marker as any).locationData;
+        console.log(`  📌 Marker ${index + 1}:`, {
+          partner: locationData?.partnerName,
+          visible: marker.getVisible(),
+          hasMap: !!marker.getMap(),
+          offerCount: locationData?.offers?.length
+        });
       });
       markersRef.current = markers;
       
@@ -596,6 +767,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         oldMarkers.forEach(marker => {
           if (marker.setMap) marker.setMap(null);
         });
+        console.log(`🧹 Removed ${oldMarkers.length} old markers`);
       }, 100);
     }
 
@@ -699,23 +871,25 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     userMarkerRef.current = userMarker;
 
-    // Validate and center map on user
-    const [lat, lng] = userLocation;
-    if (typeof lat === 'number' && typeof lng === 'number' && 
-        isFinite(lat) && isFinite(lng)) {
-      map.panTo({ lat, lng });
-      if (map.getZoom() < 13) {
-        map.setZoom(13);
+    // Validate and center map on user (but skip during active reservation to avoid aggressive re-centering)
+    if (!activeReservation) {
+      const [lat, lng] = userLocation;
+      if (typeof lat === 'number' && typeof lng === 'number' && 
+          isFinite(lat) && isFinite(lng)) {
+        map.panTo({ lat, lng });
+        if (map.getZoom() < 13) {
+          map.setZoom(13);
+        }
+      } else {
+        logger.warn('Invalid user location coordinates:', userLocation);
       }
-    } else {
-      logger.warn('Invalid user location coordinates:', userLocation);
     }
 
     // Cleanup function to remove pulse overlay
     return () => {
       pulseOverlayInstance.setMap(null);
     };
-  }, [userLocation, google]);
+  }, [userLocation, google, activeReservation]);
 
   // Dedicated effect for active reservation route - ensures route is drawn when reservation is created
   useEffect(() => {
@@ -796,7 +970,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // Center on selected offer
   useEffect(() => {
-    if (!mapRef.current || !google || !selectedOffer?.partner) return;
+    if (!mapRef.current || !google || !selectedOffer?.partner || activeReservation) return;
 
     const map = mapRef.current;
     const { latitude, longitude } = selectedOffer.partner;
@@ -809,52 +983,21 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       
       // Info window disabled - using partner sheet instead
     }
-  }, [selectedOffer, google, userLocation]);
+  }, [selectedOffer, google, userLocation, activeReservation]);
 
-  // NEW: Highlight marker when card is scrolled into view
-  useEffect(() => {
-    // Clean up previous overlays
-    if (pulseOverlayRef.current) {
-      pulseOverlayRef.current.setMap(null);
-      pulseOverlayRef.current = null;
-    }
+  // Track previously highlighted marker to avoid resetting all markers
+  const previouslyHighlightedMarkerRef = useRef<google.maps.Marker | null>(null);
 
-    // Skip partner card if active reservation exists
-    if (!google || !highlightedOfferId || activeReservation) {
-      return;
-    }
-
-    // Always wait a moment for markers to be ready after groupedLocations change
-    const highlightTimer = setTimeout(() => {
-      // Still no markers after waiting? Skip silently
-      if (markersRef.current.length === 0) {
-        return;
-      }
-
-      highlightMarker();
-    }, 200); // Small delay to ensure markers are created
-
-    return () => clearTimeout(highlightTimer);
-  }, [highlightedOfferId, google, userLocation, activeReservation]);
-
-  // Extracted highlighting logic
-  const highlightMarker = () => {
+  // Extracted highlighting logic (defined before useEffect that uses it)
+  const highlightMarker = useCallback(() => {
     if (!google || !highlightedOfferId || markersRef.current.length === 0) {
+      console.log('🔴 highlightMarker: Early exit', { 
+        hasGoogle: !!google, 
+        highlightedOfferId, 
+        markersCount: markersRef.current.length 
+      });
       return;
     }
-
-    // Reset all markers to normal size first
-    markersRef.current.forEach((m: any) => {
-      const currentIcon = m.getIcon();
-      if (currentIcon && typeof currentIcon === 'object') {
-        m.setIcon({
-          ...currentIcon,
-          scaledSize: new google.maps.Size(64, 64),
-          anchor: new google.maps.Point(32, 64),
-        });
-      }
-      m.setZIndex(1);
-    });
 
     // Find marker for highlighted offer
     const marker = markersRef.current.find((m: any) => {
@@ -865,7 +1008,41 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
     });
 
+    console.log('📍 highlightMarker: Search result', { 
+      highlightedOfferId, 
+      foundMarker: !!marker,
+      totalMarkers: markersRef.current.length,
+      markerVisible: marker ? marker.getVisible() : null,
+      markerMap: marker ? !!marker.getMap() : null
+    });
+
+    // If same marker is already highlighted, skip
+    if (marker === previouslyHighlightedMarkerRef.current) {
+      console.log('⏭️ highlightMarker: Same marker already highlighted, skipping');
+      return;
+    }
+
+    // Reset only the previously highlighted marker (not all markers)
+    if (previouslyHighlightedMarkerRef.current) {
+      const prevIcon = previouslyHighlightedMarkerRef.current.getIcon();
+      if (prevIcon && typeof prevIcon === 'object') {
+        previouslyHighlightedMarkerRef.current.setIcon({
+          ...prevIcon,
+          scaledSize: new google.maps.Size(64, 64),
+          anchor: new google.maps.Point(32, 64),
+        });
+      }
+      previouslyHighlightedMarkerRef.current.setZIndex(1);
+      console.log('✅ Reset previous marker to normal size');
+    }
+
     if (marker) {
+      // Ensure marker is visible and on the map
+      if (!marker.getMap()) {
+        console.warn('⚠️ Marker found but not on map! Re-adding...');
+        marker.setMap(mapRef.current);
+      }
+      
       const currentIcon = marker.getIcon();
       if (currentIcon && typeof currentIcon === 'object') {
         // Make marker bigger
@@ -874,10 +1051,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           scaledSize: new google.maps.Size(80, 80),
           anchor: new google.maps.Point(40, 76),
         });
+        console.log('✅ Set marker icon to 80x80');
       }
       
       // Bring to front
       marker.setZIndex(1000);
+      console.log('✅ Highlighted marker for offer:', highlightedOfferId);
       
       // Get partner info from marker
       const locationData = (marker as any).locationData;
@@ -968,8 +1147,56 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         pulseOverlay.setMap(mapRef.current);
         pulseOverlayRef.current = pulseOverlay;
       }
+      
+      // Update reference to track this as the currently highlighted marker
+      previouslyHighlightedMarkerRef.current = marker;
+    } else {
+      // No marker found, clear the reference
+      previouslyHighlightedMarkerRef.current = null;
     }
-  };
+  }, [google, highlightedOfferId]);
+
+  // NEW: Highlight marker when card is scrolled into view
+  useEffect(() => {
+    // Clean up previous overlays
+    if (pulseOverlayRef.current) {
+      pulseOverlayRef.current.setMap(null);
+      pulseOverlayRef.current = null;
+    }
+
+    // Skip partner card if active reservation exists or no highlighted offer
+    if (!google || !highlightedOfferId || activeReservation) {
+      // If no highlighted offer, reset only the previously highlighted marker (not all)
+      if (!highlightedOfferId && previouslyHighlightedMarkerRef.current) {
+        const prevIcon = previouslyHighlightedMarkerRef.current.getIcon();
+        if (prevIcon && typeof prevIcon === 'object') {
+          previouslyHighlightedMarkerRef.current.setIcon({
+            ...prevIcon,
+            scaledSize: new google.maps.Size(64, 64),
+            anchor: new google.maps.Point(32, 64),
+          });
+        }
+        previouslyHighlightedMarkerRef.current.setZIndex(1);
+        previouslyHighlightedMarkerRef.current = null;
+      }
+      return;
+    }
+
+    // Highlight immediately if markers exist (no delay for better responsiveness)
+    if (markersRef.current.length > 0) {
+      highlightMarker();
+    } else {
+      // Small delay only if markers aren't ready yet
+      const highlightTimer = setTimeout(() => {
+        if (markersRef.current.length === 0) {
+          return;
+        }
+        highlightMarker();
+      }, 100); // Reduced from 200ms for better responsiveness
+
+      return () => clearTimeout(highlightTimer);
+    }
+  }, [highlightedOfferId, google, userLocation, activeReservation, highlightMarker]);
 
   // NOTE: Route drawing is now handled by LiveRouteDrawer component
   // This old route drawing code is disabled to avoid duplicate routes
@@ -1008,14 +1235,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     );
   };
 
-  if (!isLoaded) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600 text-sm">Loading map...</div>
-      </div>
-    );
-  }
-
+  // Render map container immediately (Google Maps loads asynchronously)
   return (
     <div className="w-full h-full relative">
       {/* Animations for highlighted marker */}

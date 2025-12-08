@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MessageCircle, Send, CheckCircle2, Clock, HelpCircle, ExternalLink, Zap } from 'lucide-react';
+import { SEOHead } from '@/components/SEOHead';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -215,6 +216,16 @@ function Contact() {
 
   return (
     <PageShell maxWidth="max-w-7xl">
+      <SEOHead
+        title="Contact Us - SmartPick Support"
+        description="Get help with SmartPick. Contact our support team for questions about orders, account issues, or partner inquiries. Fast response guaranteed."
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'ContactPage',
+          name: 'Contact SmartPick',
+          description: 'Contact SmartPick support team',
+        }}
+      />
       <div className="mb-4 md:mb-6">
         <Link to="/">
           <Button variant="ghost" className="mb-4">

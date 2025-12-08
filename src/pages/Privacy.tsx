@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Download, Printer, Shield, Lock, Eye, FileText, Mail, ChevronRight, AlertCircle } from 'lucide-react';
+import { SEOHead } from '@/components/SEOHead';
 import { useState, useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';

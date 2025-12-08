@@ -1,6 +1,7 @@
 import { PageShell } from '@/components/layout/PageShell';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { SEOHead } from '@/components/SEOHead';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,6 +46,18 @@ export default function Terms() {
 
   return (
     <PageShell maxWidth="max-w-7xl">
+      <SEOHead
+        title="Terms of Service - SmartPick"
+        description="SmartPick Terms of Service. Read our terms and conditions for using the platform, including user responsibilities, partner agreements, and pickup policies."
+        type="article"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'WebPage',
+          name: 'Terms of Service',
+          description: 'Terms and conditions for using SmartPick platform',
+          dateModified: LAST_UPDATED,
+        }}
+      />
       <style>{`
         @media print {
           .no-print { display: none !important; }

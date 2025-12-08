@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ssg": "cross-env VITE_SSG=true vite-ssg build",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint --quiet ./src",
     "preview": "vite preview",
+    "preview:ssg": "vite preview --outDir dist",
+    "sitemap": "node scripts/generate-sitemap.js",
     "apply:penalty": "node apply-penalty-migrations.js",
     "apply:achievements": "node scripts/apply-achievement-fix.js",
     "test:achievements": "node scripts/test-achievement-progress.js"
@@ -104,6 +107,7 @@
     "@vitejs/plugin-react-swc": "^3.11.0",
     "autoprefixer": "^10.4.22",
     "canvas-confetti": "^1.9.4",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.24",
@@ -114,7 +118,10 @@
     "terser": "^5.44.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "vite-plugin-pwa": "^1.2.0",
+    "vite-ssg": "^28.2.2",
+    "workbox-window": "^7.4.0"
   },
   "pnpm": {
     "overrides": {

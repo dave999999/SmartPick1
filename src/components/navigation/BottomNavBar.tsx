@@ -25,6 +25,8 @@
 import { Home, Heart, Sparkles, User, Menu } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+// Note: All icons have visible text labels, so aria-hidden should be added to icon elements
 import { useState } from 'react';
 import { MenuDrawer } from '../MenuDrawer';
 

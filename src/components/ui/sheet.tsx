@@ -5,6 +5,8 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+// Note: X icon is decorative - SheetClose button has aria-label
+
 const Sheet = SheetPrimitive.Root;
 
 const SheetTrigger = SheetPrimitive.Trigger;

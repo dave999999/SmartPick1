@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Clock, Heart, User, PanelsTopLeft, ShieldCheck, Languages, FileText, Shield, Mail, LogOut, Gift, Sparkles, ChevronRight } from 'lucide-react';
 import { getCurrentUser, getPartnerByUserId, signOut } from '@/lib/api';
+import { getUserPoints } from '@/lib/smartpoints-api';
 import { useI18n } from '@/lib/i18n';
 import AuthDialog from '@/components/AuthDialog';
 
@@ -25,6 +26,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<null | { id: string; role?: string; name?: string }>(null);
   const [isPartnerApproved, setIsPartnerApproved] = useState(false);
+  const [userPoints, setUserPoints] = useState<number>(0);
 
   useEffect(() => {
     const init = async () => {
@@ -33,6 +35,10 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
       if (user?.id) {
         const partner = await getPartnerByUserId(user.id);
         setIsPartnerApproved(!!partner && partner.status === 'APPROVED');
+        
+        // Fetch actual user points
+        const points = await getUserPoints(user.id);
+        setUserPoints(points?.balance || 0);
       }
       setLoading(false);
     };
@@ -42,6 +48,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const handleSignOut = async () => {
     await signOut();
     setUser(null);
+    setUserPoints(0);
     onClose();
     navigate('/');
   };
@@ -72,6 +79,10 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           if (user?.id) {
             const partner = await getPartnerByUserId(user.id);
             setIsPartnerApproved(!!partner && partner.status === 'APPROVED');
+            
+            // Fetch user points after sign in
+            const points = await getUserPoints(user.id);
+            setUserPoints(points?.balance || 0);
           }
         }}
       />
@@ -156,7 +167,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                         )}
                         <span className="text-xs text-gray-600 flex items-center gap-1 font-medium">
                           <Sparkles className="w-3 h-3 text-[#FF8A00]" />
-                          <span className="font-semibold">955 SP</span>
+                          <span className="font-semibold">{userPoints.toLocaleString()} SP</span>
                         </span>
                       </div>
                     </div>

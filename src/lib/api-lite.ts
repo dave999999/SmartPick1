@@ -34,7 +34,7 @@ export async function getActiveOffers(): Promise<Offer[]> {
     .gt('expires_at', new Date().toISOString())
     .gt('quantity_available', 0)
     .order('created_at', { ascending: false })
-    .limit(500);
+    .limit(100);
   
   if (error) {
     console.warn('[api-lite] getActiveOffers error', error);

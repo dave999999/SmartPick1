@@ -74,7 +74,7 @@ function PenaltyCountdown({ penaltyUntil, onExpire }: { penaltyUntil: string; on
 
   return (
     <div className="flex items-center justify-center gap-2 bg-orange-50 rounded-lg p-2 border border-orange-200">
-      <Clock className="w-4 h-4 text-orange-600" />
+      <Clock aria-hidden="true" className="w-4 h-4 text-orange-600" />
       <div className="flex gap-0.5 text-lg font-bold text-orange-700 font-mono">
         {timeLeft.hours > 0 && <span>{String(timeLeft.hours).padStart(2, '0')}:</span>}
         <span>{String(timeLeft.minutes).padStart(2, '0')}</span>
@@ -194,7 +194,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
         {/* Partner Forgiveness Info */}
         {status.canRequestForgiveness && !forgivenessStatus.requested && (
           <Alert className="border-blue-200 bg-blue-50">
-            <Heart className="h-4 w-4 text-blue-600" />
+            <Heart aria-hidden="true" className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-xs text-blue-900">
               <strong>Did you know?</strong> Partners can forgive penalties if you had a valid reason for missing pickup.
             </AlertDescription>
@@ -204,7 +204,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
         {/* Forgiveness Request Status */}
         {forgivenessStatus.requested && !forgivenessStatus.approved && !forgivenessStatus.denied && (
           <Alert className="border-yellow-200 bg-yellow-50">
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <Clock aria-hidden="true" className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-xs text-yellow-900">
               Forgiveness request pending. The partner will review your case.
             </AlertDescription>
@@ -241,7 +241,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
                 t('penalty.processing')
               ) : (
                 <>
-                  <Coins className="w-3.5 h-3.5 mr-1" />
+                  <Coins aria-hidden="true" className="w-3.5 h-3.5 mr-1" />
                   {t('penalty.lift')} ({pointsCost}pts)
                 </>
               )}
@@ -254,7 +254,7 @@ function PenaltyStatusBlock({ userId, fallbackUntil, onUpdate }: { userId: strin
               variant="outline"
               className="h-9 border-blue-300 text-blue-700 hover:bg-blue-50 font-medium rounded-lg text-xs"
             >
-              <Heart className="w-3.5 h-3.5 mr-1" />
+              <Heart aria-hidden="true" className="w-3.5 h-3.5 mr-1" />
               Request Forgiveness
             </Button>
           )}
@@ -833,7 +833,7 @@ export default function UserProfile() {
               <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200 dark:border-purple-800 shadow-sm">
                 <CardContent className="p-3.5">
                   <div className="flex items-center gap-2 mb-2.5">
-                    <Gift className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <Gift aria-hidden="true" className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Referral Progress
                     </h3>
@@ -874,7 +874,7 @@ export default function UserProfile() {
                 size="sm"
                 className="h-11 text-[13px] font-bold border-2 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-2xl hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                <UserIcon className="w-4 h-4 mr-1.5" />
+                <UserIcon aria-hidden="true" className="w-4 h-4 mr-1.5" />
                 Update ✏️
               </Button>
               <Button
@@ -882,7 +882,7 @@ export default function UserProfile() {
                 size="sm"
                 className="h-11 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-[13px] font-extrabold rounded-2xl shadow-md shadow-purple-600/30 hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                <Gift className="w-4 h-4 mr-1.5" />
+                <Gift aria-hidden="true" className="w-4 h-4 mr-1.5" />
                 Invite 🚀
               </Button>
             </div>
@@ -967,7 +967,7 @@ export default function UserProfile() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <Mail aria-hidden="true" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <div>
                           <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">Email</p>
                           <p className="text-[12px] text-gray-900 dark:text-gray-100 font-bold truncate max-w-[200px]">{user.email}</p>
@@ -976,7 +976,7 @@ export default function UserProfile() {
                     </div>
                     <div className="flex items-center justify-between pt-1 border-t border-emerald-200 dark:border-emerald-800">
                       <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <Phone aria-hidden="true" className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <div>
                           <p className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">Phone</p>
                           <p className="text-[12px] text-gray-900 dark:text-gray-100 font-bold">{user.phone || 'Not added 📱'}</p>
@@ -988,7 +988,7 @@ export default function UserProfile() {
                       size="sm"
                       className="w-full h-9 mt-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold"
                     >
-                      <Edit className="w-3 h-3 mr-1.5" />
+                      <Edit aria-hidden="true" className="w-3 h-3 mr-1.5" />
                       Update Profile
                     </Button>
                   </div>
@@ -1001,7 +1001,7 @@ export default function UserProfile() {
               <CardContent className="p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <Calendar aria-hidden="true" className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Reservation Capacity 📋
                     </h3>
@@ -1050,7 +1050,7 @@ export default function UserProfile() {
                   size="sm"
                   className="w-full h-9 mt-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-xs font-bold"
                 >
-                  <Unlock className="w-3 h-3 mr-1.5" />
+                  <Unlock aria-hidden="true" className="w-3 h-3 mr-1.5" />
                   Upgrade Slot
                 </Button>
               </CardContent>
@@ -1064,12 +1064,12 @@ export default function UserProfile() {
                   className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
                 >
                   <div className="flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <Bell aria-hidden="true" className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Notifications
                     </h3>
                   </div>
-                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.notifications ? 'rotate-90' : ''}`} />
+                  <ChevronRight aria-hidden="true" className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.notifications ? 'rotate-90' : ''}`} />
                 </button>
 
                 {sectionsOpen.notifications && (
@@ -1096,7 +1096,7 @@ export default function UserProfile() {
                     {/* Email, Push, SMS Toggles */}
                   <div className="flex items-center justify-between py-1.5 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <Mail aria-hidden="true" className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Email</span>
                     </div>
                     <Switch
@@ -1107,7 +1107,7 @@ export default function UserProfile() {
                   </div>
                   <div className="flex items-center justify-between py-1.5 border-b border-blue-200 dark:border-blue-800">
                     <div className="flex items-center gap-2">
-                      <Bell className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <Bell aria-hidden="true" className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Push</span>
                     </div>
                     <Switch
@@ -1118,7 +1118,7 @@ export default function UserProfile() {
                   </div>
                   <div className="flex items-center justify-between py-1.5">
                     <div className="flex items-center gap-2">
-                      <Phone className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                      <Phone aria-hidden="true" className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">SMS</span>
                     </div>
                     <Switch
@@ -1140,12 +1140,12 @@ export default function UserProfile() {
                   className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
                 >
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <Lock aria-hidden="true" className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Security
                     </h3>
                   </div>
-                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.security ? 'rotate-90' : ''}`} />
+                  <ChevronRight aria-hidden="true" className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.security ? 'rotate-90' : ''}`} />
                 </button>
 
                 {sectionsOpen.security && (
@@ -1155,30 +1155,30 @@ export default function UserProfile() {
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Key className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <Key aria-hidden="true" className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Change Password</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <button
                     onClick={() => toast.info('Manage devices feature coming soon')}
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Shield className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <Shield aria-hidden="true" className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Manage Devices</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <button
                     onClick={() => toast.info('Two-factor authentication coming soon')}
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Lock className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                      <Lock aria-hidden="true" className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Two-Factor Auth</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   </div>
                 )}
@@ -1193,12 +1193,12 @@ export default function UserProfile() {
                   className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
                 >
                   <div className="flex items-center gap-2">
-                    <Settings className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <Settings aria-hidden="true" className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Preferences
                     </h3>
                   </div>
-                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.preferences ? 'rotate-90' : ''}`} />
+                  <ChevronRight aria-hidden="true" className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.preferences ? 'rotate-90' : ''}`} />
                 </button>
 
                 {sectionsOpen.preferences && (
@@ -1208,21 +1208,21 @@ export default function UserProfile() {
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <Globe className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                      <Globe aria-hidden="true" className="w-3 h-3 text-teal-600 dark:text-teal-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Language</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <div className="flex items-center justify-between p-2">
                     <div className="flex items-center gap-2">
-                      <Coins className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                      <Coins aria-hidden="true" className="w-3 h-3 text-teal-600 dark:text-teal-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Currency</span>
                     </div>
                     <span className="text-[10px] font-bold text-teal-600 dark:text-teal-400">GEL (₾)</span>
                   </div>
                   <div className="flex items-center justify-between p-2">
                     <div className="flex items-center gap-2">
-                      {isDarkMode ? <Sun className="w-3 h-3 text-teal-600 dark:text-teal-400" /> : <Moon className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
+                      {isDarkMode ? <Sun aria-hidden="true" className="w-3 h-3 text-teal-600 dark:text-teal-400" /> : <Moon aria-hidden="true" className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Theme</span>
                     </div>
                     <button
@@ -1245,12 +1245,12 @@ export default function UserProfile() {
                   className="w-full flex items-center justify-between mb-2 hover:opacity-80 transition-opacity"
                 >
                   <div className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <HelpCircle aria-hidden="true" className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                     <h3 className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                       Support & Help
                     </h3>
                   </div>
-                  <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.support ? 'rotate-90' : ''}`} />
+                  <ChevronRight aria-hidden="true" className={`w-4 h-4 text-gray-400 transition-transform ${sectionsOpen.support ? 'rotate-90' : ''}`} />
                 </button>
 
                 {sectionsOpen.support && (
@@ -1260,10 +1260,10 @@ export default function UserProfile() {
                     className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-900/30 text-left transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                      <BookOpen aria-hidden="true" className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Help Center</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <a
                     href="mailto:support@smartpick.ge"
@@ -1273,7 +1273,7 @@ export default function UserProfile() {
                       <Mail className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Contact Support</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </a>
                   <button
                     onClick={() => setShowTutorial(true)}
@@ -1283,7 +1283,7 @@ export default function UserProfile() {
                       <HelpCircle className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">View Tutorial</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   <button
                     onClick={() => window.open('https://smartpick.ge/terms', '_blank')}
@@ -1293,7 +1293,7 @@ export default function UserProfile() {
                       <FileText className="w-3 h-3 text-sky-600 dark:text-sky-400" />
                       <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-300">Terms & Privacy</span>
                     </div>
-                    <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+                    <ChevronRight aria-hidden="true" className="w-3 h-3 text-gray-400 dark:text-gray-500" />
                   </button>
                   </div>
                 )}

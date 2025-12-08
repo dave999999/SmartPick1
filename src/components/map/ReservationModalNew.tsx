@@ -293,7 +293,7 @@ export default function ReservationModalNew({
                       boxShadow: '0 2px 8px rgba(255,80,0,0.3)',
                     }}
                   >
-                    <img src="/icons/button.png" alt="" className="w-4 h-4" />
+                    <img src="/icons/button.png" alt="" aria-hidden="true" className="w-4 h-4" />
                     <span className="text-[11px] font-medium text-white">{totalPoints} pts</span>
                   </div>
                 </div>

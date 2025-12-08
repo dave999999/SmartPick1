@@ -11,8 +11,11 @@ import {
   createReservation as apiCreateReservation,
   cancelReservation as apiCancelReservation,
 } from '@/lib/api';
+import { getActiveOffersInViewport, type GeographicBounds } from '@/lib/api/offers';
+import { indexedDBManager } from '@/lib/indexedDB';
 import { useUserStore, useOffersStore, useReservationsStore } from '@/stores';
 import type { Reservation } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook: Fetch current user with automatic store sync
@@ -154,5 +157,76 @@ export function useCancelReservation() {
         queryKey: queryKeys.reservations.all,
       });
     },
+  });
+}
+
+/**
+ * Hook: Fetch offers in viewport with smart caching and deduplication
+ * 
+ * Features:
+ * - Automatic request deduplication (React Query built-in)
+ * - 2-minute stale time (serves cached data instantly)
+ * - Graceful error handling with offline fallback
+ * - Automatic cache to IndexedDB for offline mode
+ * 
+ * @param bounds - Geographic viewport bounds (null = disabled)
+ * @param filters - Optional category/search filters
+ * @param limit - Max offers to return (default: 200)
+ */
+export function useViewportOffers(
+  bounds: GeographicBounds | null,
+  filters?: Record<string, unknown>,
+  limit: number = 200
+) {
+  const setOffers = useOffersStore((state) => state.setOffers);
+  const setLoading = useOffersStore((state) => state.setLoading);
+
+  return useQuery({
+    queryKey: ['offers', 'viewport', bounds, filters, limit],
+    queryFn: async ({ signal }) => {
+      logger.info('[useViewportOffers] Fetching offers in viewport', { bounds, filters, limit });
+      
+      try {
+        // Fetch offers with automatic request cancellation support
+        const offers = await getActiveOffersInViewport(
+          bounds!,
+          filters as any,
+          limit
+        );
+        
+        // Update Zustand store for components that still use it
+        setOffers(offers);
+        
+        // Cache to IndexedDB for offline access
+        await indexedDBManager.cacheOffers(offers);
+        
+        logger.info('[useViewportOffers] Successfully loaded offers', { count: offers.length });
+        return offers;
+      } catch (error) {
+        // If request was aborted (user changed viewport), don't log as error
+        if (signal?.aborted) {
+          logger.info('[useViewportOffers] Request cancelled (viewport changed)');
+          throw error;
+        }
+        
+        logger.error('[useViewportOffers] Failed to fetch offers', error);
+        
+        // Try to load from cache as fallback
+        const cachedOffers = await indexedDBManager.getCachedOffers();
+        if (cachedOffers && cachedOffers.length > 0) {
+          logger.info('[useViewportOffers] Using cached offers', { count: cachedOffers.length });
+          setOffers(cachedOffers);
+          return cachedOffers;
+        }
+        
+        throw error;
+      }
+    },
+    enabled: !!bounds, // Only fetch if bounds are available
+    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+    retry: 1, // Only retry once on failure
+    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+    // React Query automatically cancels in-flight requests when queryKey changes!
   });
 }

@@ -893,7 +893,7 @@ export default function PartnerApplication() {
           <DialogHeader>
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+                <CheckCircle2 aria-hidden="true" className="w-10 h-10 text-green-600" />
               </div>
             </div>
             <DialogTitle className="text-center text-2xl">{t('partner.dialog.submittedTitle')}</DialogTitle>
@@ -931,7 +931,7 @@ export default function PartnerApplication() {
       {isDemoMode && (
         <div className="container mx-auto px-4 pt-6">
           <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm">
-            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertCircle aria-hidden="true" className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-900 font-medium">
               <strong>Demo Mode:</strong> Partner applications require Supabase configuration.
             </AlertDescription>
@@ -950,7 +950,7 @@ export default function PartnerApplication() {
               <div className="space-y-3 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700 shadow-sm">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
                   <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                    <Shield className="w-4 h-4 text-white" />
+                    <Shield aria-hidden="true" className="w-4 h-4 text-white" />
                   </div>
                   <h3 className="text-xs font-bold text-white">{t('partner.section.account')}</h3>
                 </div>
@@ -975,13 +975,13 @@ export default function PartnerApplication() {
                   )}
                   {(emailError || fieldErrors.email) && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {emailError || fieldErrors.email}
                     </p>
                   )}
                   {!emailError && !fieldErrors.email && formData.email && validateEmail(formData.email) && !isCheckingEmail && (
                     <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
+                      <CheckCircle2 aria-hidden="true" className="w-3 h-3" />
                       {/* Simplified success text could be localized if needed */}
                       Email is available
                     </p>
@@ -1004,14 +1004,15 @@ export default function PartnerApplication() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                     </button>
                   </div>
                   {fieldErrors.password && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.password}
                     </p>
                   )}
@@ -1048,20 +1049,21 @@ export default function PartnerApplication() {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPassword ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                     </button>
                   </div>
                   {fieldErrors.confirmPassword && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.confirmPassword}
                     </p>
                   )}
                   {!fieldErrors.confirmPassword && formData.confirmPassword && formData.password === formData.confirmPassword && (
                     <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" />
+                      <CheckCircle2 aria-hidden="true" className="w-3 h-3" />
                       Passwords match
                     </p>
                   )}
@@ -1074,7 +1076,7 @@ export default function PartnerApplication() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
                   <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
-                    <MapPin className="w-4 h-4 text-white" />
+                    <MapPin aria-hidden="true" className="w-4 h-4 text-white" />
                   </div>
                   <h3 className="text-xs font-bold text-white">{t('partner.section.location')}</h3>
                 </div>
@@ -1084,7 +1086,7 @@ export default function PartnerApplication() {
                     <Label htmlFor="address" className="text-xs font-semibold text-slate-200">Street Address *</Label>
                     {addressAutoDetected && (
                       <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
-                        <MapPin className="w-3 h-3" /> Auto-detected
+                        <MapPin aria-hidden="true" className="w-3 h-3" /> Auto-detected
                       </span>
                     )}
                   </div>
@@ -1099,7 +1101,7 @@ export default function PartnerApplication() {
                   />
                   {fieldErrors.address && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.address}
                     </p>
                   )}
@@ -1138,7 +1140,7 @@ export default function PartnerApplication() {
                   />
                   {fieldErrors.city && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.city}
                     </p>
                   )}
@@ -1152,7 +1154,7 @@ export default function PartnerApplication() {
                       onClick={handleUseCurrentLocation}
                       className="absolute top-3 right-3 z-10 h-9 px-3 bg-white hover:bg-gray-50 text-emerald-600 border-2 border-emerald-500 shadow-lg hover:shadow-xl transition-all font-semibold"
                     >
-                      <Navigation className="w-4 h-4 mr-1.5" />
+                      <Navigation aria-hidden="true" className="w-4 h-4 mr-1.5" />
                       Use My Location
                     </Button>
                     <MapContainer
@@ -1180,7 +1182,7 @@ export default function PartnerApplication() {
 
                   {fieldErrors.location && (
                     <p className="text-xs text-red-600 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.location}
                     </p>
                   )}
@@ -1193,7 +1195,7 @@ export default function PartnerApplication() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
                   <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
-                    <Store className="w-4 h-4 text-white" />
+                    <Store aria-hidden="true" className="w-4 h-4 text-white" />
                   </div>
                   <h3 className="text-sm font-bold text-white">{t('partner.section.business')}</h3>
                 </div>
@@ -1210,7 +1212,7 @@ export default function PartnerApplication() {
                   />
                   {fieldErrors.business_name && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.business_name}
                     </p>
                   )}
@@ -1243,7 +1245,7 @@ export default function PartnerApplication() {
                   </div>
                   {fieldErrors.business_type && (
                     <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.business_type}
                     </p>
                   )}
@@ -1262,7 +1264,7 @@ export default function PartnerApplication() {
                   />
                   {fieldErrors.description && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.description}
                     </p>
                   )}
@@ -1272,7 +1274,7 @@ export default function PartnerApplication() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="opening_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-                      <Clock className="w-4 h-4 text-emerald-600" />
+                      <Clock aria-hidden="true" className="w-4 h-4 text-emerald-600" />
                       Opening Hours {!open24h && '*'}
                     </Label>
 
@@ -1300,7 +1302,7 @@ export default function PartnerApplication() {
 
                     {fieldErrors.opening_hours && (
                       <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
+                        <AlertCircle aria-hidden="true" className="w-3 h-3" />
                         {fieldErrors.opening_hours}
                       </p>
                     )}
@@ -1308,7 +1310,7 @@ export default function PartnerApplication() {
 
                   <div>
                     <Label htmlFor="closing_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-                      <Clock className="w-4 h-4 text-emerald-600" />
+                      <Clock aria-hidden="true" className="w-4 h-4 text-emerald-600" />
                       Closing Hours {!open24h && '*'}
                     </Label>
 
@@ -1336,7 +1338,7 @@ export default function PartnerApplication() {
 
                     {fieldErrors.closing_hours && (
                       <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
+                        <AlertCircle aria-hidden="true" className="w-3 h-3" />
                         {fieldErrors.closing_hours}
                       </p>
                     )}
@@ -1406,7 +1408,7 @@ export default function PartnerApplication() {
                   />
                   {fieldErrors.phone && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.phone}
                     </p>
                   )}
@@ -1469,7 +1471,7 @@ export default function PartnerApplication() {
                   </Label>
                   {fieldErrors.terms && (
                     <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.terms}
                     </p>
                   )}

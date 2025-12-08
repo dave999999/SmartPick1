@@ -4,11 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-
-  <!-- Cache Control - Prevent browser caching of HTML -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
   <meta name="version" content="3.0-gamification-2025-01-06" />
   <meta name="app-version" content="20251123-053817" />
 
@@ -20,8 +15,14 @@
 
   <!-- Preconnect to critical domains -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://ggzhtpaxnhwcilomswtm.supabase.co" />
-  <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+  
+  <!-- Preload critical fonts - eliminates FOUT/CLS -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" /></noscript>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap" /></noscript>
   <link rel="dns-prefetch" href="https://unpkg.com" />
   <link rel="dns-prefetch" href="https://challenges.cloudflare.com" />
   <link rel="dns-prefetch" href="https://va.vercel-scripts.com" />
@@ -47,15 +48,22 @@
   <meta name="msapplication-tap-highlight" content="no" />
   <!-- Splash image is loaded by component only when needed to avoid preload warnings -->
   <link rel="alternate icon" type="image/png" href="/icon1.png" />
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://smartpick.ge/" />
+  
+  <!-- Primary Meta Tags -->
   <title>SmartPick — Smart choice every day</title>
-  <meta name="description" content="SmartPick &#8212; Premium food at unbeatable prices. Quality meals from local restaurants at incredible value." />
+  <meta name="description" content="SmartPick — Premium food at unbeatable prices. Quality meals from local restaurants at incredible value." />
   <meta name="author" content="SmartPick" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://smartpick.ge" />
+  <meta property="og:url" content="https://smartpick.ge/" />
   <meta property="og:title" content="SmartPick — Smart choice every day" />
   <meta property="og:description" content="Premium food at unbeatable prices. Quality meals from local restaurants at incredible value." />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:locale:alternate" content="ka_GE" />
   <meta property="og:image" content="https://smartpick.ge/icon1.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />

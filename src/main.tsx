@@ -63,55 +63,56 @@ createRoot(document.getElementById('root')!).render(
 );
 
 // ============================================
-// Simple Update Check Service Worker
+// Workbox PWA Service Worker
 // ============================================
-// Registers a lightweight service worker that checks for updates
+// Auto-registers service worker with full offline support
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
 	window.addEventListener('load', async () => {
 		try {
-			// First, clean up any old service workers
+			// Clean up old service workers (sw-update-checker.js)
 			const registrations = await navigator.serviceWorker.getRegistrations();
 			for (const registration of registrations) {
-				if (registration.active && !registration.active.scriptURL.includes('sw-update-checker')) {
+				if (registration.active && registration.active.scriptURL.includes('sw-update-checker')) {
 					await registration.unregister();
-					logger.log('[SW] Unregistered old service worker:', registration.scope);
+					logger.log('[SW] Unregistered old update checker:', registration.scope);
 				}
 			}
 			
-			// Register the new update checker service worker
-			const registration = await navigator.serviceWorker.register('/sw-update-checker.js');
-			logger.log('[SW] Update checker registered:', registration.scope);
+			// Import Workbox window helper
+			const { Workbox } = await import('workbox-window');
 			
-			// Listen for update notifications from service worker
-			let lastNotificationTime = 0;
-			navigator.serviceWorker.addEventListener('message', (event) => {
-				if (event.data.type === 'NEW_VERSION_AVAILABLE') {
-					// Prevent notification spam (60 second cooldown)
-					const now = Date.now();
-					if (now - lastNotificationTime < 60000) {
-						return;
-					}
-					lastNotificationTime = now;
-					
-					logger.log('[SW] New version available:', event.data.version);
-					
-					// Show notification and reload
-					const shouldReload = confirm(
-						'A new version of SmartPick is available! Click OK to refresh and get the latest updates.'
-					);
-					
-					if (shouldReload) {
-						window.location.reload();
-					}
+			// Register Workbox service worker
+			const wb = new Workbox('/sw.js');
+			
+			// Listen for update events
+			wb.addEventListener('waiting', () => {
+				logger.log('[SW] New version available');
+				
+				// Show update notification
+				const shouldUpdate = confirm(
+					'🎉 A new version of SmartPick is available! Click OK to update and get the latest features.'
+				);
+				
+				if (shouldUpdate) {
+					// Tell service worker to skip waiting
+					wb.messageSkipWaiting();
 				}
 			});
 			
-			// Check for updates when the page becomes visible
-			document.addEventListener('visibilitychange', () => {
-				if (!document.hidden && navigator.serviceWorker.controller) {
-					navigator.serviceWorker.controller.postMessage({ type: 'CHECK_UPDATE' });
-				}
+			// Reload page when new service worker takes control
+			wb.addEventListener('controlling', () => {
+				logger.log('[SW] New service worker activated, reloading...');
+				window.location.reload();
 			});
+			
+			// Register the service worker
+			const registration = await wb.register();
+			logger.log('[SW] Workbox service worker registered:', registration.scope);
+			
+			// Check for updates periodically
+			setInterval(() => {
+				registration?.update();
+			}, 60 * 60 * 1000); // Check every hour
 			
 		} catch (error) {
 			logger.error('[SW] Error with service worker:', error);

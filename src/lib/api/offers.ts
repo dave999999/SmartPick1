@@ -102,9 +102,10 @@ export const getActiveOffersInViewport = async (
     })) as Offer[];
   } catch (error) {
     console.error('Failed to fetch offers in viewport:', error);
-    // Fallback to original method if RPC fails
-    console.warn('Falling back to full offer query');
-    return getActiveOffers(filters);
+    // Return empty array instead of dangerous full-load fallback
+    // React Query will use cached data, or caller can handle empty state
+    console.warn('⚠️ Viewport query failed - returning empty (cache may be used)');
+    return [];
   }
 };
 
@@ -194,7 +195,9 @@ export const getActiveOffersNearLocation = async (
     })) as Offer[];
   } catch (error) {
     console.error('Failed to fetch nearby offers:', error);
-    return getActiveOffers(filters);
+    // Return empty array to prevent full-load fallback
+    console.warn('⚠️ Nearby query failed - returning empty (cache may be used)');
+    return [];
   }
 };
 
@@ -204,8 +207,9 @@ export const getActiveOffersNearLocation = async (
  * Use getActiveOffersInViewport() or getActiveOffersNearLocation() instead
  * 
  * This method is kept for backwards compatibility and non-map views
+ * Safety limit: Max 500 offers to prevent unbounded queries
  */
-export const getActiveOffers = async (filters?: OfferFilters): Promise<Offer[]> => {
+export const getActiveOffers = async (filters?: OfferFilters, limit: number = 500): Promise<Offer[]> => {
   if (isDemoMode) {
     // 🔹 Demo mode: filter mock offers too
     let filtered = [...mockOffers];
@@ -226,7 +230,8 @@ export const getActiveOffers = async (filters?: OfferFilters): Promise<Offer[]> 
     .eq('status', 'ACTIVE')                               // only active offers
     .gt('expires_at', new Date().toISOString())            // not expired
     .gt('quantity_available', 0)                           // 🧠 hide sold-out offers
-    .order('created_at', { ascending: false });             // newest first
+    .order('created_at', { ascending: false })             // newest first
+    .limit(limit);                                         // 🔒 Safety cap to prevent unbounded queries
 
   // 🔹 Apply category filter if provided
   if (filters?.category) {

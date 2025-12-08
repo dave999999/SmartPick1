@@ -6,6 +6,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Search, Mic } from 'lucide-react';
+
+// Search icon is decorative - input has visible placeholder text
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { HeroOfferCard } from './HeroOfferCard';

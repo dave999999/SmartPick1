@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Clock, Gem, Heart, Sparkles, Coffee, ShoppingBag } from 'lucide-react';
+
+// Note: All icons are decorative (next to text labels) - aria-hidden added for accessibility
 import { toast } from 'sonner';
 import { UserPenalty, liftBanWithPoints, acknowledgePenalty } from '@/lib/api/penalty';
 import { logger } from '@/lib/logger';

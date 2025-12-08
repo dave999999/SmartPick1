@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Download, TrendingUp, Users, ShoppingCart, Eye } from 'lucide-react';
@@ -80,7 +80,7 @@ export default function FinancialDashboardPanel() {
             <CardTitle className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Revenue (GEL)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[#00C896]">₾{revenueStats?.total_revenue.toFixed(2) || '0.00'}</div>
+            <div className="text-2xl font-bold text-[#00C896]">?{revenueStats?.total_revenue.toFixed(2) || '0.00'}</div>
             <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><TrendingUp className="w-3 h-3" />Georgian Lari</div>
           </CardContent>
         </Card>
@@ -99,7 +99,7 @@ export default function FinancialDashboardPanel() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{revenueStats?.total_points_sold.toLocaleString() || 0}</div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />100 pts = ₾1</div>
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />100 pts = ?1</div>
           </CardContent>
         </Card>
         <Card className="bg-white border-gray-200 shadow-lg hover:shadow-xl transition-all">
@@ -107,7 +107,7 @@ export default function FinancialDashboardPanel() {
             <CardTitle className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Avg Purchase (GEL)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">₾{revenueStats?.average_purchase_value.toFixed(2) || '0.00'}</div>
+            <div className="text-2xl font-bold text-gray-900">?{revenueStats?.average_purchase_value.toFixed(2) || '0.00'}</div>
             <div className="flex items-center gap-1 text-xs text-gray-500 mt-1"><DollarSign className="w-3 h-3" />Per transaction</div>
           </CardContent>
         </Card>
@@ -150,7 +150,7 @@ export default function FinancialDashboardPanel() {
                   <div>{new Date(day.revenue_date).toLocaleDateString('ka-GE')}</div>
                   <div className="text-right font-medium">{day.purchase_count}</div>
                   <div className="text-right">{day.total_points_sold.toLocaleString()}</div>
-                  <div className="text-right font-bold text-green-600">₾{day.total_revenue_gel.toFixed(2)}</div>
+                  <div className="text-right font-bold text-green-600">?{day.total_revenue_gel.toFixed(2)}</div>
                   <div className="text-right">{day.unique_buyers}</div>
                 </div>
               ))}

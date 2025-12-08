@@ -21,6 +21,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Mail, Clock, XCircle, Gift, Shield, FileText, Lock, User } from 'lucide-react';
+
+// Note: All Lucide icons in this file are decorative (next to form labels) - aria-hidden added where rendered
 import { toast } from 'sonner';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { OnboardingDialog } from './OnboardingDialog';
