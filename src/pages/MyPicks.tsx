@@ -67,12 +67,12 @@ export default function MyPicks() {
     }
   }, [user]);
 
-  // ✅ OPTIMIZED POLLING: Battery & data friendly
-  // Primary updates come from real-time subscription above
-  // This polling is ONLY a safety fallback that runs when:
-  // 1. User has active reservations (not history-only)
-  // 2. Tab is visible (pauses when minimized/background)
-  // 3. Device is online (skips when offline)
+  // ⚠️ DISABLED POLLING: Real-time subscription is sufficient
+  // This polling was contributing to the 4.7M database calls issue
+  // The realtime subscription above already provides instant updates
+  // Polling is redundant and expensive at scale
+  
+  /* REMOVED POLLING INTERVAL:
   useEffect(() => {
     if (!user) return;
 
@@ -92,6 +92,7 @@ export default function MyPicks() {
       clearInterval(pollingInterval);
     };
   }, [user, reservations]);
+  */
 
   const loadUserAndReservations = async () => {
     try {

@@ -268,6 +268,16 @@ const translations: Record<Language, Record<string, string>> = {
   'profile.tabs.settings': 'Settings',
   'profile.greeting.morning': 'Good morning',
   'profile.greeting.afternoon': 'Good afternoon',
+  
+  // SmartPoints Wallet
+  'wallet.currentBalance': 'Current Balance',
+  'wallet.addPoints': 'Add SmartPoints',
+  'wallet.howItWorks': 'How SmartPoints Work',
+  'wallet.howItWorksDesc': 'Points reserve your spot — you only pay cash at pickup. Think of them as your booking currency.',
+  'wallet.recentActivity': 'Recent Activity',
+  'wallet.noTransactions': 'No transactions yet',
+  'wallet.activityWillAppear': 'Your activity will appear here',
+  'wallet.canReserveItems': 'You can reserve up to {count} items',
   'profile.greeting.evening': 'Good evening',
   'profile.level.legend': 'Legend',
   'profile.level.expert': 'Expert',
@@ -641,6 +651,22 @@ const translations: Record<Language, Record<string, string>> = {
   'support.faq.partnerIssue': 'What if there\'s an issue with my order?',
   'support.email': 'support@smartpick.ge',
   'support.telegram': '@SmartPickSupport',
+
+  // Menu Drawer
+  'menu.myReservations': 'My Reservations',
+  'menu.favorites': 'Favorites',
+  'menu.profile': 'Profile',
+  'menu.partnerDashboard': 'Partner Dashboard',
+  'menu.adminPanel': 'Admin Panel',
+  'menu.listBusiness': 'List your business',
+  'menu.language': 'Language',
+  'menu.contactSupport': 'Contact Support',
+  'menu.privacyPolicy': 'Privacy Policy',
+  'menu.termsConditions': 'Terms & Conditions',
+  'menu.inviteFriends': 'Invite friends',
+  'menu.earnPoints': 'Earn 50 SmartPoints',
+  'menu.becomePartner': 'Become a Partner',
+  'menu.signOut': 'Sign Out',
   },
   ka: {
     // Header
@@ -752,6 +778,16 @@ const translations: Record<Language, Record<string, string>> = {
   'receipt.title': 'SmartPick საფუძველი',
   'receipt.reservationId': 'ბეჭდვის ID',
   'receipt.partner': 'პარტნიორი',
+  
+  // SmartPoints Wallet
+  'wallet.currentBalance': 'მიმდინარე ბალანსი',
+  'wallet.addPoints': 'დაამატე SmartPoints',
+  'wallet.howItWorks': 'როგორ მუშაობს SmartPoints',
+  'wallet.howItWorksDesc': 'ქულები აკეთებს შენს ადგილს — ნაღდი ფულით იხდი მხოლოდ აღებისას. წარმოიდგინე როგორც ჯავშნის ვალუტა.',
+  'wallet.recentActivity': 'ბოლო აქტივობა',
+  'wallet.noTransactions': 'ტრანზაქციები ჯერ არაა',
+  'wallet.activityWillAppear': 'შენი აქტივობა აქ გამოჩნდება',
+  'wallet.canReserveItems': 'შეგიძლია დაჯავშნო {count} ერთეული',
   'receipt.item': 'ნივთი',
   'receipt.quantity': 'რაოდენობა',
   'receipt.totalPrice': 'სრული ფასი',
@@ -1271,6 +1307,22 @@ const translations: Record<Language, Record<string, string>> = {
   'support.faq.partnerIssue': 'რა ვქნა თუ შეკვეთასთან პრობლემაა?',
   'support.email': 'support@smartpick.ge',
   'support.telegram': '@SmartPickSupport',
+
+  // Menu Drawer
+  'menu.myReservations': 'ჩემი რეზერვაციები',
+  'menu.favorites': 'ფავორიტები',
+  'menu.profile': 'პროფილი',
+  'menu.partnerDashboard': 'პარტნიორის დაფა',
+  'menu.adminPanel': 'ადმინის პანელი',
+  'menu.language': 'ენა',
+  'menu.listBusiness': 'დაურთე ბიზნესი',
+  'menu.contactSupport': 'დაუკავშირდით მხარდაჭერას',
+  'menu.privacyPolicy': 'კონფიდენციალურობის პოლიტიკა',
+  'menu.termsConditions': 'წესები და პირობები',
+  'menu.inviteFriends': 'მოიწვიე მეგობრები',
+  'menu.earnPoints': 'მიიღე 50 SmartPoints',
+  'menu.becomePartner': 'გახდი პარტნიორი',
+  'menu.signOut': 'გასვლა',
   },
 };
 

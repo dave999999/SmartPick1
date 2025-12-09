@@ -148,6 +148,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const pulseOverlayRef = useRef<any>(null);
   const directionsRendererRef = useRef<any>(null);
   const hasInitiallyFitBoundsRef = useRef<string | null>(null); // Track if we've already fit bounds for this reservation
+  const activeReservationRouteDrawnRef = useRef<string | null>(null); // Track if route has been drawn for current reservation
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
@@ -451,13 +452,21 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     if (!mapRef.current || !google) return;
 
     const map = mapRef.current;
+    const currentReservationId = activeReservation?.id || null;
 
     console.log('🗺️ Markers effect running:', { 
       hideMarkers, 
       hasActiveReservation: !!activeReservation,
       hasPartner: !!activeReservation?.offer?.partner,
       userLocation: userLocation,
+      routeAlreadyDrawn: activeReservationRouteDrawnRef.current === currentReservationId,
     });
+
+    // If we have an active reservation and the route is already drawn, skip the entire effect
+    if (hideMarkers && activeReservation && activeReservationRouteDrawnRef.current === currentReservationId) {
+      console.log('⏭️ Skipping markers effect - route already drawn for this reservation');
+      return;
+    }
 
     // Clear all existing markers first
     markersRef.current.forEach(marker => {
@@ -474,6 +483,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     // Reset fitBounds tracking when reservation ends
     if (!activeReservation) {
       hasInitiallyFitBoundsRef.current = null;
+      activeReservationRouteDrawnRef.current = null;
     }
     
     // If markers should be hidden but there's an active reservation, show only partner marker and route
@@ -578,6 +588,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           } else {
             console.log('⏭️ Skipping fitBounds - already centered for this reservation');
           }
+          
+          // Mark route as drawn for this reservation to prevent re-renders
+          activeReservationRouteDrawnRef.current = reservationId;
         } else {
           console.warn('⚠️ Invalid partner coordinates:', { partnerLat, partnerLng });
         }

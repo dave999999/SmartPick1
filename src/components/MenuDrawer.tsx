@@ -223,30 +223,30 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                   <div className="space-y-2">
                     <GlassMenuItem
                       icon={Clock}
-                      label="My Reservations"
+                      label={t('menu.myReservations')}
                       onClick={() => handleNavigation('/my-picks')}
                     />
                     <GlassMenuItem
                       icon={Heart}
-                      label="Favorites"
+                      label={t('menu.favorites')}
                       onClick={() => handleNavigation('/favorites')}
                     />
                     <GlassMenuItem
                       icon={User}
-                      label="Profile"
+                      label={t('menu.profile')}
                       onClick={() => handleNavigation('/profile')}
                     />
                     {isPartnerApproved && (
                       <GlassMenuItem
                         icon={PanelsTopLeft}
-                        label="Partner Dashboard"
+                        label={t('menu.partnerDashboard')}
                         onClick={() => handleNavigation('/partner')}
                       />
                     )}
                     {user?.role === 'ADMIN' && (
                       <GlassMenuItem
                         icon={ShieldCheck}
-                        label="Admin Panel"
+                        label={t('menu.adminPanel')}
                         onClick={() => handleNavigation('/admin-dashboard')}
                       />
                     )}
@@ -263,7 +263,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <Languages className="w-4 h-4 text-gray-600" strokeWidth={2} />
-                        <span className="text-sm font-medium text-gray-700">Language</span>
+                        <span className="text-sm font-medium text-gray-700">{t('menu.language')}</span>
                       </div>
                       <div className="flex gap-1.5">
                         <button
@@ -293,17 +293,17 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                   {/* App Settings Glass Tiles */}
                   <GlassMenuItem
                     icon={Mail}
-                    label="Contact Support"
+                    label={t('menu.contactSupport')}
                     onClick={() => handleNavigation('/contact')}
                   />
                   <GlassMenuItem
                     icon={Shield}
-                    label="Privacy Policy"
+                    label={t('menu.privacyPolicy')}
                     onClick={() => handleNavigation('/privacy')}
                   />
                   <GlassMenuItem
                     icon={FileText}
-                    label="Terms & Conditions"
+                    label={t('menu.termsConditions')}
                     onClick={() => handleNavigation('/terms')}
                   />
 
@@ -331,8 +331,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                             <Gift className="w-5 h-5 text-white" strokeWidth={2} />
                           </div>
                           <div>
-                            <p className="text-white font-semibold text-sm">Invite friends</p>
-                            <p className="text-white/95 text-xs font-medium">Earn 50 SmartPoints ⭐</p>
+                            <p className="text-white font-semibold text-sm">{t('menu.inviteFriends')}</p>
+                            <p className="text-white/95 text-xs font-medium">{t('menu.earnPoints')} ⭐</p>
                           </div>
                         </div>
                         <ChevronRight className="w-5 h-5 text-white/80" strokeWidth={2} />
@@ -351,8 +351,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                   {!isPartnerApproved && (
                     <GlassMenuItem
                       icon={PanelsTopLeft}
-                      label="Become a Partner"
-                      subtitle="List your business"
+                      label={t('menu.becomePartner')}
+                      subtitle={t('menu.listBusiness')}
                       onClick={() => handleNavigation('/partner/apply')}
                       accent
                     />
@@ -455,8 +455,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                   {/* Become Partner Glass Tile */}
                   <GlassMenuItem
                     icon={PanelsTopLeft}
-                    label="Become a Partner"
-                    subtitle="List your business"
+                    label={t('menu.becomePartner')}
+                    subtitle={t('menu.listBusiness')}
                     onClick={() => handleNavigation('/partner/apply')}
                     accent
                   />

@@ -33,7 +33,10 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   },
   realtime: {
     params: {
-      eventsPerSecond: 2, // Reduced from 10 to 2 for better scalability
+      eventsPerSecond: 10, // Higher = better (prevents polling backlog)
+      // Note: This is the THROTTLE limit, not poll frequency
+      // Setting it too low (e.g., 2) causes Supabase to poll database repeatedly
+      // Setting it higher (10) allows efficient WebSocket batching
     },
   },
   global: {

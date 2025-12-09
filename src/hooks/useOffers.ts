@@ -15,7 +15,11 @@ export function useOffers() {
   useEffect(() => {
     fetchOffers();
 
-    // Set up real-time subscription for new/updated offers
+    // ⚠️ DISABLED: Real-time subscription for ALL offers causes 23K+ queries
+    // This was a performance issue - every offer update triggered a refetch
+    // Solution: Use polling/refetch instead, or filter by user's viewport
+    
+    /* REMOVED REALTIME SUBSCRIPTION:
     const channel = supabase
       .channel('offers-realtime')
       .on(
@@ -113,9 +117,11 @@ export function useOffers() {
         }
       )
       .subscribe();
+    */
 
+    // Cleanup function - no subscription to clean up anymore
     return () => {
-      channel.unsubscribe();
+      // channel.unsubscribe(); // Disabled
     };
   }, []);
 

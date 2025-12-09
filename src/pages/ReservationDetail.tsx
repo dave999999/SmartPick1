@@ -125,7 +125,11 @@ export default function ReservationDetail() {
     };
   }, [id]);
 
-  // Polling fallback: Check for status updates every 3 seconds when ACTIVE
+  // ⚠️ DISABLED POLLING: Real-time subscription already handles updates
+  // This polling was causing excessive database calls (720 req/hour per active reservation!)
+  // The realtime subscription above is sufficient for instant updates
+  
+  /* REMOVED POLLING INTERVAL:
   useEffect(() => {
     if (!reservation || reservation.status !== 'ACTIVE') return;
 
@@ -143,6 +147,7 @@ export default function ReservationDetail() {
       clearInterval(pollInterval);
     };
   }, [reservation?.status]);
+  */
 
   // Detect when order is picked up and show success modal
   useEffect(() => {

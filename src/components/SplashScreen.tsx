@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 
+const SPLASH_SHOWN_KEY = 'smartpick-splash-shown';
+
 export default function SplashScreen() {
-  const [isVisible, setIsVisible] = useState(true);
+  // Check if splash was already shown ever (persists across sessions)
+  const [isVisible, setIsVisible] = useState(() => {
+    const hasShown = localStorage.getItem(SPLASH_SHOWN_KEY);
+    return !hasShown; // Only show if not shown yet ever
+  });
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [canPlayWithSound, setCanPlayWithSound] = useState(false);
@@ -9,6 +15,11 @@ export default function SplashScreen() {
   const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // If already shown, don't load video at all
+    if (!isVisible) {
+      return;
+    }
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -70,13 +81,18 @@ export default function SplashScreen() {
   // Handle video end
   const handleVideoEnded = () => {
     console.log('✅ Splash video ended');
+    // Mark splash as shown permanently
+    localStorage.setItem(SPLASH_SHOWN_KEY, 'true');
     setIsVisible(false);
   };
 
   // Safety timeout: hide after max 5 seconds even if video hasn't ended
   useEffect(() => {
+    if (!isVisible) return; // Don't set timeout if splash shouldn't show
+    
     hideTimerRef.current = setTimeout(() => {
       console.log('⏱️ Splash timeout - hiding after 5s');
+      localStorage.setItem(SPLASH_SHOWN_KEY, 'true');
       setIsVisible(false);
     }, 5000);
 
@@ -85,7 +101,7 @@ export default function SplashScreen() {
         clearTimeout(hideTimerRef.current);
       }
     };
-  }, []);
+  }, [isVisible]);
 
   if (!isVisible) {
     return null;

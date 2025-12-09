@@ -12,6 +12,8 @@ import type { UserPenalty } from './lib/api/penalty';
 import { GoogleMapProvider } from './components/map/GoogleMapProvider';
 import { queryClient } from './lib/queryClient';
 import { OverlayOrchestrator } from './components/OverlayOrchestrator';
+import { useCurrentUser } from './hooks/useQueryHooks';
+import { useUserStore } from './stores';
 
 // Eager load: Only Index page (main landing) and essential components
 import Index from './pages/Index';
@@ -64,6 +66,19 @@ const PageLoader = () => (
 );
 
 const AppContent = () => {
+  const setUser = useUserStore((state) => state.setUser);
+  
+  // 🚀 OPTIMIZATION: Fetch user once globally, cache for 10 minutes
+  // All pages will read from Zustand store instead of making duplicate queries
+  const { data: globalUser } = useCurrentUser();
+  
+  useEffect(() => {
+    if (globalUser) {
+      setUser(globalUser);
+      console.log('👤 User loaded globally:', globalUser.name || globalUser.email);
+    }
+  }, [globalUser, setUser]);
+  
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
