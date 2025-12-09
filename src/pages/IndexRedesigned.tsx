@@ -96,6 +96,9 @@ export default function IndexRedesigned() {
     updateInterval: 3000 
   });
 
+  // Ref to track last highlighted offer (prevents duplicate highlights causing re-renders)
+  const lastHighlightedOfferRef = useRef<string | null>(null);
+
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterState>({
@@ -817,6 +820,12 @@ export default function IndexRedesigned() {
         onCenteredOfferChange={useCallback((offer: Offer | null) => {
           // Validate all required data before attempting map sync
           if (!offer || !googleMap) {
+            lastHighlightedOfferRef.current = null;
+            return;
+          }
+          
+          // 🔧 PERFORMANCE FIX: Skip if same offer already highlighted
+          if (lastHighlightedOfferRef.current === offer.id) {
             return;
           }
           
@@ -836,8 +845,10 @@ export default function IndexRedesigned() {
             // Moderate zoom level (14 shows neighborhood context, avoids cluster view)
             googleMap.setZoom(14);
             // Highlight the offer marker
+            lastHighlightedOfferRef.current = offer.id;
             setHighlightedOfferId(offer.id);
           }
+          // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [googleMap])}
       />
 
