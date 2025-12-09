@@ -638,3 +638,54 @@ export const clearAllHistory = async (userId: string): Promise<void> => {
 
   if (error) throw error;
 };
+
+/**
+ * 🚀 PHASE 2 OPTIMIZATION: Unified Customer Dashboard Data
+ * Replaces 2 separate queries with 1 RPC call
+ * Saves 50% of customer dashboard queries
+ */
+export interface CustomerDashboardData {
+  user: any;
+  reservations: Reservation[];
+  points: any;
+  stats: {
+    totalReservations: number;
+    activeReservations: number;
+    completedReservations: number;
+    cancelledReservations: number;
+    totalSaved: number;
+  };
+}
+
+export const getCustomerDashboardData = async (userId: string): Promise<CustomerDashboardData> => {
+  if (isDemoMode) {
+    throw new Error('Demo mode: Dashboard data not available');
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_customer_dashboard_data', {
+      p_user_id: userId
+    });
+
+    if (error) {
+      logger.error('Failed to fetch customer dashboard data:', error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error('No dashboard data returned');
+    }
+
+    logger.info('✅ Customer dashboard data loaded in single query');
+
+    return {
+      user: data.user,
+      reservations: data.reservations,
+      points: data.points,
+      stats: data.stats
+    };
+  } catch (error) {
+    logger.error('Error in getCustomerDashboardData:', error);
+    throw error;
+  }
+};

@@ -286,3 +286,56 @@ export const denyForgivenessRequest = async (reservationId: string): Promise<{
     };
   }
 };
+
+/**
+ * 🚀 PHASE 2 OPTIMIZATION: Unified Partner Dashboard Data
+ * Replaces 5 separate queries with 1 RPC call
+ * Saves 80% of partner dashboard queries
+ */
+export interface PartnerDashboardData {
+  partner: Partner;
+  offers: Offer[];
+  activeReservations: any[];
+  stats: {
+    activeOffers: number;
+    totalOffers: number;
+    reservationsToday: number;
+    itemsPickedUp: number;
+    totalRevenue: number;
+  };
+  points: any;
+}
+
+export const getPartnerDashboardData = async (userId: string): Promise<PartnerDashboardData> => {
+  if (isDemoMode) {
+    throw new Error('Demo mode: Dashboard data not available');
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_partner_dashboard_data', {
+      p_user_id: userId
+    });
+
+    if (error) {
+      logger.error('Failed to fetch partner dashboard data:', error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error('No dashboard data returned');
+    }
+
+    logger.info('✅ Partner dashboard data loaded in single query');
+
+    return {
+      partner: data.partner,
+      offers: data.offers,
+      activeReservations: data.activeReservations,
+      stats: data.stats,
+      points: data.points
+    };
+  } catch (error) {
+    logger.error('Error in getPartnerDashboardData:', error);
+    throw error;
+  }
+};

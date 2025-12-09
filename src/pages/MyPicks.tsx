@@ -106,10 +106,35 @@ export default function MyPicks() {
       }
 
       setUser(currentUser);
-      await loadReservations(currentUser.id);
+      
+      // 🚀 PHASE 2 OPTIMIZATION: Use unified RPC - 2 queries → 1 query (50% reduction)
+      try {
+        const { getCustomerDashboardData } = await import('@/lib/api/reservations');
+        const dashboardData = await getCustomerDashboardData(currentUser.id);
+        
+        setReservations(dashboardData.reservations);
+        logger.log('✅ Customer dashboard data loaded in single query');
+        
+        // Auto-cleanup old history items (10+ days old)
+        await cleanupOldHistory(currentUser.id);
+        
+        // Schedule pickup reminders for active reservations
+        if (hasPermission) {
+          const activeReservations = dashboardData.reservations.filter(
+            (r: any) => r.status === 'ACTIVE'
+          );
+          if (activeReservations.length > 0) {
+            await scheduleMultipleReminders(activeReservations);
+          }
+        }
+      } catch (rpcError) {
+        // Fallback to old method if RPC not yet deployed
+        logger.warn('Unified RPC not available, using fallback:', rpcError);
+        await loadReservations(currentUser.id);
+      }
     } catch (error) {
       logger.error('Error loading user and reservations:', error);
-  toast.error(t('toast.failedLoadPicks'));
+      toast.error(t('toast.failedLoadPicks'));
     } finally {
       setLoading(false);
     }
