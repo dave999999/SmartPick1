@@ -412,8 +412,9 @@ export function usePerformanceMetrics(refreshInterval: number = 5000) {
   return metrics;
 }
 
-// Auto-run health check every 5 minutes in production
-if (typeof window !== 'undefined' && import.meta.env.PROD) {
+// Auto-run health check only in development
+// Admin dashboard has dedicated health panel for production monitoring
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   setInterval(() => {
     performanceMonitor.checkDatabaseHealth().catch(error => {
       logger.error('Scheduled health check failed', error);
