@@ -6,23 +6,53 @@
 -- Impact: Improves query performance and reduces bloat
 -- =====================================================
 
+-- ⚠️ IMPORTANT: VACUUM cannot run in a transaction block
+-- In Supabase SQL Editor, you must run each command SEPARATELY
+-- Copy and paste ONE LINE AT A TIME and execute individually
+-- =====================================================
+
+-- ❌ DO NOT run this entire file at once
+-- ✅ DO copy/paste each line below ONE BY ONE:
+
 -- Priority 1: users table (71.9% dead rows - auth session churn)
-VACUUM ANALYZE public.users;
+-- VACUUM ANALYZE public.users;
 
 -- Priority 1: system_settings (95.0% dead rows)
-VACUUM ANALYZE public.system_settings;
+-- VACUUM ANALYZE public.system_settings;
 
 -- Priority 2: user_stats (52.9% dead rows)
-VACUUM ANALYZE public.user_stats;
+-- VACUUM ANALYZE public.user_stats;
 
 -- Priority 2: points_history (50.9% dead rows - 31 days since last vacuum)
-VACUUM ANALYZE public.points_history;
+-- VACUUM ANALYZE public.points_history;
 
 -- Priority 2: partners (53.3% dead rows)
-VACUUM ANALYZE public.partners;
+-- VACUUM ANALYZE public.partners;
 
 -- Priority 3: api_rate_limits (64.9% dead rows - active churn is expected)
-VACUUM ANALYZE public.api_rate_limits;
+-- VACUUM ANALYZE public.api_rate_limits;
+
+-- =====================================================
+-- ALTERNATIVE: Use a function to schedule vacuums
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION public.manual_vacuum_tables()
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Note: This function just returns the commands to run
+  -- VACUUM must be run outside transactions
+  RETURN 'Run these commands individually in SQL Editor:
+  
+VACUUM ANALYZE public.users;
+VACUUM ANALYZE public.system_settings;
+VACUUM ANALYZE public.user_stats;
+VACUUM ANALYZE public.points_history;
+VACUUM ANALYZE public.partners;
+VACUUM ANALYZE public.api_rate_limits;';
+END;
+$$;
 
 -- =====================================================
 -- VERIFICATION QUERY
