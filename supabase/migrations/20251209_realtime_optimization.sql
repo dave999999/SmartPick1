@@ -39,22 +39,24 @@ WHERE status = 'active';
 -- Check existing publications
 -- You may already have supabase_realtime publication
 
--- Option A: If you want to be very specific, create filtered publication
+-- Option A: Create basic publication for realtime tables
+-- Note: Row-level filtering happens via RLS policies, not publication filters
 DO $$
 BEGIN
-  -- Only publish changes for active/pending records
+  -- Create publication if it doesn't exist
   IF NOT EXISTS (
     SELECT 1 FROM pg_publication WHERE pubname = 'smartpick_realtime_filtered'
   ) THEN
     
-    -- Create publication for only relevant changes
+    -- Create publication for realtime tables (filtering via RLS)
     CREATE PUBLICATION smartpick_realtime_filtered FOR TABLE
-      public.reservations WHERE (status IN ('pending', 'ready', 'picked_up')),
-      public.partners WHERE (status = 'pending'),
-      public.notifications WHERE (read = false);
+      public.reservations,
+      public.partners,
+      public.notifications;
     
-    -- Note: You'll need to configure Supabase to use this publication
-    -- in your project settings if you want to switch from default
+    -- Note: Supabase uses 'supabase_realtime' publication by default
+    -- This is an alternative if you want custom control
+    -- Configure in: Project Settings > API > Realtime
   END IF;
 END $$;
 
