@@ -169,7 +169,8 @@ export default function IndexRedesigned() {
       setActiveReservation(null);
       setIsReservationLoading(false); // No user = no reservation to load
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // 🔧 FIX: Only depend on user.id, not entire user object
 
   // Set up real-time subscription when active reservation exists
   useEffect(() => {
@@ -231,17 +232,22 @@ export default function IndexRedesigned() {
         logger.log('📡 Subscription status:', status);
       });
 
-    // Add polling fallback as backup (reduced to every 10 seconds to save battery)
+    // ⚠️ DISABLED POLLING: Real-time subscription already handles updates
+    // This polling was causing 4.7M database calls (600 req/min per user!)
+    // Realtime subscription is sufficient - polling is redundant and expensive
+    
+    /* REMOVED POLLING INTERVAL:
     const pollingInterval = setInterval(() => {
       if (!isCleanedUp) {
         loadActiveReservation();
       }
     }, 10000); // Increased from 5s to 10s to reduce CPU/battery usage
+    */
 
     return () => {
       isCleanedUp = true;
-      logger.log('🔌 Cleaning up reservation subscription and polling');
-      clearInterval(pollingInterval);
+      logger.log('🔌 Cleaning up reservation subscription');
+      // clearInterval(pollingInterval); // Disabled
       
       // Remove the channel completely
       channel.unsubscribe().then(() => {
@@ -366,7 +372,11 @@ export default function IndexRedesigned() {
 
     window.addEventListener('reservation-synced', handleReservationSynced);
 
-    // Set up real-time subscription for new offers
+    // ⚠️ DISABLED: Real-time subscription for ALL offers causes 23K+ queries
+    // This was causing severe performance issues - every offer update across all partners
+    // triggered refetches. Using React Query's automatic refetch instead (on focus, interval)
+    
+    /* REMOVED GLOBAL OFFERS SUBSCRIPTION:
     const offersChannel = supabase
       .channel('offers-realtime-index')
       .on(
@@ -413,10 +423,11 @@ export default function IndexRedesigned() {
         }
       )
       .subscribe();
+    */
 
     return () => {
       window.removeEventListener('reservation-synced', handleReservationSynced);
-      offersChannel.unsubscribe();
+      // offersChannel.unsubscribe(); // Disabled
     };
   }, []);
 
