@@ -593,7 +593,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="pending" className="space-y-4">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              <PartnersVerification onStatsUpdate={loadStats} />
+              <PartnersVerification onStatsUpdate={loadStats} isActive={activeTab === 'pending'} />
             </div>
           </TabsContent>
 
@@ -653,7 +653,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="performance" className="space-y-4">
-            <PerformanceMonitoringPanel />
+            <PerformanceMonitoringPanel isActive={activeTab === 'performance'} />
           </TabsContent>
 
           <TabsContent value="audit" className="space-y-4">
@@ -670,7 +670,7 @@ export default function AdminDashboard() {
 
           <TabsContent value="live" className="space-y-4">
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <LiveMonitoring />
+              <LiveMonitoring isActive={activeTab === 'live'} />
             </div>
           </TabsContent>
 

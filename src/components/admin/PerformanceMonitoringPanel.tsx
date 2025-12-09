@@ -13,22 +13,48 @@ import { performanceMonitor, type PerformanceMetrics, type HealthCheckResult } f
 import { Activity, TrendingUp, AlertTriangle, CheckCircle2, RefreshCw, Database, Zap } from 'lucide-react';
 import { logger } from '@/lib/logger';
 
-export function PerformanceMonitoringPanel() {
+interface PerformanceMonitoringPanelProps {
+  isActive?: boolean; // Whether this tab is currently visible
+}
+
+export function PerformanceMonitoringPanel({ isActive = true }: PerformanceMonitoringPanelProps) {
   const [metrics, setMetrics] = useState<PerformanceMetrics>(performanceMonitor.getMetrics());
   const [health, setHealth] = useState<HealthCheckResult | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Auto-refresh metrics every 5 seconds
+  // Auto-refresh metrics every 5 seconds - ONLY when tab is active and visible
   useEffect(() => {
-    if (!autoRefresh) return;
+    if (!autoRefresh || !isActive || document.hidden) {
+      logger.log('⏸️ [PerformancePanel] Auto-refresh paused', { autoRefresh, isActive, hidden: document.hidden });
+      return;
+    }
 
+    logger.log('▶️ [PerformancePanel] Starting auto-refresh - admin is viewing this tab');
+    
     const interval = setInterval(() => {
-      setMetrics(performanceMonitor.getMetrics());
+      // Double-check visibility before each update
+      if (!document.hidden && isActive) {
+        setMetrics(performanceMonitor.getMetrics());
+      }
     }, 5000);
+    
+    // Listen for visibility changes
+    const handleVisibilityChange = () => {
+      if (!document.hidden && isActive && autoRefresh) {
+        logger.log('👁️ [PerformancePanel] Tab visible - immediate refresh');
+        setMetrics(performanceMonitor.getMetrics());
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+    return () => {
+      logger.log('🛑 [PerformancePanel] Cleanup - stopping auto-refresh');
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [autoRefresh, isActive]);
 
   // Run health check on mount
   useEffect(() => {

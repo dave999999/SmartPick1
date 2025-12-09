@@ -14,7 +14,11 @@ interface LiveStats {
   todayRevenue: number;
 }
 
-export function LiveMonitoring() {
+interface LiveMonitoringProps {
+  isActive?: boolean; // Whether this tab is currently visible
+}
+
+export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
   const [stats, setStats] = useState<LiveStats>({
     totalUsers: 0,
     totalPartners: 0,
@@ -77,13 +81,44 @@ export function LiveMonitoring() {
   };
 
   useEffect(() => {
+    // Only poll when tab is active AND window is visible
+    if (!isActive || document.hidden) {
+      console.log('⏸️ [LiveMonitoring] Paused - tab not active or window hidden');
+      return;
+    }
+
+    console.log('▶️ [LiveMonitoring] Starting polling - admin is viewing this tab');
     fetchLiveStats();
     
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchLiveStats, 30000);
+    // Increased to 60 seconds (50% reduction from 30s)
+    const interval = setInterval(() => {
+      // Double-check visibility before each poll
+      if (!document.hidden && isActive) {
+        console.log('🔄 [LiveMonitoring] Polling update');
+        fetchLiveStats();
+      } else {
+        console.log('⏭️ [LiveMonitoring] Skipping poll - not visible');
+      }
+    }, 60000);
     
-    return () => clearInterval(interval);
-  }, []);
+    // Listen for visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('👁️ [LiveMonitoring] Tab hidden - pausing polls');
+      } else if (isActive) {
+        console.log('👁️ [LiveMonitoring] Tab visible - resuming polls');
+        fetchLiveStats(); // Immediate refresh when tab becomes visible
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      console.log('🛑 [LiveMonitoring] Cleanup - stopping polling');
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isActive]); // Re-run when tab activation changes
 
   const StatCard = ({ title, value, icon: Icon, color }: { title: string; value: number | string; icon: any; color: string }) => (
     <Card>
@@ -121,7 +156,7 @@ export function LiveMonitoring() {
       </div>
 
       <div className="text-xs text-gray-500 text-center">
-        Auto-refreshes every 30 seconds
+        {isActive ? '✅ Live - Auto-refreshes every 60 seconds' : '⏸️ Paused - Switch to this tab to resume'}
       </div>
     </div>
   );

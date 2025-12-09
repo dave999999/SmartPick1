@@ -15,9 +15,10 @@ import { logger } from '@/lib/logger';
 
 interface Props {
   onStatsUpdate: () => void;
+  isActive?: boolean; // Whether this tab is currently visible
 }
 
-export default function PartnersVerification({ onStatsUpdate }: Props) {
+export default function PartnersVerification({ onStatsUpdate, isActive = true }: Props) {
   const [pending, setPending] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [note, setNote] = useState('');
@@ -37,9 +38,15 @@ export default function PartnersVerification({ onStatsUpdate }: Props) {
     }
   };
 
+  // ✅ OPTIMIZATION: Only load when tab becomes active
   useEffect(() => {
-    load();
-  }, []);
+    if (isActive) {
+      logger.log('▶️ [PartnersVerification] Loading pending partners - tab is active');
+      load();
+    } else {
+      logger.log('⏸️ [PartnersVerification] Skipping load - tab not active');
+    }
+  }, [isActive]);
 
   const open = (p: Partner, a: 'approve' | 'reject') => {
     setSelected(p);

@@ -12,9 +12,10 @@ import { logger } from '@/lib/logger';
 
 interface PendingPartnersProps {
   onStatsUpdate: () => void;
+  isActive?: boolean; // Whether this tab is currently visible
 }
 
-export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
+export function PendingPartners({ onStatsUpdate, isActive = true }: PendingPartnersProps) {
   const [pendingPartners, setPendingPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
@@ -24,6 +25,14 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
 
   useEffect(() => {
     loadPendingPartners();
+    
+    // ✅ OPTIMIZATION: Only subscribe when tab is active
+    if (!isActive) {
+      logger.log('⏸️ [PendingPartners] Not subscribing - tab not active');
+      return;
+    }
+    
+    logger.log('▶️ [PendingPartners] Setting up realtime subscription - tab is active');
     
     // Subscribe to realtime changes on partners table
     const channel = supabase
@@ -37,7 +46,7 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
           filter: 'status=in.(pending,PENDING)'
         },
         (payload) => {
-          logger.log('Realtime update received:', payload);
+          logger.log('🔔 [PendingPartners] Realtime update received:', payload);
           // Reload pending partners when any change occurs
           loadPendingPartners();
         }
@@ -45,9 +54,10 @@ export function PendingPartners({ onStatsUpdate }: PendingPartnersProps) {
       .subscribe();
 
     return () => {
+      logger.log('🛑 [PendingPartners] Cleanup - unsubscribing from realtime');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [isActive]); // Re-subscribe when tab activation changes
 
   const loadPendingPartners = async () => {
     try {
