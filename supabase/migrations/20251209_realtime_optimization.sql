@@ -22,8 +22,8 @@ WHERE status IN ('pending', 'ready', 'picked_up');
 
 -- Index for pending partners (admin dashboard)
 CREATE INDEX IF NOT EXISTS idx_partners_pending_realtime
-ON public.partners(verification_status, created_at DESC)
-WHERE verification_status = 'pending';
+ON public.partners(status, created_at DESC)
+WHERE status = 'pending';
 
 -- Index for offer updates (if you add realtime for offers)
 CREATE INDEX IF NOT EXISTS idx_offers_active_realtime
@@ -50,7 +50,7 @@ BEGIN
     -- Create publication for only relevant changes
     CREATE PUBLICATION smartpick_realtime_filtered FOR TABLE
       public.reservations WHERE (status IN ('pending', 'ready', 'picked_up')),
-      public.partners WHERE (verification_status = 'pending'),
+      public.partners WHERE (status = 'pending'),
       public.notifications WHERE (read = false);
     
     -- Note: You'll need to configure Supabase to use this publication
