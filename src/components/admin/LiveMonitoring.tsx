@@ -90,7 +90,7 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
     console.log('▶️ [LiveMonitoring] Starting polling - admin is viewing this tab');
     fetchLiveStats();
     
-    // Increased to 60 seconds (50% reduction from 30s)
+    // Increased to 120 seconds / 2 minutes (50% reduction from 60s)
     const interval = setInterval(() => {
       // Double-check visibility before each poll
       if (!document.hidden && isActive) {
@@ -99,7 +99,7 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
       } else {
         console.log('⏭️ [LiveMonitoring] Skipping poll - not visible');
       }
-    }, 60000);
+    }, 120000);
     
     // Listen for visibility changes
     const handleVisibilityChange = () => {

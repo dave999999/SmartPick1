@@ -154,6 +154,11 @@ export function ReservationSheet({
     if (isVisible && reservation && sheetState === 'hidden') {
       dispatch({ type: 'RESERVATION_CREATED' });
       
+      // Trigger wallet refresh for immediate points deduction
+      window.dispatchEvent(new CustomEvent('smartpointsRefresh', { 
+        detail: { reason: 'Reservation created' } 
+      }));
+      
       // Auto-collapse after 5 seconds
       autoCollapseTimer.current = setTimeout(() => {
         dispatch({ type: 'AUTO_COLLAPSE' });

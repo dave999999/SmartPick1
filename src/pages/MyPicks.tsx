@@ -236,6 +236,11 @@ export default function MyPicks() {
       if (result.success) {
         toast.success(`${t('toast.pickupConfirmed')} ${result.points_transferred} ${t('toast.pointsTransferred')}`);
         loadReservations(); // Refresh the list
+        
+        // Trigger wallet refresh for immediate points update
+        window.dispatchEvent(new CustomEvent('smartpointsRefresh', { 
+          detail: { reason: 'Pickup confirmed' } 
+        }));
       } else {
         toast.error(t('toast.failedConfirmPickup'), {
           description: 'Unable to confirm pickup. Please contact the partner.',
