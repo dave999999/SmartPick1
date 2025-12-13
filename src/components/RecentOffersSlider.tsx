@@ -56,6 +56,16 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
     });
   };
 
+  // Check if business operates 24 hours (either flag or same pickup times)
+  const is24HourBusiness = (start: string, end: string, partner?: any) => {
+    if (partner?.open_24h) return true;
+    if (!start || !end) return false;
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const diffMinutes = Math.abs(endTime.getTime() - startTime.getTime()) / (1000 * 60);
+    return diffMinutes < 5; // Less than 5 minutes difference means 24/7
+  };
+
   const getTimeRemaining = (expiresAt?: string) => {
     const target = expiresAt || new Date(Date.now() + DEFAULT_24H_OFFER_DURATION_HOURS * 60 * 60 * 1000).toISOString();
     const now = new Date();
@@ -235,9 +245,15 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
                   {pickupTimes.start && pickupTimes.end && (
                     <div className="flex items-center gap-1 text-xs text-gray-600">
                       <Clock className="w-3 h-3 text-[#00C896]" />
-                      <span>
-                        {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
-                      </span>
+                      {is24HourBusiness(pickupTimes.start, pickupTimes.end, offer.partner) ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                          OPEN 24/7
+                        </span>
+                      ) : (
+                        <span>
+                          {formatTime(pickupTimes.start)} - {formatTime(pickupTimes.end)}
+                        </span>
+                      )}
                     </div>
                   )}
 

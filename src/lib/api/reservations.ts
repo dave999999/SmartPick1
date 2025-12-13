@@ -483,6 +483,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
   }
 
   // Call Edge Function (has service_role permissions to award points)
+  console.log('🔑 Calling mark-pickup with:', { reservationId, hasToken: !!session.access_token });
   const { data: functionResult, error: functionError } = await supabase.functions.invoke('mark-pickup', {
     body: { reservation_id: reservationId },
     headers: {
@@ -491,12 +492,20 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
   });
 
   if (functionError) {
-    console.error('❌ Edge Function ERROR:', functionError);
+    console.error('❌ Edge Function ERROR:', {
+      message: functionError.message,
+      details: functionError,
+      reservationId
+    });
     throw new Error(functionError.message || 'Failed to mark as picked up');
   }
 
   if (!functionResult?.success) {
-    console.error('❌ Edge Function returned error:', functionResult);
+    console.error('❌ Edge Function returned error:', {
+      result: functionResult,
+      reservationId,
+      errorMessage: functionResult?.error
+    });
     throw new Error(functionResult?.error || 'Failed to mark as picked up');
   }
 

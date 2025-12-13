@@ -68,7 +68,7 @@ import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReser
 import PenaltyForgivenessTab from '@/components/partner/PenaltyForgivenessTab';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { useI18n } from '@/lib/i18n';
-import { BuyPartnerPointsModal } from '@/components/BuyPartnerPointsModal';
+import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
 import PendingPartnerStatus from '@/components/partner/PendingPartnerStatus';
 import PartnerAnalytics from '@/components/partner/PartnerAnalytics';
 import PartnerOffers from '@/components/partner/PartnerOffers';
@@ -76,6 +76,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { logger } from '@/lib/logger';
 import PartnerOnboardingTour from '@/components/partner/PartnerOnboardingTour';
 import { PartnerDashboardRedesigned } from '@/components/partner/PartnerDashboardRedesigned';
+import { PartnerDashboardApple } from '@/components/partner/PartnerDashboardApple';
 import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
 import { PurchaseSlotDialog } from '@/components/partner/PurchaseSlotDialog';
 import { EditOfferDialog } from '@/components/partner/EditOfferDialog';
@@ -192,6 +193,23 @@ export default function PartnerDashboard() {
   // Action hooks
   const offerActions = useOfferActions(partner, loadPartnerData);
   const reservationActions = useReservationActions(loadPartnerData);
+
+  // Apple Dashboard handlers
+  const handlePauseOffer = async (offerId: string) => {
+    await offerActions.handlePauseOffer(offerId);
+  };
+
+  const handleResumeOffer = async (offerId: string) => {
+    await offerActions.handleResumeOffer(offerId);
+  };
+
+  const handleDeleteOffer = async (offerId: string) => {
+    await offerActions.handleDeleteOffer(offerId);
+  };
+
+  const handleDuplicateOffer = async (offer: Offer) => {
+    await offerActions.handleDuplicateOffer(offer);
+  };
 
   useEffect(() => {
     loadPartnerData();
@@ -1050,28 +1068,20 @@ export default function PartnerDashboard() {
           {activeView === 'today' && (
             <div>
               <Card className="mb-6 rounded-xl border border-gray-200 shadow-sm bg-white">
-                <CardHeader className="border-b border-gray-100 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-emerald-100">
-                      <CheckCircle className="w-6 h-6 text-emerald-600" />
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-lg bg-emerald-100">
+                        <CheckCircle className="w-6 h-6 text-emerald-600" strokeWidth={2} />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 font-medium">Today's Performance</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Items picked up</p>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900">
-                        Today's Performance
-                      </CardTitle>
-                      <CardDescription className="text-sm text-gray-600 mt-1">
-                        Items picked up and completed reservations for today
-                      </CardDescription>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-emerald-600">{stats.itemsPickedUp}</p>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="text-center py-12 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-emerald-100 mb-4">
-                      <CheckCircle className="w-10 h-10 text-emerald-600" strokeWidth={2} />
-                    </div>
-                    <p className="text-5xl font-bold text-gray-900 mb-2">{stats.itemsPickedUp}</p>
-                    <p className="text-gray-600 font-medium">Items picked up today</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1135,18 +1145,14 @@ export default function PartnerDashboard() {
         onBuyPoints={() => setIsBuyPointsModalOpen(true)}
       />
 
-      {/* Buy Partner Points Modal */}
+      {/* Buy Partner Points Modal - BOG Payment Integration */}
       {partner && partnerPoints && (
-        <BuyPartnerPointsModal
-          open={isBuyPointsModalOpen}
+        <BuyPointsModal
+          isOpen={isBuyPointsModalOpen}
           onClose={() => setIsBuyPointsModalOpen(false)}
-          partnerId={partner.id}
+          userId={partner.user_id}
           currentBalance={partnerPoints.balance}
-          onSuccess={(newBalance) => {
-            setPartnerPoints({ ...partnerPoints, balance: newBalance });
-            setIsBuyPointsModalOpen(false);
-            toast.success(`✅ Successfully purchased points! New balance: ${newBalance}`);
-          }}
+          mode="partner"
         />
       )}
 

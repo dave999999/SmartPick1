@@ -55,7 +55,7 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
         .from('partner_points')
         .select('*')
         .eq('user_id', profile.id)  // Column is named user_id, not partner_id
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching partner points:', error instanceof Error ? error.message : String(error));
@@ -75,7 +75,7 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       .from('user_points')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching user points:', error instanceof Error ? error.message : String(error));

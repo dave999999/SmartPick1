@@ -103,17 +103,27 @@ export default function EnhancedActiveReservations({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900 text-sm truncate">
-                      {reservation.customer?.name || reservation.customer?.email || 'Customer'}
+                      {(reservation as any).customer?.name || (reservation as any).customer?.email || 'Customer'}
                     </p>
-                    <p className="text-xs text-gray-600 truncate">
-                      {reservation.offer?.title}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-600 truncate">
+                        {reservation.offer?.title}
+                      </p>
+                      {(reservation as any).customer?.penalty_count > 0 && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 font-semibold">
+                          {(reservation as any).customer.penalty_count < 3 
+                            ? `⚠️ ${(reservation as any).customer.penalty_count}/3`
+                            : `🚫 ${(reservation as any).customer.penalty_count}`
+                          }
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   <span className="text-lg font-bold text-teal-600">
-                    ₾{reservation.total_price.toFixed(2)}
+                    ₾{((reservation.total_price || ((reservation.offer as any)?.smart_price || 0) * (reservation.quantity || 1))).toFixed(2)}
                   </span>
                   <Badge
                     className={`text-xs px-2 py-1 rounded-md ${
@@ -147,30 +157,13 @@ export default function EnhancedActiveReservations({
                   {/* Expired warning */}
                   <div className="bg-red-100 border border-red-300 rounded-lg px-3 py-2">
                     <p className="text-sm text-red-700 font-semibold text-center">
-                      ⚠️ Reservation Expired
+                      ⚠️ Reservation Expired - Customer Failed to Pick Up
                     </p>
                   </div>
 
-                  {/* Primary: Mark as Picked Up */}
-                  <Button
-                    onClick={() => onMarkAsPickedUp(reservation)}
-                    disabled={isProcessing}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white h-10 rounded-lg font-semibold shadow-sm"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Mark as Picked Up
-                      </>
-                    )}
-                  </Button>
+                  {/* NO Mark as Picked Up button for expired reservations */}
 
-                  {/* Secondary Actions */}
+                  {/* Actions for expired reservations */}
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       onClick={() => onConfirmNoShow(reservation)}

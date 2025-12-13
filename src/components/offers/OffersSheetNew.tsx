@@ -16,6 +16,7 @@ import { useOffers } from '@/hooks/useOffers';
 import { usePartners } from '@/hooks/usePartners';
 import { getAllCategories } from '@/lib/categories';
 import { Offer, Partner } from '@/lib/types';
+import { useI18n } from '@/lib/i18n';
 
 interface OffersSheetNewProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ interface OffersSheetNewProps {
 }
 
 export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange }: OffersSheetNewProps) {
+  const { t } = useI18n();
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -245,7 +247,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         }}
       >
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
-          Discover Deals and Offers
+          {t('offers.discoverDeals')}
         </SheetTitle>
         <div className="h-full overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
           {/* Hidden dummy input to prevent search bar from getting focus */}
@@ -263,7 +265,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
               <Search className="absolute left-3 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Enter a dish name e.g. Egusi soup"
+                placeholder={t('offers.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1 px-10 text-sm bg-transparent outline-none placeholder:text-gray-400"
@@ -316,7 +318,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                   <div className="pb-2">
                     <div className="px-4 mb-3">
                       <h2 className="text-[18px] font-bold text-gray-900">
-                        Today's Special Offer
+                        {t('offers.todaySpecial')}
                       </h2>
                     </div>
                     {/* Horizontal Scrollable Cards */}
@@ -386,21 +388,6 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                     )}
                                   </div>
                                 </div>
-
-                                {/* Reserve Button */}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onOfferSelect(offer);
-                                  }}
-                                  className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-white text-xs sm:text-sm font-semibold transition-transform active:scale-95"
-                                  style={{
-                                    background: 'linear-gradient(135deg, #FF8A00 0%, #FF5A00 100%)',
-                                    boxShadow: '0 4px 16px rgba(255, 138, 0, 0.3)',
-                                  }}
-                                >
-                                  Reserve Now
-                                </button>
                               </div>
                             </div>
                           </div>
@@ -415,7 +402,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                   <div className="mb-4">
                     <div className="flex items-center justify-between px-4 mb-2">
                       <h2 className="text-[17px] font-semibold text-gray-900">
-                        Popular Now
+                        {t('offers.popularNow')}
                       </h2>
                     </div>
                     <div className="overflow-x-auto scrollbar-hide">
@@ -443,7 +430,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
               <div className="px-4 pb-20">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-[17px] font-semibold text-gray-900">
-                    Featured Offers
+                    {t('offers.featuredOffers')}
                   </h2>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

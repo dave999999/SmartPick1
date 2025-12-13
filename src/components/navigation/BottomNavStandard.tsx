@@ -30,6 +30,7 @@ import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { MenuDrawer } from '../MenuDrawer';
+import { useI18n } from '@/lib/i18n';
 
 // Haptic feedback utility
 const triggerHaptic = (style: 'light' | 'medium' | 'heavy' = 'medium') => {
@@ -56,6 +57,7 @@ interface BottomNavStandardProps {
 }
 
 export function BottomNavStandard({ onCenterClick }: BottomNavStandardProps) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,11 +65,11 @@ export function BottomNavStandard({ onCenterClick }: BottomNavStandardProps) {
   const isActive = (path: string) => location.pathname === path;
 
   const tabs = [
-    { id: 'home', path: '/', icon: Home, label: 'Home' },
-    { id: 'favorites', path: '/favorites', icon: Heart, label: 'Saved' },
-    { id: 'center', path: null, icon: Sparkles, label: 'Offers' },
-    { id: 'profile', path: '/profile', icon: User, label: 'Profile' },
-    { id: 'menu', path: null, icon: Menu, label: 'Menu' },
+    { id: 'home', path: '/', icon: Home, label: t('nav.home') },
+    { id: 'favorites', path: '/favorites', icon: Heart, label: t('nav.saved') },
+    { id: 'center', path: null, icon: Sparkles, label: t('nav.offers') },
+    { id: 'profile', path: '/profile', icon: User, label: t('nav.profile') },
+    { id: 'menu', path: null, icon: Menu, label: t('nav.menu') },
   ];
 
   const handleTabClick = (tab: typeof tabs[0]) => {

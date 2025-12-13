@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
-import { Coins, Loader2, Check, Sparkles, Shield } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Loader2, Shield, Lock, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BOG_CONFIG } from '@/lib/payments/bog';
 import { supabase } from '@/lib/supabase';
 import { secureRequest } from '@/lib/secureRequest';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { useI18n } from '@/lib/i18n';
 
 interface BuyPointsModalProps {
   isOpen: boolean;
@@ -24,13 +22,24 @@ export function BuyPointsModal({
   onClose,
   currentBalance: initialBalance,
   userId,
-  mode: _mode = 'user', // Reserved for future partner/user distinction
+  mode = 'user',
 }: BuyPointsModalProps) {
-  const [selectedPackage, setSelectedPackage] = useState<number | null>(null);
-  const [customGel, setCustomGel] = useState<string>('');
-  const [isCustom, setIsCustom] = useState(false);
+  const { t } = useI18n();
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(initialBalance);
+  const [error, setError] = useState<string>('');
+
+  const isPartner = mode === 'partner';
+  
+  // Define preset amounts based on mode
+  const presetAmounts = isPartner 
+    ? [10, 25, 50, 100] 
+    : [1, 2, 5, 10, 25, 50];
+  
+  const minAmount = 0.5;
+  const maxAmount = 100;
 
   // Fetch fresh balance when modal opens
   useEffect(() => {
@@ -38,10 +47,13 @@ export function BuyPointsModal({
       const fetchBalance = async () => {
         try {
           logger.log('BuyPointsModal: Fetching balance for user', userId);
+          const tableName = isPartner ? 'partner_points' : 'user_points';
+          const idField = isPartner ? 'partner_id' : 'user_id';
+          
           const { data, error } = await supabase
-            .from('user_points')
+            .from(tableName)
             .select('balance')
-            .eq('user_id', userId)
+            .eq(idField, userId)
             .single();
           
           if (error) {
@@ -56,41 +68,84 @@ export function BuyPointsModal({
       };
       fetchBalance();
     }
-  }, [isOpen, userId]);
+  }, [isOpen, userId, isPartner]);
 
-  const computedPoints = isCustom
-    ? Math.floor(parseFloat(customGel || '0') * BOG_CONFIG.POINTS_PER_GEL)
-    : selectedPackage !== null
-      ? BOG_CONFIG.PACKAGES[selectedPackage].points
-      : 0;
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedAmount(null);
+      setCustomAmount('');
+      setError('');
+    }
+  }, [isOpen]);
 
-  const computedGel = isCustom
-    ? parseFloat(customGel || '0')
-    : selectedPackage !== null
-      ? BOG_CONFIG.PACKAGES[selectedPackage].gel
-      : 0;
+  // Strict validation and sanitization
+  const amount = customAmount ? parseFloat(customAmount) : selectedAmount || 0;
+  const points = Math.floor(amount * BOG_CONFIG.POINTS_PER_GEL);
+  
+  // Validate amount with strict rules
+  useEffect(() => {
+    if (amount === 0 || !customAmount) {
+      setError('');
+    } else if (isNaN(amount)) {
+      setError('გთხოვთ შეიყვანოთ ვალიდური რიცხვი');
+    } else if (amount < minAmount) {
+      setError(`მინიმალური თანხა არის ${minAmount} ₾`);
+    } else if (amount > maxAmount) {
+      setError(`მაქსიმალური თანხა არის ${maxAmount} ₾`);
+    } else {
+      setError('');
+    }
+  }, [amount, customAmount, minAmount, maxAmount]);
 
-  const isValid = computedGel >= BOG_CONFIG.MIN_GEL && computedGel <= BOG_CONFIG.MAX_GEL;
+  // Strict validation: must be a valid number within range
+  const isValid = !isNaN(amount) && amount >= minAmount && amount <= maxAmount;
 
-  const handlePackageSelect = (index: number) => {
-    setSelectedPackage(index);
-    setIsCustom(false);
-    // Auto-fill custom amount with selected package value
-    setCustomGel(BOG_CONFIG.PACKAGES[index].gel.toString());
+  const handlePresetSelect = (value: number) => {
+    setSelectedAmount(value);
+    setCustomAmount(value.toString());
+    setError('');
   };
 
-  const handleCustomAmountChange = (value: string) => {
-    // Only allow numbers and one decimal point
-    if (!/^\d*\.?\d{0,2}$/.test(value)) return;
+  const handleCustomChange = (value: string) => {
+    // Strip any non-numeric characters except decimal point
+    const sanitized = value.replace(/[^\d.]/g, '');
     
-    setCustomGel(value);
-    setIsCustom(true);
-    setSelectedPackage(null);
+    // Prevent multiple decimal points
+    const parts = sanitized.split('.');
+    if (parts.length > 2) return;
+    
+    // Allow only 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) return;
+    
+    // Prevent values starting with multiple zeros
+    if (sanitized.startsWith('00')) return;
+    
+    // Parse and validate range
+    const numValue = parseFloat(sanitized);
+    if (sanitized && (numValue > maxAmount)) return;
+    
+    setCustomAmount(sanitized);
+    setSelectedAmount(null);
   };
 
-  const handleContinueToPayment = async () => {
-    if (!isValid || !userId) {
-      toast.error('Please select a valid amount');
+  const handlePayment = async () => {
+    // Triple validation before payment
+    if (!userId) {
+      toast.error('მომხმარებლის ID არ არის ნაპოვნი');
+      return;
+    }
+
+    if (!isValid) {
+      toast.error('გთხოვთ აირჩიოთ სწორი თანხა');
+      return;
+    }
+
+    // Final security check: ensure amount is a valid number in range
+    const finalAmount = parseFloat(amount.toFixed(2));
+    if (isNaN(finalAmount) || finalAmount < minAmount || finalAmount > maxAmount) {
+      toast.error('არასწორი თანხა');
+      setError(`თანხა უნდა იყოს ${minAmount}-დან ${maxAmount} ₾-მდე`);
       return;
     }
 
@@ -98,9 +153,10 @@ export function BuyPointsModal({
 
     try {
       logger.log('BuyPointsModal: Initiating payment', {
-        points: computedPoints,
-        gel: computedGel,
+        points,
+        gel: finalAmount,
         userId,
+        mode,
       });
 
       const data = await secureRequest<any>({
@@ -108,24 +164,24 @@ export function BuyPointsModal({
         execute: async () => {
           const { data, error } = await supabase.functions.invoke('bog-create-session', {
             body: {
-              points: computedPoints,
-              gel_amount: computedGel,
+              points,
+              gel_amount: finalAmount,
             },
           });
           if (error) {
             logger.error('BuyPointsModal: Payment session creation failed', error);
             if (error.message?.includes('CORS') || error.message?.includes('ERR_FAILED')) {
-              throw new Error('Cannot connect to payment service. Please test on the production site (smartpick.ge) or check your network connection.');
+              throw new Error('გადახდის სერვისთან დაკავშირება ვერ მოხერხდა. გთხოვთ სცადოთ smartpick.ge-ზე ან შეამოწმოთ ინტერნეტ კავშირი.');
             }
-            throw new Error(error.message || 'Failed to create payment session');
+            throw new Error(error.message || 'გადახდის სესიის შექმნა ვერ მოხერხდა');
           }
           if (data?.error) {
             logger.error('BuyPointsModal: API returned error', data);
-            throw new Error(data.error + (data.details ? `\n\nDetails: ${data.details}` : ''));
+            throw new Error(data.error + (data.details ? `\n\nდეტალები: ${data.details}` : ''));
           }
           if (!data || !data.redirectUrl) {
             logger.error('BuyPointsModal: Invalid response', data);
-            throw new Error('Invalid response from payment service');
+            throw new Error('გადახდის სერვისიდან არასწორი პასუხი');
           }
           return data;
         }
@@ -136,143 +192,150 @@ export function BuyPointsModal({
         orderId: data.orderId,
       });
 
-      // Show loading message
-      toast.info('Redirecting to secure payment page...');
+      toast.info('გადამისამართება უსაფრთხო გადახდის გვერდზე...');
 
-      // Redirect to BOG payment page
-      // Use a small delay to ensure toast is visible
       setTimeout(() => {
         window.location.href = data.redirectUrl;
       }, 500);
 
     } catch (error) {
       logger.error('BuyPointsModal: Error', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to start payment. Please try again.');
+      toast.error(error instanceof Error ? error.message : 'გადახდა ვერ დაიწყო. გთხოვთ სცადოთ თავიდან.');
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
     if (!isLoading) {
-      setSelectedPackage(null);
-      setCustomGel('');
-      setIsCustom(false);
       onClose();
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[420px] p-0 gap-0 border-none shadow-2xl overflow-hidden">
-        {/* Compact Header with gradient */}
-        <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-5 pb-4 border-b border-orange-100">
-          <DialogTitle className="text-lg font-bold text-gray-800 mb-1 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-orange-500" />
-            Top Up SmartPoints ✨
-          </DialogTitle>
-          <DialogDescription className="text-xs text-gray-600 mb-3">
-            Use points to reserve great deals instantly
-          </DialogDescription>
-          
-          {/* Compact Balance Badge */}
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1.5 border border-orange-200">
-            <Coins className="w-4 h-4 text-orange-500" />
-            <span className="text-xs text-gray-600">Balance:</span>
-            <span className="text-sm font-bold text-orange-600">{currentBalance.toLocaleString()}</span>
-            <span className="text-xs text-gray-500">pts</span>
+      <DialogContent className="sm:max-w-md p-0 gap-0 bg-white rounded-[28px] border-none shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-5">
+          <h2 className="text-xl font-bold text-gray-900">
+            {isPartner ? 'SmartPoints პარტნიორებისთვის' : 'SmartPoints-ის შეძენა'}
+          </h2>
+          {isPartner && (
+            <p className="text-sm text-gray-600 mt-2">
+              ქულები გამოიყენება შეთავაზებების გამოქვეყნებისათვის
+            </p>
+          )}
+        </div>
+
+        {/* Balance Card */}
+        <div className="mx-6 mb-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
+          <p className="text-xs font-medium text-gray-600 mb-1">
+            {isPartner ? 'ხელმისაწვდომი ბალანსი' : 'თქვენი ბალანსი'}
+          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl font-bold text-emerald-600">
+              {currentBalance.toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-600">
+              {isPartner ? 'საბალანსო ქულა' : 'ქულა'}
+            </p>
           </div>
         </div>
 
-        <div className="p-5 space-y-4">
-          {/* Compact Quick Select - 3 per row */}
-          <div>
-            <Label className="text-xs font-semibold text-gray-700 mb-2 block">Choose an amount or enter your own</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {BOG_CONFIG.PACKAGES.map((pkg, idx) => {
-                const selected = selectedPackage === idx && !isCustom;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handlePackageSelect(idx)}
-                    className={`px-3 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
-                      selected 
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-md scale-105' 
-                        : 'bg-white hover:bg-orange-50 border-gray-200 text-gray-700 hover:border-orange-300'
-                    }`}
-                  >
-                    {pkg.gel} ₾
-                  </button>
-                );
-              })}
-            </div>
+        {/* Amount Selection */}
+        <div className="px-6 pb-5">
+          <p className="text-sm font-semibold text-gray-700 mb-3">
+            {isPartner ? 'ქულების შეძენა' : 'აირჩიე თანხა'}
+          </p>
+          
+          {/* Preset Buttons */}
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            {presetAmounts.map((value) => (
+              <motion.button
+                key={value}
+                type="button"
+                whileTap={{ scale: 0.95 }}
+                onClick={() => handlePresetSelect(value)}
+                className={`h-12 rounded-2xl font-semibold text-base transition-all ${
+                  selectedAmount === value
+                    ? 'bg-emerald-500 text-white shadow-md border-2 border-emerald-500'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-emerald-300'
+                }`}
+              >
+                {value} ₾
+              </motion.button>
+            ))}
           </div>
 
-          {/* Compact Custom Input */}
-          <div>
-            <Label htmlFor="gel" className="text-xs font-semibold text-gray-700 mb-2 block">Or enter custom amount</Label>
+          {/* Custom Amount Input */}
+          <div className="mb-5">
+            <label className="text-sm font-semibold text-gray-700 mb-2 block">
+              {isPartner ? `საკუთარი თანხა (${minAmount}–${maxAmount} ₾)` : `ან საკუთარი თანხა`}
+            </label>
             <div className="relative">
-              <Input
-                id="gel"
+              <input
                 type="text"
                 inputMode="decimal"
-                placeholder="1-50"
-                value={customGel}
-                onChange={(e) => handleCustomAmountChange(e.target.value)}
-                className="h-11 text-base font-semibold pr-12 rounded-xl border-2 focus:border-orange-400"
+                placeholder="0.5–100"
+                value={customAmount}
+                onChange={(e) => handleCustomChange(e.target.value)}
+                maxLength={6}
+                autoComplete="off"
+                spellCheck={false}
+                className={`w-full h-12 pl-4 pr-16 text-base font-semibold rounded-2xl border-2 transition-colors focus:outline-none ${
+                  error 
+                    ? 'border-red-400 focus:border-red-500' 
+                    : 'border-gray-200 focus:border-emerald-400'
+                }`}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">GEL</span>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">
+                GEL
+              </span>
             </div>
             
-            {/* Inline Points Preview */}
-            {computedPoints > 0 && (
-              <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-gray-600">You will receive:</span>
-                <span className="font-bold text-orange-600 text-sm">{computedPoints.toLocaleString()} points</span>
-              </div>
-            )}
+            {/* Error Message */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="mt-2 flex items-center gap-1.5 text-red-600 text-sm"
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{error}</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Ultra Compact Summary */}
-          {isValid && (selectedPackage !== null || (isCustom && customGel)) && (
-            <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 text-xs border border-gray-200">
-              <div className="flex justify-between text-gray-600">
-                <span>Amount:</span>
-                <span className="font-semibold text-gray-800">{computedGel.toFixed(2)} GEL</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Points:</span>
-                <span className="font-semibold text-orange-600">+{computedPoints.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between pt-1.5 border-t border-gray-300">
-                <span className="font-medium text-gray-700">New Balance:</span>
-                <span className="font-bold text-orange-600">{(currentBalance + computedPoints).toLocaleString()} pts</span>
-              </div>
-            </div>
-          )}
+          {/* Primary CTA */}
+          <motion.button
+            type="button"
+            whileTap={{ scale: isValid && !isLoading ? 0.98 : 1 }}
+            onClick={handlePayment}
+            disabled={!isValid || isLoading}
+            className={`w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all ${
+              isValid && !isLoading
+                ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>მუშავდება...</span>
+              </>
+            ) : (
+              <span>
+                {isPartner ? 'ბალანსის შევსება' : 'გადახდა'} · {amount > 0 ? amount.toFixed(2) : '0.00'} ₾
+              </span>
+            )}
+          </motion.button>
 
-          {/* Compact Payment Button */}
-          <div className="space-y-2">
-            <Button 
-              className="w-full h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl shadow-lg hover:shadow-xl transition-all" 
-              disabled={!isValid || isLoading} 
-              onClick={handleContinueToPayment}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>Pay {computedGel > 0 ? computedGel.toFixed(2) : '0.00'} GEL</>
-              )}
-            </Button>
-            
-            {/* Friendly subtext */}
-            <p className="text-xs text-center text-gray-500 flex items-center justify-center gap-1.5">
-              <Shield className="w-3 h-3" />
-              <span>Secure BOG payment • Your points appear instantly!</span>
-            </p>
+          {/* Trust Footer */}
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-500">
+            <Lock className="w-3.5 h-3.5" />
+            <span>გადახდა BOG-ის გადახდის უსაფრთხო სისტემით</span>
           </div>
         </div>
       </DialogContent>

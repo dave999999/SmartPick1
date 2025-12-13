@@ -180,6 +180,28 @@ export default function ReservationModalNew({
     });
   };
 
+  // Check if business operates 24 hours (either flag or same pickup times)
+  const is24HourBusiness = (start: string, end: string, partner?: any) => {
+    // Check explicit flag first
+    if (partner?.open_24h) return true;
+    if (!start || !end) return false;
+    
+    // Format both times to compare - if they're the same when displayed, it's 24/7
+    const startFormatted = formatTime(start);
+    const endFormatted = formatTime(end);
+    
+    // Debug logging
+    console.log('24H Check:', {
+      startFormatted,
+      endFormatted,
+      areSame: startFormatted === endFormatted,
+      partner: partner?.business_name
+    });
+    
+    // If formatted times are identical, it's 24/7 operation
+    return startFormatted === endFormatted;
+  };
+
   const maxQuantity = Math.min(3, offer.quantity_available);
   const POINTS_PER_UNIT = 5;
   const totalPoints = POINTS_PER_UNIT * quantity;
@@ -262,7 +284,7 @@ export default function ReservationModalNew({
                 <div className="flex items-start justify-between mb-2">
                   {/* Left: Price */}
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide mb-0.5">Pickup Price</p>
+                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide mb-0.5">{t('reservation.pickupPrice')}</p>
                     <p className="text-[18px] font-black text-gray-900">₾{offer.smart_price.toFixed(2)}</p>
                   </div>
                   {/* Right: Add Points */}
@@ -275,14 +297,14 @@ export default function ReservationModalNew({
                       color: '#0A8A5E',
                     }}
                   >
-                    Add Points
+                    {t('reservation.addPoints')}
                   </button>
                 </div>
 
                 <div className="flex items-center justify-between">
                   {/* Balance */}
                   <p className="text-[12px] text-gray-700">
-                    Balance: <span className="font-bold text-teal-700">{userPoints} pts</span>
+                    {t('reservation.balance')}: <span className="font-bold text-teal-700">{userPoints} {t('reservation.pts')}</span>
                   </p>
 
                   {/* Reserve Badge */}
@@ -294,7 +316,7 @@ export default function ReservationModalNew({
                     }}
                   >
                     <img src="/icons/button.png" alt="" aria-hidden="true" className="w-4 h-4" />
-                    <span className="text-[11px] font-medium text-white">{totalPoints} pts</span>
+                    <span className="text-[11px] font-medium text-white">{totalPoints} {t('reservation.pts')}</span>
                   </div>
                 </div>
               </div>
@@ -318,7 +340,7 @@ export default function ReservationModalNew({
 
                 <div className="flex-1 text-center">
                   <span className="text-[16px] font-semibold text-gray-900">{quantity}</span>
-                  <p className="text-[10px] text-gray-600 font-medium">Max {maxQuantity} left</p>
+                  <p className="text-[10px] text-gray-600 font-medium">{t('reservation.maxLeft').replace('{count}', maxQuantity.toString())}</p>
                 </div>
 
                 <button
@@ -350,10 +372,16 @@ export default function ReservationModalNew({
                         <Clock className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                       </div>
                       <div className="flex-1">
-                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">Pickup Window</p>
-                        <p className="text-[14px] font-black text-gray-900">
-                          {formatTime(pickupStart)} - {formatTime(pickupEnd)}
-                        </p>
+                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">{t('reservation.pickupWindow')}</p>
+                        {is24HourBusiness(pickupStart, pickupEnd, offer.partner) ? (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black bg-green-100 text-green-800 border border-green-300">
+                            {t('reservation.open24_7')}
+                          </span>
+                        ) : (
+                          <p className="text-[14px] font-black text-gray-900">
+                            {formatTime(pickupStart)} - {formatTime(pickupEnd)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="h-px bg-gray-300/40" />
@@ -366,7 +394,7 @@ export default function ReservationModalNew({
                     <MapPin className="w-4 h-4 text-orange-600" strokeWidth={2.5} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">Location</p>
+                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide mb-0.5">{t('reservation.location')}</p>
                     <p className="text-[14px] font-black text-gray-900">{partnerAddress}</p>
                   </div>
                 </div>
@@ -386,24 +414,24 @@ export default function ReservationModalNew({
                 {isReserving ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Reserving...
+                    {t('reservation.reserving')}
                   </>
                 ) : cooldown.isInCooldown ? (
                   <>
                     <Clock className="w-5 h-5" />
-                    In cooldown
+                    {t('reservation.inCooldown')}
                   </>
                 ) : (
                   <>
                     <img src="/icons/button.png" alt="" className="w-12 h-12" />
-                    Reserve price now
+                    {t('reservation.reserveNow')}
                   </>
                 )}
               </button>
 
               {/* Helper Text */}
               <p className="text-[11px] text-gray-700 text-center font-medium leading-relaxed">
-                Reserve now, pay on pickup. Your discount is guaranteed.
+                {t('reservation.helperText')}
               </p>
             </div>
           </div>

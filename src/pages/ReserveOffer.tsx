@@ -256,6 +256,16 @@ export default function ReserveOffer() {
   const pickupStart = offer.pickup_start || offer.pickup_window?.start || '';
   const pickupEnd = offer.pickup_end || offer.pickup_window?.end || '';
   
+  // Check if business operates 24 hours (either flag or same pickup times)
+  const is24HourBusiness = () => {
+    if (offer.partner?.open_24h) return true;
+    if (!pickupStart || !pickupEnd) return false;
+    const startTime = new Date(pickupStart);
+    const endTime = new Date(pickupEnd);
+    const diffMinutes = Math.abs(endTime.getTime() - startTime.getTime()) / (1000 * 60);
+    return diffMinutes < 5; // Less than 5 minutes difference means 24/7
+  };
+  
   // Get partner address - support both flat and nested structures
   const partnerAddress = offer.partner?.address || offer.partner?.location?.address || '';
 
@@ -416,9 +426,17 @@ export default function ReserveOffer() {
                 </div>
                 <div>
                   <p className="font-medium text-gray-900">{t('label.pickupWindow')}</p>
-                  <p className="text-sm text-gray-600">
-                    {formatTime(pickupStart)} - {formatTime(pickupEnd)}
-                  </p>
+                  {is24HourBusiness() ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-300">
+                        OPEN 24/7
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">
+                      {formatTime(pickupStart)} - {formatTime(pickupEnd)}
+                    </p>
+                  )}
                   <p className="text-xs font-medium mt-1" style={{color: '#4CAF50'}}>
                     ⏱ {getTimeRemaining(offer.expires_at)}
                   </p>

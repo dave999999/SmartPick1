@@ -98,11 +98,78 @@ export function useOfferActions(
     }
   };
 
+  const handlePauseOffer = async (offer: Offer) => {
+    if (processingIds.has(offer.id)) return;
+
+    try {
+      setProcessingIds(prev => new Set(prev).add(offer.id));
+      await updateOffer(offer.id, { status: 'PAUSED' });
+      toast.success(t('partner.dashboard.toast.toggleSuccess'));
+      onSuccess();
+    } catch (error) {
+      toast.error(t('partner.dashboard.toast.toggleFailed'));
+    } finally {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(offer.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleResumeOffer = async (offer: Offer) => {
+    if (processingIds.has(offer.id)) return;
+
+    try {
+      setProcessingIds(prev => new Set(prev).add(offer.id));
+      await updateOffer(offer.id, { status: 'ACTIVE' });
+      toast.success(t('partner.dashboard.toast.toggleSuccess'));
+      onSuccess();
+    } catch (error) {
+      toast.error(t('partner.dashboard.toast.toggleFailed'));
+    } finally {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(offer.id);
+        return newSet;
+      });
+    }
+  };
+
+  const handleCloneOffer = async (offer: Offer) => {
+    if (processingIds.has(offer.id)) return;
+
+    try {
+      setProcessingIds(prev => new Set(prev).add(offer.id));
+
+      if (!partner || partner.status !== 'APPROVED') {
+        toast.error(t('partner.dashboard.pending.afterApproval'));
+        return;
+      }
+
+      await duplicateOffer(offer.id, partner.id);
+      toast.success(t('partner.dashboard.toast.offerCreated'));
+      onSuccess();
+    } catch (error) {
+      logger.error('Error duplicating offer:', error);
+      toast.error(t('partner.dashboard.toast.offerCreateFailed'));
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(offer.id);
+        return next;
+      });
+    }
+  };
+
   return {
     processingIds,
     handleToggleOffer,
     handleDeleteOffer,
     handleRefreshQuantity,
     handleDuplicateOffer,
+    handlePauseOffer,
+    handleResumeOffer,
+    handleCloneOffer,
   };
 }

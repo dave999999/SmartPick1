@@ -29,6 +29,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // Note: All icons have visible text labels, so aria-hidden should be added to icon elements
 import { useState } from 'react';
 import { MenuDrawer } from '../MenuDrawer';
+import { useI18n } from '@/lib/i18n';
 
 // Haptic feedback utility (10ms vibration)
 const triggerHaptic = () => {
@@ -42,6 +43,7 @@ interface BottomNavBarProps {
 }
 
 export function BottomNavBar({ onCenterClick }: BottomNavBarProps) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,11 +52,11 @@ export function BottomNavBar({ onCenterClick }: BottomNavBarProps) {
   const isActive = (path: string) => location.pathname === path;
 
   const tabs = [
-    { id: 'home', path: '/', icon: Home, label: 'Home' },
-    { id: 'favorites', path: '/favorites', icon: Heart, label: 'Saved' },
-    { id: 'center', path: null, icon: Sparkles, label: 'Offers' },
-    { id: 'profile', path: '/profile', icon: User, label: 'Profile' },
-    { id: 'menu', path: null, icon: Menu, label: 'Menu' },
+    { id: 'home', path: '/', icon: Home, label: t('nav.home') },
+    { id: 'favorites', path: '/favorites', icon: Heart, label: t('nav.saved') },
+    { id: 'center', path: null, icon: Sparkles, label: t('nav.offers') },
+    { id: 'profile', path: '/profile', icon: User, label: t('nav.profile') },
+    { id: 'menu', path: null, icon: Menu, label: t('nav.menu') },
   ];
 
   const handleTabClick = (tab: typeof tabs[0]) => {
@@ -76,13 +78,13 @@ export function BottomNavBar({ onCenterClick }: BottomNavBarProps) {
   return (
     <>
       {/* Floating 3D Glass Dock */}
-      <nav className="fixed bottom-4 left-0 right-0 z-50 pointer-events-none px-4">
+      <nav className="fixed bottom-4 left-0 right-0 z-50 pointer-events-none px-2 sm:px-4">
         <div className="relative max-w-md mx-auto pointer-events-auto">
           {/* Glass Dock Container */}
           <div
             className="
               h-[64px]
-              px-5
+              px-3 sm:px-5
               rounded-[28px]
               backdrop-blur-xl
               bg-white/20
@@ -91,7 +93,7 @@ export function BottomNavBar({ onCenterClick }: BottomNavBarProps) {
               relative
               flex items-center justify-between
               transition-all duration-300
-              max-[360px]:w-[90%] max-[360px]:mx-auto
+              w-full
             "
             style={{
               backdropFilter: 'blur(20px) saturate(180%)',

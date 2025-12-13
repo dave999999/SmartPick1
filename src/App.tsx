@@ -23,7 +23,7 @@ import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import TopRightMenu from './components/layout/TopRightMenu';
 
 // Lazy load: All other routes for code splitting (~300 KB savings on initial load)
-const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard'));
+const PartnerDashboard = lazy(() => import('./pages/PartnerDashboardV3'));
 const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const ReservationDetail = lazy(() => import('./pages/ReservationDetail'));
 const MyPicks = lazy(() => import('./pages/MyPicks'));
