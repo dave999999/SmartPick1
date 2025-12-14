@@ -132,7 +132,15 @@ export default function PartnerDashboardV3() {
   };
 
   const handlePurchaseSlot = async () => {
-    if (!partner || !partnerPoints) return;
+    if (!partner) {
+      toast.error('პარტნიორის ინფორმაცია არ არის ხელმისაწვდომი');
+      return;
+    }
+
+    if (!partnerPoints) {
+      toast.error('პარტნიორის ქულების სისტემა არ არის ინიციალიზებული. გთხოვთ დაუკავშირდეთ მხარდაჭერას.');
+      return;
+    }
 
     const slotCost = (partnerPoints.offer_slots - 9) * 100;
 
@@ -149,12 +157,24 @@ export default function PartnerDashboardV3() {
         toast.success(`სლოტი წარმატებით შეძენილია! ახალი სლოტები: ${result.new_slots}`);
         await loadPartnerData();
       } else {
-        toast.error(result.message || 'სლოტის შეძენა ვერ მოხერხდა');
-        throw new Error(result.message);
+        const errorMsg = result.message || 'სლოტის შეძენა ვერ მოხერხდა';
+        toast.error(errorMsg);
+        throw new Error(errorMsg);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error purchasing slot:', error);
-      toast.error('სლოტის შეძენა ვერ მოხერხდა');
+      const errorMessage = error?.message || 'სლოტის შეძენა ვერ მოხერხდა';
+      
+      // Provide more helpful error messages
+      if (errorMessage.includes('not initialized')) {
+        toast.error('პარტნიორის ქულების სისტემა არ არის ინიციალიზებული. გთხოვთ დაუკავშირდეთ მხარდაჭერას.');
+      } else if (errorMessage.includes('not found')) {
+        toast.error('პარტნიორი ვერ მოიძებნა სისტემაში');
+      } else if (errorMessage.includes('Insufficient')) {
+        toast.error('არასაკმარისი ბალანსი');
+      } else {
+        toast.error(errorMessage);
+      }
       throw error;
     }
   };
