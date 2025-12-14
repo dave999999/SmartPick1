@@ -645,12 +645,18 @@ export default function IndexRedesigned() {
   }, [userLocation?.[0], userLocation?.[1]]);
 
   const handleOfferClick = useCallback((offer: Offer) => {
-    setSelectedOffer(offer);
-    addRecentlyViewed(offer.id, 'offer');
-
+    // If user is not logged in, show auth dialog instead of opening offer
     if (!user) {
       setShowAuthDialog(true);
+      setDefaultAuthTab('signin');
+      return;
     }
+
+    // User is logged in, proceed with opening offer
+    setSelectedOffer(offer);
+    setHighlightedOfferId(offer.id);
+    setShowNewReservationModal(true);
+    addRecentlyViewed(offer.id, 'offer');
   }, [user, addRecentlyViewed]);
 
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
@@ -794,9 +800,7 @@ export default function IndexRedesigned() {
           setSelectedPartnerId(null);
         }}
         onOfferSelect={(offer) => {
-          setSelectedOffer(offer);
-          setHighlightedOfferId(offer.id);
-          setShowNewReservationModal(true);
+          handleOfferClick(offer);
           setShowPartnerSheet(false);
         }}
       />
@@ -812,9 +816,7 @@ export default function IndexRedesigned() {
           setSelectedPartnerId(null);
         }}
         onOfferSelect={(offer) => {
-          setSelectedOffer(offer);
-          setHighlightedOfferId(offer.id);
-          setShowNewReservationModal(true);
+          handleOfferClick(offer);
           setDiscoverSheetOpen(false);
           setIsSheetMinimized(false);
         }}

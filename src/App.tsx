@@ -299,7 +299,11 @@ const AppContent = () => {
       <TopRightMenu />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<IndexRedesigned />} />
+          <Route path="/" element={
+            <GoogleMapProvider>
+              <IndexRedesigned />
+            </GoogleMapProvider>
+          } />
           <Route path="/old" element={<Index />} />
           <Route
             path="/partner"
@@ -386,10 +390,8 @@ const AppContent = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <GoogleMapProvider>
-        <Toaster />
-        <AppContent />
-      </GoogleMapProvider>
+      <Toaster />
+      <AppContent />
     </TooltipProvider>
   </QueryClientProvider>
 );

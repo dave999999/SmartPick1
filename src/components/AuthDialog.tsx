@@ -552,7 +552,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   background: 'rgba(255,255,255,0.9)',
                   backdropFilter: 'blur(12px)',
                   boxShadow: '0 2px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.3) inset',
-                  color: '#FFFFFF',
+                  color: '#1f2937',
                 }}
               >
                 <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">
@@ -763,10 +763,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     disabled={isLoading}
                     className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 group relative overflow-hidden border-none"
                     style={{
-                      background: 'rgba(255,255,255,0.5)',
+                      background: 'rgba(255,255,255,0.9)',
                       backdropFilter: 'blur(12px)',
-                      boxShadow: '0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.5) inset',
-                      color: '#FFFFFF',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.3) inset',
+                      color: '#1f2937',
                     }}
                   >
                     <svg className="mr-3 h-5 w-5 transition-transform group-hover:scale-110 duration-200 relative z-10" viewBox="0 0 24 24">

@@ -54,7 +54,7 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       const { data, error } = await supabase
         .from('partner_points')
         .select('*')
-        .eq('user_id', profile.id)  // Column is named user_id, not partner_id
+        .eq('user_id', userId)  // Use auth user_id (same as partners.user_id)
         .maybeSingle();
 
       if (error) {
@@ -65,7 +65,7 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       // Map partner_points to UserPoints interface for compatibility
       return data ? {
         ...data,
-        user_id: userId, // Add user_id for compatibility
+        user_id: userId,
         partner_id: profile.id
       } as UserPoints : null;
     }

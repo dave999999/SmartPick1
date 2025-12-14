@@ -20,12 +20,16 @@ import {
   MoreVertical,
   Wallet,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Home
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
 import { useReservationActions } from '@/hooks/useReservationActions';
 import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
+import { EditOfferDialog } from '@/components/partner/EditOfferDialog';
+import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
+import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 
 /**
  * PARTNER DASHBOARD V3 - APPLE-STYLE MOBILE REDESIGN
@@ -63,6 +67,10 @@ export default function PartnerDashboardV3() {
   const [activeOfferMenu, setActiveOfferMenu] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'offers' | 'active'>('offers');
   const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
+  const [showCreateWizard, setShowCreateWizard] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load partner data
   const loadPartnerData = useCallback(async () => {
@@ -114,7 +122,95 @@ export default function PartnerDashboardV3() {
   // Handle offer actions
   const handleEditOffer = (offerId: string) => {
     setActiveOfferMenu(null);
-    navigate(`/partner/offers/${offerId}/edit`);
+    const offer = offers.find(o => o.id === offerId);
+    if (offer) {
+      setEditingOffer(offer);
+    }
+  };
+
+  const handleCreateOfferWizard = async (formData: FormData) => {
+    try {
+      setIsSubmitting(true);
+      
+      if (!partner) {
+        toast.error('პარტნიორის ინფორმაცია არ არის ხელმისაწვდომი');
+        return;
+      }
+
+      // Extract form data exactly like old dashboard
+      const title = (formData.get('title') as string)?.trim() || 'Untitled Offer';
+      const description = (formData.get('description') as string)?.trim() || 'No description provided';
+      const original_price = parseFloat(formData.get('original_price') as string);
+      const smart_price = parseFloat(formData.get('smart_price') as string);
+      const quantity = parseInt(formData.get('quantity') as string);
+      const autoExpire6hValue = formData.get('auto_expire_6h');
+      const autoExpire6h = autoExpire6hValue === 'true' || autoExpire6hValue === '1' || autoExpire6hValue === 'on';
+      
+      // Get images from FormData
+      const processedImages = formData
+        .getAll('images')
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value): value is string => Boolean(value));
+
+      if (processedImages.length === 0) {
+        toast.error('გთხოვთ აირჩიოთ სურათი');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Calculate pickup times
+      const { calculatePickupEndTime } = await import('@/lib/utils/businessHours');
+      const now = new Date();
+      const pickupStart = now;
+      const pickupEnd = calculatePickupEndTime(partner, autoExpire6h);
+
+      // Verify partner authentication
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (partner.user_id !== currentUser?.id) {
+        toast.error('Authentication error: Please log out and log back in');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Direct insert to database like old dashboard
+      const insertData = {
+        partner_id: partner.id,
+        title,
+        description,
+        category: partner.business_type || 'RESTAURANT',
+        images: processedImages,
+        original_price,
+        smart_price,
+        quantity_available: quantity,
+        quantity_total: quantity,
+        pickup_start: pickupStart.toISOString(),
+        pickup_end: pickupEnd.toISOString(),
+        status: 'ACTIVE',
+        expires_at: pickupEnd.toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('offers')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create offer: ${error.message}`);
+      }
+
+      toast.success('შეთავაზება წარმატებით შეიქმნა!');
+      setShowCreateWizard(false);
+      await loadPartnerData();
+    } catch (error: any) {
+      console.error('Error creating offer:', error);
+      toast.error(error.message || 'შეთავაზების შექმნა ვერ მოხერხდა');
+      throw error; // Re-throw so wizard knows not to close
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleTogglePause = async (offer: Offer) => {
@@ -188,38 +284,48 @@ export default function PartnerDashboardV3() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-32">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-28">
       {/* STICKY TOP SUMMARY STRIP */}
       <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
-        <div className="px-4 py-3">
-          {/* Layer 1: Primary - Actionable Wallet */}
-          <div className="flex items-center justify-between mb-3">
-            <h1 className="text-2xl font-bold text-gray-900">მართვის პანელი</h1>
+        <div className="px-3 py-2">
+          {/* Layer 1: Primary - Actionable Buttons */}
+          <div className="flex items-center justify-between mb-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/')}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg transition-shadow"
+            >
+              <Home className="w-4 h-4" />
+              <div className="text-left">
+                <p className="text-[10px] opacity-90">მთავარი</p>
+                <p className="text-sm font-bold">გვერდი</p>
+              </div>
+            </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowBuyPointsModal(true)}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl px-4 py-2.5 shadow-md hover:shadow-lg transition-shadow"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg transition-shadow"
             >
-              <Wallet className="w-5 h-5" />
+              <Wallet className="w-4 h-4" />
               <div className="text-left">
-                <p className="text-xs opacity-90">ბალანსი</p>
-                <p className="text-base font-bold">₾{partnerPoints?.balance || 0}</p>
+                <p className="text-[10px] opacity-90">ბალანსი</p>
+                <p className="text-sm font-bold">₾{partnerPoints?.balance || 0}</p>
               </div>
-              <Plus className="w-4 h-4 opacity-75" />
+              <Plus className="w-3 h-3 opacity-75" />
             </motion.button>
           </div>
 
           {/* Layer 2: Secondary Stats - Compact & Muted */}
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1.5">
-              <span className="text-gray-500">აქტიური შეთავაზებები:</span>
+          <div className="flex items-center gap-2.5 text-[11px] text-gray-600">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">აქტიური:</span>
               <span className="font-bold text-emerald-600">{stats.activeOffers}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-gray-500">სლოტები (ლიმიტი):</span>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500">სლოტები:</span>
               <span className="font-bold text-gray-900">{(partnerPoints?.offer_slots || 10) - offers.filter(o => o.status === 'ACTIVE').length}</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <span className="text-gray-500">დღეს:</span>
               <span className="font-bold text-gray-900">₾{revenueToday.toFixed(0)}</span>
             </div>
@@ -228,13 +334,13 @@ export default function PartnerDashboardV3() {
       </div>
 
       {/* MAIN CONTENT */}
-      <div className="px-4 pt-6 space-y-6">
+      <div className="px-3 pt-3 space-y-3">
         
         {/* PERFORMANCE CARD - Compact */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 shadow-lg"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 shadow-lg"
         >
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -243,15 +349,15 @@ export default function PartnerDashboardV3() {
           </div>
 
           <div className="relative">
-            <p className="text-emerald-100 text-xs font-semibold tracking-wide uppercase mb-3">
+            <p className="text-emerald-100 text-[10px] font-semibold tracking-wide uppercase mb-2">
               დღეს
             </p>
             
-            <div className="flex items-baseline gap-3">
-              <p className="text-5xl font-bold text-white tracking-tight">
+            <div className="flex items-baseline gap-2">
+              <p className="text-4xl font-bold text-white tracking-tight">
                 {stats.itemsPickedUp}
               </p>
-              <p className="text-emerald-100 text-base font-medium opacity-90">
+              <p className="text-emerald-100 text-sm font-medium opacity-90">
                 შეკვეთა
               </p>
             </div>
@@ -264,11 +370,11 @@ export default function PartnerDashboardV3() {
         </motion.div>
 
         {/* VIEW TABS */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-1.5 bg-gray-50 p-1 rounded-2xl">
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => setActiveView('offers')}
-            className={`flex-1 py-3 px-4 rounded-2xl font-semibold transition-all ${
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all ${
               activeView === 'offers'
                 ? 'bg-emerald-500 text-white shadow-md'
                 : 'bg-white text-gray-600 border border-gray-200'
@@ -279,15 +385,15 @@ export default function PartnerDashboardV3() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => setActiveView('active')}
-            className={`flex-1 py-3 px-4 rounded-2xl font-semibold transition-all relative ${
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition-all relative ${
               activeView === 'active'
                 ? 'bg-emerald-500 text-white shadow-md'
                 : 'bg-white text-gray-600 border border-gray-200'
-            }`}
+            } ${reservations.length > 0 ? 'animate-pulse-subtle' : ''}`}
           >
-            აქტიური
+            აქტიური რეზერვაციები
             {reservations.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
                 {reservations.length}
               </span>
             )}
@@ -297,15 +403,15 @@ export default function PartnerDashboardV3() {
         {/* OFFERS SECTION */}
         {activeView === 'offers' && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">თქვენი შეთავაზებები</h2>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-gray-900">თქვენი შეთავაზებები</h2>
               {offers.length > 0 && (
-                <p className="text-sm text-gray-500">{offers.length} ჯამური</p>
+                <p className="text-xs text-gray-500">{offers.length} ჯამური</p>
               )}
             </div>
 
             {/* Offers List */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <AnimatePresence>
                 {offers.length === 0 ? (
                   <motion.div
@@ -324,14 +430,14 @@ export default function PartnerDashboardV3() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm active:scale-[0.98] transition-transform"
+                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm active:scale-[0.98] transition-transform"
                   >
-                    <div className="p-4">
+                    <div className="p-3">
                       {/* Top Section: Image + Content */}
-                      <div className="flex gap-4 mb-3">
+                      <div className="flex gap-3 mb-2">
                         {/* Thumbnail */}
                         <div className="flex-shrink-0">
-                          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+                          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                             {offer.images?.[0] ? (
                               <img 
                                 src={offer.images[0]} 
@@ -350,21 +456,21 @@ export default function PartnerDashboardV3() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-gray-900 truncate">
+                              <h3 className="text-sm font-semibold text-gray-900 truncate leading-tight">
                                 {offer.title}
                               </h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <p className="text-lg font-bold text-emerald-600">
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <p className="text-base font-bold text-emerald-600">
                                   ₾{offer.smart_price}
                                 </p>
                                 {offer.original_price > offer.smart_price && (
-                                  <p className="text-sm text-gray-400 line-through">
+                                  <p className="text-xs text-gray-400 line-through">
                                     ₾{offer.original_price}
                                   </p>
                                 )}
                               </div>
                               {/* Quick Stats */}
-                              <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                              <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
                                 <span>{offer.quantity_available} left</span>
                                 <span>•</span>
                                 <span>Qty: {offer.original_quantity}</span>
@@ -384,35 +490,30 @@ export default function PartnerDashboardV3() {
                         <motion.button 
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleEditOffer(offer.id)}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-[11px] font-medium text-emerald-700 transition-colors"
+                            className="flex-1 flex items-center justify-center py-2 px-2 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-emerald-700 transition-colors"
+                            aria-label="რედაქტირება"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
-                            <span>რედაქტირება</span>
+                            <Edit2 className="w-4 h-4" />
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleTogglePause(offer)}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-[11px] font-medium text-gray-700 transition-colors"
+                            className="flex-1 flex items-center justify-center py-2 px-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors"
+                            aria-label={offer.status === 'ACTIVE' ? 'პაუზა' : 'განავლება'}
                           >
                             {offer.status === 'ACTIVE' ? (
-                              <>
-                                <Pause className="w-3.5 h-3.5" />
-                                <span>პაუზა</span>
-                              </>
+                              <Pause className="w-4 h-4" />
                             ) : (
-                              <>
-                                <Play className="w-3.5 h-3.5" />
-                                <span>განავლება</span>
-                              </>
+                              <Play className="w-4 h-4" />
                             )}
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleCloneOffer(offer)}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-[11px] font-medium text-purple-700 transition-colors"
+                            className="flex-1 flex items-center justify-center py-2 px-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-purple-700 transition-colors"
+                            aria-label="კლონი"
                           >
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>კლონი</span>
+                            <Copy className="w-4 h-4" />
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
@@ -421,10 +522,10 @@ export default function PartnerDashboardV3() {
                                 offerActions.handleDeleteOffer(offer.id);
                               }
                             }}
-                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-red-50 hover:bg-red-100 rounded-lg text-[11px] font-medium text-red-600 transition-colors"
+                            className="flex-1 flex items-center justify-center py-2 px-2 bg-red-50 hover:bg-red-100 rounded-lg text-red-600 transition-colors"
+                            aria-label="წაშლა"
                           >
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            <span>წაშლა</span>
+                            <AlertCircle className="w-4 h-4" />
                           </motion.button>
                         </div>
                       </div>
@@ -468,31 +569,70 @@ export default function PartnerDashboardV3() {
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="fixed bottom-6 left-4 right-4 z-50"
+        className="fixed bottom-4 left-3 right-3 z-50"
       >
-        <div className="bg-white/90 backdrop-blur-2xl rounded-[28px] border border-gray-200/60 shadow-2xl p-3">
-          <div className="flex gap-3">
+        <div className="bg-white/90 backdrop-blur-2xl rounded-3xl border border-gray-200/60 shadow-2xl p-2">
+          <div className="flex gap-2">
             {/* Primary Action - New Offer */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/partner/offers/new')}
-              className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-[20px] py-4 px-6 font-semibold text-base shadow-lg flex items-center justify-center gap-2 transition-all active:shadow-md"
+              onClick={() => setShowCreateWizard(true)}
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl py-3 px-4 font-semibold text-sm shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-1.5 transition-all active:shadow-md animate-pulse-glow"
             >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
+              <Plus className="w-4 h-4" strokeWidth={2.5} />
               ახალი შეთავაზება
             </motion.button>
 
             {/* Secondary Action - Scan QR */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/partner/scan')}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-[20px] py-4 px-6 font-semibold flex items-center justify-center gap-2 transition-colors"
+              onClick={() => setShowQRScanner(true)}
+              className="w-14 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-2xl py-3 font-semibold flex items-center justify-center shadow-lg hover:shadow-gray-300/40 transition-all active:shadow-md"
             >
               <QrCode className="w-5 h-5" />
             </motion.button>
           </div>
         </div>
       </motion.div>
+
+      {/* DIALOGS */}
+      {showCreateWizard && partner && (
+        <CreateOfferWizard
+          open={showCreateWizard}
+          onClose={() => setShowCreateWizard(false)}
+          onSubmit={handleCreateOfferWizard}
+          isSubmitting={isSubmitting}
+          is24HourBusiness={partner.hours_24_7 || false}
+          businessType={partner.business_type || 'RESTAURANT'}
+        />
+      )}
+
+      {editingOffer && partner && (
+        <EditOfferDialog
+          open={!!editingOffer}
+          onOpenChange={(open) => {
+            if (!open) setEditingOffer(null);
+          }}
+          offer={editingOffer}
+          partner={partner}
+          autoExpire6h={partner.hours_24_7 || false}
+          onSuccess={() => {
+            setEditingOffer(null);
+            loadPartnerData();
+          }}
+        />
+      )}
+
+      {showQRScanner && (
+        <QRScannerDialog
+          open={showQRScanner}
+          onOpenChange={(open) => {
+            setShowQRScanner(open);
+            if (!open) loadPartnerData();
+          }}
+          partnerId={partner?.id || ''}
+        />
+      )}
     </div>
   );
 }
