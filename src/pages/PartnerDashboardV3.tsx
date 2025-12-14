@@ -131,6 +131,34 @@ export default function PartnerDashboardV3() {
     await offerActions.handleCloneOffer(offer);
   };
 
+  const handlePurchaseSlot = async () => {
+    if (!partner || !partnerPoints) return;
+
+    const slotCost = (partnerPoints.offer_slots - 9) * 100;
+
+    if (partnerPoints.balance < slotCost) {
+      toast.error('არასაკმარისი ბალანსი სლოტის შესაძენად');
+      return;
+    }
+
+    try {
+      const { purchaseOfferSlot } = await import('@/lib/api');
+      const result = await purchaseOfferSlot();
+      
+      if (result.success) {
+        toast.success(`სლოტი წარმატებით შეძენილია! ახალი სლოტები: ${result.new_slots}`);
+        await loadPartnerData();
+      } else {
+        toast.error(result.message || 'სლოტის შეძენა ვერ მოხერხდა');
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error purchasing slot:', error);
+      toast.error('სლოტის შეძენა ვერ მოხერხდა');
+      throw error;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center">
@@ -331,32 +359,40 @@ export default function PartnerDashboardV3() {
                         </div>
                       </div>
 
-                      {/* Action Buttons - Primary actions visible, dangerous in menu */}
-                      <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
+                      {/* Action Buttons - Compact horizontal layout */}
+                      <div className="flex items-center gap-1.5 pt-2.5 border-t border-gray-100">
                         <motion.button 
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleEditOffer(offer.id)}
-                            className="flex flex-col items-center justify-center gap-1 py-2.5 px-2 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-xs font-medium text-emerald-700 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-[11px] font-medium text-emerald-700 transition-colors"
                           >
-                            <Edit2 className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                             <span>რედაქტირება</span>
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleTogglePause(offer)}
-                            className="flex flex-col items-center justify-center gap-1 py-2.5 px-2 bg-gray-50 hover:bg-gray-100 rounded-xl text-xs font-medium text-gray-700 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-gray-50 hover:bg-gray-100 rounded-lg text-[11px] font-medium text-gray-700 transition-colors"
                           >
                             {offer.status === 'ACTIVE' ? (
                               <>
-                                <Pause className="w-4 h-4" />
+                                <Pause className="w-3.5 h-3.5" />
                                 <span>პაუზა</span>
                               </>
                             ) : (
                               <>
-                                <Play className="w-4 h-4" />
+                                <Play className="w-3.5 h-3.5" />
                                 <span>განავლება</span>
                               </>
                             )}
+                          </motion.button>
+                          <motion.button 
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleCloneOffer(offer)}
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-[11px] font-medium text-purple-700 transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>კლონი</span>
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
@@ -365,9 +401,9 @@ export default function PartnerDashboardV3() {
                                 offerActions.handleDeleteOffer(offer.id);
                               }
                             }}
-                            className="flex flex-col items-center justify-center gap-1 py-2.5 px-2 bg-red-50 hover:bg-red-100 rounded-xl text-xs font-medium text-red-600 transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-red-50 hover:bg-red-100 rounded-lg text-[11px] font-medium text-red-600 transition-colors"
                           >
-                            <AlertCircle className="w-4 h-4" />
+                            <AlertCircle className="w-3.5 h-3.5" />
                             <span>წაშლა</span>
                           </motion.button>
                         </div>
@@ -401,10 +437,9 @@ export default function PartnerDashboardV3() {
           onClose={() => setShowBuyPointsModal(false)}
           userId={partner.user_id}
           currentBalance={partnerPoints?.balance || 0}
-          onSuccess={() => {
-            loadPartnerData();
-            setShowBuyPointsModal(false);
-          }}
+          mode="partner"
+          partnerPoints={partnerPoints}
+          onPurchaseSlot={handlePurchaseSlot}
         />
       )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Loader2, Shield, Lock, AlertCircle } from 'lucide-react';
+import { Loader2, Shield, Lock, AlertCircle, Wallet, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BOG_CONFIG } from '@/lib/payments/bog';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +15,11 @@ interface BuyPointsModalProps {
   currentBalance: number;
   userId: string;
   mode?: 'user' | 'partner';
+  partnerPoints?: {
+    balance: number;
+    offer_slots: number;
+  } | null;
+  onPurchaseSlot?: () => void;
 }
 
 export function BuyPointsModal({
@@ -23,11 +28,15 @@ export function BuyPointsModal({
   currentBalance: initialBalance,
   userId,
   mode = 'user',
+  partnerPoints,
+  onPurchaseSlot,
 }: BuyPointsModalProps) {
   const { t } = useI18n();
+  const [activeTab, setActiveTab] = useState<'points' | 'slots'>('points');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPurchasingSlot, setIsPurchasingSlot] = useState(false);
   const [currentBalance, setCurrentBalance] = useState(initialBalance);
   const [error, setError] = useState<string>('');
 
@@ -73,9 +82,11 @@ export function BuyPointsModal({
   // Reset state when modal opens
   useEffect(() => {
     if (isOpen) {
+      setActiveTab('points');
       setSelectedAmount(null);
       setCustomAmount('');
       setError('');
+      setIsPurchasingSlot(false);
     }
   }, [isOpen]);
 
@@ -205,8 +216,30 @@ export function BuyPointsModal({
     }
   };
 
+  const handlePurchaseSlot = async () => {
+    if (onPurchaseSlot) {
+      setIsPurchasingSlot(true);
+      try {
+        await onPurchaseSlot();
+        toast.success('სლოტი წარმატებით შეძენილია!');
+        onClose();
+      } catch (error) {
+        toast.error('სლოტის შეძენა ვერ მოხერხდა');
+      } finally {
+        setIsPurchasingSlot(false);
+      }
+    }
+  };
+
+  const calculateSlotCost = (slots: number): number => {
+    return (slots - 9) * 100;
+  };
+
+  const slotCost = partnerPoints ? calculateSlotCost(partnerPoints.offer_slots) : 0;
+  const hasInsufficientBalance = partnerPoints ? partnerPoints.balance < slotCost : false;
+
   const handleClose = () => {
-    if (!isLoading) {
+    if (!isLoading && !isPurchasingSlot) {
       onClose();
     }
   };
@@ -215,34 +248,67 @@ export function BuyPointsModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md p-0 gap-0 bg-white rounded-[28px] border-none shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 pt-6 pb-5">
+        <div className="px-6 pt-6 pb-4">
           <h2 className="text-xl font-bold text-gray-900">
             {isPartner ? 'SmartPoints პარტნიორებისთვის' : 'SmartPoints-ის შეძენა'}
           </h2>
           {isPartner && (
             <p className="text-sm text-gray-600 mt-2">
-              ქულები გამოიყენება შეთავაზებების გამოქვეყნებისათვის
+              ქულები და სლოტები შეთავაზებებისთვის
             </p>
           )}
         </div>
 
-        {/* Balance Card */}
-        <div className="mx-6 mb-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
-          <p className="text-xs font-medium text-gray-600 mb-1">
-            {isPartner ? 'ხელმისაწვდომი ბალანსი' : 'თქვენი ბალანსი'}
-          </p>
-          <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-emerald-600">
-              {currentBalance.toLocaleString()}
-            </p>
-            <p className="text-sm text-gray-600">
-              {isPartner ? 'საბალანსო ქულა' : 'ქულა'}
-            </p>
+        {/* Tabs - Only show for partners */}
+        {isPartner && partnerPoints && (
+          <div className="px-6 pb-4">
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl">
+              <button
+                onClick={() => setActiveTab('points')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  activeTab === 'points'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Wallet className="w-4 h-4" />
+                ქულების შეძენა
+              </button>
+              <button
+                onClick={() => setActiveTab('slots')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                  activeTab === 'slots'
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                სლოტის შეძენა
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Amount Selection */}
-        <div className="px-6 pb-5">
+        {/* Points Tab Content */}
+        {activeTab === 'points' && (
+          <>
+            {/* Balance Card */}
+            <div className="mx-6 mb-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
+              <p className="text-xs font-medium text-gray-600 mb-1">
+                {isPartner ? 'ხელმისაწვდომი ბალანსი' : 'თქვენი ბალანსი'}
+              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl font-bold text-emerald-600">
+                  {currentBalance.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {isPartner ? 'საბალანსო ქულა' : 'ქულა'}
+                </p>
+              </div>
+            </div>
+
+            {/* Amount Selection */}
+            <div className="px-6 pb-5">
           <p className="text-sm font-semibold text-gray-700 mb-3">
             {isPartner ? 'ქულების შეძენა' : 'აირჩიე თანხა'}
           </p>
@@ -332,12 +398,110 @@ export function BuyPointsModal({
             )}
           </motion.button>
 
-          {/* Trust Footer */}
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-500">
-            <Lock className="w-3.5 h-3.5" />
-            <span>გადახდა BOG-ის გადახდის უსაფრთხო სისტემით</span>
+              {/* Trust Footer */}
+              <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-500">
+                <Lock className="w-3.5 h-3.5" />
+                <span>გადახდა BOG-ის გადახდის უსაფრთხო სისტემით</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Slots Tab Content */}
+        {activeTab === 'slots' && isPartner && partnerPoints && (
+          <div className="px-6 pb-5">
+            {/* Current Status */}
+            <div className="mb-5 bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-4 border border-teal-200">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium text-gray-600 mb-1">
+                    ხელმისაწვდომი ბალანსი
+                  </p>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {partnerPoints.balance}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-600 mb-1">
+                    მიმდინარე სლოტები
+                  </p>
+                  <p className="text-2xl font-bold text-teal-600">
+                    {partnerPoints.offer_slots}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Slot Cost */}
+            <div className="mb-5 bg-white rounded-2xl p-4 border-2 border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    შემდეგი სლოტის ღირებულება
+                  </p>
+                  <p className="text-xs text-gray-600 mt-0.5">
+                    ფასი იზრდება თითოეული სლოტით
+                  </p>
+                </div>
+                <div className="text-3xl font-bold text-gray-900">
+                  {slotCost}
+                  <span className="text-sm font-semibold text-gray-600 ml-1">ქულა</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Insufficient Balance Warning */}
+            {hasInsufficientBalance && (
+              <div className="mb-5 bg-orange-50 rounded-2xl p-4 border border-orange-200">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-bold text-orange-900 mb-1">
+                      არასაკმარისი ბალანსი
+                    </p>
+                    <p className="text-xs text-orange-800">
+                      თქვენ გჭირდებათ მეტი ქულა ამ სლოტის შესაძენად
+                    </p>
+                    <button
+                      onClick={() => setActiveTab('points')}
+                      className="mt-3 px-4 py-2 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl transition-colors"
+                    >
+                      ქულების შეძენა
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Purchase Button */}
+            <motion.button
+              type="button"
+              whileTap={{ scale: !hasInsufficientBalance && !isPurchasingSlot ? 0.98 : 1 }}
+              onClick={handlePurchaseSlot}
+              disabled={hasInsufficientBalance || isPurchasingSlot}
+              className={`w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition-all ${
+                !hasInsufficientBalance && !isPurchasingSlot
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {isPurchasingSlot ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>მუშავდება...</span>
+                </>
+              ) : (
+                <span>სლოტის შეძენა · {slotCost} ქულა</span>
+              )}
+            </motion.button>
+
+            {/* Info Footer */}
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-500">
+              <Layers className="w-3.5 h-3.5" />
+              <span>სლოტები საჭიროა ახალი შეთავაზების დასამატებლად</span>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
