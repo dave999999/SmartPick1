@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Shield, Lock, AlertCircle, Wallet, Layers } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BOG_CONFIG } from '@/lib/payments/bog';
@@ -57,13 +57,12 @@ export function BuyPointsModal({
         try {
           logger.log('BuyPointsModal: Fetching balance for user', userId);
           const tableName = isPartner ? 'partner_points' : 'user_points';
-          const idField = isPartner ? 'partner_id' : 'user_id';
           
           const { data, error } = await supabase
             .from(tableName)
             .select('balance')
-            .eq(idField, userId)
-            .single();
+            .eq('user_id', userId)
+            .maybeSingle();
           
           if (error) {
             logger.error('BuyPointsModal: Error fetching balance', error);
@@ -247,6 +246,9 @@ export function BuyPointsModal({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md p-0 gap-0 bg-white rounded-[28px] border-none shadow-2xl overflow-hidden">
+        <DialogTitle className="sr-only">
+          {isPartner ? 'SmartPoints პარტნიორებისთვის' : 'SmartPoints-ის შეძენა'}
+        </DialogTitle>
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
           <h2 className="text-xl font-bold text-gray-900">
