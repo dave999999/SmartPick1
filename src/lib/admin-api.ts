@@ -136,8 +136,7 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
       .from('partners')
       .update(updates)
       .eq('id', partnerId)
-      .select()
-      .single();
+      .select();
       
     if (error) throw error;
     try {
@@ -145,7 +144,7 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    return data;
+    return data?.[0];
   } catch (error) {
     console.error('Admin API: Error updating partner:', error instanceof Error ? error.message : String(error));
     throw error;
