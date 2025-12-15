@@ -564,22 +564,22 @@ export default function IndexRedesigned() {
           <div className="absolute inset-0 w-full h-full z-10">
             {googleMapsLoaded && (
               <SmartPickGoogleMap
-                offers={discoverSheetOpen ? offers : mapFilteredOffers}
+                offers={offerMgmt.discoverSheetOpen ? offers : mapFilteredOffers}
                 onOfferClick={handleOfferClick}
                 onMarkerClick={handleMarkerClick}
-                selectedCategory={selectedCategory}
-                onCategorySelect={setSelectedCategory}
-                onLocationChange={setUserLocation}
-                userLocation={userLocation}
-                selectedOffer={selectedOffer}
+                selectedCategory={filterState.selectedCategory}
+                onCategorySelect={filterState.setSelectedCategory}
+                onLocationChange={location.setUserLocation}
+                userLocation={location.userLocation}
+                selectedOffer={offerMgmt.selectedOffer}
                 showUserLocation={true}
-                highlightedOfferId={highlightedOfferId}
-                hideMarkers={!!activeReservation}
-                activeReservation={activeReservation}
-                onMapBoundsChange={!activeReservation ? (bounds) => {
+                highlightedOfferId={offerMgmt.highlightedOfferId}
+                hideMarkers={!!reservation.activeReservation}
+                activeReservation={reservation.activeReservation}
+                onMapBoundsChange={!reservation.activeReservation ? (bounds) => {
                   // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
                   // Disabled during active reservation to prevent constant reloading
-                  setMapBounds(bounds);
+                  map.setMapBounds(bounds);
                 } : undefined}
               />
             )}
