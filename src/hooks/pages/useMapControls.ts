@@ -55,14 +55,12 @@ export function useMapControls({ googleMap }: UseMapControlsProps): MapControlsS
       }, 1500);
     };
     
-    const handleZoomStart = () => {
+    const handleZoomChanged = () => {
       setIsMapIdle(false);
       clearTimeout(idleTimeout);
-      logger.debug('[useMapControls] Map zoom started - queries paused');
-    };
-    
-    const handleZoomEnd = () => {
-      // Wait 1.5s after zoom ends to mark as idle
+      logger.debug('[useMapControls] Map zoom changed - queries paused');
+      
+      // Wait 1.5s after zoom change to mark as idle
       idleTimeout = setTimeout(() => {
         setIsMapIdle(true);
         logger.debug('[useMapControls] Map idle after zoom - queries resumed');
@@ -72,12 +70,12 @@ export function useMapControls({ googleMap }: UseMapControlsProps): MapControlsS
     // Listen to Google Maps events
     const dragStartListener = googleMap.addListener('dragstart', handleDragStart);
     const dragEndListener = googleMap.addListener('dragend', handleDragEnd);
-    const zoomStartListener = googleMap.addListener('zoom_changed', handleZoomStart);
+    const zoomChangedListener = googleMap.addListener('zoom_changed', handleZoomChanged);
     
     return () => {
       google.maps.event.removeListener(dragStartListener);
       google.maps.event.removeListener(dragEndListener);
-      google.maps.event.removeListener(zoomStartListener);
+      google.maps.event.removeListener(zoomChangedListener);
       clearTimeout(idleTimeout);
     };
   }, [googleMap]);
