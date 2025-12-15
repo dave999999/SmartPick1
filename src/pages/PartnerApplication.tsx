@@ -898,10 +898,10 @@ export default function PartnerApplication() {
             </div>
             <DialogTitle className="text-center text-2xl">{t('partner.dialog.submittedTitle')}</DialogTitle>
             <DialogDescription className="text-center text-base pt-2 space-y-3">
-              <p>✅ {t('partner.dialog.submittedDescription')}</p>
-              <p className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+              <span className="block">✅ {t('partner.dialog.submittedDescription')}</span>
+              <span className="block text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
                 📱 <strong>Next Step:</strong> Set up Telegram notifications from your partner dashboard to receive instant alerts about new reservations!
-              </p>
+              </span>
             </DialogDescription>
           </DialogHeader>
         </DialogContent>
