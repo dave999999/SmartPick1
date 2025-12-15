@@ -12,26 +12,53 @@ export const VerifyEmail = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    // Supabase Auth automatically handles email verification
-    // This page is shown after user clicks the confirmation link in their email
-    // The verification happens automatically via the URL hash
+    // This page handles both:
+    // 1. Email verification from confirmation link (email/password signup)
+    // 2. OAuth callback redirects (Google Sign-In)
+    // Supabase Auth automatically handles the token exchange via URL hash
     
     const checkVerification = async () => {
       try {
-        // Check if user is authenticated after email confirmation
+        // Wait a moment for Supabase to process the hash fragment
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Check if user is authenticated after email confirmation or OAuth
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) throw error;
         
-        if (user && user.email_confirmed_at) {
-          setStatus('success');
-          setMessage('Your email has been verified successfully! Redirecting...');
-          setTimeout(() => navigate('/'), 2000);
+        if (user) {
+          // User is authenticated - either via email verification or OAuth
+          const isOAuth = user.app_metadata?.provider === 'google';
+          const isEmailConfirmed = user.email_confirmed_at;
+          
+          if (isOAuth || isEmailConfirmed) {
+            setStatus('success');
+            setMessage(isOAuth 
+              ? 'Successfully signed in with Google! Redirecting...'
+              : 'Your email has been verified successfully! Redirecting...'
+            );
+            
+            // Close auth dialog if still open and redirect
+            setTimeout(() => {
+              navigate('/', { replace: true });
+            }, 1500);
+          } else {
+            setStatus('loading');
+            setMessage('Verifying your email...');
+          }
         } else {
           setStatus('loading');
-          setMessage('Verifying your email...');
+          setMessage('Processing authentication...');
+          
+          // If still no user after 3 seconds, show error
+          setTimeout(() => {
+            setStatus('error');
+            setMessage('Verification timeout. Please try again or contact support.');
+          }, 3000);
         }
       } catch (error) {
+        console.error('Verification error:', error);
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Verification failed. Please try again.');
       }

@@ -1,0 +1,43 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix 403 Auth Error</title>
+</head>
+<body>
+    <h1>SmartPick - Fix 403 Auth Error</h1>
+    <button onclick='clearAuth()' style='padding: 20px; font-size: 18px; cursor: pointer;'>
+        Clear Corrupted Session & Reload
+    </button>
+    <pre id='output'></pre>
+    <script>
+        function clearAuth() {
+            const output = document.getElementById('output');
+            output.textContent = 'Checking localStorage...\n';
+            
+            // Show what's stored
+            const session = localStorage.getItem('smartpick-auth');
+            output.textContent += 'Found session: ' + (session ? 'YES (corrupted)' : 'NONE') + '\n';
+            
+            // Clear all Supabase-related items
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('supabase') || key.includes('smartpick-auth'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            
+            output.textContent += '\nRemoving ' + keysToRemove.length + ' corrupted items...\n';
+            keysToRemove.forEach(key => {
+                output.textContent += '  - ' + key + '\n';
+                localStorage.removeItem(key);
+            });
+            
+            output.textContent += '\n Session cleared!\n';
+            output.textContent += 'Reloading in 2 seconds...\n';
+            
+            setTimeout(() => location.reload(), 2000);
+        }
+    </script>
+</body>
+</html>

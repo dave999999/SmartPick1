@@ -274,7 +274,6 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.points.pointsAdded': 'Partner Points added to your account',
   'partner.points.partnerPoints': 'Partner Points',
   'partner.points.selectPackage': 'Select Package',
-  'partner.points.points': 'Points',
   'partner.points.bestValue': 'Best value!',
   'partner.points.mostPopular': 'Most Popular',
   'partner.points.whatYouCanDo': 'What you can do with Partner Points:',

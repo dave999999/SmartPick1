@@ -25,9 +25,10 @@ interface OffersSheetNewProps {
   selectedPartnerId?: string | null;
   isMinimized?: boolean;
   onCenteredOfferChange?: (offer: Offer | null) => void;
+  filteredOffers?: Offer[]; // NEW: Accept filtered offers from parent (viewport-based)
 }
 
-export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange }: OffersSheetNewProps) {
+export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange, filteredOffers: parentFilteredOffers }: OffersSheetNewProps) {
   const { t } = useI18n();
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -37,8 +38,18 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [centeredCardIndex, setCenteredCardIndex] = useState(0);
   
-  const { offers, loading } = useOffers();
+  // Use parent-provided offers if available (viewport-filtered), otherwise fetch all
+  const { offers: allOffers, loading } = useOffers();
+  const offers = parentFilteredOffers || allOffers;
   const { partners } = usePartners();
+
+  console.log('🎠 OffersSheetNew render:', {
+    isMinimized,
+    parentOffersCount: parentFilteredOffers?.length,
+    totalOffersCount: offers.length,
+    selectedPartnerId,
+    isOpen
+  });
 
   // Handle category toggle
   const handleCategoryClick = (categoryValue: string) => {
@@ -126,6 +137,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
       scrollTimeout = setTimeout(() => {
         if (onCenteredOfferChange) {
           const centeredOffer = filteredOffers[closestIndex];
+          console.log('🎠 Carousel centered on offer:', {
+            index: closestIndex,
+            offerId: centeredOffer?.id,
+            title: centeredOffer?.title,
+            totalOffers: filteredOffers.length
+          });
           onCenteredOfferChange(centeredOffer || null);
         }
       }, 100); // Reduced debounce for more responsive map updates
@@ -143,6 +160,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {
+    console.log('🎠 Rendering carousel with', filteredOffers.length, 'offers');
+    
     return (
       <div className="fixed bottom-24 left-0 right-0 z-40 px-4">
         <div className="relative">

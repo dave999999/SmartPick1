@@ -653,7 +653,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         icon: {
           url: '/icons/map-pins/all.png?v=2',
           scaledSize: new google.maps.Size(64, 64),
-          anchor: new google.maps.Point(32, 64),
+          anchor: new google.maps.Point(32, 62.5), // Consistent proportional anchor
           optimized: false
         },
         title: location.partnerName,
@@ -1042,7 +1042,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         previouslyHighlightedMarkerRef.current.setIcon({
           ...prevIcon,
           scaledSize: new google.maps.Size(64, 64),
-          anchor: new google.maps.Point(32, 64),
+          anchor: new google.maps.Point(32, 62.5), // Proportional: 32/64 = 50%, 62.5/64 = 97.7%
         });
       }
       previouslyHighlightedMarkerRef.current.setZIndex(1);
@@ -1058,14 +1058,20 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       
       const currentIcon = marker.getIcon();
       if (currentIcon && typeof currentIcon === 'object') {
-        // Make marker bigger
+        // Make marker bigger - keep anchor proportional (50% width, 97.7% height)
         marker.setIcon({
           ...currentIcon,
-          scaledSize: new google.maps.Size(80, 80),
-          anchor: new google.maps.Point(40, 76),
+          scaledSize: new google.maps.Size(88, 88),
+          anchor: new google.maps.Point(44, 86), // Proportional: 44/88 = 50%, 86/88 = 97.7%
         });
-        console.log('✅ Set marker icon to 80x80');
+        console.log('✅ Set marker icon to 88x88');
       }
+      
+      // Add gentle DROP animation (lighter than BOUNCE)
+      marker.setAnimation(google.maps.Animation.DROP);
+      setTimeout(() => {
+        marker.setAnimation(null);
+      }, 400); // Quick gentle drop
       
       // Bring to front
       marker.setZIndex(1000);
