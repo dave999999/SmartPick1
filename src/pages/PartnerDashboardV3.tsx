@@ -1,8 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Partner, Offer, Reservation, PartnerStats, PartnerPoints } from '@/lib/types';
-import { getCurrentUser } from '@/lib/api/auth';
-import { getPartnerByUserId, getPartnerById } from '@/lib/api/partners';
+import { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,69 +46,30 @@ import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
  * - Professional, trustworthy aesthetic
  */
 
+import { usePartnerDashboardData } from '@/hooks/pages/usePartnerDashboardData';
+import { usePartnerModals } from '@/hooks/pages/usePartnerModals';
+
 export default function PartnerDashboardV3() {
   const navigate = useNavigate();
   const { t } = useI18n();
   
-  const [partner, setPartner] = useState<Partner | null>(null);
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [stats, setStats] = useState<PartnerStats>({
-    activeOffers: 0,
-    totalOffers: 0,
-    reservationsToday: 0,
-    itemsPickedUp: 0,
-    totalRevenue: 0
-  });
-  const [partnerPoints, setPartnerPoints] = useState<PartnerPoints | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // 🚀 REFACTORED: Extract data fetching to custom hook
+  const {
+    partner,
+    offers,
+    reservations,
+    stats,
+    partnerPoints,
+    isLoading,
+    loadPartnerData,
+  } = usePartnerDashboardData();
+  
+  // 🚀 REFACTORED: Extract modal state to custom hook
+  const modals = usePartnerModals();
+  
+  // UI state
   const [activeOfferMenu, setActiveOfferMenu] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'offers' | 'active'>('offers');
-  const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
-  const [showCreateWizard, setShowCreateWizard] = useState(false);
-  const [showQRScanner, setShowQRScanner] = useState(false);
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Load partner data
-  const loadPartnerData = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const { user } = await getCurrentUser();
-      if (!user) {
-        navigate('/');
-        return;
-      }
-
-      const partnerData = await getPartnerByUserId(user.id);
-      if (!partnerData) {
-        toast.error('Partner profile not found');
-        navigate('/partner/apply');
-        return;
-      }
-
-      setPartner(partnerData);
-
-      // Load dashboard data
-      const { getPartnerDashboardData } = await import('@/lib/api/partners');
-      const dashboardData = await getPartnerDashboardData(user.id);
-
-      setOffers(dashboardData.offers);
-      setReservations(dashboardData.activeReservations);
-      setStats(dashboardData.stats);
-      setPartnerPoints(dashboardData.points);
-
-    } catch (error) {
-      console.error('Error loading partner data:', error);
-      toast.error('Failed to load dashboard');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [navigate]);
-
-  useEffect(() => {
-    loadPartnerData();
-  }, [loadPartnerData]);
 
   // Initialize action hooks
   const offerActions = useOfferActions(partner, loadPartnerData);
@@ -124,13 +83,13 @@ export default function PartnerDashboardV3() {
     setActiveOfferMenu(null);
     const offer = offers.find(o => o.id === offerId);
     if (offer) {
-      setEditingOffer(offer);
+      modals.openEditOffer(offer);
     }
   };
 
   const handleCreateOfferWizard = async (formData: FormData) => {
     try {
-      setIsSubmitting(true);
+      modals.setIsSubmitting(true);
       
       if (!partner) {
         toast.error('პარტნიორის ინფორმაცია არ არის ხელმისაწვდომი');
@@ -154,7 +113,7 @@ export default function PartnerDashboardV3() {
 
       if (processedImages.length === 0) {
         toast.error('გთხოვთ აირჩიოთ სურათი');
-        setIsSubmitting(false);
+        modals.setIsSubmitting(false);
         return;
       }
 
@@ -170,7 +129,7 @@ export default function PartnerDashboardV3() {
       
       if (partner.user_id !== currentUser?.id) {
         toast.error('Authentication error: Please log out and log back in');
-        setIsSubmitting(false);
+        modals.setIsSubmitting(false);
         return;
       }
 
@@ -202,14 +161,14 @@ export default function PartnerDashboardV3() {
       }
 
       toast.success('შეთავაზება წარმატებით შეიქმნა!');
-      setShowCreateWizard(false);
+      modals.closeCreateWizard();
       await loadPartnerData();
     } catch (error: any) {
       console.error('Error creating offer:', error);
       toast.error(error.message || 'შეთავაზების შექმნა ვერ მოხერხდა');
       throw error; // Re-throw so wizard knows not to close
     } finally {
-      setIsSubmitting(false);
+      modals.setIsSubmitting(false);
     }
   };
 
@@ -303,7 +262,7 @@ export default function PartnerDashboardV3() {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowBuyPointsModal(true)}
+              onClick={() => modals.openBuyPointsModal()}
               className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg transition-shadow"
             >
               <Wallet className="w-4 h-4" />
@@ -552,10 +511,10 @@ export default function PartnerDashboardV3() {
       </div>
 
       {/* BUY POINTS MODAL */}
-      {showBuyPointsModal && partner && (
+      {modals.showBuyPointsModal && partner && (
         <BuyPointsModal
-          isOpen={showBuyPointsModal}
-          onClose={() => setShowBuyPointsModal(false)}
+          isOpen={modals.showBuyPointsModal}
+          onClose={modals.closeBuyPointsModal}
           userId={partner.user_id}
           currentBalance={partnerPoints?.balance || 0}
           mode="partner"
@@ -576,7 +535,7 @@ export default function PartnerDashboardV3() {
             {/* Primary Action - New Offer */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCreateWizard(true)}
+              onClick={() => modals.openCreateWizard()}
               className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl py-3 px-4 font-semibold text-sm shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-1.5 transition-all active:shadow-md animate-pulse-glow"
             >
               <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -586,7 +545,7 @@ export default function PartnerDashboardV3() {
             {/* Secondary Action - Scan QR */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => setShowQRScanner(true)}
+              onClick={() => modals.openQRScanner()}
               className="w-14 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-2xl py-3 font-semibold flex items-center justify-center shadow-lg hover:shadow-gray-300/40 transition-all active:shadow-md"
             >
               <QrCode className="w-5 h-5" />
@@ -596,38 +555,39 @@ export default function PartnerDashboardV3() {
       </motion.div>
 
       {/* DIALOGS */}
-      {showCreateWizard && partner && (
+      {modals.showCreateWizard && partner && (
         <CreateOfferWizard
-          open={showCreateWizard}
-          onClose={() => setShowCreateWizard(false)}
+          open={modals.showCreateWizard}
+          onClose={modals.closeCreateWizard}
           onSubmit={handleCreateOfferWizard}
-          isSubmitting={isSubmitting}
+          isSubmitting={modals.isSubmitting}
           is24HourBusiness={partner.hours_24_7 || false}
           businessType={partner.business_type || 'RESTAURANT'}
         />
       )}
 
-      {editingOffer && partner && (
+      {modals.editingOffer && partner && (
         <EditOfferDialog
-          open={!!editingOffer}
+          open={!!modals.editingOffer}
           onOpenChange={(open) => {
-            if (!open) setEditingOffer(null);
+            if (!open) modals.closeEditOffer();
           }}
-          offer={editingOffer}
+          offer={modals.editingOffer}
           partner={partner}
           autoExpire6h={partner.hours_24_7 || false}
           onSuccess={() => {
-            setEditingOffer(null);
+            modals.closeEditOffer();
             loadPartnerData();
           }}
         />
       )}
 
-      {showQRScanner && (
+      {modals.showQRScanner && (
         <QRScannerDialog
-          open={showQRScanner}
+          open={modals.showQRScanner}
           onOpenChange={(open) => {
-            setShowQRScanner(open);
+            if (open) modals.openQRScanner();
+            else modals.closeQRScanner();
             if (!open) loadPartnerData();
           }}
           partnerId={partner?.id || ''}
