@@ -11,15 +11,11 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Offer, User } from '@/lib/types';
+import { Offer } from '@/lib/types';
 import { SEOHead, structuredDataSchemas } from '@/components/SEOHead';
-import { getActiveOffers, getCurrentUser } from '@/lib/api-lite';
-import { isDemoMode, supabase } from '@/lib/supabase';
 import { indexedDBManager } from '@/lib/indexedDB';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useViewportOffers } from '@/hooks/useQueryHooks';
-import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useOffers } from '@/hooks/useOffers';
 import SplashScreen from '@/components/SplashScreen';
 import { lazy, Suspense } from 'react';
@@ -31,90 +27,48 @@ import { AnimatePresence } from 'framer-motion';
 import { useGoogleMaps } from '@/components/map/GoogleMapProvider';
 import SmartPickGoogleMap from '@/components/map/SmartPickGoogleMap';
 import ReservationModalNew from '@/components/map/ReservationModalNew';
-import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
-import { FilterState, SortOption } from '@/components/SearchAndFilters';
-import { CheckCircle } from 'lucide-react';
 import PickupSuccessModal from '@/components/PickupSuccessModal';
 const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').then(m => ({ default: m.AnnouncementPopup })));
 
-// NEW: Post-Reservation Experience Components
+// Post-Reservation Experience Components
 import { ActiveReservationCard } from '@/components/reservation/ActiveReservationCard';
 import type { ActiveReservation } from '@/components/reservation/ActiveReservationCard';
-import { useLiveGPS } from '@/hooks/useLiveGPS';
-import { getReservationById, cancelReservation } from '@/lib/api/reservations';
-import { Reservation } from '@/lib/types';
+import { cancelReservation } from '@/lib/api/reservations';
 
 // Premium Navigation Components
 import { BottomNavBar as FloatingBottomNav } from '@/components/navigation/BottomNavBar';
 import { SUBCATEGORIES } from '@/lib/categories';
 
+// Custom Hooks (extracted for maintainability)
+import { useAuthState } from '@/hooks/pages/useAuthState';
+import { useUserLocation } from '@/hooks/pages/useUserLocation';
+import { useOfferFilters } from '@/hooks/pages/useOfferFilters';
+import { useOfferManagement } from '@/hooks/pages/useOfferManagement';
+import { useMapControls } from '@/hooks/pages/useMapControls';
+import { useReservationFlow } from '@/hooks/pages/useReservationFlow';
+
 export default function IndexRedesigned() {
   const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-  const [defaultAuthTab, setDefaultAuthTab] = useState<'signin' | 'signup'>('signin');
-  const [mapBounds, setMapBounds] = useState<{ north: number; south: number; east: number; west: number } | null>(null);
-  const [isMapIdle, setIsMapIdle] = useState(true);
   
-  // 🚀 PERFORMANCE: Debounce map bounds to prevent API spam during panning
-  // Only triggers new request 1000ms after user stops moving the map
-  // Optimized from 500ms -> 1000ms = 50% reduction in panning queries
-  const debouncedBounds = useDebouncedValue(mapBounds, 1000);
+  // 🎯 REFACTORED: Custom hooks for clean state management
+  const auth = useAuthState();
+  const location = useUserLocation();
+  const map = useMapControls({ googleMap });
+  const reservation = useReservationFlow({ 
+    user: auth.user, 
+    isPostResNavigating: map.isPostResNavigating 
+  });
   
-  // 🚀 PERFORMANCE: Idle detection - only fetch when map is truly idle
-  // Prevents queries during active dragging/panning for 70% additional reduction
-  useEffect(() => {
-    if (!googleMap) return;
-    
-    let idleTimeout: NodeJS.Timeout;
-    
-    const handleDragStart = () => {
-      setIsMapIdle(false);
-      clearTimeout(idleTimeout);
-      logger.debug('[IndexRedesigned] Map drag started - queries paused');
-    };
-    
-    const handleDragEnd = () => {
-      // Wait 1.5s after drag ends to mark as idle
-      idleTimeout = setTimeout(() => {
-        setIsMapIdle(true);
-        logger.debug('[IndexRedesigned] Map idle - queries resumed');
-      }, 1500);
-    };
-    
-    const handleZoomStart = () => {
-      setIsMapIdle(false);
-      clearTimeout(idleTimeout);
-      logger.debug('[IndexRedesigned] Map zoom started - queries paused');
-    };
-    
-    const handleZoomEnd = () => {
-      // Wait 1.5s after zoom ends to mark as idle
-      idleTimeout = setTimeout(() => {
-        setIsMapIdle(true);
-        logger.debug('[IndexRedesigned] Map idle after zoom - queries resumed');
-      }, 1500);
-    };
-    
-    // Listen to Google Maps events
-    const dragStartListener = googleMap.addListener('dragstart', handleDragStart);
-    const dragEndListener = googleMap.addListener('dragend', handleDragEnd);
-    const zoomStartListener = googleMap.addListener('zoom_changed', handleZoomStart);
-    
-    return () => {
-      google.maps.event.removeListener(dragStartListener);
-      google.maps.event.removeListener(dragEndListener);
-      google.maps.event.removeListener(zoomStartListener);
-      clearTimeout(idleTimeout);
-    };
-  }, [googleMap]);
+  // Initialize offer management hook (for UI state)
+  const offerMgmt = useOfferManagement({
+    user: auth.user,
+    setShowAuthDialog: auth.setShowAuthDialog,
+    setDefaultAuthTab: auth.setDefaultAuthTab,
+    googleMap,
+    activeReservation: reservation.activeReservation,
+  });
   
   // 🚀 PERFORMANCE: Use React Query for automatic caching, deduplication, and cancellation
   // Only fetch when map is idle to prevent queries during active dragging
@@ -124,7 +78,7 @@ export default function IndexRedesigned() {
     error: offersError,
     isFetching 
   } = useViewportOffers(
-    isMapIdle ? debouncedBounds : null, // Don't fetch during active dragging
+    map.isMapIdle ? map.debouncedBounds : null, // Don't fetch during active dragging
     undefined, 
     100
   );
@@ -132,63 +86,18 @@ export default function IndexRedesigned() {
   // Fetch ALL offers for carousel/discovery mode
   const { offers: allOffers } = useOffers();
   
-  // NEW: Unified Discover Sheet state (must be declared before using in offers assignment)
-  const [discoverSheetOpen, setDiscoverSheetOpen] = useState(false);
-  
   // Use viewport offers normally, but all offers when discover sheet is open
-  const offers = discoverSheetOpen ? allOffers : viewportOffers;
+  const offers = offerMgmt.discoverSheetOpen ? allOffers : viewportOffers;
   
-  // 🐛 DEBUG: Track what causes re-renders
-  logger.info('🔄 [IndexRedesigned] RENDER', {
-    offersCount: offers.length,
-    selectedCategory,
-    isLoading,
-    isFetching,
-    isMapIdle,
-    hasUser: !!user,
-    hasMapBounds: !!mapBounds,
-    hasDebouncedBounds: !!debouncedBounds,
-    hasUserLocation: !!userLocation
+  // Initialize filters hook (needs offers and location)
+  const filterState = useOfferFilters({
+    offers,
+    userLocation: location.userLocation,
   });
-  const [isSheetMinimized, setIsSheetMinimized] = useState(false);
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
-  const [highlightedOfferId, setHighlightedOfferId] = useState<string | null>(null);
-  const [showPartnerSheet, setShowPartnerSheet] = useState(false);
   
-  // NEW: Google Maps navigation state
-  const [showNewReservationModal, setShowNewReservationModal] = useState(false);
-  const [reservationQuantity, setReservationQuantity] = useState(1);
-  const [activeReservationId, setActiveReservationId] = useState<string | null>(null);
-
-  // NEW: Post-Reservation System State
-  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
-  const [isReservationLoading, setIsReservationLoading] = useState(true); // Track reservation loading state
-  const [isPostResNavigating, setIsPostResNavigating] = useState(false);
-  const [showPickupSuccessModal, setShowPickupSuccessModal] = useState(false);
-  const [pickupModalData, setPickupModalData] = useState<{ savedAmount: number; pointsEarned: number } | null>(null);
-  
-  // Enable GPS tracking when navigating
-  const { position: gpsPosition } = useLiveGPS({ 
-    enabled: isPostResNavigating,
-    updateInterval: 3000 
-  });
-
   // Ref to track last highlighted offer (prevents duplicate highlights causing re-renders)
   const lastHighlightedOfferRef = useRef<string | null>(null);
-
-  // Search and Filter states
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState<FilterState>({
-    maxDistance: 10,
-    minPrice: 0,
-    maxPrice: 100,
-  });
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>('');
   const [currentPath, setCurrentPath] = useState<string>('/');
-
-  const { addRecentlyViewed } = useRecentlyViewed();
-  const [searchParams] = useSearchParams();
   const isOnline = useOnlineStatus();
 
   // Handle offline mode with cached offers
@@ -225,225 +134,42 @@ export default function IndexRedesigned() {
   
   // No manual loadOffers() function needed - React Query handles everything!
 
-  // Load active reservation when user is detected
-  useEffect(() => {
-    if (user?.id) {
-      loadActiveReservation();
-      
-      // Clean up old celebration keys (older than 24 hours) to prevent localStorage bloat
-      const cleanupOldCelebrations = () => {
-        const keys = Object.keys(localStorage);
-        const celebrationKeys = keys.filter(k => k.startsWith('pickup-celebrated-'));
-        logger.log(`🧹 Found ${celebrationKeys.length} celebration keys in localStorage`);
-        
-        // Keep only the last 5 celebration keys, remove the rest
-        if (celebrationKeys.length > 5) {
-          const keysToRemove = celebrationKeys.slice(0, celebrationKeys.length - 5);
-          keysToRemove.forEach(key => localStorage.removeItem(key));
-          logger.log(`🧹 Cleaned up ${keysToRemove.length} old celebration keys`);
-        }
-      };
-      
-      cleanupOldCelebrations();
-    } else {
-      setActiveReservation(null);
-      setIsReservationLoading(false); // No user = no reservation to load
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // 🔧 FIX: Only depend on user.id, not entire user object
-
-  // Set up real-time subscription when active reservation exists
-  useEffect(() => {
-    if (!activeReservation?.id) {
-      logger.log('🔌 No active reservation - skipping subscription setup');
-      return;
-    }
-
-    logger.log('🔗 Setting up real-time subscription for reservation:', activeReservation.id);
-    
-    let isCleanedUp = false;
-
-    const channel = supabase
-      .channel(`reservation-${activeReservation.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'reservations',
-          filter: `id=eq.${activeReservation.id}`
-        },
-        (payload) => {
-          if (isCleanedUp) return; // Ignore events after cleanup
-          
-          logger.log('🔔 Real-time reservation update received:', payload);
-          
-          // Check if order was picked up
-          if (payload.new && payload.new.status === 'PICKED_UP') {
-            logger.log('✅ Order picked up detected via real-time!');
-            
-            // Check localStorage to prevent duplicate celebrations
-            const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
-            if (!localStorage.getItem(celebrationKey)) {
-              localStorage.setItem(celebrationKey, 'true');
-              
-              // Calculate actual savings: (original price * quantity) - discounted price
-              const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
-              const discountedPrice = activeReservation.total_price || 0;
-              const savedAmount = originalTotal - discountedPrice;
-              const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
-              
-              // Show pickup success modal
-              setPickupModalData({ savedAmount, pointsEarned });
-              setShowPickupSuccessModal(true);
-              
-              // Clear active reservation
-              setActiveReservation(null);
-            }
-          } else {
-            // Reload for other changes (but throttle this)
-            if (!isCleanedUp) {
-              loadActiveReservation();
-            }
-          }
-        }
-      )
-      .subscribe((status) => {
-        logger.log('📡 Subscription status:', status);
-      });
-
-    // ⚠️ DISABLED POLLING: Real-time subscription already handles updates
-    // This polling was causing 4.7M database calls (600 req/min per user!)
-    // Realtime subscription is sufficient - polling is redundant and expensive
-    
-    /* REMOVED POLLING INTERVAL:
-    const pollingInterval = setInterval(() => {
-      if (!isCleanedUp) {
-        loadActiveReservation();
-      }
-    }, 10000); // Increased from 5s to 10s to reduce CPU/battery usage
-    */
-
-    return () => {
-      isCleanedUp = true;
-      logger.log('🔌 Cleaning up reservation subscription');
-      // clearInterval(pollingInterval); // Disabled
-      
-      // Remove the channel completely
-      channel.unsubscribe().then(() => {
-        supabase.removeChannel(channel);
-        logger.log('✅ Channel removed from Supabase client');
-      });
-    };
-  }, [activeReservation?.id]);
-
-  const loadActiveReservation = async () => {
-    if (!user?.id) {
-      setIsReservationLoading(false);
-      return;
-    }
-    
-    setIsReservationLoading(true);
-    try {
-      const { getCustomerReservations } = await import('@/lib/api/reservations');
-      const reservations = await getCustomerReservations(user.id);
-      
-      // Check if current active reservation was picked up
-      if (activeReservation) {
-        const currentRes = reservations.find(r => r.id === activeReservation.id);
-        if (currentRes && currentRes.status === 'PICKED_UP') {
-          logger.log('✅ Order picked up detected via polling!');
-          
-          // Check localStorage to prevent duplicate celebrations
-          const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
-          if (!localStorage.getItem(celebrationKey)) {
-            localStorage.setItem(celebrationKey, 'true');
-            
-            // Calculate actual savings: (original price * quantity) - discounted price
-            const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
-            const discountedPrice = activeReservation.total_price || 0;
-            const savedAmount = originalTotal - discountedPrice;
-            const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
-            
-            // Show pickup success modal
-            setPickupModalData({ savedAmount, pointsEarned });
-            setShowPickupSuccessModal(true);
-            
-            // Clear active reservation
-            setActiveReservation(null);
-          } else {
-            // Just clear if already celebrated
-            setActiveReservation(null);
-          }
-          return;
-        }
-      }
-      
-      // Find the first ACTIVE reservation
-      const activeRes = reservations.find(r => r.status === 'ACTIVE');
-      
-      if (activeRes) {
-        // Only update if it's a new reservation or status changed
-        if (!activeReservation || activeReservation.id !== activeRes.id) {
-          setActiveReservation(activeRes);
-          logger.log('✅ Active reservation state updated');
-        }
-      } else {
-        // Clear if no active reservation found
-        if (activeReservation) {
-          setActiveReservation(null);
-          logger.log('No active reservation found');
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to load active reservation:', error);
-    } finally {
-      setIsReservationLoading(false);
-    }
-  };
+  // ⚠️ DUPLICATE LOGIC REMOVED - NOW IN useReservationFlow HOOK:
+  // - Load active reservation when user is detected
+  // - Real-time subscription for reservation updates
+  // - Pickup celebration modal
+  // - loadActiveReservation function
+  // All this logic is now encapsulated in the useReservationFlow custom hook for better maintainability
 
   // Auto-open OffersSheet after reservation check completes
   // Only open if NO active reservation exists
   useEffect(() => {
     // Wait for reservation loading to complete
-    if (isReservationLoading) {
+    if (reservation.isReservationLoading) {
       return;
     }
 
     // Add a small delay for better UX (let user see homepage briefly)
     const timer = setTimeout(() => {
-      if (!activeReservation && !discoverSheetOpen) {
-        setDiscoverSheetOpen(true);
-        setIsSheetMinimized(false);
+      if (!reservation.activeReservation && !offerMgmt.discoverSheetOpen) {
+        offerMgmt.setDiscoverSheetOpen(true);
+        offerMgmt.setIsSheetMinimized(false);
         logger.log('✅ Auto-opening offers sheet (no active reservation)');
-      } else if (activeReservation) {
+      } else if (reservation.activeReservation) {
         logger.log('❌ NOT auto-opening sheet (active reservation exists)');
       }
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [isReservationLoading, activeReservation]); // Depend on reservation loading state
+  }, [reservation.isReservationLoading, reservation.activeReservation]); // Depend on reservation loading state
 
+  // ⚠️ DUPLICATE LOGIC REMOVED - NOW IN useAuthState AND useUserLocation HOOKS:
+  // - auth.checkUser() is called automatically in useAuthState hook on mount
+  // - location.setUserLocation() is called automatically in useUserLocation hook
+  // This useEffect can be simplified to only handle the reservation-synced event
+  
   useEffect(() => {
     // React Query automatically loads offers when debouncedBounds is available
-    checkUser();
-
-    // Get user's current location on app load
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          // Set default location (Tbilisi, Georgia) if location access denied
-          setUserLocation([41.7151, 44.8271]);
-        }
-      );
-    } else {
-      // Set default location if geolocation not supported
-      setUserLocation([41.7151, 44.8271]);
-    }
 
     const handleReservationSynced = () => {
       // React Query will auto-refetch offers when window refocuses
@@ -511,67 +237,31 @@ export default function IndexRedesigned() {
     };
   }, []);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, _session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        checkUser();
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  // ⚠️ DUPLICATE LOGIC REMOVED - NOW IN useAuthState HOOK:
+  // Auth state change listener is already set up in the useAuthState hook
+  // This useEffect is redundant and can be removed
 
   // React Query automatically retries failed requests when coming back online
   // via refetchOnReconnect: 'always' in queryClient config
 
-  useEffect(() => {
-    const refParam = searchParams.get('ref');
-    if (refParam) {
-      setDefaultAuthTab('signup');
-      setShowAuthDialog(true);
-      toast.success(`🎁 Welcome! Referral code ${refParam.toUpperCase()} is ready to use!`);
-    }
-  }, [searchParams]);
+  // ⚠️ DUPLICATE LOGIC REMOVED - NOW IN useAuthState HOOK:
+  // Referral parameter checking is already handled in the useAuthState hook
+  // This useEffect is redundant and can be removed
 
-  const checkUser = async () => {
-    const { user } = await getCurrentUser();
-    setUser(user);
-    
-    // Check if user needs to see onboarding tutorial
-    if (user) {
-      logger.info('🔍 Checking onboarding status for user:', user.id);
-      try {
-        const { data: userData, error } = await supabase
-          .from('users')
-          .select('onboarding_completed')
-          .eq('id', user.id)
-          .single();
-        
-        logger.info('📊 Onboarding query result:', { userData, error });
-        
-        if (!error && userData && !userData.onboarding_completed) {
-          // Show onboarding if not completed
-          setShowOnboarding(true);
-          logger.info('✅ Showing onboarding tutorial for user');
-        } else {
-          logger.info('❌ Not showing onboarding:', { 
-            hasError: !!error, 
-            hasData: !!userData, 
-            isCompleted: userData?.onboarding_completed 
-          });
-        }
-      } catch (err) {
-        logger.error('Failed to check onboarding status:', err);
-      }
-    } else {
-      logger.info('❌ No user logged in, skipping onboarding check');
-    }
-  };
+  // ⚠️ DUPLICATE FUNCTION REMOVED - NOW IN useAuthState HOOK:
+  // checkUser() function is already defined in the useAuthState hook
+  // This local function is redundant and can be removed
 
+  // ⚠️ DUPLICATE FUNCTIONS REMOVED - NOW IN useOfferFilters HOOK:
+  // - calculateDistance() - Haversine formula
+  // - getPartnerLocation() - Extract lat/lng from offer
+  // - getFilteredAndSortedOffers() - Filter and sort logic
+  // - getMapFilteredOffers() - Map-specific filtering
+  // All these are now in the useOfferFilters hook, accessed via filterState.filteredOffers and filterState.mapFilteredOffers
+  
+  // Keep the local versions below for backward compatibility during migration
+  // TODO: Remove these once all references are updated to use filterState
+  
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -605,8 +295,8 @@ export default function IndexRedesigned() {
     let filtered = [...offers];
 
     // Apply search filter first (for partner name filtering)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (filterState.searchQuery.trim()) {
+      const query = filterState.searchQuery.toLowerCase();
       filtered = filtered.filter(offer =>
         offer.title.toLowerCase().includes(query) ||
         offer.partner?.business_name?.toLowerCase().includes(query) ||
@@ -615,53 +305,53 @@ export default function IndexRedesigned() {
       
       // If searching for a partner, apply category filter to the carousel only
       // The category filter is applied AFTER partner filter so it only filters the partner's offers
-      if (selectedCategory && selectedCategory !== '') {
-        console.log('🔍 Filtering partner offers by category:', selectedCategory);
-        filtered = filtered.filter(o => o.category === selectedCategory);
+      if (filterState.selectedCategory && filterState.selectedCategory !== '') {
+        console.log('🔍 Filtering partner offers by category:', filterState.selectedCategory);
+        filtered = filtered.filter(o => o.category === filterState.selectedCategory);
       }
     } else {
       // If NOT searching for a partner, apply category filter globally (affects map)
-      if (selectedCategory && selectedCategory !== '') {
-        console.log('🔍 Filtering all offers by category:', selectedCategory);
+      if (filterState.selectedCategory && filterState.selectedCategory !== '') {
+        console.log('🔍 Filtering all offers by category:', filterState.selectedCategory);
         console.log('📊 Total offers before category filter:', filtered.length);
-        filtered = filtered.filter(o => o.category === selectedCategory);
+        filtered = filtered.filter(o => o.category === filterState.selectedCategory);
         console.log('✅ Offers after category filter:', filtered.length);
         console.log('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
       }
     }
 
     filtered = filtered.filter(offer =>
-      Number(offer.smart_price) >= filters.minPrice &&
-      Number(offer.smart_price) <= filters.maxPrice
+      Number(offer.smart_price) >= filterState.filters.minPrice &&
+      Number(offer.smart_price) <= filterState.filters.maxPrice
     );
 
-    if (filters.availableNow) {
+    if (filterState.filters.availableNow) {
       filtered = filtered.filter(offer => (offer as any).available_quantity > 0);
     }
 
-    if (userLocation && filters.maxDistance < 50) {
+    if (location.userLocation && filterState.filters.maxDistance < 50) {
       filtered = filtered.filter(offer => {
-        const location = getPartnerLocation(offer);
-        if (!location) return false;
+        const loc = getPartnerLocation(offer);
+        if (!loc) return false;
         const distance = calculateDistance(
-          userLocation[0],
-          userLocation[1],
-          location.lat,
-          location.lng
+          location.userLocation[0],
+          location.userLocation[1],
+          loc.lat,
+          loc.lng
         );
-        return distance <= filters.maxDistance;
+        return distance <= filterState.filters.maxDistance;
       });
     }
 
     filtered.sort((a, b) => {
-      switch (sortBy) {
+      switch (filterState.sortBy) {
         case 'nearest':
-          if (!userLocation) return 0;
+          if (!location.userLocation) return 0;
           const locA = getPartnerLocation(a);
           const locB = getPartnerLocation(b);
           if (!locA || !locB) return 0;
-          const distA = calculateDistance(userLocation[0], userLocation[1], locA.lat, locA.lng);
-          const distB = calculateDistance(userLocation[0], userLocation[1], locB.lat, locB.lng);
+          const distA = calculateDistance(location.userLocation[0], location.userLocation[1], locA.lat, locA.lng);
+          const distB = calculateDistance(location.userLocation[0], location.userLocation[1], locB.lat, locB.lng);
           return distA - distB;
 
         case 'cheapest':
@@ -686,36 +376,36 @@ export default function IndexRedesigned() {
     let filtered = [...offers];
 
     // If partner search is active, show all pins (don't filter by category)
-    if (searchQuery.trim()) {
+    if (filterState.searchQuery.trim()) {
       return offers;
     }
 
     // Otherwise, apply category filter to map
-    if (selectedCategory && selectedCategory !== '') {
-      filtered = filtered.filter(o => o.category === selectedCategory);
+    if (filterState.selectedCategory && filterState.selectedCategory !== '') {
+      filtered = filtered.filter(o => o.category === filterState.selectedCategory);
     }
 
     // Apply other filters
     filtered = filtered.filter(offer =>
-      Number(offer.smart_price) >= filters.minPrice &&
-      Number(offer.smart_price) <= filters.maxPrice
+      Number(offer.smart_price) >= filterState.filters.minPrice &&
+      Number(offer.smart_price) <= filterState.filters.maxPrice
     );
 
-    if (filters.availableNow) {
+    if (filterState.filters.availableNow) {
       filtered = filtered.filter(offer => (offer as any).available_quantity > 0);
     }
 
-    if (userLocation && filters.maxDistance < 50) {
+    if (location.userLocation && filterState.filters.maxDistance < 50) {
       filtered = filtered.filter(offer => {
-        const location = getPartnerLocation(offer);
-        if (!location) return false;
+        const loc = getPartnerLocation(offer);
+        if (!loc) return false;
         const distance = calculateDistance(
-          userLocation[0],
-          userLocation[1],
-          location.lat,
-          location.lng
+          location.userLocation[0],
+          location.userLocation[1],
+          loc.lat,
+          loc.lng
         );
-        return distance <= filters.maxDistance;
+        return distance <= filterState.filters.maxDistance;
       });
     }
 
@@ -724,14 +414,14 @@ export default function IndexRedesigned() {
 
   const filteredOffers = useMemo(() => getFilteredAndSortedOffers(), [
     offers,
-    selectedCategory,
-    searchQuery,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.maxDistance,
-    filters.availableNow,
-    userLocation,
-    sortBy
+    filterState.selectedCategory,
+    filterState.searchQuery,
+    filterState.filters.minPrice,
+    filterState.filters.maxPrice,
+    filterState.filters.maxDistance,
+    filterState.filters.availableNow,
+    location.userLocation,
+    filterState.sortBy
   ]);
 
   const mapFilteredOffers = useMemo(() => {
@@ -739,53 +429,52 @@ export default function IndexRedesigned() {
     logger.debug('[IndexRedesigned] mapFilteredOffers updated', {
       count: filtered.length,
       offersFromQuery: offers.length,
-      selectedCategory,
-      searchQuery
+      selectedCategory: filterState.selectedCategory,
+      searchQuery: filterState.searchQuery
     });
     return filtered;
   }, [
     offers,
-    selectedCategory,
-    searchQuery,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.maxDistance,
-    filters.availableNow,
-    userLocation
+    filterState.selectedCategory,
+    filterState.searchQuery,
+    filterState.filters.minPrice,
+    filterState.filters.maxPrice,
+    filterState.filters.maxDistance,
+    filterState.filters.availableNow,
+    location.userLocation
   ]);
 
-  // Memoize userLocation object to prevent creating new reference on every render
-  const userLocationObject = useMemo(() => {
-    return userLocation ? { lat: userLocation[0], lng: userLocation[1] } : null;
-  }, [userLocation?.[0], userLocation?.[1]]);
+  // ⚠️ DUPLICATE REMOVED - NOW IN useUserLocation HOOK:
+  // userLocationObject is already memoized in the useUserLocation hook
+  // Access it via location.userLocationObject instead
 
   const handleOfferClick = useCallback((offer: Offer) => {
     // If user is not logged in, show auth dialog instead of opening offer
-    if (!user) {
-      setShowAuthDialog(true);
-      setDefaultAuthTab('signin');
+    if (!auth.user) {
+      auth.setShowAuthDialog(true);
+      auth.setDefaultAuthTab('signin');
       return;
     }
 
     // User is logged in, proceed with opening offer
-    setSelectedOffer(offer);
-    setHighlightedOfferId(offer.id);
-    setShowNewReservationModal(true);
+    offerMgmt.setSelectedOffer(offer);
+    offerMgmt.setHighlightedOfferId(offer.id);
+    offerMgmt.setShowNewReservationModal(true);
     addRecentlyViewed(offer.id, 'offer');
-  }, [user, addRecentlyViewed]);
+  }, [auth.user, addRecentlyViewed]);
 
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
     // Skip if active reservation exists - no partner sheet during navigation
-    if (activeReservation) {
+    if (reservation.activeReservation) {
       return;
     }
     
     // If empty partner name, clear filters (map clicked on empty area)
     if (!partnerName || partnerOffers.length === 0) {
-      setSearchQuery('');
-      setSelectedOffer(null);
-      setSelectedCategory('');
-      setShowPartnerSheet(false);
+      filterState.setSearchQuery('');
+      offerMgmt.setSelectedOffer(null);
+      filterState.setSelectedCategory('');
+      offerMgmt.setShowPartnerSheet(false);
       return;
     }
     
@@ -793,8 +482,8 @@ export default function IndexRedesigned() {
     if (partnerOffers.length > 0) {
       const partnerId = partnerOffers[0]?.partner_id;
       if (partnerId) {
-        setSelectedPartnerId(partnerId);
-        setShowPartnerSheet(true);
+        offerMgmt.setSelectedPartnerId(partnerId);
+        offerMgmt.setShowPartnerSheet(true);
         
         // Center map on partner
         if (googleMap && partnerOffers[0]?.partner?.location) {
@@ -806,7 +495,7 @@ export default function IndexRedesigned() {
         }
       }
     }
-  }, [googleMap, activeReservation]);
+  }, [googleMap, reservation.activeReservation]);
 
   // Generate structured data with actual offers for rich results
   const offerListSchema = useMemo(() => {
@@ -897,59 +586,59 @@ export default function IndexRedesigned() {
 
       <Suspense fallback={null}>
         <AuthDialog
-          open={showAuthDialog}
-          onOpenChange={setShowAuthDialog}
-          defaultTab={defaultAuthTab}
+          open={auth.showAuthDialog}
+          onOpenChange={auth.setShowAuthDialog}
+          defaultTab={auth.defaultAuthTab}
           onSuccess={() => {
-            checkUser();
+            auth.checkUser();
           }}
         />
       </Suspense>
 
       {/* ONBOARDING TUTORIAL - Shows when user hasn't completed it yet */}
       <OnboardingDialog
-        open={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
-        onDismiss={() => setShowOnboarding(false)}
-        userName={user?.name || user?.email?.split('@')[0] || 'there'}
-        userId={user?.id}
+        open={auth.showOnboarding}
+        onComplete={() => auth.setShowOnboarding(false)}
+        onDismiss={() => auth.setShowOnboarding(false)}
+        userName={auth.user?.name || auth.user?.email?.split('@')[0] || 'there'}
+        userId={auth.user?.id}
       />
 
       {/* PARTNER SHEET - Shows partner info and offers when clicking map pin */}
       <PartnerSheet
-        isOpen={showPartnerSheet}
-        partnerId={selectedPartnerId}
+        isOpen={offerMgmt.showPartnerSheet}
+        partnerId={offerMgmt.selectedPartnerId}
         onClose={() => {
-          setShowPartnerSheet(false);
-          setSelectedPartnerId(null);
+          offerMgmt.setShowPartnerSheet(false);
+          offerMgmt.setSelectedPartnerId(null);
         }}
         onOfferSelect={(offer) => {
           handleOfferClick(offer);
-          setShowPartnerSheet(false);
+          offerMgmt.setShowPartnerSheet(false);
         }}
       />
 
       {/* NEW OFFERS SHEET - Pixel-Perfect Redesign */}
       <OffersSheetNew
-        isOpen={discoverSheetOpen}
-        isMinimized={isSheetMinimized}
-        selectedPartnerId={selectedPartnerId}
+        isOpen={offerMgmt.discoverSheetOpen}
+        isMinimized={offerMgmt.isSheetMinimized}
+        selectedPartnerId={offerMgmt.selectedPartnerId}
         filteredOffers={mapFilteredOffers}
         onClose={() => {
-          setDiscoverSheetOpen(false);
-          setIsSheetMinimized(false);
-          setSelectedPartnerId(null);
+          offerMgmt.setDiscoverSheetOpen(false);
+          offerMgmt.setIsSheetMinimized(false);
+          offerMgmt.setSelectedPartnerId(null);
         }}
         onOfferSelect={(offer) => {
           handleOfferClick(offer);
-          setDiscoverSheetOpen(false);
-          setIsSheetMinimized(false);
+          offerMgmt.setDiscoverSheetOpen(false);
+          offerMgmt.setIsSheetMinimized(false);
         }}
         onCenteredOfferChange={useCallback((offer: Offer | null) => {
           // Validate all required data before attempting map sync
           if (!offer || !googleMap) {
             lastHighlightedOfferRef.current = null;
-            setHighlightedOfferId(null);
+            offerMgmt.setHighlightedOfferId(null);
             logger.debug('[IndexRedesigned] Carousel: No offer to highlight');
             return;
           }
@@ -985,7 +674,7 @@ export default function IndexRedesigned() {
             googleMap.setZoom(14);
             // Highlight the offer marker
             lastHighlightedOfferRef.current = offer.id;
-            setHighlightedOfferId(offer.id);
+            offerMgmt.setHighlightedOfferId(offer.id);
             logger.info('[IndexRedesigned] Carousel: Set highlightedOfferId', offer.id);
           } else {
             logger.warn('[IndexRedesigned] Carousel: Invalid offer location', { 
@@ -1003,28 +692,28 @@ export default function IndexRedesigned() {
       />
 
       {/* NEW: In-page Reservation Modal (replaces separate reservation page) */}
-      {selectedOffer && (
+      {offerMgmt.selectedOffer && (
         <ReservationModalNew
-          offer={selectedOffer}
-          user={user}
-          open={showNewReservationModal}
-          initialQuantity={reservationQuantity}
-          onClose={() => setShowNewReservationModal(false)}
+          offer={offerMgmt.selectedOffer}
+          user={auth.user}
+          open={offerMgmt.showNewReservationModal}
+          initialQuantity={offerMgmt.reservationQuantity}
+          onClose={() => offerMgmt.setShowNewReservationModal(false)}
           onReservationCreated={async (reservationId) => {
             logger.log('🎯 onReservationCreated called with ID:', reservationId);
             
             // Close UI immediately for better UX
-            setShowNewReservationModal(false);
-            setDiscoverSheetOpen(false);
-            setSelectedOffer(null);
+            offerMgmt.setShowNewReservationModal(false);
+            offerMgmt.setDiscoverSheetOpen(false);
+            offerMgmt.setSelectedOffer(null);
             
             // Fetch full reservation data (this triggers the modal to appear)
             logger.log('🔄 Fetching reservation data...');
-            const reservation = await getReservationById(reservationId);
-            logger.log('✅ Reservation fetched:', reservation);
+            const resData = await getReservationById(reservationId);
+            logger.log('✅ Reservation fetched:', resData);
             
-            if (reservation) {
-              setActiveReservation(reservation);
+            if (resData) {
+              reservation.setActiveReservation(resData);
               logger.log('✅ Active reservation state updated');
             } else {
               logger.error('❌ Failed to fetch reservation');
@@ -1035,32 +724,32 @@ export default function IndexRedesigned() {
       
       {/* NEW: Active Reservation Card - Modern Design */}
       <AnimatePresence mode="wait">
-        {activeReservation && (
+        {reservation.activeReservation && (
           <ActiveReservationCard
             reservation={{
-          id: activeReservation.id,
-          offerTitle: activeReservation.offer?.title || 'Offer',
-          partnerName: activeReservation.partner?.business_name || activeReservation.offer?.partner?.business_name || 'Partner',
-          imageUrl: activeReservation.offer?.images?.[0] || '/images/Map.jpg',
-          quantity: activeReservation.quantity,
-          expiresAt: activeReservation.expires_at,
-          pickupWindowStart: activeReservation.offer?.pickup_start || new Date().toISOString(),
-          pickupWindowEnd: activeReservation.offer?.pickup_end || new Date().toISOString(),
-          qrPayload: activeReservation.qr_code || activeReservation.id,
+          id: reservation.activeReservation.id,
+          offerTitle: reservation.activeReservation.offer?.title || 'Offer',
+          partnerName: reservation.activeReservation.partner?.business_name || reservation.activeReservation.offer?.partner?.business_name || 'Partner',
+          imageUrl: reservation.activeReservation.offer?.images?.[0] || '/images/Map.jpg',
+          quantity: reservation.activeReservation.quantity,
+          expiresAt: reservation.activeReservation.expires_at,
+          pickupWindowStart: reservation.activeReservation.offer?.pickup_start || new Date().toISOString(),
+          pickupWindowEnd: reservation.activeReservation.offer?.pickup_end || new Date().toISOString(),
+          qrPayload: reservation.activeReservation.qr_code || reservation.activeReservation.id,
           partnerLocation: {
-            lat: activeReservation.offer?.partner?.location?.latitude || 
-                 activeReservation.offer?.partner?.latitude || 
-                 activeReservation.partner?.location?.latitude || 
-                 activeReservation.partner?.latitude || 41.7151,
-            lng: activeReservation.offer?.partner?.location?.longitude || 
-                 activeReservation.offer?.partner?.longitude || 
-                 activeReservation.partner?.location?.longitude || 
-                 activeReservation.partner?.longitude || 44.8271,
+            lat: reservation.activeReservation.offer?.partner?.location?.latitude || 
+                 reservation.activeReservation.offer?.partner?.latitude || 
+                 reservation.activeReservation.partner?.location?.latitude || 
+                 reservation.activeReservation.partner?.latitude || 41.7151,
+            lng: reservation.activeReservation.offer?.partner?.location?.longitude || 
+                 reservation.activeReservation.offer?.partner?.longitude || 
+                 reservation.activeReservation.partner?.location?.longitude || 
+                 reservation.activeReservation.partner?.longitude || 44.8271,
           },
-          pickupAddress: activeReservation.partner?.address || 
-                        activeReservation.offer?.partner?.address || 'Location',
+          pickupAddress: reservation.activeReservation.partner?.address || 
+                        reservation.activeReservation.offer?.partner?.address || 'Location',
             }}
-            userLocation={userLocationObject}
+            userLocation={location.userLocationObject}
             onNavigate={(reservation) => {
           // Option 1: Open Google Maps in new tab
           const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.pickupAddress)}`;
@@ -1076,7 +765,7 @@ export default function IndexRedesigned() {
         onCancel={async (reservationId) => {
           try {
             await cancelReservation(reservationId);
-            setActiveReservation(null);
+            reservation.setActiveReservation(null);
             toast.success('Reservation cancelled');
           } catch (error) {
             toast.error('Failed to cancel reservation');
@@ -1084,7 +773,7 @@ export default function IndexRedesigned() {
           }
         }}
         onExpired={() => {
-          setActiveReservation(null);
+          reservation.setActiveReservation(null);
           toast.error('⏰ Your reservation has expired');
         }}
           />
@@ -1092,15 +781,15 @@ export default function IndexRedesigned() {
       </AnimatePresence>
 
       {/* Pickup Success Modal with confetti and achievements */}
-      {pickupModalData && (
+      {reservation.pickupModalData && (
         <PickupSuccessModal
-          open={showPickupSuccessModal}
+          open={reservation.showPickupSuccessModal}
           onClose={() => {
-            setShowPickupSuccessModal(false);
-            setPickupModalData(null);
+            reservation.setShowPickupSuccessModal(false);
+            reservation.setPickupModalData(null);
           }}
-          savedAmount={pickupModalData.savedAmount}
-          pointsEarned={pickupModalData.pointsEarned}
+          savedAmount={reservation.pickupModalData.savedAmount}
+          pointsEarned={reservation.pickupModalData.pointsEarned}
         />
       )}
       
@@ -1118,21 +807,21 @@ export default function IndexRedesigned() {
       <FloatingBottomNav 
         onCenterClick={() => {
           // Don't open offers sheet if there's an active reservation
-          if (activeReservation) return;
+          if (reservation.activeReservation) return;
           
           // Toggle between open, minimized (carousel), and closed
-          if (discoverSheetOpen && !isSheetMinimized) {
+          if (offerMgmt.discoverSheetOpen && !offerMgmt.isSheetMinimized) {
             // Sheet is fully open -> minimize to carousel
-            setIsSheetMinimized(true);
-          } else if (discoverSheetOpen && isSheetMinimized) {
+            offerMgmt.setIsSheetMinimized(true);
+          } else if (offerMgmt.discoverSheetOpen && offerMgmt.isSheetMinimized) {
             // Sheet is minimized -> close it
-            setDiscoverSheetOpen(false);
-            setIsSheetMinimized(false);
+            offerMgmt.setDiscoverSheetOpen(false);
+            offerMgmt.setIsSheetMinimized(false);
           } else {
             // Sheet is closed -> open it fully
-            setDiscoverSheetOpen(true);
-            setIsSheetMinimized(false);
-            setSelectedPartnerId(null);
+            offerMgmt.setDiscoverSheetOpen(true);
+            offerMgmt.setIsSheetMinimized(false);
+            offerMgmt.setSelectedPartnerId(null);
           }
         }}
       />
