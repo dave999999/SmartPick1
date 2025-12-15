@@ -278,7 +278,7 @@ export default function PartnerDashboardV3() {
           <div className="flex items-center gap-2.5 text-[11px] text-gray-600">
             <div className="flex items-center gap-1">
               <span className="text-gray-500">აქტიური:</span>
-              <span className="font-bold text-emerald-600">{stats.activeOffers}</span>
+              <span className="font-bold text-emerald-600">{stats?.activeOffers || 0}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">სლოტები:</span>
@@ -314,7 +314,7 @@ export default function PartnerDashboardV3() {
             
             <div className="flex items-baseline gap-2">
               <p className="text-4xl font-bold text-white tracking-tight">
-                {stats.itemsPickedUp}
+                {stats?.itemsPickedUp || 0}
               </p>
               <p className="text-emerald-100 text-sm font-medium opacity-90">
                 შეკვეთა
@@ -323,7 +323,7 @@ export default function PartnerDashboardV3() {
 
             {/* Single stat - no repetition */}
             <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-xl p-2.5 border border-white/20 inline-block">
-              <p className="text-emerald-100 text-xs font-medium">აქტიური შეთავაზებები: <span className="text-white font-bold">{stats.activeOffers}</span></p>
+              <p className="text-emerald-100 text-xs font-medium">აქტიური შეთავაზებები: <span className="text-white font-bold">{stats?.activeOffers || 0}</span></p>
             </div>
           </div>
         </motion.div>
