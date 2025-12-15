@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Supabase Connection Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Supabase Connection Test</h1>
+  <button onclick="testConnection()">Test Connection</button>
+  <pre id="result"></pre>
+
+  <script>
+    const SUPABASE_URL = 'https://ggzhtpaxnhwcilomswtm.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdnemh0cGF4bmh3Y2lsb21zd3RtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4ODA3MzksImV4cCI6MjA3NjQ1NjczOX0.OVZw-sdqFcAHLupCumm4pVF-2CPmMSWdBUCc7RQHRYA';
+    
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    async function testConnection() {
+      const result = document.getElementById('result');
+      result.textContent = 'Testing connection...\n';
+      
+      try {
+        // Test 1: Basic health check
+        result.textContent += '\n1. Testing Supabase URL...\n';
+        const response = await fetch(SUPABASE_URL);
+        result.textContent += `   Status: ${response.status}\n`;
+        
+        // Test 2: RPC function
+        result.textContent += '\n2. Testing RPC function...\n';
+        const { data, error } = await supabase.rpc('get_offers_in_viewport', {
+          p_north: 41.8,
+          p_south: 41.6,
+          p_east: 44.9,
+          p_west: 44.7,
+          p_category: null,
+          p_limit: 10
+        });
+        
+        if (error) {
+          result.textContent += `   ERROR: ${JSON.stringify(error, null, 2)}\n`;
+        } else {
+          result.textContent += `   SUCCESS: Got ${data?.length || 0} offers\n`;
+          result.textContent += `   Data: ${JSON.stringify(data, null, 2)}\n`;
+        }
+        
+      } catch (err) {
+        result.textContent += `\nFATAL ERROR: ${err.message}\n`;
+        result.textContent += `Stack: ${err.stack}\n`;
+      }
+    }
+  </script>
+</body>
+</html>

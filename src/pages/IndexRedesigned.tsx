@@ -934,6 +934,7 @@ export default function IndexRedesigned() {
         isOpen={discoverSheetOpen}
         isMinimized={isSheetMinimized}
         selectedPartnerId={selectedPartnerId}
+        filteredOffers={mapFilteredOffers}
         onClose={() => {
           setDiscoverSheetOpen(false);
           setIsSheetMinimized(false);
