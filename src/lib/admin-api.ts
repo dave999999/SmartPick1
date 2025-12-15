@@ -132,19 +132,32 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
     logger.log('Admin API: Updating partner:', partnerId, updates);
     await checkAdminAccess();
     
-    const { data, error } = await supabase
+    // First do the update without select to avoid RLS conflicts
+    const { error: updateError } = await supabase
       .from('partners')
       .update(updates)
-      .eq('id', partnerId)
-      .select();
+      .eq('id', partnerId);
       
-    if (error) throw error;
+    if (updateError) throw updateError;
+    
+    // Then fetch the updated data separately
+    const { data, error: selectError } = await supabase
+      .from('partners')
+      .select()
+      .eq('id', partnerId)
+      .single();
+    
+    if (selectError) {
+      // Update succeeded but select failed, log and return partial success
+      console.warn('Partner updated but could not fetch updated data:', selectError);
+    }
+    
     try {
       await logAdminAction('PARTNER_UPDATED', 'PARTNER', partnerId, { updates });
     } catch (logError) {
       console.warn('Failed to log admin action:', logError);
     }
-    return data?.[0];
+    return data || { id: partnerId, ...updates };
   } catch (error) {
     console.error('Admin API: Error updating partner:', error instanceof Error ? error.message : String(error));
     throw error;
