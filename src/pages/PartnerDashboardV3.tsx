@@ -76,7 +76,7 @@ export default function PartnerDashboardV3() {
   const reservationActions = useReservationActions(loadPartnerData);
 
   // Calculate revenue today
-  const revenueToday = stats.totalRevenue; // Simplified for demo
+  const revenueToday = stats?.totalRevenue || 0; // Simplified for demo
 
   // Handle offer actions
   const handleEditOffer = (offerId: string) => {
