@@ -81,6 +81,91 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
     }
   }, [searchParams]);
 
+  // Listen for OAuth sign-in to show onboarding for new users
+  useEffect(() => {
+    if (!open) return;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const user = session.user;
+        const isOAuth = user.app_metadata?.provider === 'google';
+        
+        if (isOAuth) {
+          // Check if user has completed onboarding (from database)
+          try {
+            logger.info('🔍 AuthDialog: Checking onboarding for Google user:', user.email);
+            
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('onboarding_completed, created_at')
+              .eq('id', user.id)
+              .single();
+            
+            logger.info('📊 AuthDialog: Onboarding check result:', { userData, error: userError });
+            
+            if (userError) {
+              logger.warn('Failed to check onboarding status:', userError);
+              // If can't check, treat as returning user (safe default)
+              setTimeout(() => {
+                onOpenChange(false);
+                if (onSuccess) onSuccess();
+              }, 500);
+              return;
+            }
+            
+            // Show onboarding if NOT completed yet
+            const shouldShowOnboarding = !userData?.onboarding_completed;
+            logger.info('🎯 AuthDialog: Should show onboarding?', shouldShowOnboarding);
+            
+            if (shouldShowOnboarding) {
+              // New Google OAuth user OR returning user who skipped onboarding - show tutorial
+              const displayName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'there';
+              
+              logger.info('🎓 Google OAuth: Will show onboarding for user:', user.email);
+              
+              // Wait a bit for auth to settle
+              setTimeout(() => {
+                onOpenChange(false);
+                
+                // Wait another moment then show onboarding
+                setTimeout(() => {
+                  setNewUserId(user.id);
+                  setNewUserName(displayName);
+                  setShowOnboarding(true);
+                  
+                  toast.success(`🎉 Welcome ${displayName}! Let's get you started!`, {
+                    duration: 4000,
+                  });
+                }, 300);
+              }, 500);
+            } else {
+              // Returning Google OAuth user who completed onboarding - just close dialog
+              logger.info('✅ Google OAuth: User already completed onboarding, closing dialog');
+              setTimeout(() => {
+                onOpenChange(false);
+                // Trigger parent to re-check user (will refresh onboarding status)
+                if (onSuccess) {
+                  onSuccess();
+                }
+              }, 500);
+            }
+          } catch (err) {
+            logger.error('Error checking onboarding status:', err);
+            // On error, just close dialog (safe default)
+            setTimeout(() => {
+              onOpenChange(false);
+              if (onSuccess) onSuccess();
+            }, 500);
+          }
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [open, onOpenChange, onSuccess]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -411,7 +496,9 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/verify-email`,
+          // Redirect back to home page after successful OAuth
+          // Google has already verified the email, no additional confirmation needed
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -421,12 +508,10 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
       if (error) throw error;
       
-      // Show email confirmation message for OAuth signups too
+      // OAuth opens in popup/redirect - user will be signed in automatically when they return
+      // No need to show "check your email" message
       if (data) {
-        toast.info('Please check your email to verify your account', {
-          duration: 8000,
-          icon: <Mail className="w-4 h-4" />,
-        });
+        logger.info('Google OAuth initiated successfully');
       }
     } catch (err) {
       logger.error('Google sign in error:', err);
@@ -472,29 +557,27 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         className="sm:max-w-md border-none p-0 overflow-hidden max-h-[90vh] flex flex-col mt-[80px]"
         style={{
           borderRadius: '28px',
-          background: 'linear-gradient(180deg, rgba(120,120,120,0.25) 0%, rgba(80,80,80,0.2) 100%)',
-          backdropFilter: 'blur(60px)',
-          WebkitBackdropFilter: 'blur(60px)',
-          boxShadow: '0 8px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.15) inset',
+          background: 'linear-gradient(135deg, #FFFFFF 0%, #F0F9FF 50%, #E0F2FE 100%)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(14,165,233,0.1) inset',
         }}
       >
         {/* Premium Header */}
-        <div className="px-6 pt-3 pb-2 text-center relative">
+        <div className="px-6 pt-6 pb-4 text-center relative">
           {/* Title & Subtitle */}
           <DialogTitle 
-            className="text-base font-bold mb-0.5 tracking-tight"
+            className="text-2xl font-bold mb-1 tracking-tight"
             style={{
-              color: '#FFFFFF',
-              fontWeight: 700,
+              color: '#0F172A',
+              fontWeight: 800,
               letterSpacing: '-0.02em',
             }}
           >
-            Join SmartPick
+            Welcome to SmartPick
           </DialogTitle>
           <DialogDescription 
-            className="text-xs font-medium"
+            className="text-sm font-medium"
             style={{
-              color: 'rgba(255,255,255,0.7)',
+              color: '#64748B',
             }}
           >
             Get exclusive deals and earn SmartPoints
@@ -519,23 +602,21 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
 
           <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList 
-              className="grid w-full grid-cols-2 gap-3 mb-4 bg-transparent p-0"
+              className="grid w-full grid-cols-2 gap-2 mb-5 p-1"
+              style={{
+                background: '#F1F5F9',
+                borderRadius: '16px',
+              }}
             >
               <TabsTrigger 
                 value="signin" 
-                className="rounded-2xl font-semibold transition-all duration-200 h-11 data-[state=inactive]:text-white data-[state=inactive]:opacity-70 border border-white/30"
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                }}
+                className="rounded-xl font-semibold transition-all duration-200 h-10 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600"
               >
                 Sign In
               </TabsTrigger>
               <TabsTrigger 
                 value="signup" 
-                className="rounded-2xl font-semibold transition-all duration-200 h-11 data-[state=inactive]:text-white data-[state=inactive]:opacity-70 border border-white/30"
-                style={{
-                  background: 'rgba(255,255,255,0.15)',
-                }}
+                className="rounded-xl font-semibold transition-all duration-200 h-10 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm data-[state=inactive]:text-gray-600"
               >
                 Create Account
               </TabsTrigger>
@@ -575,16 +656,15 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 />
               </div>
 
-              <form onSubmit={handleSignIn} className="space-y-3">
-                {/* Frosted Email Input */}
+              <form onSubmit={handleSignIn} className="space-y-4">
+                {/* Email Input */}
                 <div className="space-y-2">
-                  <Label htmlFor="signin-email" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                  <Label htmlFor="signin-email" className="text-sm font-semibold text-gray-700">
                     Email
                   </Label>
                   <div className="relative">
                     <Mail 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="signin-email"
@@ -602,27 +682,20 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-12 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
                 </div>
 
-                {/* Frosted Password Input */}
+                {/* Password Input */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="signin-password" className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                    <Label htmlFor="signin-password" className="text-sm font-semibold text-gray-700">
                       Password
                     </Label>
                     <Link 
                       to="/forgot-password" 
-                      className="text-xs font-semibold transition-all hover:opacity-70"
-                      style={{ color: '#FF8A00' }}
+                      className="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
                       onClick={() => setTimeout(() => onOpenChange(false), 0)}
                     >
                       Forgot?
@@ -630,8 +703,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   </div>
                   <div className="relative">
                     <Lock 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="signin-password"
@@ -647,13 +719,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-12 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-12 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900"
                     />
                   </div>
                 </div>
@@ -789,16 +855,15 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                     />
                   </div>
 
-                  <form onSubmit={handleSignUp} className="space-y-1">
+                  <form onSubmit={handleSignUp} className="space-y-3">
                     {/* Full Name */}
-                    <div className="space-y-1">
-                  <Label htmlFor="signup-name" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                    <div className="space-y-2">
+                  <Label htmlFor="signup-name" className="text-sm font-semibold text-gray-700">
                     Full Name
                   </Label>
                   <div className="relative">
                     <User 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="signup-name"
@@ -815,26 +880,19 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-11 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
-                <div className="space-y-1">
-                  <Label htmlFor="signup-email" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email" className="text-sm font-semibold text-gray-700">
                     Email
                   </Label>
                   <div className="relative">
                     <Mail 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="signup-email"
@@ -852,13 +910,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       }}
                       required
                       disabled={isLoading}
-                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-11 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900 placeholder:text-gray-400"
                     />
                   </div>
                 </div>
@@ -904,14 +956,13 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Confirm Password */}
-                <div className="space-y-1">
-                  <Label htmlFor="signup-confirm-password" className="text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password" className="text-sm font-semibold text-gray-700">
                     Confirm Password
                   </Label>
                   <div className="relative">
                     <Lock 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="signup-confirm-password"
@@ -928,27 +979,20 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       required
                       disabled={isLoading}
                       minLength={12}
-                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-11 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900"
                     />
                   </div>
                 </div>
 
                 {/* Referral Code */}
-                <div className="space-y-1">
-                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: 'rgba(255,255,255,0.9)' }}>
-                    <Gift className="w-4 h-4" style={{ color: '#FF8A00' }} />
+                <div className="space-y-2">
+                  <Label htmlFor="referral-code" className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                    <Gift className="w-4 h-4 text-orange-500" />
                     Referral Code (Optional)
                   </Label>
                   <div className="relative">
                     <Gift 
-                      className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 z-10"
-                      style={{ color: '#8E8E93' }}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 z-10 text-gray-400"
                     />
                     <Input
                       id="referral-code"
@@ -957,26 +1001,14 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                       disabled={isLoading}
-                      className="h-10 rounded-2xl pl-11 font-medium border-none transition-all duration-200 uppercase"
-                      style={{
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(10px)',
-                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.3)',
-                        color: '#FFFFFF',
-                      }}
+                      className="h-11 rounded-xl pl-12 font-medium border-2 border-gray-200 focus:border-sky-400 transition-all duration-200 bg-white text-gray-900 placeholder:text-gray-400 uppercase"
                       maxLength={6}
                     />
                   </div>
                   {referralCode && (
-                    <div 
-                      className="flex items-center gap-1.5 p-2 rounded-xl"
-                      style={{
-                        background: 'rgba(255,140,0,0.1)',
-                        border: '1px solid rgba(255,140,0,0.2)',
-                      }}
-                    >
-                      <Gift className="w-3 h-3 flex-shrink-0" style={{ color: '#FF8A00' }} />
-                      <p className="text-[10px] font-medium leading-tight" style={{ color: '#FF6B00' }}>
+                    <div className="flex items-center gap-2 p-3 rounded-xl bg-orange-50 border-2 border-orange-200">
+                      <Gift className="w-4 h-4 flex-shrink-0 text-orange-600" />
+                      <p className="text-xs font-medium text-orange-700">
                         You and your friend will both get bonus points!
                       </p>
                     </div>
@@ -984,13 +1016,12 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 </div>
 
                 {/* Terms & Conditions */}
-                <div className="space-y-1.5 pt-0">
+                <div className="space-y-2 pt-1">
                   <div 
-                    className="flex items-start space-x-2.5 p-2 rounded-xl transition-colors"
+                    className="flex items-start space-x-3 p-3 rounded-xl transition-colors"
                     style={{
-                      background: 'rgba(255,255,255,0.3)',
-                      border: `2px solid ${termsAccepted ? '#FF8A00' : error && !termsAccepted ? '#EF4444' : 'rgba(0,0,0,0.08)'}`,
-                    backgroundColor: termsAccepted ? 'rgb(240 253 250)' : error && !termsAccepted ? 'rgb(254 242 242)' : 'transparent'
+                      background: termsAccepted ? '#FEF3E2' : error && !termsAccepted ? '#FEE2E2' : '#F8FAFC',
+                      border: `2px solid ${termsAccepted ? '#FFA726' : error && !termsAccepted ? '#EF4444' : '#E2E8F0'}`,
                   }}>
                     <Checkbox
                       id="terms-acceptance"
@@ -1110,11 +1141,13 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
           setShowOnboarding(false);
           setNewUserId(null);
           setNewUserName('');
+          
           // Navigate to home to start browsing
           navigate('/');
           toast.success('🎉 You\'re all set! Start exploring offers now!');
         }}
         userName={newUserName}
+        userId={newUserId || undefined}
       />
     )}
 
