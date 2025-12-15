@@ -33,11 +33,8 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ReserveOffer = lazy(() => import('./pages/ReserveOffer'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const NotificationsDebug = lazy(() => import('./pages/NotificationsDebug'));
-const SentryTest = lazy(() => import('./pages/SentryTest'));
 const MaintenanceMode = lazy(() => import('./pages/MaintenanceMode'));
 const UserProfile = lazy(() => import('./pages/UserProfileApple'));
-const HapticTest = lazy(() => import('./pages/HapticTest'));
-const AccessibilityTest = lazy(() => import('./pages/AccessibilityTest'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Contact = lazy(() => import('./pages/Contact'));
@@ -45,13 +42,7 @@ const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then(module => ({ d
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then(module => ({ default: module.ResetPassword })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then(module => ({ default: module.ForgotPassword })));
 const VerifyRequested = lazy(() => import('./pages/VerifyRequested').then(module => ({ default: module.VerifyRequested })));
-const FloatingBottomNavDemo = lazy(() => import('./pages/FloatingBottomNavDemo'));
-const ActiveReservationV2Demo = lazy(() => import('./pages/ActiveReservationV2Demo'));
 const DesignReference = lazy(() => import('./pages/DesignReference'));
-const OffersSheetDemo = lazy(() => import('./pages/OffersSheetDemo'));
-const OffersCardDemo = lazy(() => import('./pages/OffersCardDemo'));
-const ReservationModalDemo = lazy(() => import('./pages/reservation-demo'));
-const OfferConfirmationDemo = lazy(() => import('./pages/offer-confirmation-demo'));
 
 // (Removed unused loadLeafletCSS helper)
 
@@ -337,9 +328,6 @@ const AppContent = () => {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/debug/notifications" element={<NotificationsDebug />} />
-          <Route path="/debug/sentry" element={<SentryTest />} />
-          <Route path="/debug/haptic" element={<HapticTest />} />
-          <Route path="/debug/accessibility" element={<AccessibilityTest />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/contact" element={<Contact />} />
@@ -347,13 +335,6 @@ const AppContent = () => {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/verify-requested" element={<VerifyRequested />} />
-          <Route path="/demo/bottom-nav" element={<FloatingBottomNavDemo />} />
-          <Route path="/demo/reservation-v2" element={<ActiveReservationV2Demo />} />
-          <Route path="/demo/offers-sheet" element={<OffersSheetDemo />} />
-          <Route path="/demo/offers-card" element={<OffersCardDemo />} />
-          <Route path="/offers-card-demo" element={<OffersCardDemo />} />
-          <Route path="/demo/reservation-modal" element={<ReservationModalDemo />} />
-          <Route path="/demo/offer-confirmation" element={<OfferConfirmationDemo />} />
           <Route path="/design-reference" element={<DesignReference />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
