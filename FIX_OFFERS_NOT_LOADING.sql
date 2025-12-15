@@ -86,9 +86,10 @@ BEGIN
   FROM offers o
   INNER JOIN partners p ON o.partner_id = p.id
   WHERE 
-    o.status = 'active'
+    UPPER(o.status) = 'ACTIVE'
     AND o.quantity_available > 0
     AND o.expires_at > NOW()
+    AND UPPER(p.status) IN ('ACTIVE', 'APPROVED')
     AND p.latitude IS NOT NULL
     AND p.longitude IS NOT NULL
     AND p.latitude >= p_south
