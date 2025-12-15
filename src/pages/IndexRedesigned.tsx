@@ -48,6 +48,7 @@ import { useOfferFilters } from '@/hooks/pages/useOfferFilters';
 import { useOfferManagement } from '@/hooks/pages/useOfferManagement';
 import { useMapControls } from '@/hooks/pages/useMapControls';
 import { useReservationFlow } from '@/hooks/pages/useReservationFlow';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 
 export default function IndexRedesigned() {
   const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
@@ -94,6 +95,9 @@ export default function IndexRedesigned() {
     offers,
     userLocation: location.userLocation,
   });
+  
+  // Track recently viewed offers for history
+  const { addRecentlyViewed } = useRecentlyViewed();
   
   // Ref to track last highlighted offer (prevents duplicate highlights causing re-renders)
   const lastHighlightedOfferRef = useRef<string | null>(null);
