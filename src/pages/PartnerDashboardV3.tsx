@@ -252,10 +252,23 @@ export default function PartnerDashboardV3() {
         <div className="px-3 py-2">
           {/* Layer 1: Primary - Actionable Buttons */}
           <div className="flex items-center justify-between gap-2 mb-2">
+            {/* Settings Button - First */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // TODO: Add settings modal
+                toast.info('პარამეტრები');
+              }}
+              className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+            >
+              <Settings className="w-5 h-5 text-gray-700" />
+            </motion.button>
+
+            {/* Home Button */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/')}
-              className="w-12 h-12 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
+              className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
             >
               <Home className="w-5 h-5" />
             </motion.button>
@@ -264,34 +277,18 @@ export default function PartnerDashboardV3() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openGallery()}
-              className="w-12 h-12 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-md hover:shadow-lg hover:bg-white transition-all flex items-center justify-center"
+              className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
             >
-              <ImageIcon className="w-5 h-5 text-gray-700" />
+              <ImageIcon className="w-5 h-5" />
             </motion.button>
 
-            {/* Settings Button */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                // TODO: Add settings modal
-                toast.info('პარამეტრები');
-              }}
-              className="w-12 h-12 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-md hover:shadow-lg hover:bg-white transition-all flex items-center justify-center"
-            >
-              <Settings className="w-5 h-5 text-gray-700" />
-            </motion.button>
-
+            {/* Wallet Button */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openBuyPointsModal()}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg transition-shadow"
+              className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
             >
-              <Wallet className="w-4 h-4" />
-              <div className="text-left">
-                <p className="text-[10px] opacity-90">ბალანსი</p>
-                <p className="text-sm font-bold">₾{partnerPoints?.balance || 0}</p>
-              </div>
-              <Plus className="w-3 h-3 opacity-75" />
+              <Wallet className="w-5 h-5" />
             </motion.button>
           </div>
 
