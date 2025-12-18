@@ -286,25 +286,34 @@ export default function PartnerDashboardV3() {
                 // TODO: Add settings modal
                 toast.info('პარამეტრები');
               }}
-              className="w-12 h-12 bg-gradient-to-br from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+              className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
             >
-              <Settings className="w-5 h-5 text-gray-700" />
+              <Settings className="w-5 h-5" />
             </motion.button>
           </div>
 
-          {/* Layer 2: Secondary Stats - Compact & Muted */}
-          <div className="flex items-center gap-2.5 text-[11px] text-gray-600">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500">აქტიური:</span>
-              <span className="font-bold text-emerald-600">{stats?.activeOffers || 0}</span>
+          {/* Layer 2: Stats - Items Sold & Earnings */}
+          <div className="flex items-center justify-between">
+            {/* Items Sold Today */}
+            <div className="flex items-center gap-2 bg-blue-50/80 rounded-lg px-3 py-1.5">
+              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center">
+                <Package className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-[9px] text-gray-500 leading-none">გაყიდული</p>
+                <p className="text-sm font-bold text-gray-900 leading-tight">{stats?.itemsPickedUp || 0} ცალი</p>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500">სლოტები:</span>
-              <span className="font-bold text-gray-900">{(partnerPoints?.offer_slots || 10) - (offers?.filter(o => o.status === 'ACTIVE').length || 0)}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500">დღეს:</span>
-              <span className="font-bold text-gray-900">₾{revenueToday.toFixed(0)}</span>
+
+            {/* Earnings Today */}
+            <div className="flex items-center gap-2 bg-emerald-50/80 rounded-lg px-3 py-1.5">
+              <div className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-[9px] text-gray-500 leading-none">შემოსავალი</p>
+                <p className="text-sm font-bold text-gray-900 leading-tight">₾{(stats?.totalRevenue || 0).toFixed(0)}</p>
+              </div>
             </div>
           </div>
         </div>
