@@ -263,7 +263,7 @@ export default function PartnerDashboardV3() {
               </div>
             </motion.button>
 
-            {/* Gallery Button - Center */}
+            {/* Gallery Button - Offer Images */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openGallery()}
@@ -271,8 +271,8 @@ export default function PartnerDashboardV3() {
             >
               <ImageIcon className="w-4 h-4 text-gray-700" />
               <div className="text-left">
-                <p className="text-[10px] text-gray-500">სურათები</p>
-                <p className="text-sm font-bold text-gray-900">Gallery</p>
+                <p className="text-[10px] text-gray-500">შეთავაზება</p>
+                <p className="text-sm font-bold text-gray-900">სურათები</p>
               </div>
             </motion.button>
 
