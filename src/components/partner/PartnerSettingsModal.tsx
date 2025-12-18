@@ -488,13 +488,13 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full px-1 py-2 md:px-4 md:py-3 rounded-lg md:rounded-xl flex flex-col md:flex-row items-center justify-center md:justify-start gap-0 md:gap-3 transition-all ${
+                        className={`w-full px-1 py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl flex flex-col md:flex-row items-center justify-center md:justify-start gap-0 md:gap-3 transition-all ${
                           isActive
                             ? `bg-gradient-to-r ${section.color} text-white shadow-lg`
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
-                        <Icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                        <Icon className="w-5 h-5 flex-shrink-0" />
                         <span className="hidden md:block font-medium text-sm">{section.label}</span>
                       </button>
                     );
