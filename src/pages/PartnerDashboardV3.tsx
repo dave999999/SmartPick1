@@ -282,7 +282,7 @@ export default function PartnerDashboardV3() {
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">სლოტები:</span>
-              <span className="font-bold text-gray-900">{(partnerPoints?.offer_slots || 10) - offers.filter(o => o.status === 'ACTIVE').length}</span>
+              <span className="font-bold text-gray-900">{(partnerPoints?.offer_slots || 10) - (offers?.filter(o => o.status === 'ACTIVE').length || 0)}</span>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-500">დღეს:</span>
