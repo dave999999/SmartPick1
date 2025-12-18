@@ -31,6 +31,7 @@ import { EditOfferDialog } from '@/components/partner/EditOfferDialog';
 import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { GalleryModal } from '@/components/partner/GalleryModal';
+import { PartnerSettingsModal } from '@/components/partner/PartnerSettingsModal';
 
 /**
  * PARTNER DASHBOARD V3 - APPLE-STYLE MOBILE REDESIGN
@@ -282,10 +283,7 @@ export default function PartnerDashboardV3() {
             {/* Settings Button - Last */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                // TODO: Add settings modal
-                toast.info('პარამეტრები');
-              }}
+              onClick={() => modals.openSettings()}
               className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
             >
               <Settings className="w-5 h-5" />
@@ -619,6 +617,13 @@ export default function PartnerDashboardV3() {
       <GalleryModal
         open={modals.showGallery}
         onClose={modals.closeGallery}
+        partnerId={partner?.id || ''}
+      />
+
+      {/* Settings Modal */}
+      <PartnerSettingsModal
+        open={modals.showSettings}
+        onClose={modals.closeSettings}
         partnerId={partner?.id || ''}
       />
     </div>
