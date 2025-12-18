@@ -141,7 +141,7 @@ export function GalleryModal({ open, onClose, partnerId, mode = 'browse', onSele
           <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-4 sm:px-6 py-4">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">სურათები</h2>
+                <h2 className="text-2xl font-bold text-gray-900">პროდუქტის ფოტოები</h2>
                 <p className="text-sm text-gray-500 mt-0.5">შეთავაზებებისთვის</p>
               </div>
               <div className="flex items-center gap-2">

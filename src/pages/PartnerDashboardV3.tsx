@@ -263,16 +263,16 @@ export default function PartnerDashboardV3() {
               </div>
             </motion.button>
 
-            {/* Gallery Button - Offer Images */}
+            {/* Gallery Button - Product Photos */}
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openGallery()}
-              className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg hover:bg-white transition-all"
+              className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl px-2.5 py-1.5 shadow-md hover:shadow-lg hover:bg-white transition-all"
             >
               <ImageIcon className="w-4 h-4 text-gray-700" />
-              <div className="text-left">
-                <p className="text-[10px] text-gray-500">შეთავაზება</p>
-                <p className="text-sm font-bold text-gray-900">სურათები</p>
+              <div className="text-left leading-tight">
+                <p className="text-[9px] text-gray-500">პროდუქტის</p>
+                <p className="text-xs font-bold text-gray-900">ფოტოები</p>
               </div>
             </motion.button>
 
