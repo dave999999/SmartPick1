@@ -478,9 +478,9 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
             {/* Content */}
             <div className="flex-1 overflow-hidden flex">
-              {/* Sidebar - Desktop */}
-              <div className="hidden md:block w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto">
-                <div className="p-3 space-y-1">
+              {/* Sidebar - Always visible */}
+              <div className="w-16 sm:w-20 md:w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
+                <div className="p-1 sm:p-2 md:p-3 space-y-1">
                   {sections.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -488,33 +488,18 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full px-4 py-3 rounded-xl flex items-center gap-3 transition-all ${
+                        className={`w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 transition-all ${
                           isActive
                             ? `bg-gradient-to-r ${section.color} text-white shadow-lg`
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
-                        <Icon className="w-5 h-5" />
-                        <span className="font-medium text-sm">{section.label}</span>
+                        <Icon className="w-5 h-5 flex-shrink-0" />
+                        <span className="font-medium text-[10px] sm:text-xs md:text-sm text-center md:text-left leading-tight">{section.label}</span>
                       </button>
                     );
                   })}
                 </div>
-              </div>
-
-              {/* Mobile section selector */}
-              <div className="md:hidden w-full border-b border-gray-200 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
-                <select
-                  value={activeSection}
-                  onChange={(e) => setActiveSection(e.target.value as SettingsSection)}
-                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
-                >
-                  {sections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.label}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {/* Main content */}
