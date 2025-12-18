@@ -559,19 +559,19 @@ export default function PartnerDashboardV3() {
         />
       )}
 
-      {/* FLOATING ACTION BAR - Scan Only */}
+      {/* FLOATING SCAN BUTTON */}
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
       >
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => modals.openQRScanner()}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full w-16 h-16 font-semibold flex items-center justify-center shadow-2xl hover:shadow-blue-500/40 transition-all active:shadow-lg"
+          className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full w-20 h-20 flex items-center justify-center shadow-2xl hover:shadow-blue-500/50 transition-all border-4 border-white"
         >
-          <QrCode className="w-7 h-7" />
+          <QrCode className="w-9 h-9" strokeWidth={2.5} />
         </motion.button>
       </motion.div>
 
