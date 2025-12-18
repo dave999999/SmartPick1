@@ -559,35 +559,20 @@ export default function PartnerDashboardV3() {
         />
       )}
 
-      {/* FLOATING ACTION BAR */}
+      {/* FLOATING ACTION BAR - Scan Only */}
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
-        className="fixed bottom-4 left-3 right-3 z-50"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
       >
-        <div className="bg-white/90 backdrop-blur-2xl rounded-3xl border border-gray-200/60 shadow-2xl p-2">
-          <div className="flex gap-2">
-            {/* Primary Action - New Offer */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => modals.openCreateWizard()}
-              className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-2xl py-3 px-4 font-semibold text-sm shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-1.5 transition-all active:shadow-md animate-pulse-glow"
-            >
-              <Plus className="w-4 h-4" strokeWidth={2.5} />
-              ახალი შეთავაზება
-            </motion.button>
-
-            {/* Secondary Action - Scan QR */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => modals.openQRScanner()}
-              className="w-14 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-2xl py-3 font-semibold flex items-center justify-center shadow-lg hover:shadow-gray-300/40 transition-all active:shadow-md"
-            >
-              <QrCode className="w-5 h-5" />
-            </motion.button>
-          </div>
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => modals.openQRScanner()}
+          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full w-16 h-16 font-semibold flex items-center justify-center shadow-2xl hover:shadow-blue-500/40 transition-all active:shadow-lg"
+        >
+          <QrCode className="w-7 h-7" />
+        </motion.button>
       </motion.div>
 
       {/* DIALOGS */}
