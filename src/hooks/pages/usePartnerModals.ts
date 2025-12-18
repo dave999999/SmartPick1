@@ -17,6 +17,7 @@ export interface PartnerModalsState {
   showBuyPointsModal: boolean;
   showCreateWizard: boolean;
   showQRScanner: boolean;
+  showGallery: boolean;
   editingOffer: Offer | null;
   isSubmitting: boolean;
   openBuyPointsModal: () => void;
@@ -25,6 +26,8 @@ export interface PartnerModalsState {
   closeCreateWizard: () => void;
   openQRScanner: () => void;
   closeQRScanner: () => void;
+  openGallery: () => void;
+  closeGallery: () => void;
   openEditOffer: (offer: Offer) => void;
   closeEditOffer: () => void;
   setIsSubmitting: (submitting: boolean) => void;
@@ -34,6 +37,7 @@ export function usePartnerModals(): PartnerModalsState {
   const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
   const [showCreateWizard, setShowCreateWizard] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,6 +45,7 @@ export function usePartnerModals(): PartnerModalsState {
     showBuyPointsModal,
     showCreateWizard,
     showQRScanner,
+    showGallery,
     editingOffer,
     isSubmitting,
     
@@ -55,6 +60,10 @@ export function usePartnerModals(): PartnerModalsState {
     // QR Scanner
     openQRScanner: () => setShowQRScanner(true),
     closeQRScanner: () => setShowQRScanner(false),
+    
+    // Gallery
+    openGallery: () => setShowGallery(true),
+    closeGallery: () => setShowGallery(false),
     
     // Edit Offer
     openEditOffer: (offer: Offer) => setEditingOffer(offer),

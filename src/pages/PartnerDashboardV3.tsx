@@ -19,7 +19,8 @@ import {
   Wallet,
   AlertCircle,
   CheckCircle,
-  Home
+  Home,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
@@ -28,6 +29,7 @@ import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
 import { EditOfferDialog } from '@/components/partner/EditOfferDialog';
 import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
+import { GalleryModal } from '@/components/partner/GalleryModal';
 
 /**
  * PARTNER DASHBOARD V3 - APPLE-STYLE MOBILE REDESIGN
@@ -81,7 +83,7 @@ export default function PartnerDashboardV3() {
   // Handle offer actions
   const handleEditOffer = (offerId: string) => {
     setActiveOfferMenu(null);
-    const offer = offers.find(o => o.id === offerId);
+    const offer = offers?.find(o => o.id === offerId);
     if (offer) {
       modals.openEditOffer(offer);
     }
@@ -248,7 +250,7 @@ export default function PartnerDashboardV3() {
       <div className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-200/50">
         <div className="px-3 py-2">
           {/* Layer 1: Primary - Actionable Buttons */}
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between gap-2 mb-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/')}
@@ -260,6 +262,20 @@ export default function PartnerDashboardV3() {
                 <p className="text-sm font-bold">გვერდი</p>
               </div>
             </motion.button>
+
+            {/* Gallery Button - Center */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => modals.openGallery()}
+              className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg hover:bg-white transition-all"
+            >
+              <ImageIcon className="w-4 h-4 text-gray-700" />
+              <div className="text-left">
+                <p className="text-[10px] text-gray-500">სურათები</p>
+                <p className="text-sm font-bold text-gray-900">Gallery</p>
+              </div>
+            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openBuyPointsModal()}
@@ -364,15 +380,15 @@ export default function PartnerDashboardV3() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-base font-bold text-gray-900">თქვენი შეთავაზებები</h2>
-              {offers.length > 0 && (
-                <p className="text-xs text-gray-500">{offers.length} ჯამური</p>
+              {(offers?.length || 0) > 0 && (
+                <p className="text-xs text-gray-500">{offers?.length || 0} ჯამური</p>
               )}
             </div>
 
             {/* Offers List */}
             <div className="space-y-2">
               <AnimatePresence>
-                {offers.length === 0 ? (
+                {(offers?.length || 0) === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -383,7 +399,7 @@ export default function PartnerDashboardV3() {
                     <p className="text-sm text-gray-500 mt-1">დაამატეთ პირველი შეთავაზება და დაიწყეთ გაყიდვა</p>
                   </motion.div>
                 ) : (
-                  offers.map((offer, index) => (
+                  offers?.map((offer, index) => (
                   <motion.div
                     key={offer.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -593,6 +609,13 @@ export default function PartnerDashboardV3() {
           partnerId={partner?.id || ''}
         />
       )}
+
+      {/* Gallery Modal */}
+      <GalleryModal
+        open={modals.showGallery}
+        onClose={modals.closeGallery}
+        partnerId={partner?.id || ''}
+      />
     </div>
   );
 }

@@ -53,7 +53,7 @@ export default function EnhancedActiveReservations({
     return expires.getTime() - now.getTime() <= 0;
   };
 
-  if (reservations.length === 0) {
+  if ((reservations?.length || 0) === 0) {
     return (
       <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-200 mb-4">
@@ -72,12 +72,12 @@ export default function EnhancedActiveReservations({
         <div className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse"></div>
         <h3 className="text-sm font-bold text-gray-900">Active Reservations</h3>
         <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
-          {reservations.length}
+          {reservations?.length || 0}
         </Badge>
       </div>
 
       {/* Reservation Cards */}
-      {reservations.map((reservation) => {
+      {reservations?.map((reservation) => {
         const isProcessing = processingIds.has(reservation.id);
         const timeRemaining = getTimeRemaining(reservation.expires_at);
         const isExpiringSoon = timeRemaining.includes('m remaining') && !timeRemaining.includes('h');
