@@ -254,13 +254,9 @@ export default function PartnerDashboardV3() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/')}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl px-3 py-1.5 shadow-md hover:shadow-lg transition-shadow"
+              className="w-12 h-12 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
             >
-              <Home className="w-4 h-4" />
-              <div className="text-left">
-                <p className="text-[10px] opacity-90">მთავარი</p>
-                <p className="text-sm font-bold">გვერდი</p>
-              </div>
+              <Home className="w-5 h-5" />
             </motion.button>
 
             {/* Gallery Button - Product Photos */}
