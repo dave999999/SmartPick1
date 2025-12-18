@@ -479,8 +479,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
             {/* Content */}
             <div className="flex-1 overflow-hidden flex">
               {/* Sidebar - Always visible */}
-              <div className="w-16 sm:w-20 md:w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
-                <div className="p-1 sm:p-2 md:p-3 space-y-1">
+              <div className="w-12 md:w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto flex-shrink-0">
+                <div className="p-1 md:p-3 space-y-0.5 md:space-y-1">
                   {sections.map((section) => {
                     const Icon = section.icon;
                     const isActive = activeSection === section.id;
@@ -488,14 +488,14 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
                       <button
                         key={section.id}
                         onClick={() => setActiveSection(section.id)}
-                        className={`w-full px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 rounded-lg md:rounded-xl flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 transition-all ${
+                        className={`w-full px-1 py-2 md:px-4 md:py-3 rounded-lg md:rounded-xl flex flex-col md:flex-row items-center justify-center md:justify-start gap-0 md:gap-3 transition-all ${
                           isActive
                             ? `bg-gradient-to-r ${section.color} text-white shadow-lg`
                             : 'text-gray-700 hover:bg-gray-100'
                         }`}
                       >
-                        <Icon className="w-5 h-5 flex-shrink-0" />
-                        <span className="font-medium text-[10px] sm:text-xs md:text-sm text-center md:text-left leading-tight">{section.label}</span>
+                        <Icon className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                        <span className="hidden md:block font-medium text-sm">{section.label}</span>
                       </button>
                     );
                   })}
