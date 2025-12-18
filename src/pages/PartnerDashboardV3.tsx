@@ -348,12 +348,12 @@ export default function PartnerDashboardV3() {
               activeView === 'active'
                 ? 'bg-emerald-500 text-white shadow-md'
                 : 'bg-white text-gray-600 border border-gray-200'
-            } ${reservations.length > 0 ? 'animate-pulse-subtle' : ''}`}
+            } ${(reservations?.length || 0) > 0 ? 'animate-pulse-subtle' : ''}`}
           >
             აქტიური რეზერვაციები
-            {reservations.length > 0 && (
+            {(reservations?.length || 0) > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                {reservations.length}
+                {reservations?.length || 0}
               </span>
             )}
           </motion.button>
