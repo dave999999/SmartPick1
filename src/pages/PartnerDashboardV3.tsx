@@ -322,11 +322,11 @@ export default function PartnerDashboardV3() {
       {/* MAIN CONTENT */}
       <div className="px-3 pt-3 space-y-3">
         
-        {/* PERFORMANCE CARD - Compact */}
+        {/* QUICK ACTION CARD - Available Slots */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 shadow-lg"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 shadow-lg"
         >
           {/* Subtle background pattern */}
           <div className="absolute inset-0 opacity-10">
@@ -334,23 +334,32 @@ export default function PartnerDashboardV3() {
             <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-white rounded-full blur-3xl" />
           </div>
 
-          <div className="relative">
-            <p className="text-emerald-100 text-[10px] font-semibold tracking-wide uppercase mb-2">
-              დღეს
-            </p>
-            
-            <div className="flex items-baseline gap-2">
-              <p className="text-4xl font-bold text-white tracking-tight">
-                {stats?.itemsPickedUp || 0}
+          <div className="relative flex items-center justify-between">
+            <div>
+              <p className="text-emerald-100 text-xs font-medium mb-1">
+                ხელმისაწვდომი სლოტები
               </p>
-              <p className="text-emerald-100 text-sm font-medium opacity-90">
-                შეკვეთა
-              </p>
+              <div className="flex items-baseline gap-2 mb-3">
+                <p className="text-5xl font-bold text-white tracking-tight">
+                  {(partnerPoints?.offer_slots || 10) - (offers?.filter(o => o.status === 'ACTIVE').length || 0)}
+                </p>
+                <p className="text-emerald-100 text-base font-medium opacity-90">
+                  / {partnerPoints?.offer_slots || 10}
+                </p>
+              </div>
+              
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => modals.openCreateWizard()}
+                className="bg-white text-emerald-600 rounded-xl px-4 py-2 text-sm font-bold shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                ახალი შეთავაზება
+              </motion.button>
             </div>
 
-            {/* Single stat - no repetition */}
-            <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-xl p-2.5 border border-white/20 inline-block">
-              <p className="text-emerald-100 text-xs font-medium">აქტიური შეთავაზებები: <span className="text-white font-bold">{stats?.activeOffers || 0}</span></p>
+            <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Package className="w-10 h-10 text-white" />
             </div>
           </div>
         </motion.div>
