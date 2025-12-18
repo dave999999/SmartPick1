@@ -20,7 +20,8 @@ import {
   AlertCircle,
   CheckCircle,
   Home,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Settings
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
@@ -263,13 +264,21 @@ export default function PartnerDashboardV3() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => modals.openGallery()}
-              className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl px-2.5 py-1.5 shadow-md hover:shadow-lg hover:bg-white transition-all"
+              className="w-12 h-12 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-md hover:shadow-lg hover:bg-white transition-all flex items-center justify-center"
             >
-              <ImageIcon className="w-4 h-4 text-gray-700" />
-              <div className="text-left leading-tight">
-                <p className="text-[9px] text-gray-500">პროდუქტის</p>
-                <p className="text-xs font-bold text-gray-900">ფოტოები</p>
-              </div>
+              <ImageIcon className="w-5 h-5 text-gray-700" />
+            </motion.button>
+
+            {/* Settings Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // TODO: Add settings modal
+                toast.info('პარამეტრები');
+              }}
+              className="w-12 h-12 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-xl shadow-md hover:shadow-lg hover:bg-white transition-all flex items-center justify-center"
+            >
+              <Settings className="w-5 h-5 text-gray-700" />
             </motion.button>
 
             <motion.button
