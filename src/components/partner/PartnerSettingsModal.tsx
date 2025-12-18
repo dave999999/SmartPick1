@@ -90,30 +90,30 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
     switch (activeSection) {
       case 'profile':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">ბიზნეს ინფორმაცია</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">ბიზნეს ინფორმაცია</h3>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Building className="w-4 h-4 inline mr-2" />
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                <Building className="w-3 h-3 sm:w-4 sm:h-4 inline mr-1 sm:mr-2" />
                 ბიზნესის სახელი
               </label>
               <input
                 type="text"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
                 placeholder="თქვენი ბიზნესის სახელი"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">აღწერა</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">აღწერა</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                rows={3}
+                className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm"
                 placeholder="მოკლე აღწერა თქვენი ბიზნესის შესახებ"
               />
             </div>
@@ -180,8 +180,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'notifications':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">შეტყობინებების პარამეტრები</h3>
+          <div className="space-y-3 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">შეტყობინებების პარამეტრები</h3>
             
             <ToggleSetting
               label="ახალი დაჯავშნები"
@@ -222,8 +222,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'payment':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">გადახდის პარამეტრები</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">გადახდის პარამეტრები</h3>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -265,8 +265,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'offers':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">შეთავაზებების ნაგულისხმევი პარამეტრები</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">შეთავაზებების ნაგულისხმევი პარამეტრები</h3>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -324,8 +324,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'account':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">უსაფრთხოება და ანგარიში</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">უსაფრთხოება და ანგარიში</h3>
             
             <button className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all text-left flex items-center justify-between">
               <div>
@@ -357,8 +357,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'language':
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">ენა და დისპლეი</h3>
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">ენა და დისპლეი</h3>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">ინტერფეისის ენა</label>
@@ -398,8 +398,8 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
 
       case 'support':
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">დახმარება და მხარდაჭერა</h3>
+          <div className="space-y-3 sm:space-y-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">დახმარება და მხარდაჭერა</h3>
             
             <button className="w-full px-6 py-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-md transition-all text-left flex items-center justify-between">
               <div>
@@ -458,21 +458,21 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="fixed inset-4 md:inset-8 lg:inset-16 bg-white rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col"
+            className="fixed inset-2 sm:inset-4 md:inset-8 lg:inset-16 bg-white rounded-2xl sm:rounded-3xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[calc(100vh-16px)] sm:max-h-[calc(100vh-32px)]"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center">
-                  <SettingsIcon className="w-5 h-5" />
+            <div className="bg-gradient-to-r from-red-500 to-red-600 text-white px-3 sm:px-6 py-3 sm:py-5 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center">
+                  <SettingsIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <h2 className="text-xl font-bold">პარამეტრები</h2>
+                <h2 className="text-base sm:text-xl font-bold">პარამეტრები</h2>
               </div>
               <button
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xl hover:bg-white/30 transition-colors flex items-center justify-center"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-xl hover:bg-white/30 transition-colors flex items-center justify-center"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
 
@@ -503,11 +503,11 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
               </div>
 
               {/* Mobile section selector */}
-              <div className="md:hidden w-full border-b border-gray-200 bg-gray-50 p-3">
+              <div className="md:hidden w-full border-b border-gray-200 bg-gray-50 p-2 sm:p-3 flex-shrink-0">
                 <select
                   value={activeSection}
                   onChange={(e) => setActiveSection(e.target.value as SettingsSection)}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm"
                 >
                   {sections.map((section) => (
                     <option key={section.id} value={section.id}>
@@ -518,7 +518,7 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
               </div>
 
               {/* Main content */}
-              <div className="flex-1 overflow-y-auto p-6 md:p-8">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-6 md:p-8">
                 <motion.div
                   key={activeSection}
                   initial={{ opacity: 0, x: 20 }}
@@ -531,19 +531,19 @@ export function PartnerSettingsModal({ open, onClose, partnerId }: PartnerSettin
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end gap-3">
+            <div className="border-t border-gray-200 px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 flex justify-end gap-2 sm:gap-3 flex-shrink-0">
               <button
                 onClick={onClose}
-                className="px-6 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors font-medium"
+                className="px-4 py-2 sm:px-6 sm:py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors font-medium text-sm"
               >
                 გაუქმება
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-4 py-2 sm:px-6 sm:py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium transition-all disabled:opacity-50 flex items-center gap-2 text-sm"
               >
-                <Save className="w-4 h-4" />
+                <Save className="w-3 h-3 sm:w-4 sm:h-4" />
                 {isSaving ? 'შენახვა...' : 'შენახვა'}
               </button>
             </div>
@@ -564,21 +564,21 @@ interface ToggleSettingProps {
 
 function ToggleSetting({ label, description, checked, onChange }: ToggleSettingProps) {
   return (
-    <div className="flex items-start justify-between p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors">
-      <div className="flex-1">
-        <div className="font-medium text-gray-900">{label}</div>
-        <div className="text-sm text-gray-500 mt-1">{description}</div>
+    <div className="flex items-start justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 transition-colors gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-gray-900 text-sm sm:text-base">{label}</div>
+        <div className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">{description}</div>
       </div>
       <button
         onClick={() => onChange(!checked)}
-        className={`relative w-12 h-7 rounded-full transition-colors ${
+        className={`relative w-10 h-6 sm:w-12 sm:h-7 rounded-full transition-colors flex-shrink-0 ${
           checked ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gray-300'
         }`}
       >
         <motion.div
-          animate={{ x: checked ? 22 : 2 }}
+          animate={{ x: checked ? (window.innerWidth < 640 ? 18 : 22) : 2 }}
           transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-          className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
+          className="absolute top-1 w-4 h-4 sm:w-5 sm:h-5 bg-white rounded-full shadow-md"
         />
       </button>
     </div>
