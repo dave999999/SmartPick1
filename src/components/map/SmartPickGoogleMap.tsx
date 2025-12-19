@@ -1082,31 +1082,15 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       const partnerName = locationData?.partnerName || 'Partner';
       const offersCount = locationData?.offers?.length || 0;
       
-      // Add pulsing shadow and info card above marker
+      // Add info card above marker (removed pulse)
       const markerPosition = marker.getPosition();
       if (markerPosition) {
         const pulseOverlay = new google.maps.OverlayView();
         pulseOverlay.onAdd = function() {
-          // Create container for both pulse and info card
+          // Create container for info card
           const container = document.createElement('div');
           
-          // Pulsing shadow
-          const pulseDiv = document.createElement('div');
-          pulseDiv.style.cssText = `
-            position: absolute;
-            width: 80px;
-            height: 40px;
-            border-radius: 50%;
-            background: radial-gradient(ellipse, rgba(255, 138, 0, 0.8) 0%, rgba(255, 138, 0, 0.5) 30%, rgba(255, 138, 0, 0.2) 60%, transparent 80%);
-            animation: markerPulse 1.5s ease-in-out infinite;
-            pointer-events: none;
-            transform: translate(-50%, -50%);
-            filter: blur(6px);
-            left: 0;
-            top: 10px;
-          `;
-          
-          // Info card above pin
+          // Info card above pin (pulse removed)
           const infoCard = document.createElement('div');
           infoCard.style.cssText = `
             position: absolute;
@@ -1131,14 +1115,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
             <div style="font-size: 11px; color: #666;">${offersCount} offer${offersCount !== 1 ? 's' : ''} available</div>
           `;
           
-          container.appendChild(pulseDiv);
           container.appendChild(infoCard);
           
           const panes = this.getPanes();
           if (panes) {
             panes.overlayLayer.appendChild(container);
             setTimeout(() => {
-              pulseDiv.style.opacity = '1';
               infoCard.style.opacity = '1';
             }, 50);
           }
