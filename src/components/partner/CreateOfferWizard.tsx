@@ -29,10 +29,10 @@ interface OfferDraft {
 }
 
 const STEPS = [
-  { id: 1, name: 'Basic Info', icon: '📝' },
-  { id: 2, name: 'Pricing', icon: '💰' },
-  { id: 3, name: 'Image', icon: '📷' },
-  { id: 4, name: 'Review', icon: '✓' },
+  { id: 1, name: 'ძირითადი ინფო', icon: '📝' },
+  { id: 2, name: 'ფასები', icon: '💰' },
+  { id: 3, name: 'სურათი', icon: '📷' },
+  { id: 4, name: 'შემოწმება', icon: '✓' },
 ];
 
 export default function CreateOfferWizard({
@@ -93,30 +93,30 @@ export default function CreateOfferWizard({
     const newErrors: Record<string, string> = {};
 
     if (step === 1) {
-      if (!draft.title.trim()) newErrors.title = 'Title is required';
-      if (draft.title.trim().length < 3) newErrors.title = 'Title must be at least 3 characters';
-      if (draft.title.trim().length > 100) newErrors.title = 'Title must not exceed 100 characters';
+      if (!draft.title.trim()) newErrors.title = 'სათაური აუცილებელია';
+      if (draft.title.trim().length < 3) newErrors.title = 'სათაური უნდა შეიცავდეს მინიმუმ 3 სიმბოლოს';
+      if (draft.title.trim().length > 100) newErrors.title = 'სათაური არ უნდა აღემატებოდეს 100 სიმბოლოს';
       // Description is optional - no validation needed
     } else if (step === 2) {
       const quantity = Number(draft.quantity);
       const originalPrice = Number(draft.original_price);
       const smartPrice = Number(draft.smart_price);
 
-      if (!draft.quantity || quantity < 1) newErrors.quantity = 'Quantity must be at least 1';
-      if (quantity > 100) newErrors.quantity = 'Maximum 100 items per offer';
+      if (!draft.quantity || quantity < 1) newErrors.quantity = 'რაოდენობა მინიმუმ 1 უნდა იყოს';
+      if (quantity > 100) newErrors.quantity = 'მაქსიმუმ 100 ერთეული შეთავაზებაზე';
       
-      if (!draft.original_price || originalPrice <= 0) newErrors.original_price = 'Original price is required';
-      if (originalPrice < 0.50) newErrors.original_price = 'Minimum price is ₾0.50';
-      if (originalPrice > 500) newErrors.original_price = 'Maximum price is ₾500';
+      if (!draft.original_price || originalPrice <= 0) newErrors.original_price = 'ორიგინალური ფასი აუცილებელია';
+      if (originalPrice < 0.50) newErrors.original_price = 'მინიმალური ფასი არის ₾0.50';
+      if (originalPrice > 500) newErrors.original_price = 'მაქსიმალური ფასი არის ₾500';
       
-      if (!draft.smart_price || smartPrice <= 0) newErrors.smart_price = 'Smart price is required';
-      if (smartPrice < 0.50) newErrors.smart_price = 'Minimum price is ₾0.50';
-      if (smartPrice > 500) newErrors.smart_price = 'Maximum price is ₾500';
+      if (!draft.smart_price || smartPrice <= 0) newErrors.smart_price = 'სმარტ ფასი აუცილებელია';
+      if (smartPrice < 0.50) newErrors.smart_price = 'მინიმალური ფასი არის ₾0.50';
+      if (smartPrice > 500) newErrors.smart_price = 'მაქსიმალური ფასი არის ₾500';
       if (smartPrice >= originalPrice) {
-        newErrors.smart_price = 'Smart price must be less than original price';
+        newErrors.smart_price = 'სმარტ ფასი უნდა იყოს ნაკლები ორიგინალურ ფასზე';
       }
     } else if (step === 3) {
-      if (!draft.image) newErrors.image = 'Please select an image';
+      if (!draft.image) newErrors.image = 'გთხოვთ აირჩიოთ სურათი';
     }
 
     setErrors(newErrors);
@@ -142,7 +142,7 @@ export default function CreateOfferWizard({
   const handleSubmit = async () => {
     // Validate ALL steps before submitting
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
-      toast.error('Please complete all required fields');
+      toast.error('გთხოვთ შეავსოთ ყველა სავალდებულო ველი');
       return;
     }
 
@@ -232,7 +232,7 @@ export default function CreateOfferWizard({
           <div className="sticky top-0 bg-white border-b border-gray-100 p-4 sm:p-6" style={{ backgroundColor: '#ffffff' }}>
             <DialogHeader>
               <DialogTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                Create New Offer
+                ახალი შეთავაზების შექმნა
               </DialogTitle>
             </DialogHeader>
             
@@ -271,13 +271,13 @@ export default function CreateOfferWizard({
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="title" className="text-sm font-semibold text-gray-700">
-                    Offer Title <span className="text-red-500">*</span>
+                    შეთავაზების სათაური <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="title"
                     value={draft.title}
                     onChange={(e) => updateDraft('title', e.target.value)}
-                    placeholder="e.g., Fresh Croissants (min 3 characters)"
+                    placeholder="მაგ., ახალი კრუასანები (მინ. 3 სიმბოლო)"
                     className="mt-2 rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white"
                     autoFocus
                     maxLength={100}
@@ -285,25 +285,25 @@ export default function CreateOfferWizard({
                   {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                   {!errors.title && (
                     <p className={`text-xs mt-1 ${draft.title.length < 3 ? 'text-amber-600 font-medium' : draft.title.length > 100 ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
-                      {draft.title.length}/100 characters {draft.title.length < 3 && '(minimum 3)'}
+                      {draft.title.length}/100 სიმბოლო {draft.title.length < 3 && '(მინიმუმ 3)'}
                     </p>
                   )}
                 </div>
 
                 <div>
                   <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
-                    Description <span className="text-gray-400 text-xs">(optional)</span>
+                    აღწერა <span className="text-gray-400 text-xs">(არასავალდებულო)</span>
                   </Label>
                   <Textarea
                     id="description"
                     value={draft.description}
                     onChange={(e) => updateDraft('description', e.target.value)}
-                    placeholder="Describe your offer in detail... (optional)"
+                    placeholder="დეტალურად აღწერეთ თქვენი შეთავაზება... (არასავალდებულო)"
                     className="mt-2 min-h-[120px] rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white text-gray-900 placeholder:text-gray-400 resize-none"
                   />
                   {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                   <p className="text-xs mt-1 text-gray-500">
-                    {draft.description.length} characters
+                    {draft.description.length} სიმბოლო
                   </p>
                 </div>
               </div>
@@ -314,7 +314,7 @@ export default function CreateOfferWizard({
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="quantity" className="text-sm font-semibold text-gray-700">
-                    Quantity Available <span className="text-red-500">*</span>
+                    ხელმისაწვდომი რაოდენობა <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="quantity"
@@ -328,13 +328,13 @@ export default function CreateOfferWizard({
                     autoFocus
                   />
                   {errors.quantity && <p className="text-red-500 text-xs mt-1">{errors.quantity}</p>}
-                  {!errors.quantity && <p className="text-xs text-gray-500 mt-1">Max 100 items per offer</p>}
+                  {!errors.quantity && <p className="text-xs text-gray-500 mt-1">მაქს 100 ერთეული შეთავაზებაზე</p>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label htmlFor="original_price" className="text-sm font-semibold text-gray-700">
-                      Original Price <span className="text-red-500">*</span>
+                      ორიგინალური ფასი <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative mt-2">
                       <Input
@@ -356,7 +356,7 @@ export default function CreateOfferWizard({
 
                   <div>
                     <Label htmlFor="smart_price" className="text-sm font-semibold text-slate-700">
-                      Smart Price <span className="text-red-500">*</span>
+                      სმარტ ფასი <span className="text-red-500">*</span>
                     </Label>
                     <div className="relative mt-2">
                       <Input
@@ -380,7 +380,7 @@ export default function CreateOfferWizard({
                 {draft.original_price && draft.smart_price && calculateDiscount() > 0 && (
                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                     <p className="text-sm font-semibold text-emerald-700">
-                      💰 {calculateDiscount()}% discount - Great deal!
+                      💰 {calculateDiscount()}% ფასდაკლება - შესანიშნავი შეთავაზება!
                     </p>
                   </div>
                 )}
@@ -393,7 +393,7 @@ export default function CreateOfferWizard({
                       onCheckedChange={(checked) => updateDraft('autoExpire6h', checked === true)}
                     />
                     <Label htmlFor="auto_expire_6h" className="text-xs cursor-pointer text-gray-700">
-                      Auto-expire in 12 hours (24h business)
+                      ავტომატური ვადის გასვლა 12 საათში (24 საათიანი ბიზნესი)
                     </Label>
                   </div>
                 )}
@@ -405,9 +405,9 @@ export default function CreateOfferWizard({
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm font-semibold text-gray-700">
-                    Product Image <span className="text-red-500">*</span>
+                    პროდუქტის სურათი <span className="text-red-500">*</span>
                   </Label>
-                  <p className="text-xs text-gray-500 mt-1 mb-3">Choose an appetizing photo that represents your offer</p>
+                  <p className="text-xs text-gray-500 mt-1 mb-3">აირჩიეთ მომხიბლავი ფოტო, რომელიც წარმოადგენს თქვენს შეთავაზებას</p>
                   
                   {draft.image ? (
                     <div className="space-y-3">
@@ -418,7 +418,7 @@ export default function CreateOfferWizard({
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute top-3 left-3 bg-emerald-500 text-white text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1 shadow-md">
-                          <Check className="w-3 h-3" /> Selected
+                          <Check className="w-3 h-3" /> არჩეულია
                         </div>
                       </div>
                       <Button
@@ -430,7 +430,7 @@ export default function CreateOfferWizard({
                         }}
                         className="w-full rounded-xl border-gray-300 hover:bg-gray-50"
                       >
-                        Change Image
+                        სურათის შეცვლა
                       </Button>
                     </div>
                   ) : (
@@ -446,8 +446,8 @@ export default function CreateOfferWizard({
                         <span className="text-3xl">📷</span>
                       </div>
                       <div className="text-center">
-                        <p className="font-semibold text-gray-700 group-hover:text-emerald-600">Click to Choose Image</p>
-                        <p className="text-xs text-gray-500 mt-1">Select from our curated library</p>
+                        <p className="font-semibold text-gray-700 group-hover:text-emerald-600">დააწკაპუნეთ სურათის ასარჩევად</p>
+                        <p className="text-xs text-gray-500 mt-1">აირჩიეთ ჩვენი ბიბლიოთეკიდან</p>
                       </div>
                     </button>
                   )}
@@ -463,7 +463,7 @@ export default function CreateOfferWizard({
               <div className="space-y-4">
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
                   <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="text-lg">✓</span> Review Your Offer
+                    <span className="text-lg">✓</span> გადახედეთ თქვენი შეთავაზება
                   </h3>
                   
                   {/* Image Preview */}
@@ -476,24 +476,24 @@ export default function CreateOfferWizard({
                   {/* Details */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between py-2 border-b border-emerald-100">
-                      <span className="text-gray-600 font-medium">Title:</span>
+                      <span className="text-gray-600 font-medium">სათაური:</span>
                       <span className="text-gray-900 font-semibold text-right flex-1 ml-3">{draft.title}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Quantity:</span>
-                      <span className="text-gray-900 font-semibold">{draft.quantity} items</span>
+                      <span className="text-gray-600 font-medium">რაოდენობა:</span>
+                      <span className="text-gray-900 font-semibold">{draft.quantity} ერთეული</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Original Price:</span>
+                      <span className="text-gray-600 font-medium">ორიგინალური ფასი:</span>
                       <span className="text-gray-900 font-semibold">₾{draft.original_price}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium">Smart Price:</span>
+                      <span className="text-gray-600 font-medium">სმარტ ფასი:</span>
                       <span className="text-emerald-600 font-bold">₾{draft.smart_price}</span>
                     </div>
                     <div className="flex justify-between py-2">
-                      <span className="text-gray-600 font-medium">Discount:</span>
-                      <span className="text-teal-600 font-bold">{calculateDiscount()}% OFF</span>
+                      <span className="text-gray-600 font-medium">ფასდაკლება:</span>
+                      <span className="text-teal-600 font-bold">{calculateDiscount()}% დაკლება</span>
                     </div>
                   </div>
 
@@ -501,7 +501,7 @@ export default function CreateOfferWizard({
                 </div>
 
                 <p className="text-xs text-gray-500 text-center">
-                  Click "Create Offer" to publish this offer to customers
+                  დააწკაპუნეთ "შეთავაზების შექმნა" მომხმარებლებისთვის გამოსაქვეყნებლად
                 </p>
               </div>
             )}
@@ -518,7 +518,7 @@ export default function CreateOfferWizard({
                   className="rounded-xl border-gray-300 hover:bg-gray-50"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back
+                  უკან
                 </Button>
               )}
               
@@ -531,16 +531,16 @@ export default function CreateOfferWizard({
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating...
+                    იქმნება...
                   </>
                 ) : currentStep === 4 ? (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Create Offer
+                    შეთავაზების შექმნა
                   </>
                 ) : (
                   <>
-                    Next
+                    შემდეგი
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </>
                 )}
