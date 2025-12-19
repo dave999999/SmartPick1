@@ -163,7 +163,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     console.log('🎠 Rendering carousel with', filteredOffers.length, 'offers');
     
     return (
-      <div className="fixed bottom-48 left-0 right-0 z-30 px-4 pb-6">
+      <div className="fixed bottom-24 left-0 right-0 px-4" style={{ zIndex: 100 }}>
         <div className="relative">
           {/* Carousel Container */}
           <div 
