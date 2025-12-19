@@ -17,6 +17,7 @@ import { usePartners } from '@/hooks/usePartners';
 import { getAllCategories } from '@/lib/categories';
 import { Offer, Partner } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
+import { useAppleTick } from '@/hooks/useAppleTick';
 
 interface OffersSheetNewProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface OffersSheetNewProps {
 
 export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange, filteredOffers: parentFilteredOffers }: OffersSheetNewProps) {
   const { t } = useI18n();
+  const { playTick, initializeAudio } = useAppleTick();
   const allCategories = getAllCategories();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,6 +107,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     if (!isMinimized || !carouselRef.current) return;
 
     let scrollTimeout: NodeJS.Timeout | null = null;
+    let lastCenteredIndex = -1;
 
     const handleScroll = () => {
       const container = carouselRef.current;
@@ -127,6 +130,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         }
       });
 
+      // Trigger Apple-style haptic and sound when card snaps to center
+      if (closestIndex !== lastCenteredIndex && lastCenteredIndex !== -1) {
+        playTick(); // Apple-style tick sound + 5ms haptic
+      }
+      
+      lastCenteredIndex = closestIndex;
       setCenteredCardIndex(closestIndex);
 
       // Debounce the parent callback to avoid rapid map updates
@@ -156,7 +165,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
       container.removeEventListener('scroll', handleScroll);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [isMinimized, filteredOffers, onCenteredOfferChange]);
+  }, [isMinimized, filteredOffers, onCenteredOfferChange, playTick]);
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {
@@ -169,6 +178,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
           <div 
             ref={carouselRef}
             className="flex gap-3 overflow-x-auto scrollbar-hide snap-x snap-mandatory scroll-smooth px-8"
+            onClick={initializeAudio} // Initialize audio context on first interaction
             style={{ 
               scrollSnapType: 'x mandatory',
               WebkitOverflowScrolling: 'touch',

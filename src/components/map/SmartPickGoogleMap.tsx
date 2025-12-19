@@ -652,8 +652,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         position: { lat: location.lat, lng: location.lng },
         icon: {
           url: '/icons/map-pins/all.png?v=2',
-          scaledSize: new google.maps.Size(64, 64),
-          anchor: new google.maps.Point(32, 62.5), // Consistent proportional anchor
+          scaledSize: new google.maps.Size(60, 42),
+          anchor: new google.maps.Point(30, 40.5), // Consistent proportional anchor
           optimized: false
         },
         title: location.partnerName,
@@ -1041,8 +1041,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       if (prevIcon && typeof prevIcon === 'object') {
         previouslyHighlightedMarkerRef.current.setIcon({
           ...prevIcon,
-          scaledSize: new google.maps.Size(64, 64),
-          anchor: new google.maps.Point(32, 62.5), // Proportional: 32/64 = 50%, 62.5/64 = 97.7%
+          scaledSize: new google.maps.Size(60, 42),
+          anchor: new google.maps.Point(30, 40.5), // Proportional: 30/60 = 50%, 40.5/42 = 96.4%
         });
       }
       previouslyHighlightedMarkerRef.current.setZIndex(1);
@@ -1061,8 +1061,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         // Make marker bigger - keep anchor proportional (50% width, 97.7% height)
         marker.setIcon({
           ...currentIcon,
-          scaledSize: new google.maps.Size(88, 88),
-          anchor: new google.maps.Point(44, 86), // Proportional: 44/88 = 50%, 86/88 = 97.7%
+          scaledSize: new google.maps.Size(76, 54),
+          anchor: new google.maps.Point(38, 52), // Proportional: 38/76 = 50%, 52/54 = 96.3%
         });
         console.log('✅ Set marker icon to 88x88');
       }
