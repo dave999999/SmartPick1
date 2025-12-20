@@ -39,6 +39,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   const carouselRef = useRef<HTMLDivElement>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [centeredCardIndex, setCenteredCardIndex] = useState(0);
+  const previousIsOpenRef = useRef<boolean>(false);
+  const previousIsMinimizedRef = useRef<boolean>(isMinimized);
   
   // Use parent-provided offers if available (viewport-filtered), otherwise fetch all
   const { offers: allOffers, loading } = useOffers();
@@ -101,6 +103,22 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     .filter(offer => !specialOffers.some(special => special.id === offer.id))
     .sort((a: Offer, b: Offer) => (b.reservation_count || 0) - (a.reservation_count || 0))
     .slice(0, 10);
+
+  // Play offer sound when sheet opens or expands
+  useEffect(() => {
+    const wasMinimized = previousIsMinimizedRef.current;
+    const wasClosed = !previousIsOpenRef.current;
+    
+    // Play sound when: sheet opens OR when it expands from minimized to full
+    if (isOpen && !isMinimized && (wasClosed || wasMinimized)) {
+      const audio = new Audio('/sounds/offer.mp3');
+      audio.volume = 0.4;
+      audio.play().catch(() => {});
+    }
+    
+    previousIsOpenRef.current = isOpen;
+    previousIsMinimizedRef.current = isMinimized;
+  }, [isOpen, isMinimized]);
 
   // Track centered card in carousel
   useEffect(() => {
@@ -172,7 +190,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     console.log('🎠 Rendering carousel with', filteredOffers.length, 'offers');
     
     return (
-      <div className="fixed bottom-24 left-0 right-0 px-4" style={{ zIndex: 100 }}>
+      <div className="fixed bottom-24 left-0 right-0 px-4" style={{ zIndex: 40 }}>
         <div className="relative">
           {/* Carousel Container */}
           <div 

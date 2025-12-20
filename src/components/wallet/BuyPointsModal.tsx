@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Loader2, Shield, Lock, AlertCircle, Wallet, Layers } from 'lucide-react';
+import { Loader2, Shield, Lock, AlertCircle, Wallet, Layers, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BOG_CONFIG } from '@/lib/payments/bog';
 import { supabase } from '@/lib/supabase';
@@ -56,7 +56,17 @@ export function BuyPointsModal({
       const fetchBalance = async () => {
         try {
           logger.log('BuyPointsModal: Fetching balance for user', userId);
-          const tableName = isPartner ? 'partner_points' : 'user_points';
+          
+          // Check if user is a partner first
+          const { data: partnerProfile } = await supabase
+            .from('partners')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('status', 'APPROVED')
+            .maybeSingle();
+          
+          const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
+          logger.log('BuyPointsModal: Using table', tableName, 'isPartner:', !!partnerProfile?.id);
           
           const { data, error } = await supabase
             .from(tableName)
@@ -76,7 +86,7 @@ export function BuyPointsModal({
       };
       fetchBalance();
     }
-  }, [isOpen, userId, isPartner]);
+  }, [isOpen, userId]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -243,49 +253,64 @@ export function BuyPointsModal({
     }
   };
 
+  const ModalWrapper = Dialog; // Always use Dialog for centered Apple-style modal
+  const ContentWrapper = DialogContent;
+
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md p-0 gap-0 bg-white rounded-[28px] border-none shadow-2xl overflow-hidden">
+    <ModalWrapper open={isOpen} onOpenChange={handleClose}>
+      <ContentWrapper className="max-w-[420px] p-0 gap-0 bg-white/95 backdrop-blur-xl border-none shadow-[0_20px_60px_rgba(0,0,0,0.3)] overflow-hidden max-h-[85vh] overflow-y-auto rounded-[24px]">
         <DialogTitle className="sr-only">
           {isPartner ? 'SmartPoints პარტნიორებისთვის' : 'SmartPoints-ის შეძენა'}
         </DialogTitle>
-        {/* Header */}
-        <div className="px-6 pt-6 pb-4">
-          <h2 className="text-xl font-bold text-gray-900">
-            {isPartner ? 'SmartPoints პარტნიორებისთვის' : 'SmartPoints-ის შეძენა'}
-          </h2>
-          {isPartner && (
-            <p className="text-sm text-gray-600 mt-2">
-              ქულები და სლოტები შეთავაზებებისთვის
-            </p>
-          )}
+        
+        {/* Apple-Style Header with Glassmorphism */}
+        <div className="relative px-5 pt-5 pb-4 bg-gradient-to-br from-[#FF8A00]/10 to-[#FFB84D]/10">
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-md"></div>
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF8A00] to-[#FFB84D] flex items-center justify-center shadow-lg">
+                <Wallet className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  {isPartner ? 'SmartPoints' : 'ქულების შეძენა'}
+                </h2>
+                {isPartner && (
+                  <p className="text-xs text-gray-600">
+                    პარტნიორებისთვის
+                  </p>
+                )}
+
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Tabs - Only show for partners */}
+        {/* Tabs - Apple Style */}
         {isPartner && partnerPoints && (
-          <div className="px-6 pb-4">
-            <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl">
+          <div className="px-5 py-3">
+            <div className="flex gap-1 p-0.5 bg-gray-100/80 backdrop-blur-sm rounded-[14px]">
               <button
                 onClick={() => setActiveTab('points')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-[12px] font-semibold text-sm transition-all duration-200 ${
                   activeTab === 'points'
-                    ? 'bg-white text-emerald-600 shadow-sm'
+                    ? 'bg-white text-[#FF8A00] shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Wallet className="w-4 h-4" />
-                ქულების შეძენა
+                ქულები
               </button>
               <button
                 onClick={() => setActiveTab('slots')}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-[12px] font-semibold text-sm transition-all duration-200 ${
                   activeTab === 'slots'
-                    ? 'bg-white text-emerald-600 shadow-sm'
+                    ? 'bg-white text-[#FF8A00] shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Layers className="w-4 h-4" />
-                სლოტის შეძენა
+                სლოტები
               </button>
             </div>
           </div>
@@ -294,39 +319,46 @@ export function BuyPointsModal({
         {/* Points Tab Content */}
         {activeTab === 'points' && (
           <>
-            {/* Balance Card */}
-            <div className="mx-6 mb-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border border-emerald-200">
-              <p className="text-xs font-medium text-gray-600 mb-1">
-                {isPartner ? 'ხელმისაწვდომი ბალანსი' : 'თქვენი ბალანსი'}
-              </p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-emerald-600">
-                  {currentBalance.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {isPartner ? 'საბალანსო ქულა' : 'ქულა'}
-                </p>
+            {/* Apple-Style Balance Card with Glassmorphism */}
+            <div className="mx-5 mb-4 bg-gradient-to-br from-[#FF8A00]/5 to-[#FFB84D]/5 backdrop-blur-sm rounded-[18px] p-4 border border-[#FF8A00]/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-medium text-gray-500 mb-1 uppercase tracking-wide">
+                    {isPartner ? 'ხელმისაწვდომი' : 'მიმდინარე'}
+                  </p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-3xl font-bold bg-gradient-to-r from-[#FF8A00] to-[#FFB84D] bg-clip-text text-transparent">
+                      {currentBalance.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600 font-medium">
+                      ქულა
+                    </p>
+                  </div>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#FF8A00] to-[#FFB84D] flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-6 h-6 text-white" />
+                </div>
               </div>
             </div>
 
-            {/* Amount Selection */}
-            <div className="px-6 pb-5">
-          <p className="text-sm font-semibold text-gray-700 mb-3">
-            {isPartner ? 'ქულების შეძენა' : 'აირჩიე თანხა'}
+            {/* Amount Selection - Apple Style */}
+            <div className="px-5 pb-5">
+          <p className="text-sm font-semibold text-gray-900 mb-3">
+            აირჩიე თანხა
           </p>
           
-          {/* Preset Buttons */}
-          <div className="grid grid-cols-3 gap-2 mb-5">
+          {/* Preset Buttons - Apple Style */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
             {presetAmounts.map((value) => (
               <motion.button
                 key={value}
                 type="button"
                 whileTap={{ scale: 0.95 }}
                 onClick={() => handlePresetSelect(value)}
-                className={`h-12 rounded-2xl font-semibold text-base transition-all ${
+                className={`h-11 rounded-[14px] font-semibold text-base transition-all duration-200 ${
                   selectedAmount === value
-                    ? 'bg-emerald-500 text-white shadow-md border-2 border-emerald-500'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-emerald-300'
+                    ? 'bg-gradient-to-r from-[#FF8A00] to-[#FFB84D] text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-[#FF8A00]/30 hover:shadow-sm'
                 }`}
               >
                 {value} ₾
@@ -335,9 +367,9 @@ export function BuyPointsModal({
           </div>
 
           {/* Custom Amount Input */}
-          <div className="mb-5">
-            <label className="text-sm font-semibold text-gray-700 mb-2 block">
-              {isPartner ? `საკუთარი თანხა (${minAmount}–${maxAmount} ₾)` : `ან საკუთარი თანხა`}
+          <div className="mb-4">
+            <label className="text-sm font-semibold text-gray-900 mb-2 block">
+              საკუთარი თანხა (0.5–100 ₾)
             </label>
             <div className="relative">
               <input
@@ -349,10 +381,10 @@ export function BuyPointsModal({
                 maxLength={6}
                 autoComplete="off"
                 spellCheck={false}
-                className={`w-full h-12 pl-4 pr-16 text-base font-semibold rounded-2xl border-2 transition-colors focus:outline-none ${
+                className={`w-full h-12 pl-4 pr-16 text-base font-semibold rounded-[14px] border-2 transition-colors focus:outline-none focus:ring-0 ${
                   error 
                     ? 'border-red-400 focus:border-red-500' 
-                    : 'border-gray-200 focus:border-emerald-400'
+                    : 'border-gray-200 focus:border-[#FF8A00]'
                 }`}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-gray-500">
@@ -504,7 +536,7 @@ export function BuyPointsModal({
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </ContentWrapper>
+    </ModalWrapper>
   );
 }

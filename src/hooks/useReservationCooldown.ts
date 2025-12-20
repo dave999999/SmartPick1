@@ -14,9 +14,10 @@ export interface CooldownInfo {
   unlockTime: Date | null;
   resetCooldownUsed: boolean;
   cooldownDurationMinutes: number;
+  resetCount: number;
 }
 
-export function useReservationCooldown(user: User | null) {
+export function useReservationCooldown(user: User | null, enabled: boolean = true) {
   const [cooldownInfo, setCooldownInfo] = useState<CooldownInfo>({
     isInCooldown: false,
     cancellationCount: 0,
@@ -24,12 +25,14 @@ export function useReservationCooldown(user: User | null) {
     unlockTime: null,
     resetCooldownUsed: false,
     cooldownDurationMinutes: 30,
+    resetCount: 0,
   });
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
   useEffect(() => {
-    if (!user?.id) {
+    // Only run if enabled (modal is open)
+    if (!enabled || !user?.id) {
       setCooldownInfo({
         isInCooldown: false,
         cancellationCount: 0,
@@ -37,27 +40,29 @@ export function useReservationCooldown(user: User | null) {
         unlockTime: null,
         resetCooldownUsed: false,
         cooldownDurationMinutes: 30,
+        resetCount: 0,
       });
       return;
     }
 
     checkCooldownStatus();
 
-    // Poll every 5 seconds to update countdown
+    // Poll every 5 seconds to update countdown ONLY if enabled
     const pollInterval = setInterval(() => {
       checkCooldownStatus();
     }, 5000);
 
     return () => clearInterval(pollInterval);
-  }, [user?.id]);
+  }, [user?.id, enabled]); // Add enabled to dependencies
 
   const checkCooldownStatus = async () => {
     if (!user?.id) return;
 
     setLoading(true);
     try {
+      // Use is_user_in_cooldown function which returns reset_count
       const { data, error } = await supabase.rpc(
-        'get_user_consecutive_cancellations',
+        'is_user_in_cooldown',
         { p_user_id: user.id }
       );
 
@@ -69,25 +74,23 @@ export function useReservationCooldown(user: User | null) {
 
       if (data && data.length > 0) {
         const { 
-          cancellation_count, 
-          oldest_cancellation_time, 
-          time_until_unlock,
-          reset_cooldown_used,
-          cooldown_duration_minutes
+          in_cooldown,
+          cooldown_end,
+          cancellation_count,
+          reset_count
         } = data[0];
         
-        // Parse the interval result
-        const timeUntilMs = parseIntervalToMs(time_until_unlock);
+        // Calculate time until unlock
+        const timeUntilMs = cooldown_end ? Math.max(0, new Date(cooldown_end).getTime() - Date.now()) : 0;
         
         setCooldownInfo({
-          isInCooldown: cancellation_count >= 3 && timeUntilMs > 0,
+          isInCooldown: in_cooldown || false,
           cancellationCount: cancellation_count || 0,
           timeUntilUnlock: timeUntilMs,
-          unlockTime: oldest_cancellation_time 
-            ? new Date(new Date(oldest_cancellation_time).getTime() + (cooldown_duration_minutes || 30) * 60 * 1000)
-            : null,
-          resetCooldownUsed: reset_cooldown_used || false,
-          cooldownDurationMinutes: cooldown_duration_minutes || 30,
+          unlockTime: cooldown_end ? new Date(cooldown_end) : null,
+          resetCooldownUsed: false, // Deprecated - using resetCount now
+          cooldownDurationMinutes: 60, // Now 1 hour cooldown
+          resetCount: reset_count || 0,
         });
       }
     } catch (err) {
@@ -138,7 +141,44 @@ export function useReservationCooldown(user: User | null) {
     }
   };
 
-  return { ...cooldownInfo, loading, resetLoading, refetch, resetCooldown };
+  const liftCooldownWithPoints = async (): Promise<{ success: boolean; message: string }> => {
+    if (!user?.id) {
+      return { success: false, message: 'User not found' };
+    }
+
+    setResetLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('lift_cooldown_with_points', {
+        p_user_id: user.id,
+      });
+
+      if (error) {
+        console.error('Error lifting cooldown:', error);
+        return { success: false, message: 'Failed to lift cooldown' };
+      }
+
+      if (data && data.length > 0) {
+        const { success, message } = data[0];
+        
+        // Refetch cooldown status after lift
+        if (success) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          await checkCooldownStatus();
+        }
+
+        return { success, message };
+      }
+
+      return { success: false, message: 'Unexpected response from server' };
+    } catch (err) {
+      console.error('Error lifting cooldown:', err);
+      return { success: false, message: 'An error occurred while lifting cooldown' };
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  return { ...cooldownInfo, loading, resetLoading, refetch, resetCooldown, liftCooldownWithPoints };
 }
 
 /**

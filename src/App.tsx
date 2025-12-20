@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { getCurrentUser } from './lib/api';
+import { logger } from './lib/logger';
 // supabase dynamically imported to reduce initial bundle size
 import { useActivityTracking } from './hooks/useActivityTracking';
 import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
@@ -27,6 +28,7 @@ const PartnerDashboard = lazy(() => import('./pages/PartnerDashboardV3'));
 const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const ReservationDetail = lazy(() => import('./pages/ReservationDetail'));
 const MyPicks = lazy(() => import('./pages/MyPicks'));
+const ReservationHistory = lazy(() => import('./pages/ReservationHistory'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
@@ -66,7 +68,7 @@ const AppContent = () => {
   useEffect(() => {
     if (globalUser) {
       setUser(globalUser);
-      console.log('👤 User loaded globally:', globalUser.name || globalUser.email);
+      logger.log('👤 User loaded globally:', { userId: globalUser.id, hasName: !!globalUser.name });
     }
   }, [globalUser, setUser]);
   
@@ -204,11 +206,22 @@ const AppContent = () => {
         if (!user || cancelled) return;
 
         const { supabase } = await import('./lib/supabase');
+        
+        // Check if user is a partner
+        const { data: partnerProfile } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('user_id', (user as any).id)
+          .eq('status', 'APPROVED')
+          .maybeSingle();
+
+        // Use partner_points if partner, otherwise user_points
+        const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
         const { data: userPoints } = await supabase
-          .from('user_points')
+          .from(tableName)
           .select('balance')
           .eq('user_id', (user as any).id)
-          .single();
+          .maybeSingle();
 
         if (cancelled) return;
         setUserPoints(userPoints?.balance || 0);
@@ -313,7 +326,7 @@ const AppContent = () => {
             }
           />
           <Route path="/partner/apply" element={<PartnerApplication />} />
-          <Route path="/my-picks" element={<MyPicks />} />
+          <Route path="/my-picks" element={<ReservationHistory />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/reservation/:id" element={<ReservationDetail />} />

@@ -35,7 +35,7 @@ const AnnouncementPopup = lazy(() => import('@/components/AnnouncementPopup').th
 // Post-Reservation Experience Components
 import { ActiveReservationCard } from '@/components/reservation/ActiveReservationCard';
 import type { ActiveReservation } from '@/components/reservation/ActiveReservationCard';
-import { cancelReservation } from '@/lib/api/reservations';
+import { cancelReservation, getReservationById } from '@/lib/api/reservations';
 
 // Premium Navigation Components
 import { BottomNavBar as FloatingBottomNav } from '@/components/navigation/BottomNavBar';

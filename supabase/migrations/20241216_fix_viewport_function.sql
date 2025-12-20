@@ -83,6 +83,7 @@ BEGIN
     UPPER(o.status) = 'ACTIVE'
     AND o.quantity_available > 0
     AND o.expires_at > NOW()
+    AND (o.pickup_end IS NULL OR o.pickup_end > NOW())
     AND UPPER(p.status) IN ('ACTIVE', 'APPROVED')
     AND p.latitude IS NOT NULL
     AND p.longitude IS NOT NULL

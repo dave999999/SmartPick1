@@ -41,6 +41,8 @@ export interface AddPointsResult {
  */
 export async function getUserPoints(userId: string): Promise<UserPoints | null> {
   try {
+    console.log('🔍 getUserPoints called for userId:', userId);
+    
     // Check if user is a partner
     const { data: profile } = await supabase
       .from('partners')
@@ -48,9 +50,12 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       .eq('user_id', userId)
       .eq('status', 'APPROVED')
       .maybeSingle();
+    
+    console.log('👤 Partner check result:', { partnerId: profile?.id, isPartner: !!profile?.id });
 
     // If user is a partner, get partner points
     if (profile?.id) {
+      console.log('💼 Fetching partner_points for user:', userId);
       const { data, error } = await supabase
         .from('partner_points')
         .select('*')
@@ -58,19 +63,25 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching partner points:', error instanceof Error ? error.message : String(error));
+        console.error('❌ Error fetching partner points:', error instanceof Error ? error.message : String(error));
         return null;
       }
 
+      console.log('💼 Partner points data:', data);
+      
       // Map partner_points to UserPoints interface for compatibility
-      return data ? {
+      const result = data ? {
         ...data,
         user_id: userId,
         partner_id: profile.id
       } as UserPoints : null;
+      
+      console.log('✅ Returning partner points:', result);
+      return result;
     }
 
     // Regular customer points
+    console.log('👥 Fetching user_points for user:', userId);
     const { data, error } = await supabase
       .from('user_points')
       .select('*')
@@ -78,10 +89,12 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching user points:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Error fetching user points:', error instanceof Error ? error.message : String(error));
       return null;
     }
 
+    console.log('👥 User points data:', data);
+    console.log('✅ Returning user points:', data);
     return data;
   } catch (error) {
     console.error('Error in getUserPoints:', error instanceof Error ? error.message : String(error));

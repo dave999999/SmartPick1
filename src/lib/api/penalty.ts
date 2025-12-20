@@ -105,6 +105,40 @@ export async function canUserReserve(userId: string): Promise<CanReserveResult> 
 }
 
 /**
+ * Check if user is in cooldown period (3+ cancels in 30min = 1hr cooldown)
+ */
+export async function getUserCooldownStatus(userId: string): Promise<{
+  inCooldown: boolean;
+  cooldownUntil: Date | null;
+  cancellationCount: number;
+}> {
+  try {
+    logger.log('[Cooldown] Checking cooldown status for user:', userId);
+    
+    const { data, error } = await supabase
+      .rpc('is_user_in_cooldown', { p_user_id: userId });
+    
+    if (error) throw error;
+    
+    const result = data?.[0] || { in_cooldown: false, cooldown_until: null, cancellation_count: 0 };
+    
+    const cooldownStatus = {
+      inCooldown: result.in_cooldown,
+      cooldownUntil: result.cooldown_until ? new Date(result.cooldown_until) : null,
+      cancellationCount: result.cancellation_count || 0
+    };
+    
+    logger.log('[Cooldown] Status:', cooldownStatus);
+    
+    return cooldownStatus;
+  } catch (error) {
+    logger.error('[Cooldown] Error checking cooldown status:', error);
+    // Fail open - allow reservation if check fails
+    return { inCooldown: false, cooldownUntil: null, cancellationCount: 0 };
+  }
+}
+
+/**
  * Get user's active penalty
  */
 export async function getActivePenalty(userId: string): Promise<ActivePenaltyResult | null> {

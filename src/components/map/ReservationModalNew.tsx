@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Offer, User } from '@/lib/types';
 import { createReservation } from '@/lib/api';
 import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty';
@@ -18,7 +19,9 @@ import { useI18n } from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { PenaltyModal } from '@/components/PenaltyModal';
 import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
+import { EarnPointsSheet } from '@/components/wallet/EarnPointsSheet';
 import { CancellationCooldownCard } from '@/components/reservation/CancellationCooldownCard';
+import { PaidCooldownLiftModal } from '@/components/reservation/PaidCooldownLiftModal';
 import { supabase } from '@/lib/supabase';
 
 interface ReservationModalProps {
@@ -28,6 +31,7 @@ interface ReservationModalProps {
   onClose: () => void;
   onReservationCreated: (reservationId: string) => void;
   initialQuantity?: number;
+  userBalance?: number; // Pass from parent to avoid redundant API calls
 }
 
 export default function ReservationModalNew({
@@ -37,44 +41,63 @@ export default function ReservationModalNew({
   onClose,
   onReservationCreated,
   initialQuantity = 1,
+  userBalance = 0,
 }: ReservationModalProps) {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
   const [quantity, setQuantity] = useState(initialQuantity);
   const [isReserving, setIsReserving] = useState(false);
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyData, setPenaltyData] = useState<any>(null);
-  const [userPoints, setUserPoints] = useState(0);
+  const [userPoints, setUserPoints] = useState(userBalance);
   const [showBuyPointsModal, setShowBuyPointsModal] = useState(false);
+  const [showEarnPointsSheet, setShowEarnPointsSheet] = useState(false);
   
-  // Cooldown state
-  const cooldown = useReservationCooldown(user);
+  // Cooldown state - only check when modal is open
+  const cooldown = useReservationCooldown(user, open);
 
   useEffect(() => {
-    if (open) setQuantity(initialQuantity);
-  }, [open, initialQuantity]);
-
-  useEffect(() => {
-    if (open && user) {
-      checkPenaltyStatus();
-      fetchUserPoints();
-      cooldown.refetch();
+    if (open) {
+      setQuantity(initialQuantity);
+      // Always fetch fresh points when modal opens
+      if (user) {
+        fetchUserPoints();
+        checkPenaltyStatus();
+      }
     }
-  }, [open, user]);
+  }, [open, initialQuantity, user]);
+
+  // Update local points when prop changes (but fresh fetch takes priority)
+  useEffect(() => {
+    if (userBalance !== undefined && !open) {
+      setUserPoints(userBalance);
+    }
+  }, [userBalance, open]);
 
   const fetchUserPoints = async () => {
     if (!user) return;
     try {
       const userId = (user as any).id || user.id;
+      
+      // Check if user is a partner
+      const { data: partnerProfile } = await supabase
+        .from('partners')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('status', 'APPROVED')
+        .maybeSingle();
+      
+      // Use partner_points if partner, otherwise user_points
+      const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
       const { data: points, error } = await supabase
-        .from('user_points')
+        .from(tableName)
         .select('balance')
         .eq('user_id', userId)
-        .single();
-      if (!error) setUserPoints(points?.balance || 0);
+        .maybeSingle();
+      if (!error && points) setUserPoints(points.balance || 0);
     } catch (error) {
       logger.error('Exception fetching user points:', error);
-      setUserPoints(0);
     }
   };
 
@@ -84,13 +107,7 @@ export default function ReservationModalNew({
       const result = await canUserReserve(user.id);
       if (!result.can_reserve && result.penalty_id) {
         const penalty = await getPenaltyDetails(result.penalty_id);
-        const { data: points } = await supabase
-          .from('user_points')
-          .select('balance')
-          .eq('user_id', user.id)
-          .single();
         setPenaltyData(penalty);
-        setUserPoints(points?.balance || 0);
         setShowPenaltyModal(true);
       }
     } catch (error) {
@@ -104,6 +121,13 @@ export default function ReservationModalNew({
       onClose();
       return;
     }
+    
+    // Check if user has enough points - open earn points sheet if not
+    if (!hasEnoughPoints) {
+      setShowEarnPointsSheet(true);
+      return;
+    }
+    
     if (quantity > offer.quantity_available) {
       toast.error(t('toast.notEnoughQuantity'));
       return;
@@ -149,24 +173,42 @@ export default function ReservationModalNew({
       onClose();
     } catch (error) {
       logger.error('Error creating reservation:', error);
+      
+      // 🛡️ If offer expired, invalidate cache to remove it from UI immediately
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('expired')) {
+        logger.warn('🗑️ Offer expired - invalidating cache to remove from UI');
+        queryClient.invalidateQueries({ queryKey: ['offers'] });
+        toast.error(t('toast.offerExpired') || 'This offer has expired and has been removed');
+        onClose();
+        return;
+      }
+      
       try {
-        const errorMessage = error instanceof Error ? error.message : '';
         const errorData = JSON.parse(errorMessage);
         if (errorData.type === 'PENALTY_BLOCKED') {
           setPenaltyData(errorData.penalty);
           if (user) {
+            // Check if user is a partner
+            const { data: partnerProfile } = await supabase
+              .from('partners')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('status', 'APPROVED')
+              .maybeSingle();
+            
+            const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
             const { data: points } = await supabase
-              .from('user_points')
+              .from(tableName)
               .select('balance')
               .eq('user_id', user.id)
-              .single();
+              .maybeSingle();
             setUserPoints(points?.balance || 0);
           }
           setShowPenaltyModal(true);
           return;
         }
       } catch {}
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create reservation';
       toast.error(errorMessage);
     } finally {
       setIsReserving(false);
@@ -189,14 +231,6 @@ export default function ReservationModalNew({
     // Format both times to compare - if they're the same when displayed, it's 24/7
     const startFormatted = formatTime(start);
     const endFormatted = formatTime(end);
-    
-    // Debug logging
-    console.log('24H Check:', {
-      startFormatted,
-      endFormatted,
-      areSame: startFormatted === endFormatted,
-      partner: partner?.business_name
-    });
     
     // If formatted times are identical, it's 24/7 operation
     return startFormatted === endFormatted;
@@ -272,51 +306,68 @@ export default function ReservationModalNew({
                 </div>
               </div>
 
-              {/* PRICE + BALANCE ROW - Side by Side */}
+              {/* PRICE + POINTS CARD - Professional Clean Design */}
               <div
-                className="rounded-[20px] p-3 border border-white/40"
+                className="rounded-[20px] overflow-hidden border border-white/40"
                 style={{
                   background: 'rgba(255,255,255,0.7)',
                   backdropFilter: 'blur(15px)',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                 }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  {/* Left: Price */}
-                  <div>
-                    <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide mb-0.5">{t('reservation.pickupPrice')}</p>
-                    <p className="text-[18px] font-black text-gray-900">₾{offer.smart_price.toFixed(2)}</p>
+                {/* Price Section - Top */}
+                <div className="px-4 pt-4 pb-3">
+                  <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                    {t('reservation.pickupPrice')}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-baseline gap-2.5">
+                      <span className="text-[32px] font-black text-gray-900 leading-none">
+                        ₾{offer.smart_price.toFixed(2)}
+                      </span>
+                      {offer.original_price && offer.original_price > offer.smart_price && (
+                        <span className="text-[15px] font-medium text-gray-400 line-through">
+                          ₾{offer.original_price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                    {offer.original_price && offer.original_price > offer.smart_price && (
+                      <div className="px-2.5 py-1 rounded-full bg-green-50 border border-green-300">
+                        <span className="text-[11px] font-extrabold text-green-700">
+                          -{Math.round(((offer.original_price - offer.smart_price) / offer.original_price) * 100)}%
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  {/* Right: Add Points */}
-                  <button
-                    onClick={() => setShowBuyPointsModal(true)}
-                    className="px-3 py-1 rounded-full text-[12px] font-semibold shadow-sm transition-all active:scale-95"
-                    style={{
-                      background: 'rgba(204,252,235,0.5)',
-                      border: '1px solid rgba(22,220,168,0.3)',
-                      color: '#0A8A5E',
-                    }}
-                  >
-                    {t('reservation.addPoints')}
-                  </button>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  {/* Balance */}
-                  <p className="text-[12px] text-gray-700">
-                    {t('reservation.balance')}: <span className="font-bold text-teal-700">{userPoints} {t('reservation.pts')}</span>
-                  </p>
-
-                  {/* Reserve Badge */}
-                  <div
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                    style={{
-                      background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
-                      boxShadow: '0 2px 8px rgba(255,80,0,0.3)',
-                    }}
-                  >
-                    <img src="/icons/button.png" alt="" aria-hidden="true" className="w-4 h-4" />
-                    <span className="text-[11px] font-medium text-white">{totalPoints} {t('reservation.pts')}</span>
+                {/* Points Section - Bottom with subtle background */}
+                <div className="px-4 py-3 bg-gray-50/60 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {/* Cost */}
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[18px] font-bold text-orange-600">{totalPoints}</span>
+                      <span className="text-[11px] font-semibold text-orange-500">points</span>
+                    </div>
+                    
+                    {/* Divider */}
+                    <div className="w-px h-6 bg-gray-300" />
+                    
+                    {/* Balance with Add Button */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-[11px] font-medium text-gray-500">{t('reservation.balance')}:</span>
+                        <span className="text-[15px] font-bold text-gray-900">{userPoints}</span>
+                        <span className="text-[11px] font-medium text-gray-500">points</span>
+                      </div>
+                      <button
+                        onClick={() => setShowBuyPointsModal(true)}
+                        className="w-6 h-6 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center transition-all active:scale-90"
+                        title={t('reservation.addPoints')}
+                      >
+                        <span className="text-white text-[16px] font-bold leading-none">+</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -403,8 +454,8 @@ export default function ReservationModalNew({
               {/* RESERVE BUTTON - Final Cosmic Orange */}
               <button
                 onClick={handleReserve}
-                disabled={isReserving || !hasEnoughPoints || !isOnline || cooldown.isInCooldown}
-                className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                disabled={isReserving || !isOnline || cooldown.isInCooldown}
+                className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 style={{
                   background: 'linear-gradient(90deg, #FF8A00 0%, #FF4E00 100%)',
                   boxShadow: '0 6px 16px rgba(255,120,0,0.35), 0 10px 30px rgba(0,0,0,0.18)',
@@ -438,8 +489,8 @@ export default function ReservationModalNew({
         </div>
       </div>
 
-      {/* INDEPENDENT COOLDOWN CARD OVERLAY - Centered on screen */}
-      {cooldown.isInCooldown && (
+      {/* COOLDOWN MODALS - Show different modal based on resetCount */}
+      {cooldown.isInCooldown && cooldown.resetCount === 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
           <div className="pointer-events-auto">
             <CancellationCooldownCard
@@ -448,11 +499,24 @@ export default function ReservationModalNew({
               cancellationCount={cooldown.cancellationCount}
               unlockTime={cooldown.unlockTime}
               resetCooldownUsed={cooldown.resetCooldownUsed}
+              resetCount={cooldown.resetCount}
+              userPoints={user?.smart_points || 0}
               onResetCooldown={cooldown.resetCooldown}
               isResetting={cooldown.resetLoading}
             />
           </div>
         </div>
+      )}
+
+      {cooldown.isInCooldown && cooldown.resetCount >= 1 && (
+        <PaidCooldownLiftModal
+          isVisible={true}
+          timeUntilUnlock={cooldown.timeUntilUnlock}
+          resetCount={cooldown.resetCount}
+          userPoints={user?.smart_points || 0}
+          onLiftWithPoints={cooldown.liftCooldownWithPoints}
+          isLifting={cooldown.resetLoading}
+        />
       )}
 
       {/* Modals */}
@@ -468,6 +532,17 @@ export default function ReservationModalNew({
         />
       )}
 
+      {/* Earn Points Sheet */}
+      <EarnPointsSheet
+        isOpen={showEarnPointsSheet}
+        onClose={() => setShowEarnPointsSheet(false)}
+        onBuyPoints={() => {
+          setShowEarnPointsSheet(false);
+          setShowBuyPointsModal(true);
+        }}
+      />
+
+      {/* Buy Points Modal */}
       {showBuyPointsModal && user && (
         <BuyPointsModal
           isOpen={showBuyPointsModal}

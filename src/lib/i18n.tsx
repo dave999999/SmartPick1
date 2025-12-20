@@ -149,6 +149,7 @@ const translations: Record<Language, Record<string, string>> = {
   'toast.notEnoughQuantity': 'Not enough quantity available',
   'toast.maxUnits': 'Maximum 3 units allowed per reservation',
   'toast.reservationCreated': 'Reservation created successfully!',
+  'toast.offerExpired': 'This offer has expired and has been removed',
   'offer.loading': 'Loading offer...',
   'offer.notFound': 'Offer not found',
   'header.backToOffers': 'Back to Offers',
@@ -301,6 +302,17 @@ const translations: Record<Language, Record<string, string>> = {
   'wallet.topUpBalance': 'Top Up Balance',
   'wallet.errorMinAmount': 'Minimum amount is',
   'wallet.errorMaxAmount': 'Maximum amount is',
+  
+  // Earn Points Sheet
+  'earnPoints.title': 'Get SmartPoints',
+  'earnPoints.subtitle': 'Choose a way to earn points',
+  'earnPoints.achievements.title': 'Check Achievements',
+  'earnPoints.achievements.description': 'Complete challenges and unlock rewards to earn free points',
+  'earnPoints.referral.title': 'Refer a Friend',
+  'earnPoints.referral.description': 'Invite friends and earn points when they make their first reservation',
+  'earnPoints.buyPoints.title': 'Buy Points',
+  'earnPoints.buyPoints.description': 'Purchase points instantly with your card',
+  
   // User Profile tabs & penalty messages
   'profile.tabs.overview': 'Overview',
   'profile.tabs.achievements': 'Achievements',
@@ -375,6 +387,49 @@ const translations: Record<Language, Record<string, string>> = {
   'offer.availableSuffix': 'available',
   'label.pickedUpAt': 'Picked up',
   'button.cancelReservation': 'Cancel Reservation',
+
+  // Cancel Dialog
+  'cancelDialog.title': 'Cancel Reservation?',
+  'cancelDialog.emoji': '🤔',
+  'cancelDialog.message1': 'Hey! Just want to make sure — you\'re about to cancel your {offerTitle} at {partnerName}.',
+  'cancelDialog.message2': 'If you change your mind, you\'ll need to make a new reservation. We\'d love to have you though! 😊',
+  'cancelDialog.keepButton': 'Keep My Reservation ✨',
+  'cancelDialog.cancelButton': 'Cancel Anyway',
+  
+  // 2nd Cancellation Warning
+  'cancelDialog.warning.title': 'Second Cancellation',
+  'cancelDialog.warning.emoji': '⚠️',
+  'cancelDialog.warning.message1': 'This is your 2nd cancellation for {offerTitle} at {partnerName}.',
+  'cancelDialog.warning.message2': 'One more cancel and we\'ll give you a quick timeout to help you make better choices! 😊',
+  'cancelDialog.warning.keepButton': 'Keep It! ✨',
+  'cancelDialog.warning.cancelButton': 'Cancel Anyway',
+  
+  // 3rd+ Cancellation Warning (Educational - Explain Why)
+  'cancelDialog.critical.title': 'Are you sure? 🤔',
+  'cancelDialog.critical.emoji': '🤔',
+  'cancelDialog.critical.message1': 'This is your 3rd cancellation. To protect our partners, we need to pause new reservations for the next 1 hour.',
+  'cancelDialog.critical.message2': 'During this cooldown, you won\'t be able to make new reservations.',
+  'cancelDialog.critical.keepButton': 'Keep My Reservation ✨',
+  'cancelDialog.critical.cancelButton': 'Cancel Anyway',
+
+  // Cooldown Card
+  'cooldownCard.alertBanner': '⚠️ Active Reservation Canceled',
+  'cooldownCard.headerTitle': 'WORKING TOGETHER SMOOTHLY',
+  'cooldownCard.headerMessage': 'A 1-hour cooldown helps everyone have the best experience',
+  'cooldownCard.canReserveIn': 'You can reserve in',
+  'cooldownCard.cancellations': 'Cancellations',
+  'cooldownCard.acknowledgment': 'I understand and won\'t cancel reservations repeatedly',
+  'cooldownCard.encouragingMessage': 'Come back soon and grab amazing deals 🎉',
+  'cooldownCard.resetButton': 'Reset Cooldown (One-time use)',
+  'cooldownCard.resetting': 'Resetting...',
+  'cooldownCard.nextCancellationWarning': '⚡ Next cancellation = 1-hour ban',
+  'cooldownCard.resetUsedWarning': '⚡ Your reset has been used. Next cancellation = 1-hour ban',
+  'cooldownCard.liftButton': 'Lift Cooldown',
+  'cooldownCard.lifting': 'Lifting...',
+  'cooldownCard.liftCostMessage': 'Lift cooldown now for {cost} points',
+  'cooldownCard.yourBalance': 'Your balance',
+  'cooldownCard.points': 'points',
+  'cooldownCard.insufficientPoints': 'Insufficient Points',
 
   // My Picks page
   'mypicks.backToHome': 'Back to Home',
@@ -693,7 +748,7 @@ const translations: Record<Language, Record<string, string>> = {
   'support.telegram': '@SmartPickSupport',
 
   // Menu Drawer
-  'menu.myReservations': 'My Reservations',
+  'menu.myReservations': 'Reservation History',
   'menu.favorites': 'Favorites',
   'menu.profile': 'Profile',
   'menu.partnerDashboard': 'Partner Dashboard',
@@ -708,11 +763,37 @@ const translations: Record<Language, Record<string, string>> = {
   'menu.becomePartner': 'Become a Partner',
   'menu.signOut': 'Sign Out',
 
+  // Reservation History
+  'history.title': 'Reservation History',
+  'history.active': 'Active',
+  'history.completed': 'Completed',
+  'history.cancelled': 'Cancelled',
+  'history.expired': 'Expired',
+  'history.all': 'All',
+  'history.today': 'Today',
+  'history.yesterday': 'Yesterday',
+  'history.thisWeek': 'This Week',
+  'history.earlier': 'Earlier',
+  'history.noReservations': 'No reservations found',
+  'history.pickedUp': 'Picked Up',
+  'history.failed': 'Failed Pickup',
+  'history.rateExperience': 'Rate',
+  'history.viewDetails': 'Details',
+  'history.searchPlaceholder': 'Search...',
+  'history.filterByStatus': 'Filter by status',
+  'history.reservationCode': 'Code',
+  'history.pickedUpAt': 'Picked up at',
+  'history.reservedAt': 'Reserved at',
+  'history.expiresAt': 'Expires',
+  'history.pointsEarned': 'Points Earned',
+  'history.totalReservations': 'Total Reservations',
+
   // Reservation Modal
   'reservation.pickupPrice': 'Pickup Price',
   'reservation.addPoints': 'Add Points',
   'reservation.balance': 'Balance',
   'reservation.pts': 'pts',
+  'reservation.needed': 'needed',
   'reservation.maxLeft': 'Max {count} left',
   'reservation.pickupWindow': 'Pickup Window',
   'reservation.open24_7': 'OPEN 24/7',
@@ -851,8 +932,8 @@ const translations: Record<Language, Record<string, string>> = {
   // SmartPoints Wallet
   'wallet.currentBalance': 'მიმდინარე ბალანსი',
   'wallet.addPoints': 'დაამატე SmartPoints',
-  'wallet.howItWorks': 'როგორ მუშაობს SmartPoints',
-  'wallet.howItWorksDesc': 'ქულები აკეთებს შენს ადგილს — ნაღდი ფულით იხდი მხოლოდ აღებისას. წარმოიდგინე როგორც ჯავშნის ვალუტა.',
+  'wallet.howItWorks': 'რაში გჭირდება SmartPoints?',
+  'wallet.howItWorksDesc': 'ქულები შენს ჯავშანს აფიქსირებს — ფულს კი ადგილზე იხდი. ეს შენი ჯავშნის ვალუტაა.',
   'wallet.recentActivity': 'ბოლო აქტივობა',
   'wallet.noTransactions': 'ტრანზაქციები ჯერ არაა',
   'wallet.activityWillAppear': 'შენი აქტივობა აქ გამოჩნდება',
@@ -884,6 +965,7 @@ const translations: Record<Language, Record<string, string>> = {
   'toast.notEnoughQuantity': 'არ არის საკმარისად რაოდენობა',
   'toast.maxUnits': 'მაქსიმუმ 3 ერთეული კარგად',
   'toast.reservationCreated': 'რეზერვაცია წარმატებით შეიქმნა!',
+  'toast.offerExpired': 'ამ შეთავაზებას ვადა გაუვიდა და წაშალდა',
   'offer.loading': 'იტვირთება შეთავაზება...',
   'offer.notFound': 'შეთავაზება ვერ მოიძებნა',
   'header.backToOffers': 'უკან შეთავაზებებზე',
@@ -1032,6 +1114,17 @@ const translations: Record<Language, Record<string, string>> = {
   'wallet.topUpBalance': 'ბალანსის შევსება',
   'wallet.errorMinAmount': 'მინიმალური თანხა არის',
   'wallet.errorMaxAmount': 'მაქსიმალური თანხა არის',
+  
+  // Earn Points Sheet
+  'earnPoints.title': 'მიიღე SmartPoints',
+  'earnPoints.subtitle': 'აირჩიე ქულების მიღების გზა',
+  'earnPoints.achievements.title': 'შეამოწმე მიღწევები',
+  'earnPoints.achievements.description': 'შეასრულე გამოწვევები და მიიღე უფასო ქულები',
+  'earnPoints.referral.title': 'მოიწვიე მეგობარი',
+  'earnPoints.referral.description': 'მოიწვიე მეგობრები და მიიღე ქულები, როცა პირველ რეზერვაციას გააკეთებენ',
+  'earnPoints.buyPoints.title': 'შეიძინე ქულები',
+  'earnPoints.buyPoints.description': 'მყისიერად შეიძინე ქულები ბარათით',
+  
   'notFound.goBack': 'უკან დაბრუნება',
   // Partner Dashboard - Notifications
   'partner.dashboard.notifications.title': 'გაფრთხილების პარამეტრები',
@@ -1100,6 +1193,49 @@ const translations: Record<Language, Record<string, string>> = {
   'offer.availableSuffix': 'ხელმისაწვდომია',
   'label.pickedUpAt': 'აღებულია',
   'button.cancelReservation': 'რეზერვაციის გაუქმება',
+
+  // Cancel Dialog
+  'cancelDialog.title': 'გავაუქმოთ რეზერვაცია?',
+  'cancelDialog.emoji': '🤔',
+  'cancelDialog.message1': 'ჰეი! უბრალოდ დავრწმუნდეთ — აპირებ გააუქმო {offerTitle} {partnerName}-ში.',
+  'cancelDialog.message2': 'გაითვალისწინე, რომ გაუქმებული ჯავშანი არ აღდგება. იმედია, მალე ისევ გვეწვევი! 🧡',
+  'cancelDialog.keepButton': 'შევინარჩუნოთ ✨',
+  'cancelDialog.cancelButton': 'მაინც გავაუქმოთ',
+  
+  // 2nd Cancellation Warning
+  'cancelDialog.warning.title': 'მეორე გაუქმება',
+  'cancelDialog.warning.emoji': '⚠️',
+  'cancelDialog.warning.message1': 'ეს შენი მე-2 გაუქმებაა {offerTitle}-ისთვის {partnerName}-ში.',
+  'cancelDialog.warning.message2': 'კიდევ ერთი გაუქმება და მოგცემთ მოკლე პაუზას, რომ უკეთესი არჩევანი გააკეთო! 😊',
+  'cancelDialog.warning.keepButton': 'შევინარჩუნოთ! ✨',
+  'cancelDialog.warning.cancelButton': 'მაინც გავაუქმოთ',
+  
+  // 3rd+ Cancellation Warning (Educational - Explain Why)
+  'cancelDialog.critical.title': 'დარწმუნებული ხარ? 🤔',
+  'cancelDialog.critical.emoji': '🤔',
+  'cancelDialog.critical.message1': 'ეს უკვე მე-3 გაუქმებაა. ჩვენი პარტნიორების დასაცავად, ახალი რეზერვაციის გაკეთებას ვერშეზლებთ მომდევნო 1 საათის განმავლობაში.',
+  'cancelDialog.critical.message2': 'შეზღუდვის დროს ახალ შეკვეთებს ვერ გააკეთებ.',
+  'cancelDialog.critical.keepButton': 'შევინარჩუნოთ ✨',
+  'cancelDialog.critical.cancelButton': 'მაინც გავაუქმოთ',
+
+  // Cooldown Card
+  'cooldownCard.alertBanner': '⚠️ აქტიური რეზერვაცია გაუქმდა',
+  'cooldownCard.headerTitle': 'ერთად უკეთესად ვმუშაობთ',
+  'cooldownCard.headerMessage': '1-საათიანი შესვენება ყველას საუკეთესო გამოცდილებას უზრუნველყოფს',
+  'cooldownCard.canReserveIn': 'შეგიძლია დაჯავშნო',
+  'cooldownCard.cancellations': 'გაუქმებები',
+  'cooldownCard.acknowledgment': 'მესმის და აღარ გავაუქმებ რეზერვაციებს განმეორებით',
+  'cooldownCard.encouragingMessage': 'მალე დაბრუნდი და აიღე შესანიშნავი შეთავაზებები 🎉',
+  'cooldownCard.resetButton': 'შესვენების გადატვირთვა (ერთჯერადი)',
+  'cooldownCard.resetting': 'გადატვირთვა...',
+  'cooldownCard.nextCancellationWarning': '⚡ შემდეგი გაუქმება = 1-საათიანი ბლოკი',
+  'cooldownCard.resetUsedWarning': '⚡ შენი გადატვირთვა უკვე გამოყენებულია. შემდეგი გაუქმება = 1-საათიანი ბლოკი',
+  'cooldownCard.liftButton': 'შესვენების მოხსნა',
+  'cooldownCard.lifting': 'მოხსნა...',
+  'cooldownCard.liftCostMessage': 'მოხსენი შესვენება {cost} ქულით',
+  'cooldownCard.yourBalance': 'შენი ბალანსი',
+  'cooldownCard.points': 'ქულა',
+  'cooldownCard.insufficientPoints': 'არასაკმარისი ქულები',
 
   // My Picks page
   'mypicks.backToHome': 'უკან მთავარზე',
@@ -1418,7 +1554,7 @@ const translations: Record<Language, Record<string, string>> = {
   'support.telegram': '@SmartPickSupport',
 
   // Menu Drawer
-  'menu.myReservations': 'ჩემი რეზერვაციები',
+  'menu.myReservations': 'რეზერვაციების ისტორია',
   'menu.favorites': 'ფავორიტები',
   'menu.profile': 'პროფილი',
   'menu.partnerDashboard': 'პარტნიორის დაფა',
@@ -1433,19 +1569,45 @@ const translations: Record<Language, Record<string, string>> = {
   'menu.becomePartner': 'გახდი პარტნიორი',
   'menu.signOut': 'გასვლა',
 
+  // Reservation History
+  'history.title': 'რეზერვაციების ისტორია',
+  'history.active': 'აქტიური',
+  'history.completed': 'დასრულებული',
+  'history.cancelled': 'გაუქმებული',
+  'history.expired': 'ვადაგასული',
+  'history.all': 'ყველა',
+  'history.today': 'დღეს',
+  'history.yesterday': 'გუშინ',
+  'history.thisWeek': 'ამ კვირაში',
+  'history.earlier': 'ადრე',
+  'history.noReservations': 'რეზერვაციები ვერ მოიძებნა',
+  'history.pickedUp': 'აღებულია',
+  'history.failed': 'ვერ აიღო',
+  'history.rateExperience': 'შეაფასე',
+  'history.viewDetails': 'დეტალები',
+  'history.searchPlaceholder': 'ძებნა...',
+  'history.filterByStatus': 'სტატუსით ფილტრი',
+  'history.reservationCode': 'კოდი',
+  'history.pickedUpAt': 'აღების დრო',
+  'history.reservedAt': 'დაჯავშნის დრო',
+  'history.expiresAt': 'ვადა',
+  'history.pointsEarned': 'მიღებული ქულები',
+  'history.totalReservations': 'სულ რეზერვაცია',
+
   // Reservation Modal
   'reservation.pickupPrice': 'აღების ფასი',
   'reservation.addPoints': 'ქულების დამატება',
   'reservation.balance': 'ბალანსი',
   'reservation.pts': 'ქულა',
-  'reservation.maxLeft': 'მაქს. {count} დარჩა',
-  'reservation.pickupWindow': 'აღების დრო',
+  'reservation.needed': 'საჭიროა',
+  'reservation.maxLeft': 'მაქს. {count}',
+  'reservation.pickupWindow': 'ობიექტის სამუშაო საათები',
   'reservation.open24_7': 'ღია 24/7',
   'reservation.location': 'ადგილმდებარეობა',
-  'reservation.reserveNow': 'დაარეზერვე ახლავე',
+  'reservation.reserveNow': 'ფასის დარეზერვება',
   'reservation.reserving': 'რეზერვაცია...',
   'reservation.inCooldown': 'დაელოდე',
-  'reservation.helperText': 'დაჯავშენი ახლა, გადაიხადე აღებისას. შენი ფასდაკლება გარანტირებულია.',
+  'reservation.helperText': 'დაარეზერვე ფასი, გადაიხადე აღებისას. შენი ფასდაკლება გარანტირებულია.',
 
   // Offers Sheet
   'offers.searchPlaceholder': 'ჩაწერე კერძის სახელი მაგ. ხინკალი',

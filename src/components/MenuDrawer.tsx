@@ -92,7 +92,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
         <>
           {/* Premium Backdrop with Blur */}
           <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[60] animate-in fade-in duration-[180ms]"
+            className="fixed inset-0 bg-black/40 backdrop-blur-md z-[110] animate-in fade-in duration-[180ms]"
             onClick={onClose}
             style={{
               animation: 'fadeInBackdrop 180ms cubic-bezier(0.32, 0.72, 0, 1)',
@@ -101,7 +101,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
       {/* Premium Glass Morphism Drawer */}
       <div 
-        className="fixed inset-x-0 bottom-0 z-[70] max-h-[85vh] overflow-y-auto"
+        className="fixed inset-x-0 bottom-0 z-[120] max-h-[85vh] overflow-y-auto"
         style={{
           animation: 'slideUpSpring 180ms cubic-bezier(0.32, 0.72, 0, 1)',
         }}

@@ -36,6 +36,13 @@ export const SmartPointsWallet = forwardRef<SmartPointsWalletRef, SmartPointsWal
         getPointTransactions(userId, 5)
       ]);
 
+      logger.log('💰 SmartPointsWallet loaded:', { 
+        userId, 
+        pointsData, 
+        balance: pointsData?.balance,
+        reason 
+      });
+
       setPoints(pointsData);
       setTransactions(transactionsData);
       if (reason) {
@@ -155,6 +162,14 @@ export const SmartPointsWallet = forwardRef<SmartPointsWalletRef, SmartPointsWal
 
   const balance = points?.balance ?? 0;
   const isLowBalance = balance < 10;
+  const isPartner = !!(points as any)?.partner_id;
+  
+  logger.log('💰 SmartPointsWallet render:', { 
+    userId, 
+    balance, 
+    isPartner,
+    pointsObject: points 
+  });
 
   if (compact) {
     return (
@@ -181,6 +196,7 @@ export const SmartPointsWallet = forwardRef<SmartPointsWalletRef, SmartPointsWal
           userId={userId}
           currentBalance={balance}
           onSuccess={handlePurchaseSuccess}
+          isPartner={isPartner}
         />
       </>
     );
@@ -348,6 +364,8 @@ export const SmartPointsWallet = forwardRef<SmartPointsWalletRef, SmartPointsWal
         userId={userId}
         currentBalance={balance}
         onSuccess={handlePurchaseSuccess}
+        isPartner={isPartner}
+        partnerPoints={points as any}
       />
     </>
   );

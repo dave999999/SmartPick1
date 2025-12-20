@@ -72,7 +72,7 @@ export const getActiveOffersInViewport = async (
     }
 
     // Transform RPC results to Offer format
-    return (data || []).map((row: any) => ({
+    const offers = (data || []).map((row: any) => ({
       id: row.id,
       partner_id: row.partner_id,
       title: row.title,
@@ -100,6 +100,13 @@ export const getActiveOffersInViewport = async (
       },
       distance_meters: row.distance_meters, // Distance from viewport center
     })) as Offer[];
+    
+    // 🛡️ SAFETY: Client-side expiration filter (in case of cache/timezone issues)
+    const now = new Date();
+    return offers.filter(offer => {
+      if (!offer.expires_at) return true;
+      return new Date(offer.expires_at) > now;
+    });
   } catch (error) {
     console.error('Failed to fetch offers in viewport:', error);
     // Return empty array instead of dangerous full-load fallback
@@ -249,8 +256,19 @@ export const getActiveOffers = async (filters?: OfferFilters, limit: number = 50
     return [];
   }
 
+  // 🛡️ SAFETY: Client-side expiration filter (in case of cache/timezone issues)
+  const now = new Date();
+  const validOffers = offers.filter(offer => {
+    if (!offer.expires_at) return true; // No expiry = always valid
+    return new Date(offer.expires_at) > now;
+  });
+
+  if (validOffers.length === 0) {
+    return [];
+  }
+
   // Fetch partners separately to avoid RLS issues with joins
-  const partnerIds = [...new Set(offers.map(o => o.partner_id).filter(Boolean))];
+  const partnerIds = [...new Set(validOffers.map(o => o.partner_id).filter(Boolean))];
   
   if (partnerIds.length > 0) {
     const { data: partners } = await supabase
@@ -261,7 +279,7 @@ export const getActiveOffers = async (filters?: OfferFilters, limit: number = 50
     if (partners) {
       // Attach partner data to offers
       const partnerMap = new Map(partners.map(p => [p.id, p]));
-      offers.forEach(offer => {
+      validOffers.forEach(offer => {
         if (offer.partner_id) {
           offer.partner = partnerMap.get(offer.partner_id);
         }
@@ -269,7 +287,7 @@ export const getActiveOffers = async (filters?: OfferFilters, limit: number = 50
     }
   }
 
-  return offers as Offer[];
+  return validOffers as Offer[];
 };
 
 
@@ -290,6 +308,22 @@ export const getOfferById = async (id: string): Promise<Offer> => {
     .single();
 
   if (error) throw error;
+  
+  // ✅ Check if offer has expired or pickup window has ended
+  const now = new Date();
+  if (data.expires_at && new Date(data.expires_at) <= now) {
+    throw new Error('This offer has expired');
+  }
+  if (data.pickup_end && new Date(data.pickup_end) <= now) {
+    throw new Error('The pickup window for this offer has ended');
+  }
+  if (data.status !== 'ACTIVE') {
+    throw new Error('This offer is no longer available');
+  }
+  if (data.quantity_available <= 0) {
+    throw new Error('This offer is sold out');
+  }
+  
   return data as Offer;
 };
 

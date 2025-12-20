@@ -112,7 +112,7 @@ export default function MyPicks() {
         const { getCustomerDashboardData } = await import('@/lib/api/reservations');
         const dashboardData = await getCustomerDashboardData(currentUser.id);
         
-        setReservations(dashboardData.reservations);
+        setReservations(dashboardData.reservations || []);
         logger.log('✅ Customer dashboard data loaded in single query');
         
         // Auto-cleanup old history items (10+ days old)
@@ -120,7 +120,7 @@ export default function MyPicks() {
         
         // Schedule pickup reminders for active reservations
         if (hasPermission) {
-          const activeReservations = dashboardData.reservations.filter(
+          const activeReservations = (dashboardData.reservations || []).filter(
             (r: any) => r.status === 'ACTIVE'
           );
           if (activeReservations.length > 0) {
@@ -149,7 +149,7 @@ export default function MyPicks() {
       await cleanupOldHistory(userIdToUse);
 
       const reservationsData = await getCustomerReservations(userIdToUse);
-      setReservations(reservationsData);
+      setReservations(reservationsData || []);
 
       // Schedule pickup reminders for active reservations
       if (hasPermission) {
@@ -400,8 +400,10 @@ export default function MyPicks() {
     }).format(price);
   };
 
-  const activeReservations = reservations.filter(r => r.status === 'ACTIVE');
-  const historyReservations = reservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED', 'FAILED_PICKUP'].includes(r.status));
+  // 🛡️ SAFETY: Ensure reservations is always an array
+  const safeReservations = Array.isArray(reservations) ? reservations : [];
+  const activeReservations = safeReservations.filter(r => r.status === 'ACTIVE');
+  const historyReservations = safeReservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED', 'FAILED_PICKUP'].includes(r.status));
 
   if (loading) {
     return (

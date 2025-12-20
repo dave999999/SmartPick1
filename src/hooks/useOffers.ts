@@ -128,6 +128,7 @@ export function useOffers() {
   const fetchOffers = async () => {
     try {
       setLoading(true);
+      const now = new Date().toISOString();
       const { data, error: fetchError } = await supabase
         .from('offers')
         .select(`
@@ -136,7 +137,8 @@ export function useOffers() {
         `)
         .eq('status', 'ACTIVE')
         .gt('quantity_available', 0)
-        .gt('expires_at', new Date().toISOString()) // Filter out expired offers
+        .gt('expires_at', now) // Filter out expired offers
+        .gt('pickup_end', now) // Filter out offers with ended pickup windows
         .order('created_at', { ascending: false });
 
       if (fetchError) {

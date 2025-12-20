@@ -355,12 +355,30 @@ export default function UserProfileApple() {
         .eq('id', authUser.id)
         .single();
 
-      // Load SmartPoints balance from user_points table
-      const { data: pointsData } = await supabase
-        .from('user_points')
+      // Check if user is a partner
+      const { data: partnerProfile } = await supabase
+        .from('partners')
+        .select('id')
+        .eq('user_id', authUser.id)
+        .eq('status', 'APPROVED')
+        .maybeSingle();
+
+      // Load SmartPoints balance - use partner_points if partner, otherwise user_points
+      const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
+      const { data: pointsData, error: pointsError } = await supabase
+        .from(tableName)
         .select('balance')
         .eq('user_id', authUser.id)
-        .single();
+        .maybeSingle();
+
+      console.log('🔍 Points Query Result:', { 
+        userId: authUser.id,
+        isPartner: !!partnerProfile?.id,
+        tableName,
+        pointsData, 
+        pointsError,
+        balance: pointsData?.balance 
+      });
 
       if (userData) {
         setUser({
@@ -401,6 +419,34 @@ export default function UserProfileApple() {
   useEffect(() => {
     loadUser();
   }, [loadUser]);
+
+  // Refetch points when page becomes visible (user returns from another tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        // Refetch only points when page becomes visible
+        const refetchPoints = async () => {
+          try {
+            const { data: pointsData } = await supabase
+              .from('user_points')
+              .select('balance')
+              .eq('user_id', user.id)
+              .single();
+            
+            if (pointsData) {
+              setUser(prev => prev ? { ...prev, smart_points: pointsData.balance || 0 } : null);
+            }
+          } catch (error) {
+            console.error('Error refetching points:', error);
+          }
+        };
+        refetchPoints();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -643,13 +689,6 @@ export default function UserProfileApple() {
               className="w-full flex items-center justify-between p-4 bg-white rounded-lg border hover:bg-[#F8F9FB]"
             >
               <span className="text-[15px] font-medium">🇬🇪 ქართული (Georgian)</span>
-              <ChevronRight size={18} className="text-[#6F6F6F]" />
-            </button>
-            <button
-              onClick={() => toast.info('Russian language coming soon')}
-              className="w-full flex items-center justify-between p-4 bg-white rounded-lg border hover:bg-[#F8F9FB]"
-            >
-              <span className="text-[15px] font-medium">🇷🇺 Русский (Russian)</span>
               <ChevronRight size={18} className="text-[#6F6F6F]" />
             </button>
           </div>

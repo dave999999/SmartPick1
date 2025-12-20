@@ -64,6 +64,8 @@ import { MapPin, Navigation, X, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { supabase } from '@/lib/supabase';
+import { useI18n } from '@/lib/i18n';
 
 // ============================================
 // TYPES
@@ -380,7 +382,7 @@ function QRModal({ isOpen, onClose, qrPayload, offerTitle, partnerName, expiresI
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[340px] p-0 border-none bg-transparent shadow-none overflow-visible">
+      <DialogContent className="max-w-[360px] p-0 border-none bg-transparent shadow-none overflow-visible">
         <VisuallyHidden>
           <DialogTitle>Reservation QR Code</DialogTitle>
           <DialogDescription>Scan this QR code at the partner location to pick up your order</DialogDescription>
@@ -390,61 +392,76 @@ function QRModal({ isOpen, onClose, qrPayload, offerTitle, partnerName, expiresI
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.92, opacity: 0, y: 20 }}
           transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-          className="bg-white/98 backdrop-blur-xl rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden"
+          className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.2)] overflow-hidden"
         >
-          {/* Compact Header */}
-          <div className="px-4 pt-4 pb-3 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
+          {/* ✨ Mint Green Header with White Text */}
+          <div className="px-5 pt-5 pb-4 bg-gradient-to-br from-[#2ECC71] to-[#27AE60] border-b border-[#27AE60]/20">
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <h2 className="text-[15px] font-semibold text-gray-900 leading-tight truncate">
-                  {offerTitle}
+                <h2 className="text-[18px] font-bold text-white leading-tight truncate">
+                  🎟️ {offerTitle}
                 </h2>
-                <p className="text-[11px] text-gray-500 mt-0.5 truncate">{partnerName}</p>
+                <p className="text-[13px] text-white/80 mt-1 truncate">{partnerName}</p>
               </div>
               <button
                 onClick={onClose}
-                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors active:scale-95"
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-95 flex-shrink-0"
               >
-                <X className="w-3.5 h-3.5 text-gray-600" strokeWidth={2.5} />
+                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
               </button>
             </div>
           </div>
 
-          {/* Compact QR Section */}
-          <div className="p-4">
+          {/* QR Code Container - Premium Style */}
+          <div className="p-6 bg-gradient-to-b from-white to-gray-50">
             <div 
-              className="bg-white rounded-2xl p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-gray-100"
+              className="bg-white rounded-[18px] p-5 shadow-[0_8px_24px_rgba(46,204,113,0.12)] border border-[#2ECC71]/10"
               style={{ 
-                background: 'linear-gradient(145deg, #FFFFFF 0%, #FAFAFA 100%)'
+                background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FFFE 100%)'
               }}
             >
               <div className="flex justify-center">
-                <QRCodeSVG 
-                  value={qrPayload} 
-                  size={220} 
-                  level="H" 
-                  style={{ 
-                    borderRadius: '10px',
-                    display: 'block'
-                  }} 
-                />
+                <div className="p-2 bg-white rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+                  <QRCodeSVG 
+                    value={qrPayload} 
+                    size={240}
+                    level="H" 
+                    style={{ 
+                      borderRadius: '8px',
+                      display: 'block'
+                    }} 
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Compact Timer & Info */}
-          <div className="px-4 pb-4 text-center space-y-2">
-            <div>
-              <p className="text-[32px] font-bold font-mono text-[#2ECC71] tracking-tight leading-none">
+          {/* Friendly Timer & Instructions */}
+          <div className="px-6 pb-6 text-center space-y-3 bg-gradient-to-b from-gray-50 to-white">
+            {/* Large Timer */}
+            <div className="pt-2">
+              <p className="text-[14px] text-gray-600 mb-1">⏱️ Time remaining</p>
+              <p className="text-[56px] font-black font-mono text-[#2ECC71] tracking-tight leading-none">
                 {expiresIn}
               </p>
-              <p className="text-[9px] text-gray-400 uppercase tracking-[0.12em] font-semibold mt-0.5">
-                REMAINING
+            </div>
+            
+            {/* Friendly Messaging */}
+            <div className="space-y-2 pt-2">
+              <p className="text-[16px] font-semibold text-gray-900">
+                🎉 Ready to pick up!
+              </p>
+              <p className="text-[14px] text-gray-600 leading-relaxed">
+                Show this QR code to the partner staff
               </p>
             </div>
-            <p className="text-[12px] text-gray-500">
-              Show this code at pickup
-            </p>
+
+            {/* Pro Tip */}
+            <div className="mt-4 p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-[12px] border border-blue-200">
+              <p className="text-[12px] text-blue-900">
+                💡 <strong>Pro Tip:</strong> Screenshot this code for backup
+              </p>
+            </div>
           </div>
         </motion.div>
       </DialogContent>
@@ -466,7 +483,44 @@ export function ActiveReservationCard({
 }: ActiveReservationCardProps) {
   const [showQRModal, setShowQRModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelCount, setCancelCount] = useState(0);
+  const [loadingCancelCount, setLoadingCancelCount] = useState(true);
   const { formatted, isExpired, minutes } = useCountdown(reservation?.expiresAt || null);
+  const { t } = useI18n();
+
+  // Fetch user's recent cancellation count
+  useEffect(() => {
+    async function fetchCancelCount() {
+      if (!reservation) return;
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Only count cancellations in the last 30 minutes (current cooldown window)
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+        const { count, error } = await supabase
+          .from('user_cancellation_tracking')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('cancelled_at', thirtyMinutesAgo); // Last 30 minutes only
+
+        if (error) {
+          console.error('Error fetching cancel count:', error);
+          return;
+        }
+
+        setCancelCount(count || 0);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoadingCancelCount(false);
+      }
+    }
+
+    fetchCancelCount();
+  }, [reservation]);
 
   // Auto-expire handler
   useEffect(() => {
@@ -641,7 +695,7 @@ export function ActiveReservationCard({
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <DialogContent className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
           <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
-            Cancel Reservation?
+            {cancelCount >= 2 ? t('cancelDialog.critical.title') : cancelCount >= 1 ? t('cancelDialog.warning.title') : t('cancelDialog.title')}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Confirm if you want to cancel your reservation. You will need to make a new reservation if you change your mind.
@@ -655,13 +709,33 @@ export function ActiveReservationCard({
             <div className="px-5 pt-0 pb-3 text-center">
               <div className="flex justify-center mb-3">
                 <div className="text-[56px] leading-none">
-                  🤔
+                  {cancelCount >= 2 ? t('cancelDialog.critical.emoji') : cancelCount >= 1 ? t('cancelDialog.warning.emoji') : t('cancelDialog.emoji')}
                 </div>
               </div>
               <p className="text-[13px] text-gray-600 leading-relaxed mt-2 px-2">
-                Hey! Just want to make sure — you're about to cancel your <span className="font-semibold text-gray-900">{reservation.offerTitle}</span> at <span className="font-semibold text-gray-900">{reservation.partnerName}</span>.
-                <br /><br />
-                If you change your mind, you'll need to make a new reservation. We'd love to have you though! 😊
+                {cancelCount >= 2 ? (
+                  <>
+                    {t('cancelDialog.critical.message1')}
+                    <br /><br />
+                    {t('cancelDialog.critical.message2')}
+                  </>
+                ) : cancelCount >= 1 ? (
+                  <>
+                    {t('cancelDialog.warning.message1')
+                      .replace('{offerTitle}', reservation.offerTitle)
+                      .replace('{partnerName}', reservation.partnerName)}
+                    <br /><br />
+                    {t('cancelDialog.warning.message2')}
+                  </>
+                ) : (
+                  <>
+                    {t('cancelDialog.message1')
+                      .replace('{offerTitle}', reservation.offerTitle)
+                      .replace('{partnerName}', reservation.partnerName)}
+                    <br /><br />
+                    {t('cancelDialog.message2')}
+                  </>
+                )}
               </p>
             </div>
 
@@ -672,7 +746,7 @@ export function ActiveReservationCard({
                 whileTap={{ scale: 0.98 }}
                 className="w-full h-11 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-[15px] rounded-xl shadow-lg shadow-blue-500/25 transition-all"
               >
-                Keep My Reservation ✨
+                {cancelCount >= 2 ? t('cancelDialog.critical.keepButton') : cancelCount >= 1 ? t('cancelDialog.warning.keepButton') : t('cancelDialog.keepButton')}
               </motion.button>
               <motion.button
                 onClick={() => {
@@ -682,7 +756,7 @@ export function ActiveReservationCard({
                 whileTap={{ scale: 0.98 }}
                 className="w-full h-10 bg-transparent hover:bg-gray-50 text-gray-500 font-medium text-[14px] rounded-xl transition-colors"
               >
-                Cancel Anyway
+                {cancelCount >= 2 ? t('cancelDialog.critical.cancelButton') : cancelCount >= 1 ? t('cancelDialog.warning.cancelButton') : t('cancelDialog.cancelButton')}
               </motion.button>
             </div>
           </motion.div>

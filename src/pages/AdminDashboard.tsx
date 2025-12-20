@@ -108,7 +108,7 @@ export default function AdminDashboard() {
         return;
       }
       
-      logger.log('AdminDashboard: User authenticated:', user.email);
+      logger.log('AdminDashboard: User authenticated:', { userId: user.id });
       
       // Check if user is admin - check for both uppercase and lowercase
       const { data: profile, error } = await supabase
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 
       // Verify admin role (case-insensitive)
       if (!profile || profile.role?.toUpperCase() !== 'ADMIN') {
-        logger.error('AdminDashboard: Unauthorized access attempt by user:', user.email);
+        logger.error('AdminDashboard: Unauthorized access attempt:', { userId: user.id });
         toast.error('Unauthorized: Admin access required');
         navigate('/');
         return;

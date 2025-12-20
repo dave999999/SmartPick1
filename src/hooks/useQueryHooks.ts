@@ -52,7 +52,7 @@ export function useOffers(filters?: Record<string, unknown>) {
       setOffers(offers);
       return offers;
     },
-    staleTime: 2 * 60 * 1000, // Offers fresh for 2 minutes
+    staleTime: 30 * 1000, // Offers fresh for 30 seconds (reduced to quickly remove expired offers)
   });
 }
 

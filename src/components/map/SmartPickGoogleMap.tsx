@@ -539,8 +539,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
             title: partner.business_name,
             icon: {
               url: '/icons/map-pins/all.png?v=2',
-              scaledSize: new google.maps.Size(64, 64),
-              anchor: new google.maps.Point(32, 64),
+              scaledSize: new google.maps.Size(60, 42),
+              anchor: new google.maps.Point(30, 40.5),
               optimized: false
             },
             zIndex: 10000,
@@ -1173,8 +1173,8 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         if (prevIcon && typeof prevIcon === 'object') {
           previouslyHighlightedMarkerRef.current.setIcon({
             ...prevIcon,
-            scaledSize: new google.maps.Size(64, 64),
-            anchor: new google.maps.Point(32, 64),
+            scaledSize: new google.maps.Size(60, 42),
+            anchor: new google.maps.Point(30, 40.5),
           });
         }
         previouslyHighlightedMarkerRef.current.setZIndex(1);

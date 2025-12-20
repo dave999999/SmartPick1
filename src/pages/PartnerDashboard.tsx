@@ -159,7 +159,17 @@ export default function PartnerDashboard() {
         const dashboardData = await getPartnerDashboardData(user?.id || impersonatePartnerId!);
 
         setPartner(dashboardData.partner);
-        setOffers(dashboardData.offers);
+        
+        // 🛡️ SAFETY: Filter out expired offers on client side
+        const now = new Date();
+        const validOffers = (dashboardData.offers || []).filter(offer => {
+          // Keep offer if no expiration set
+          if (!offer.expires_at) return true;
+          // Filter out expired offers
+          return new Date(offer.expires_at) > now;
+        });
+        setOffers(validOffers);
+        
         setReservations(dashboardData.activeReservations);
         setAllReservations(dashboardData.activeReservations); // Will need to fetch all separately if needed
         setStats(dashboardData.stats);
@@ -945,7 +955,7 @@ export default function PartnerDashboard() {
           <div className="space-y-6 mb-6 md:mb-8">
             <EnhancedActiveReservations
               reservations={reservations}
-              onMarkAsPickedUp={(r) => reservationActions.handleMarkAsPickedUp(r, (id) => setReservations(prev => prev.filter(res => res.id !== id)))}
+              onMarkAsPickedUp={(r) => reservationActions.handleMarkAsPickedUp(r, () => {})}
               onConfirmNoShow={handleConfirmNoShow}
               onForgiveCustomer={handleForgiveCustomer}
               processingIds={processingIds}

@@ -251,9 +251,9 @@ export const sendVerificationEmail = async (userId: string, email: string, userN
       emailHTML
     );
 
-    console.log(`Verification email sent successfully to ${email}`);
+    logger.log('Verification email sent successfully');
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    logger.error('Error sending verification email:', error);
     throw error;
   }
 };
@@ -283,9 +283,9 @@ export const sendPasswordResetEmail = async (email: string): Promise<void> => {
       throw new Error(data.error || 'Failed to send password reset email');
     }
 
-    console.log(`Password reset email sent successfully to ${email}`);
+    logger.log('Password reset email sent successfully');
   } catch (error) {
-    console.error('Error sending password reset email:', error);
+    logger.error('Error sending password reset email:', error);
     throw error;
   }
 };

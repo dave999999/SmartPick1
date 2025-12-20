@@ -20,7 +20,11 @@ export function useReservationActions(onSuccess: () => void) {
       setProcessingIds(prev => new Set(prev).add(reservation.id));
 
       // Optimistically remove from UI to prevent repeat clicks
-      optimisticUpdate(reservation.id);
+      try {
+        optimisticUpdate(reservation.id);
+      } catch (updateError) {
+        logger.warn('Optimistic update failed:', updateError);
+      }
 
       // Only update reservation status in database
       await markAsPickedUp(reservation.id);

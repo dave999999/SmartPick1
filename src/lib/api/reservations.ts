@@ -88,7 +88,7 @@ export const createReservation = async (
   // Validate offer availability & fetch offer atomically for constraints
   const { data: offerData, error: offerError } = await supabase
     .from('offers')
-    .select('id, quantity_available, pickup_start, pickup_end, status, partner_id')
+    .select('id, quantity_available, pickup_start, pickup_end, expires_at, status, partner_id')
     .eq('id', offerId)
     .single();
 
@@ -99,13 +99,18 @@ export const createReservation = async (
     throw new Error('Offer is not active');
   }
 
-  // Check pickup window validity
+  // 🛡️ CRITICAL: Check expires_at first (primary expiration)
   const now = new Date();
+  if (offerData.expires_at && new Date(offerData.expires_at) <= now) {
+    throw new Error('Offer has expired');
+  }
+
+  // Check pickup window validity
   if (offerData.pickup_start && new Date(offerData.pickup_start) > now) {
     throw new Error('Pickup window has not started yet');
   }
   if (offerData.pickup_end && new Date(offerData.pickup_end) <= now) {
-    throw new Error('Offer has expired');
+    throw new Error('Pickup window has ended');
   }
 
   if (quantity > offerData.quantity_available) {
@@ -474,31 +479,24 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Demo mode: Please configure Supabase');
   }
 
-  console.log('🔍 Marking reservation as picked up (using Edge Function):', reservationId);
+  console.log('🔍 Marking reservation as picked up (using RPC):', reservationId);
 
-  // Get auth session
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError || !session) {
-    throw new Error('Not authenticated');
-  }
-
-  // Call Edge Function (has service_role permissions to award points)
-  console.log('🔑 Calling mark-pickup with:', { reservationId, hasToken: !!session.access_token });
-  const { data: functionResult, error: functionError } = await supabase.functions.invoke('mark-pickup', {
-    body: { reservation_id: reservationId },
-    headers: {
-      Authorization: `Bearer ${session.access_token}`
-    }
+  // Use RPC function with SECURITY DEFINER (apply migration 20251220_partner_mark_pickup_rpc.sql)
+  const { data, error } = await supabase.rpc('partner_mark_reservation_picked_up', {
+    p_reservation_id: reservationId
   });
 
-  if (functionError) {
-    console.error('❌ Edge Function ERROR:', {
-      message: functionError.message,
-      details: functionError,
-      reservationId
-    });
-    throw new Error(functionError.message || 'Failed to mark as picked up');
+  if (error) {
+    console.error('❌ RPC error:', error);
+    throw new Error(error.message || 'Failed to mark as picked up');
   }
+
+  if (!data || data.length === 0) {
+    throw new Error('Reservation not found');
+  }
+
+  console.log('✅ Marked as picked up successfully');
+  return data[0] as Reservation;
 
   if (!functionResult?.success) {
     console.error('❌ Edge Function returned error:', {
@@ -583,9 +581,14 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .update({ quantity_available: offer.quantity_available + reservation.quantity })
       .eq('id', reservation.offer_id);
 
-    // Get customer name for notification from auth.users
-    const { data: authUser } = await supabase.auth.admin.getUserById(reservation.customer_id);
-    const customerName = authUser?.user?.user_metadata?.name || authUser?.user?.email?.split('@')[0] || 'Customer';
+    // Get customer name from users table instead of auth.admin (which requires service role)
+    const { data: userData } = await supabase
+      .from('users')
+      .select('name, email')
+      .eq('id', reservation.customer_id)
+      .single();
+    
+    const customerName = userData?.name || userData?.email?.split('@')[0] || 'Customer';
 
     // Notify partner about cancellation (fire-and-forget)
     if (offer.partner_id) {

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Offer } from '@/lib/types';
 import { getOfferById, createReservation, getCurrentUser } from '@/lib/api';
-import { canUserReserve, getPenaltyDetails } from '@/lib/api/penalty';
+import { canUserReserve, getPenaltyDetails, getUserCooldownStatus } from '@/lib/api/penalty';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { requestQueue } from '@/lib/requestQueue';
@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n';
 import { updateMetaTags } from '@/lib/social-share';
 import { logger } from '@/lib/logger';
 import { PenaltyModal } from '@/components/PenaltyModal'; // NEW: Import penalty modal
+import { CooldownSheet } from '@/components/reservation/CooldownSheet'; // NEW: Import cooldown sheet
 import { supabase } from '@/lib/supabase'; // NEW: For getting user points
 
 export default function ReserveOffer() {
@@ -36,10 +37,15 @@ export default function ReserveOffer() {
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyData, setPenaltyData] = useState<any>(null);
   const [userPoints, setUserPoints] = useState(0);
+  
+  // Cooldown modal state (friendly 1-hour timeout)
+  const [showCooldownSheet, setShowCooldownSheet] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState<Date | null>(null);
 
   useEffect(() => {
     loadOffer();
     checkPenaltyStatus();
+    checkCooldownStatus(); // NEW: Check cooldown on page load
   }, [offerId]);
 
   const loadOffer = async () => {
@@ -53,9 +59,16 @@ export default function ReserveOffer() {
       if (data) {
         updateMetaTags(data);
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error loading offer:', error);
-  toast.error(t('toast.failedLoadOffer'));
+      
+      // Show specific error message for expired offers
+      const errorMsg = error?.message || '';
+      if (errorMsg.includes('expired') || errorMsg.includes('pickup window') || errorMsg.includes('ended')) {
+        toast.error(t('toast.offerExpired') || 'This offer has expired or is no longer available');
+      } else {
+        toast.error(t('toast.failedLoadOffer'));
+      }
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -73,12 +86,21 @@ export default function ReserveOffer() {
       if (!result.can_reserve && result.penalty_id) {
         const penalty = await getPenaltyDetails(result.penalty_id);
         
-        // Get user points
+        // Check if user is a partner
+        const { data: partnerProfile } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'APPROVED')
+          .maybeSingle();
+        
+        // Get user points from correct table
+        const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
         const { data: points } = await supabase
-          .from('user_points')
+          .from(tableName)
           .select('balance')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
         
         setPenaltyData(penalty);
         setUserPoints(points?.balance || 0);
@@ -86,6 +108,23 @@ export default function ReserveOffer() {
       }
     } catch (error) {
       logger.error('Error checking penalty status:', error);
+    }
+  };
+
+  // Check cooldown status (3+ cancels in 30min = 1hr timeout)
+  const checkCooldownStatus = async () => {
+    try {
+      const { user } = await getCurrentUser();
+      if (!user) return;
+      
+      const cooldownStatus = await getUserCooldownStatus(user.id);
+      
+      if (cooldownStatus.inCooldown && cooldownStatus.cooldownUntil) {
+        setCooldownUntil(cooldownStatus.cooldownUntil);
+        setShowCooldownSheet(true);
+      }
+    } catch (error) {
+      logger.error('Error checking cooldown status:', error);
     }
   };
 
@@ -98,6 +137,15 @@ export default function ReserveOffer() {
       if (!user) {
         toast.error(t('toast.signInToReserve'));
         navigate('/');
+        return;
+      }
+
+      // NEW: Check cooldown before reservation
+      const cooldownStatus = await getUserCooldownStatus(user.id);
+      if (cooldownStatus.inCooldown && cooldownStatus.cooldownUntil) {
+        setCooldownUntil(cooldownStatus.cooldownUntil);
+        setShowCooldownSheet(true);
+        setIsReserving(false);
         return;
       }
 
@@ -489,6 +537,15 @@ export default function ReserveOffer() {
             setShowPenaltyModal(false);
             checkPenaltyStatus(); // Refresh penalty status
           }}
+        />
+      )}
+      
+      {/* NEW: Cooldown Sheet (Friendly 1-hour timeout) */}
+      {showCooldownSheet && cooldownUntil && (
+        <CooldownSheet
+          isOpen={showCooldownSheet}
+          onClose={() => setShowCooldownSheet(false)}
+          cooldownUntil={cooldownUntil}
         />
       )}
     </div>
