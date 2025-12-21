@@ -46,7 +46,9 @@ export function getTelegramBotLink(userId: string): string {
   const timestamp = Date.now();
   const startParam = `${b64}_${timestamp}`;
   
-  return `https://t.me/${botUsername}?start=${startParam}`;
+  // Use tg:// protocol for direct app opening (works on mobile and desktop)
+  // Falls back to web if app not installed
+  return `tg://resolve?domain=${botUsername}&start=${startParam}`;
 }
 
 /**
