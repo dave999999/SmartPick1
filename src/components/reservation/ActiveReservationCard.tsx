@@ -66,6 +66,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
+import { usePickupBroadcast } from '@/hooks/usePickupBroadcast';
 
 // ============================================
 // TYPES
@@ -94,6 +95,7 @@ export interface ActiveReservationCardProps {
   onNavigate: (reservation: ActiveReservation) => void;
   onCancel: (reservationId: string) => void;
   onExpired: () => void;
+  onPickupConfirmed?: (data: { savedAmount: number; pointsEarned: number }) => void;
   variant?: 'minimal' | 'glossy';
 }
 
@@ -382,84 +384,70 @@ function QRModal({ isOpen, onClose, qrPayload, offerTitle, partnerName, expiresI
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[360px] p-0 border-none bg-transparent shadow-none overflow-visible">
+      <DialogContent className="max-w-[320px] p-0 border-none bg-transparent shadow-none overflow-visible">
         <VisuallyHidden>
           <DialogTitle>Reservation QR Code</DialogTitle>
           <DialogDescription>Scan this QR code at the partner location to pick up your order</DialogDescription>
         </VisuallyHidden>
         <motion.div
-          initial={{ scale: 0.92, opacity: 0, y: 20 }}
+          initial={{ scale: 0.94, opacity: 0, y: 24 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-          className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(0,0,0,0.2)] overflow-hidden"
+          exit={{ scale: 0.94, opacity: 0, y: 24 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+          className="bg-white/75 backdrop-blur-[28px] border border-white/40 rounded-[18px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden"
         >
-          {/* ✨ Mint Green Header with White Text */}
-          <div className="px-5 pt-5 pb-4 bg-gradient-to-br from-[#2ECC71] to-[#27AE60] border-b border-[#27AE60]/20">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-[18px] font-bold text-white leading-tight truncate">
-                  🎟️ {offerTitle}
-                </h2>
-                <p className="text-[13px] text-white/80 mt-1 truncate">{partnerName}</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors active:scale-95 flex-shrink-0"
-              >
-                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
-              </button>
-            </div>
-          </div>
-
-          {/* QR Code Container - Premium Style */}
-          <div className="p-6 bg-gradient-to-b from-white to-gray-50">
-            <div 
-              className="bg-white rounded-[18px] p-5 shadow-[0_8px_24px_rgba(46,204,113,0.12)] border border-[#2ECC71]/10"
-              style={{ 
-                background: 'linear-gradient(135deg, #FFFFFF 0%, #F8FFFE 100%)'
-              }}
+          {/* Compact Emerald Header */}
+          <div className="relative bg-gradient-to-br from-[#2ECC71] to-[#27AE60] px-3 py-2.5">
+            <button
+              onClick={onClose}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center transition-all"
+              aria-label="Close"
             >
-              <div className="flex justify-center">
-                <div className="p-2 bg-white rounded-[12px] shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
-                  <QRCodeSVG 
-                    value={qrPayload} 
-                    size={240}
-                    level="H" 
-                    style={{ 
-                      borderRadius: '8px',
-                      display: 'block'
-                    }} 
-                  />
-                </div>
-              </div>
+              <X className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </button>
+            <div className="text-white pr-8">
+              <h2 className="text-sm font-semibold leading-tight mb-0.5">ქორბანი</h2>
+              <p className="text-[10px] text-white/80 leading-tight">ქორბანის საქმრობა</p>
             </div>
           </div>
 
-          {/* Friendly Timer & Instructions */}
-          <div className="px-6 pb-6 text-center space-y-3 bg-gradient-to-b from-gray-50 to-white">
-            {/* Large Timer */}
-            <div className="pt-2">
-              <p className="text-[14px] text-gray-600 mb-1">⏱️ Time remaining</p>
-              <p className="text-[56px] font-black font-mono text-[#2ECC71] tracking-tight leading-none">
-                {expiresIn}
-              </p>
+          {/* Compact QR Section */}
+          <div className="flex flex-col items-center px-3 py-3">
+            <div className="bg-white/90 rounded-xl p-2.5 shadow-md border border-white/60">
+              <QRCodeSVG 
+                value={qrPayload} 
+                size={180}
+                level="H" 
+                className="w-full h-auto"
+              />
             </div>
-            
-            {/* Friendly Messaging */}
-            <div className="space-y-2 pt-2">
-              <p className="text-[16px] font-semibold text-gray-900">
-                🎉 Ready to pick up!
-              </p>
-              <p className="text-[14px] text-gray-600 leading-relaxed">
-                Show this QR code to the partner staff
-              </p>
-            </div>
+          </div>
 
-            {/* Pro Tip */}
-            <div className="mt-4 p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-[12px] border border-blue-200">
-              <p className="text-[12px] text-blue-900">
-                💡 <strong>Pro Tip:</strong> Screenshot this code for backup
+          {/* Timer Section */}
+          <div className="px-3 pb-2 text-center">
+            <p className="text-[10px] text-gray-500 mb-1 flex items-center justify-center gap-1">
+              <span className="text-purple-500">⏱</span> Time remaining
+            </p>
+            <p className="text-3xl font-bold text-[#2ECC71] font-mono tracking-tight leading-none mb-0.5">
+              {expiresIn}
+            </p>
+            <p className="text-xs font-semibold text-gray-700 flex items-center justify-center gap-1 mb-1">
+              <span>🎉</span> Ready to pick up!
+            </p>
+            <p className="text-[10px] text-gray-500">
+              Show this QR code to the partner staff
+            </p>
+          </div>
+
+          {/* Compact Details */}
+          <div className="px-3 pb-3 space-y-2">
+            <div className="bg-white/60 rounded-lg p-2 border border-white/50">
+              <p className="text-xs font-semibold text-gray-900 truncate leading-tight">{offerTitle}</p>
+              <p className="text-[10px] text-gray-600 truncate leading-tight mt-0.5">{partnerName}</p>
+            </div>
+            <div className="bg-gradient-to-r from-blue-50/80 to-blue-100/60 rounded-lg px-2.5 py-1.5 border border-blue-200/50">
+              <p className="text-[9px] text-center text-gray-600 leading-snug">
+                <span className="font-semibold text-gray-700">💡 Pro Tip:</span> Screenshot this code for backup
               </p>
             </div>
           </div>
@@ -479,6 +467,7 @@ export function ActiveReservationCard({
   onNavigate,
   onCancel,
   onExpired,
+  onPickupConfirmed,
   variant = 'glossy'
 }: ActiveReservationCardProps) {
   const [showQRModal, setShowQRModal] = useState(false);
@@ -487,6 +476,63 @@ export function ActiveReservationCard({
   const [loadingCancelCount, setLoadingCancelCount] = useState(true);
   const { formatted, isExpired, minutes } = useCountdown(reservation?.expiresAt || null);
   const { t } = useI18n();
+
+  // Debug QR modal state
+  useEffect(() => {
+    console.log('🔍 QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
+  }, [showQRModal, reservation?.id]);
+
+  // Poll for pickup status when QR modal is open (lightweight fallback)
+  useEffect(() => {
+    if (!showQRModal || !reservation?.id) return;
+    
+    console.log('🔄 Starting pickup polling for reservation:', reservation.id);
+    
+    const checkPickupStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('reservations')
+          .select('status')
+          .eq('id', reservation.id)
+          .single();
+        
+        if (!error && data?.status === 'PICKED_UP') {
+          console.log('✅ Pickup detected via polling!');
+          
+          // Check if already celebrated
+          const celebrationKey = `pickup-celebrated-${reservation.id}`;
+          if (!localStorage.getItem(celebrationKey)) {
+            localStorage.setItem(celebrationKey, 'true');
+            
+            // Close QR modal
+            setShowQRModal(false);
+            
+            // Calculate savings
+            const savedAmount = 9.00; // TODO: Calculate from reservation data
+            const pointsEarned = Math.floor(savedAmount * 10);
+            
+            // Show pickup success modal via parent callback
+            if (onPickupConfirmed) {
+              onPickupConfirmed({ savedAmount, pointsEarned });
+            }
+            
+            // Note: Don't call onExpired() here - it shows "expired" toast
+            // The pickup modal handles the success message
+          }
+        }
+      } catch (err) {
+        console.error('Error checking pickup status:', err);
+      }
+    };
+    
+    // Poll every 2 seconds while QR modal is open
+    const interval = setInterval(checkPickupStatus, 2000);
+    
+    return () => {
+      console.log('🛑 Stopping pickup polling');
+      clearInterval(interval);
+    };
+  }, [showQRModal, reservation?.id, onExpired]);
 
   // Fetch user's recent cancellation count
   useEffect(() => {

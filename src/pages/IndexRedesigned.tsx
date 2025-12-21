@@ -780,6 +780,12 @@ export default function IndexRedesigned() {
           reservation.setActiveReservation(null);
           toast.error('⏰ Your reservation has expired');
         }}
+        onPickupConfirmed={({ savedAmount, pointsEarned }) => {
+          reservation.setPickupModalData({ savedAmount, pointsEarned });
+          reservation.setShowPickupSuccessModal(true);
+          // Clear active reservation (pickup successful)
+          reservation.setActiveReservation(null);
+        }}
           />
         )}
       </AnimatePresence>

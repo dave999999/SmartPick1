@@ -18,31 +18,11 @@ interface QRScannerProps {
 export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const hasScannedRef = useRef(false); // Prevent multiple scans
-
-  useEffect(() => {
-    // Get available cameras on mount
-    (async () => {
-      try {
-        const { Html5Qrcode } = await import('html5-qrcode');
-        const devices = await Html5Qrcode.getCameras();
-        if (devices && devices.length > 0) {
-          setCameras(devices);
-        } else {
-          setError('No cameras found on this device');
-        }
-      } catch (err) {
-        logger.error('Error getting cameras:', err);
-        setError('Unable to access camera');
-      }
-    })();
-
-    return () => {
-      stopScanning();
-    };
-  }, []);
+  const autoStartAttemptedRef = useRef(false); // Prevent multiple auto-start attempts
 
   const startScanning = async () => {
     if (!cameras.length) {
@@ -51,6 +31,9 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     }
 
     try {
+      setError(null);
+      setPermissionDenied(false);
+      
       // Stop any existing scanner first
       if (scannerRef.current) {
         logger.log('⚠️ Stopping existing scanner before starting new one');
@@ -126,10 +109,18 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       setIsScanning(true);
       setError(null);
       logger.log('📷 Camera started successfully');
-    } catch (err) {
+    } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start camera';
       logger.error('❌ Error starting scanner:', err);
-      setError(errorMessage);
+      
+      // Check if permission was denied
+      if (err.name === 'NotAllowedError' || errorMessage.includes('Permission denied') || errorMessage.includes('permission')) {
+        setPermissionDenied(true);
+        setError('📸 Camera permission denied. Please allow camera access in your browser settings and try again.');
+      } else {
+        setError(errorMessage);
+      }
+      
       onError?.(errorMessage);
     }
   };
@@ -151,6 +142,36 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       // It will be reset when dialog is closed and reopened
     }
   };
+
+  // Get available cameras and auto-start on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode');
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          setCameras(devices);
+          
+          // Auto-start camera if not already attempted
+          if (!autoStartAttemptedRef.current) {
+            autoStartAttemptedRef.current = true;
+            logger.log('🚀 Auto-starting camera...');
+            setTimeout(() => startScanning(), 500); // Small delay to ensure DOM is ready
+          }
+        } else {
+          setError('No cameras found on this device');
+        }
+      } catch (err) {
+        logger.error('Error getting cameras:', err);
+        setError('Unable to access camera');
+      }
+    })();
+
+    return () => {
+      stopScanning();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // Reset scan flag when scanner is mounted (dialog opens)
   useEffect(() => {
@@ -168,9 +189,13 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           <div className="aspect-video flex items-center justify-center bg-gray-100">
             <div className="text-center p-6">
               <CameraOff className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Camera not active</p>
+              <p className="text-gray-600">
+                {permissionDenied ? 'Camera Permission Needed' : 'Camera Starting...'}
+              </p>
               <p className="text-sm text-gray-500 mt-2">
-                Click "Start Camera" to begin scanning
+                {permissionDenied 
+                  ? 'Please allow camera access in your browser and refresh' 
+                  : 'Please wait while we initialize the camera'}
               </p>
             </div>
           </div>
@@ -185,28 +210,33 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         </Alert>
       )}
 
-      {/* Controls */}
-      <div className="flex gap-3">
-        {!isScanning ? (
+      {/* Controls - Only show manual start button if permission denied or error */}
+      {(permissionDenied || (error && !isScanning)) && (
+        <div className="flex gap-3">
           <Button
             onClick={startScanning}
             disabled={!cameras.length}
             className="flex-1 bg-[#00C896] hover:bg-[#00B588]"
           >
             <Camera className="w-4 h-4 mr-2" />
-            Start Camera
+            {permissionDenied ? 'Request Camera Access' : 'Retry Camera'}
           </Button>
-        ) : (
+        </div>
+      )}
+
+      {/* Stop button when scanning */}
+      {isScanning && (
+        <div className="flex gap-3">
           <Button
             onClick={stopScanning}
-            variant="destructive"
+            variant="outline"
             className="flex-1"
           >
             <CameraOff className="w-4 h-4 mr-2" />
             Stop Camera
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Instructions */}
       <div className="text-sm text-gray-600 space-y-2">

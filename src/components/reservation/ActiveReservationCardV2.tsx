@@ -357,71 +357,72 @@ function QRModal({ isOpen, onClose, qrPayload, offerTitle, partnerName, expiresI
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[340px] p-0 border-none bg-transparent shadow-none overflow-visible">
+      <DialogContent className="max-w-[320px] p-0 border-none bg-transparent shadow-none overflow-visible">
         <VisuallyHidden>
           <DialogTitle>Reservation QR Code</DialogTitle>
           <DialogDescription>Scan this QR code at the partner location to pick up your order</DialogDescription>
         </VisuallyHidden>
         <motion.div
-          initial={{ scale: 0.92, opacity: 0, y: 20 }}
+          initial={{ scale: 0.94, opacity: 0, y: 24 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.92, opacity: 0, y: 20 }}
-          transition={{ type: 'spring', damping: 30, stiffness: 400 }}
-          className="bg-white/98 backdrop-blur-xl rounded-[24px] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden"
+          exit={{ scale: 0.94, opacity: 0, y: 24 }}
+          transition={{ type: 'spring', damping: 30, stiffness: 350 }}
+          className="bg-white/75 backdrop-blur-[28px] border border-white/40 rounded-[18px] shadow-[0_8px_32px_rgba(0,0,0,0.12)] overflow-hidden"
         >
-          {/* Compact Header */}
-          <div className="px-4 pt-4 pb-3 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-[15px] font-semibold text-gray-900 leading-tight truncate">
-                  {offerTitle}
-                </h2>
-                <p className="text-[11px] text-gray-500 mt-0.5 truncate">{partnerName}</p>
-              </div>
-              <button
-                onClick={onClose}
-                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors active:scale-95"
-              >
-                <X className="w-3.5 h-3.5 text-gray-600" strokeWidth={2.5} />
-              </button>
+          {/* Compact Emerald Header */}
+          <div className="relative bg-gradient-to-br from-emerald-500 to-emerald-400 px-3 py-2.5">
+            <button
+              onClick={onClose}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/30 hover:bg-white/50 backdrop-blur-sm flex items-center justify-center transition-all"
+              aria-label="Close"
+            >
+              <X className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+            </button>
+            <div className="text-white pr-8">
+              <h2 className="text-sm font-semibold leading-tight mb-0.5">Show at Pickup</h2>
+              <p className="text-[10px] text-emerald-50/90 leading-tight">Present this code to staff</p>
             </div>
           </div>
 
           {/* Compact QR Section */}
-          <div className="p-4">
-            <div 
-              className="bg-white rounded-2xl p-4 shadow-[0_4px_16px_rgba(0,0,0,0.06)] border border-gray-100"
-              style={{ 
-                background: 'linear-gradient(145deg, #FFFFFF 0%, #FAFAFA 100%)'
-              }}
-            >
-              <div className="flex justify-center">
-                <QRCodeSVG 
-                  value={qrPayload} 
-                  size={220} 
-                  level="H" 
-                  style={{ 
-                    borderRadius: '10px',
-                    display: 'block'
-                  }} 
-                />
-              </div>
+          <div className="flex flex-col items-center px-3 py-3">
+            <div className="bg-white/90 rounded-xl p-2.5 shadow-md border border-white/60">
+              <QRCodeSVG 
+                value={qrPayload} 
+                size={180}
+                level="H" 
+                className="w-full h-auto"
+              />
             </div>
           </div>
 
-          {/* Compact Timer & Info */}
-          <div className="px-4 pb-4 text-center space-y-2">
-            <div>
-              <p className="text-[32px] font-bold font-mono text-[#2ECC71] tracking-tight leading-none">
-                {expiresIn}
-              </p>
-              <p className="text-[9px] text-gray-400 uppercase tracking-[0.12em] font-semibold mt-0.5">
-                REMAINING
+          {/* Timer Section */}
+          <div className="px-3 pb-2 text-center">
+            <p className="text-[10px] text-gray-500 mb-1 flex items-center justify-center gap-1">
+              <span className="text-purple-500">⏱</span> Time remaining
+            </p>
+            <p className="text-3xl font-bold text-emerald-500 font-mono tracking-tight leading-none mb-0.5">
+              {expiresIn}
+            </p>
+            <p className="text-xs font-semibold text-gray-700 flex items-center justify-center gap-1 mb-1">
+              <span>🎉</span> Ready to pick up!
+            </p>
+            <p className="text-[10px] text-gray-500">
+              Show this QR code to the partner staff
+            </p>
+          </div>
+
+          {/* Compact Details */}
+          <div className="px-3 pb-3 space-y-2">
+            <div className="bg-white/60 rounded-lg p-2 border border-white/50">
+              <p className="text-xs font-semibold text-gray-900 truncate leading-tight">{offerTitle}</p>
+              <p className="text-[10px] text-gray-600 truncate leading-tight mt-0.5">{partnerName}</p>
+            </div>
+            <div className="bg-gradient-to-r from-blue-50/80 to-blue-100/60 rounded-lg px-2.5 py-1.5 border border-blue-200/50">
+              <p className="text-[9px] text-center text-gray-600 leading-snug">
+                <span className="font-semibold text-gray-700">💡 Pro Tip:</span> Screenshot this code for backup
               </p>
             </div>
-            <p className="text-[12px] text-gray-500">
-              Show this code at pickup
-            </p>
           </div>
         </motion.div>
       </DialogContent>

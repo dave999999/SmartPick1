@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Gift, Sparkles, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useI18n } from '@/lib/i18n';
 
 interface Achievement {
   id: string;
@@ -33,6 +34,12 @@ export default function PickupSuccessModal({
 }: PickupSuccessModalProps) {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('🎊 PickupSuccessModal render:', { open, savedAmount, pointsEarned });
+  }, [open, savedAmount, pointsEarned]);
 
   const handleClose = () => {
     onClose();
@@ -126,52 +133,50 @@ export default function PickupSuccessModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md p-0 overflow-hidden bg-gradient-to-br from-white via-mint-50/30 to-emerald-50/50">
+      <DialogContent className="max-w-[340px] p-0 overflow-hidden bg-white/80 backdrop-blur-[28px] border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[20px]">
         {/* Step 1: Success Celebration */}
         {step === 1 && (
-          <div className="p-8 text-center space-y-6 animate-in fade-in zoom-in duration-500">
-            <DialogTitle className="sr-only">Pickup Success</DialogTitle>
+          <div className="p-5 text-center space-y-4 animate-in fade-in zoom-in duration-500">
+            <DialogTitle className="sr-only">{t('pickupSuccess.title')}</DialogTitle>
             <div className="relative">
-              <div className="absolute inset-0 bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
-              <div className="relative text-7xl animate-bounce">🎉</div>
+              <div className="absolute inset-0 bg-green-500/20 rounded-full blur-2xl animate-pulse"></div>
+              <div className="relative text-5xl animate-bounce">🎉</div>
             </div>
             
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold text-gray-900 animate-in slide-in-from-bottom-4 duration-700">
-                Congratulations!
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-gray-900">
+                {t('pickupSuccess.congratulations')}
               </h2>
-              <p className="text-lg text-gray-700 font-medium animate-in slide-in-from-bottom-4 duration-700 delay-100">
-                Order Picked Up Successfully
+              <p className="text-sm text-gray-600 font-medium">
+                {t('pickupSuccess.orderPickedUp')}
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-2xl p-6 border-2 border-green-200 shadow-lg animate-in slide-in-from-bottom-4 duration-700 delay-200">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-semibold text-green-800">You Saved</span>
+            <div className="bg-gradient-to-r from-green-50/80 to-emerald-50/80 backdrop-blur-sm rounded-xl p-4 border border-green-200/50 shadow-sm">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Sparkles className="h-4 w-4 text-green-600" />
+                <span className="text-xs font-semibold text-green-800">{t('pickupSuccess.youSaved')}</span>
               </div>
-              <div className="text-4xl font-black text-green-600">
-                {savedAmount.toFixed(2)} GEL
+              <div className="text-3xl font-black text-green-600">
+                {savedAmount.toFixed(2)} ₾
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Button 
                 onClick={handleViewAchievements}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all"
-                size="lg"
+                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold py-3 rounded-xl shadow-md hover:shadow-lg transition-all text-sm h-auto"
               >
-                <Trophy className="mr-2 h-5 w-5" />
-                Check Your Achievements
+                <Trophy className="mr-2 h-4 w-4" />
+                {t('pickupSuccess.checkAchievements')}
               </Button>
 
               <Button 
                 onClick={handleClose}
                 variant="outline"
-                className="w-full border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-medium shadow-sm"
-                size="lg"
+                className="w-full border border-gray-200 bg-white/60 backdrop-blur-sm text-gray-700 hover:bg-white/80 hover:border-gray-300 font-medium shadow-sm text-sm h-auto py-3 rounded-xl"
               >
-                Close
+                {t('common.close')}
               </Button>
             </div>
           </div>

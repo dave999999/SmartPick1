@@ -62,10 +62,14 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
         const currentRes = reservations.find(r => r.id === activeReservation.id);
         if (currentRes && currentRes.status === 'PICKED_UP') {
           logger.log('✅ Order picked up detected via polling!');
+          console.log('🎉 PICKUP DETECTED (POLLING) - Status changed to PICKED_UP', currentRes);
           
           // Check localStorage to prevent duplicate celebrations
           const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
-          if (!localStorage.getItem(celebrationKey)) {
+          const alreadyCelebrated = localStorage.getItem(celebrationKey);
+          console.log('🔍 Celebration check (polling):', { celebrationKey, alreadyCelebrated });
+          
+          if (!alreadyCelebrated) {
             localStorage.setItem(celebrationKey, 'true');
             
             // Calculate actual savings: (original price * quantity) - discounted price
@@ -74,14 +78,18 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
             const savedAmount = originalTotal - discountedPrice;
             const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
             
+            console.log('💰 Celebration data (polling):', { savedAmount, pointsEarned });
+            
             // Show pickup success modal
             setPickupModalData({ savedAmount, pointsEarned });
             setShowPickupSuccessModal(true);
+            console.log('✅ Modal state updated (polling) - should show now');
             
             // Clear active reservation
             setActiveReservation(null);
           } else {
             // Just clear if already celebrated
+            console.log('⚠️ Pickup already celebrated (polling), skipping modal');
             setActiveReservation(null);
           }
           return;
@@ -145,12 +153,21 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
       return;
     }
 
-    logger.log('🔗 Setting up real-time subscription for reservation:', activeReservation.id);
+    logger.log('🔗 Setting up minimal subscription for reservation:', activeReservation.id);
+    console.log('🔗 Setting up subscription for:', activeReservation.id);
+    
+    // ⚠️ REMOVED: Heavy polling (every 5 seconds) - now using broadcast instead
+    // Pickup detection now happens via broadcast in ActiveReservationCard when QR modal is open
     
     let isCleanedUp = false;
 
     const channel = supabase
-      .channel(`reservation-${activeReservation.id}`)
+      .channel(`reservation-${activeReservation.id}`, {
+        config: {
+          broadcast: { self: false },
+          presence: { key: '' },
+        },
+      })
       .on(
         'postgres_changes',
         {
@@ -163,14 +180,19 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
           if (isCleanedUp) return; // Ignore events after cleanup
           
           logger.log('🔔 Real-time reservation update received:', payload);
+          console.log('📨 Payload received:', payload.new);
           
           // Check if order was picked up
           if (payload.new && payload.new.status === 'PICKED_UP') {
             logger.log('✅ Order picked up detected via real-time!');
+            console.log('🎉 PICKUP DETECTED - Status changed to PICKED_UP', payload.new);
             
             // Check localStorage to prevent duplicate celebrations
             const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
-            if (!localStorage.getItem(celebrationKey)) {
+            const alreadyCelebrated = localStorage.getItem(celebrationKey);
+            console.log('🔍 Celebration check:', { celebrationKey, alreadyCelebrated });
+            
+            if (!alreadyCelebrated) {
               localStorage.setItem(celebrationKey, 'true');
               
               // Calculate actual savings: (original price * quantity) - discounted price
@@ -179,12 +201,17 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
               const savedAmount = originalTotal - discountedPrice;
               const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
               
+              console.log('💰 Celebration data:', { savedAmount, pointsEarned });
+              
               // Show pickup success modal
               setPickupModalData({ savedAmount, pointsEarned });
               setShowPickupSuccessModal(true);
+              console.log('✅ Modal state updated - should show now');
               
               // Clear active reservation
               setActiveReservation(null);
+            } else {
+              console.log('⚠️ Pickup already celebrated, skipping modal');
             }
           } else {
             // Reload for other changes (but throttle this)
@@ -196,11 +223,24 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
       )
       .subscribe((status) => {
         logger.log('📡 Subscription status:', status);
+        console.log('📡 Subscription status:', status);
+        
+        // If subscription fails, force a reload to catch the pickup via polling
+        if (status === 'SUBSCRIPTION_ERROR' || status === 'TIMED_OUT') {
+          console.warn('⚠️ Subscription failed, relying on polling...');
+          // Trigger immediate polling
+          setTimeout(() => {
+            if (!isCleanedUp) {
+              loadActiveReservation();
+            }
+          }, 1000);
+        }
       });
 
     return () => {
       isCleanedUp = true;
       logger.log('🔌 Cleaning up reservation subscription');
+      console.log('🧹 Cleanup: removing subscription');
       
       // Remove the channel completely
       channel.unsubscribe().then(() => {

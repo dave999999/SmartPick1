@@ -209,6 +209,14 @@ const translations: Record<Language, Record<string, string>> = {
   'profile.updateError': 'Failed to update profile',
   'profile.goodStanding': 'Account in Good Standing',
 
+  // Pickup Success Modal
+  'pickupSuccess.title': 'Pickup Success',
+  'pickupSuccess.congratulations': 'Congratulations!',
+  'pickupSuccess.orderPickedUp': 'Order Picked Up Successfully',
+  'pickupSuccess.youSaved': 'You Saved',
+  'pickupSuccess.checkAchievements': 'Check Your Achievements',
+  'common.close': 'Close',
+
   // Favorites
   'favorites.title': 'My Favorites',
   'favorites.offers': 'Saved Offers',
@@ -1024,6 +1032,14 @@ const translations: Record<Language, Record<string, string>> = {
   'profile.updateSuccess': 'პროფილი წარმატებით განახლდა',
   'profile.updateError': 'პროფილის განახლება ვერ მოხერხდა',
   'profile.goodStanding': 'ანგარიში კარგ მდგომარეობაშია',
+
+  // Pickup Success Modal
+  'pickupSuccess.title': 'აღება წარმატებული',
+  'pickupSuccess.congratulations': 'გილოცავთ!',
+  'pickupSuccess.orderPickedUp': 'შეკვეთა წარმატებით აიღეთ',
+  'pickupSuccess.youSaved': 'თქვენ დაზოგეთ',
+  'pickupSuccess.checkAchievements': 'შეამოწმეთ თქვენი მიღწევები',
+  'common.close': 'დახურვა',
 
   // Favorites
   'favorites.title': 'ჩემი ფავორიტები',

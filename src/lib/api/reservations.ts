@@ -495,8 +495,57 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Reservation not found');
   }
 
+  const reservation = data[0] as Reservation;
   console.log('✅ Marked as picked up successfully');
-  return data[0] as Reservation;
+  
+  // 🚀 BROADCAST pickup confirmation to customer (lightweight, real-time)
+  // Customer listens to this channel when QR modal is open
+  try {
+    console.log('📢 Attempting to broadcast to channel:', `pickup-${reservationId}`);
+    const channel = supabase.channel(`pickup-${reservationId}`);
+    
+    // Subscribe first, then send
+    await new Promise((resolve, reject) => {
+      channel.subscribe(async (status) => {
+        console.log('📡 Partner broadcast channel status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          try {
+            await channel.send({
+              type: 'broadcast',
+              event: 'pickup_confirmed',
+              payload: {
+                reservationId,
+                savedAmount: reservation.total_price || 0,
+                timestamp: new Date().toISOString()
+              }
+            });
+            console.log('✅ Broadcast sent successfully to customer');
+            resolve(true);
+          } catch (sendError) {
+            console.error('❌ Failed to send broadcast:', sendError);
+            reject(sendError);
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          reject(new Error('Channel subscription failed'));
+        }
+      });
+      
+      // Timeout after 3 seconds
+      setTimeout(() => reject(new Error('Broadcast timeout')), 3000);
+    });
+    
+    // Cleanup channel after sending
+    setTimeout(() => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    }, 2000);
+  } catch (broadcastError) {
+    // Non-critical - customer will see via polling fallback
+    console.warn('⚠️ Broadcast failed (non-critical):', broadcastError);
+  }
+  
+  return reservation;
 
   if (!functionResult?.success) {
     console.error('❌ Edge Function returned error:', {
