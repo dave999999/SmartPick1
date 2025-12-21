@@ -42,6 +42,7 @@ interface PartnerNotificationSettingsProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   partnerId: string;
+  userId: string;
 }
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -56,7 +57,8 @@ const DEFAULT_PREFERENCES: NotificationPreferences = {
 export function PartnerNotificationSettings({ 
   open, 
   onOpenChange,
-  partnerId 
+  partnerId,
+  userId
 }: PartnerNotificationSettingsProps) {
   const { t } = useI18n();
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
@@ -102,7 +104,7 @@ export function PartnerNotificationSettings({
     if (key === 'telegram' && !preferences.telegram) {
       // Opening Telegram to connect
       const { getTelegramBotLink } = await import('@/lib/telegram');
-      const botLink = getTelegramBotLink(partnerId);
+      const botLink = getTelegramBotLink(userId);
       window.open(botLink, '_blank');
       toast.success('📱 გახსენი ტელეგრამი და დააჭირე START', {
         description: 'შეტყობინებები გააქტიურდება დაკავშირების შემდეგ',

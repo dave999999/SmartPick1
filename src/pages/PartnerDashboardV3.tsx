@@ -687,6 +687,7 @@ export default function PartnerDashboardV3() {
         open={modals.showNotifications}
         onOpenChange={modals.closeNotifications}
         partnerId={partner?.id || ''}
+        userId={partner?.user_id || ''}
       />
     </div>
   );
