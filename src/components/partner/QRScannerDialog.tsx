@@ -56,12 +56,13 @@ export function QRScannerDialog({ open, onOpenChange, partnerId, onSuccess }: QR
         setScanSuccess(true);
         toast.success('✅ აღება დადასტურდა!');
         
+        // Close dialog faster to prevent phone overheating from camera
         setTimeout(() => {
           setManualCode('');
           setScanSuccess(false);
           onOpenChange(false);
           onSuccess?.();
-        }, 1200);
+        }, 800); // Reduced from 1200ms
       } else {
         toast.error(result.error || '❌ არასწორი კოდი');
       }

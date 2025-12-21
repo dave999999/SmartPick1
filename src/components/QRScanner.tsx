@@ -25,11 +25,6 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const autoStartAttemptedRef = useRef(false); // Prevent multiple auto-start attempts
 
   const startScanning = async () => {
-    if (!cameras.length) {
-      setError('No cameras available');
-      return;
-    }
-
     try {
       setError(null);
       setPermissionDenied(false);
@@ -143,21 +138,15 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     }
   };
 
-  // Get available cameras and auto-start on mount
+  // Get available cameras on mount
   useEffect(() => {
     (async () => {
       try {
         const { Html5Qrcode } = await import('html5-qrcode');
         const devices = await Html5Qrcode.getCameras();
         if (devices && devices.length > 0) {
+          logger.log('📷 Found', devices.length, 'camera(s)');
           setCameras(devices);
-          
-          // Auto-start camera if not already attempted
-          if (!autoStartAttemptedRef.current) {
-            autoStartAttemptedRef.current = true;
-            logger.log('🚀 Auto-starting camera...');
-            setTimeout(() => startScanning(), 500); // Small delay to ensure DOM is ready
-          }
         } else {
           setError('No cameras found on this device');
         }
@@ -172,6 +161,19 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-start camera when cameras are detected
+  useEffect(() => {
+    if (cameras.length > 0 && !autoStartAttemptedRef.current && !isScanning) {
+      autoStartAttemptedRef.current = true;
+      logger.log('🚀 Auto-starting camera...');
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        startScanning();
+      }, 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameras]);
   
   // Reset scan flag when scanner is mounted (dialog opens)
   useEffect(() => {
@@ -237,25 +239,6 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           </Button>
         </div>
       )}
-
-      {/* Instructions */}
-      <div className="text-sm text-gray-600 space-y-2">
-        <p className="font-semibold">Instructions:</p>
-        <ol className="list-decimal list-inside space-y-1 text-xs">
-          <li>Click "Start Camera" to activate your device camera</li>
-          <li>Point the camera at the customer's QR code (starts with "SP-")</li>
-          <li>Hold steady and ensure good lighting</li>
-          <li>Keep the QR code within the scanning square</li>
-          <li>The camera will stop automatically after scanning</li>
-        </ol>
-        
-        {isScanning && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs font-semibold text-blue-900">📷 Scanner Active</p>
-            <p className="text-xs text-blue-700 mt-1">Looking for QR codes (format: SP-XXXX-XXXXX)</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
