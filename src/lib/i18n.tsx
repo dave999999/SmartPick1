@@ -217,6 +217,25 @@ const translations: Record<Language, Record<string, string>> = {
   'pickupSuccess.checkAchievements': 'Check Your Achievements',
   'common.close': 'Close',
 
+  // Analytics
+  'analytics.overview': 'Overview',
+  'analytics.trends': 'Trends',
+  'analytics.offers': 'Offers',
+  'analytics.customers': 'Customers',
+  'analytics.todayRevenue': 'Today\'s Revenue',
+  'analytics.todayOrders': 'Today\'s Orders',
+  'analytics.soldItems': 'Items Sold',
+  'analytics.avgOrder': 'Avg Order',
+  'analytics.weekSummary': 'This Week\'s Summary',
+  'analytics.totalRevenue': 'Total Revenue',
+  'analytics.totalOrders': 'Total Orders',
+  'analytics.topOffers': 'Top Offers',
+  'analytics.peakHour': 'Peak Hour',
+  'analytics.totalCustomers': 'Total Customers',
+  'analytics.repeatCustomers': 'Repeat Customers',
+  'analytics.customerLoyalty': 'Customer Loyalty',
+  'analytics.noData': 'No data available',
+
   // Favorites
   'favorites.title': 'My Favorites',
   'favorites.offers': 'Saved Offers',
@@ -1039,6 +1058,26 @@ const translations: Record<Language, Record<string, string>> = {
   'pickupSuccess.orderPickedUp': 'შეკვეთა წარმატებით აიღეთ',
   'pickupSuccess.youSaved': 'თქვენ დაზოგეთ',
   'pickupSuccess.checkAchievements': 'შეამოწმეთ თქვენი მიღწევები',
+  'common.close': 'დახურვა',
+
+  // Analytics
+  'analytics.overview': 'მიმოხილვა',
+  'analytics.trends': 'ტენდენციები',
+  'analytics.offers': 'შეთავაზებები',
+  'analytics.customers': 'მომხმარებლები',
+  'analytics.todayRevenue': 'დღევანდელი შემოსავალი',
+  'analytics.todayOrders': 'შეკვეთები დღეს',
+  'analytics.soldItems': 'გაყიდული ერთეულები',
+  'analytics.avgOrder': 'საშუალო შეკვეთა',
+  'analytics.weekSummary': 'ამ კვირის შეჯამება',
+  'analytics.totalRevenue': 'ჯამური შემოსავალი',
+  'analytics.totalOrders': 'ჯამური შეკვეთები',
+  'analytics.topOffers': 'ყველაზე პოპულარული',
+  'analytics.peakHour': 'პიკის საათი',
+  'analytics.totalCustomers': 'სულ მომხმარებლები',
+  'analytics.repeatCustomers': 'მუდმივი მომხმარებლები',
+  'analytics.customerLoyalty': 'მომხმარებელთა ლოიალობა',
+  'analytics.noData': 'მონაცემები არ არის ხელმისაწვდომი',
   'common.close': 'დახურვა',
 
   // Favorites

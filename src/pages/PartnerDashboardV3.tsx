@@ -21,7 +21,8 @@ import {
   CheckCircle,
   Home,
   Image as ImageIcon,
-  Settings
+  Settings,
+  BarChart3
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
@@ -32,6 +33,7 @@ import { QRScannerDialog } from '@/components/partner/QRScannerDialog';
 import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { GalleryModal } from '@/components/partner/GalleryModal';
 import { PartnerSettingsModal } from '@/components/partner/PartnerSettingsModal';
+import { PartnerAnalyticsModal, PartnerAnalytics } from '@/components/partner/PartnerAnalyticsModal';
 
 /**
  * PARTNER DASHBOARD V3 - APPLE-STYLE MOBILE REDESIGN
@@ -74,6 +76,8 @@ export default function PartnerDashboardV3() {
   // UI state
   const [activeOfferMenu, setActiveOfferMenu] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'offers' | 'active'>('offers');
+  const [analytics, setAnalytics] = useState<PartnerAnalytics | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // Initialize action hooks
   const offerActions = useOfferActions(partner, loadPartnerData);
@@ -81,6 +85,24 @@ export default function PartnerDashboardV3() {
 
   // Calculate revenue today
   const revenueToday = stats?.totalRevenue || 0; // Simplified for demo
+
+  // Load analytics data
+  const handleLoadAnalytics = async () => {
+    if (!partner?.id) return;
+    
+    setLoadingAnalytics(true);
+    try {
+      const { getPartnerAnalytics } = await import('@/lib/api/partners');
+      const data = await getPartnerAnalytics(partner.id);
+      setAnalytics(data);
+      modals.openAnalytics();
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      toast.error('ანალიტიკის ჩატვირთვა ვერ მოხერხდა');
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   // Handle offer actions
   const handleEditOffer = (offerId: string) => {
@@ -269,6 +291,20 @@ export default function PartnerDashboardV3() {
               className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
             >
               <ImageIcon className="w-5 h-5" />
+            </motion.button>
+
+            {/* Analytics Button - Performance Insights */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLoadAnalytics}
+              disabled={loadingAnalytics}
+              className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center disabled:opacity-50"
+            >
+              {loadingAnalytics ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <BarChart3 className="w-5 h-5" />
+              )}
             </motion.button>
 
             {/* Wallet Button */}
@@ -625,6 +661,14 @@ export default function PartnerDashboardV3() {
         open={modals.showSettings}
         onClose={modals.closeSettings}
         partnerId={partner?.id || ''}
+      />
+
+      {/* Analytics Modal */}
+      <PartnerAnalyticsModal
+        open={modals.showAnalytics}
+        onOpenChange={modals.closeAnalytics}
+        analytics={analytics}
+        isLoading={loadingAnalytics}
       />
     </div>
   );

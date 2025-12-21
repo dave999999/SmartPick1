@@ -19,6 +19,7 @@ export interface PartnerModalsState {
   showQRScanner: boolean;
   showGallery: boolean;
   showSettings: boolean;
+  showAnalytics: boolean;
   editingOffer: Offer | null;
   isSubmitting: boolean;
   openBuyPointsModal: () => void;
@@ -31,6 +32,8 @@ export interface PartnerModalsState {
   closeGallery: () => void;
   openSettings: () => void;
   closeSettings: () => void;
+  openAnalytics: () => void;
+  closeAnalytics: () => void;
   openEditOffer: (offer: Offer) => void;
   closeEditOffer: () => void;
   setIsSubmitting: (submitting: boolean) => void;
@@ -42,6 +45,7 @@ export function usePartnerModals(): PartnerModalsState {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -51,6 +55,7 @@ export function usePartnerModals(): PartnerModalsState {
     showQRScanner,
     showGallery,
     showSettings,
+    showAnalytics,
     editingOffer,
     isSubmitting,
     
@@ -73,6 +78,10 @@ export function usePartnerModals(): PartnerModalsState {
     // Settings
     openSettings: () => setShowSettings(true),
     closeSettings: () => setShowSettings(false),
+    
+    // Analytics
+    openAnalytics: () => setShowAnalytics(true),
+    closeAnalytics: () => setShowAnalytics(false),
     
     // Edit Offer
     openEditOffer: (offer: Offer) => setEditingOffer(offer),

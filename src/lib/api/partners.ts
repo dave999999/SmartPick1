@@ -339,3 +339,189 @@ export const getPartnerDashboardData = async (userId: string): Promise<PartnerDa
     throw error;
   }
 };
+
+/**
+ * Get partner analytics data for dashboard insights
+ * Returns 7-day trends, top offers, and customer insights
+ */
+export const getPartnerAnalytics = async (partnerId: string) => {
+  if (isDemoMode) {
+    // Return demo data for testing
+    return {
+      today: { revenue: 125.50, orders: 8, items_sold: 12 },
+      yesterday: { revenue: 98.00, orders: 6 },
+      weekTrend: [
+        { date: '2025-12-16', revenue: 85, orders: 5 },
+        { date: '2025-12-17', revenue: 110, orders: 7 },
+        { date: '2025-12-18', revenue: 95, orders: 6 },
+        { date: '2025-12-19', revenue: 120, orders: 8 },
+        { date: '2025-12-20', revenue: 105, orders: 7 },
+        { date: '2025-12-21', revenue: 98, orders: 6 },
+        { date: '2025-12-22', revenue: 125.50, orders: 8 },
+      ],
+      topOffers: [
+        { name: 'ხაჭაპური', orders: 15, revenue: 90, image_url: null },
+        { name: 'პიცა', orders: 12, revenue: 72, image_url: null },
+        { name: 'ლობიანი', orders: 8, revenue: 40, image_url: null },
+      ],
+      insights: {
+        peak_hour: '18:00 - 19:00',
+        avg_order_value: 15.69,
+        repeat_customers: 12,
+        total_customers: 25,
+      },
+    };
+  }
+
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const weekAgo = new Date(today);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    // Today's stats
+    const { data: todayReservations } = await supabase
+      .from('reservations')
+      .select('total_price, quantity')
+      .eq('partner_id', partnerId)
+      .eq('status', 'PICKED_UP')
+      .gte('picked_up_at', today.toISOString());
+
+    const todayRevenue = todayReservations?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
+    const todayOrders = todayReservations?.length || 0;
+    const todayItems = todayReservations?.reduce((sum, r) => sum + (r.quantity || 0), 0) || 0;
+
+    // Yesterday's stats for comparison
+    const { data: yesterdayReservations } = await supabase
+      .from('reservations')
+      .select('total_price')
+      .eq('partner_id', partnerId)
+      .eq('status', 'PICKED_UP')
+      .gte('picked_up_at', yesterday.toISOString())
+      .lt('picked_up_at', today.toISOString());
+
+    const yesterdayRevenue = yesterdayReservations?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
+    const yesterdayOrders = yesterdayReservations?.length || 0;
+
+    // 7-day trend
+    const { data: weekReservations } = await supabase
+      .from('reservations')
+      .select('picked_up_at, total_price')
+      .eq('partner_id', partnerId)
+      .eq('status', 'PICKED_UP')
+      .gte('picked_up_at', weekAgo.toISOString())
+      .order('picked_up_at', { ascending: true });
+
+    // Group by date
+    const weekTrend: Array<{ date: string; revenue: number; orders: number }> = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekAgo);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayReservations = weekReservations?.filter(r => 
+        r.picked_up_at?.startsWith(dateStr)
+      ) || [];
+      
+      weekTrend.push({
+        date: dateStr,
+        revenue: dayReservations.reduce((sum, r) => sum + (r.total_price || 0), 0),
+        orders: dayReservations.length,
+      });
+    }
+
+    // Top performing offers (last 7 days)
+    const { data: topOffersData } = await supabase
+      .from('reservations')
+      .select(`
+        offer_id,
+        total_price,
+        offers (
+          product_name,
+          image_url
+        )
+      `)
+      .eq('partner_id', partnerId)
+      .eq('status', 'PICKED_UP')
+      .gte('picked_up_at', weekAgo.toISOString());
+
+    // Group by offer
+    const offerMap = new Map<string, { name: string; orders: number; revenue: number; image_url?: string }>();
+    topOffersData?.forEach(r => {
+      const offerId = r.offer_id;
+      const name = (r.offers as any)?.product_name || 'უცნობი პროდუქტი';
+      const image_url = (r.offers as any)?.image_url;
+      
+      if (offerMap.has(offerId)) {
+        const existing = offerMap.get(offerId)!;
+        existing.orders += 1;
+        existing.revenue += r.total_price || 0;
+      } else {
+        offerMap.set(offerId, {
+          name,
+          orders: 1,
+          revenue: r.total_price || 0,
+          image_url,
+        });
+      }
+    });
+
+    const topOffers = Array.from(offerMap.values())
+      .sort((a, b) => b.orders - a.orders)
+      .slice(0, 5);
+
+    // Customer insights
+    const { data: customerData } = await supabase
+      .from('reservations')
+      .select('user_id, picked_up_at')
+      .eq('partner_id', partnerId)
+      .eq('status', 'PICKED_UP')
+      .gte('picked_up_at', weekAgo.toISOString());
+
+    const uniqueCustomers = new Set(customerData?.map(r => r.user_id) || []);
+    const customerCounts = new Map<string, number>();
+    customerData?.forEach(r => {
+      const count = customerCounts.get(r.user_id) || 0;
+      customerCounts.set(r.user_id, count + 1);
+    });
+    const repeatCustomers = Array.from(customerCounts.values()).filter(count => count > 1).length;
+
+    // Peak hour analysis
+    const hourCounts = new Array(24).fill(0);
+    customerData?.forEach(r => {
+      if (r.picked_up_at) {
+        const hour = new Date(r.picked_up_at).getHours();
+        hourCounts[hour]++;
+      }
+    });
+    const peakHour = hourCounts.indexOf(Math.max(...hourCounts));
+    const peakHourStr = `${peakHour}:00 - ${peakHour + 1}:00`;
+
+    const avgOrderValue = todayOrders > 0 ? todayRevenue / todayOrders : 0;
+
+    return {
+      today: {
+        revenue: todayRevenue,
+        orders: todayOrders,
+        items_sold: todayItems,
+      },
+      yesterday: {
+        revenue: yesterdayRevenue,
+        orders: yesterdayOrders,
+      },
+      weekTrend,
+      topOffers,
+      insights: {
+        peak_hour: peakHourStr,
+        avg_order_value: avgOrderValue,
+        repeat_customers: repeatCustomers,
+        total_customers: uniqueCustomers.size,
+      },
+    };
+  } catch (error) {
+    logger.error('Error fetching partner analytics:', error);
+    throw error;
+  }
+};
