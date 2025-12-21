@@ -288,24 +288,6 @@ The customer did not pick up their reservation. Penalty has been applied to thei
 }
 
 /**
- * Send low stock alert to partner
- */
-export async function notifyPartnerLowStock(
-  partnerId: string,
-  offerTitle: string,
-  quantityLeft: number
-) {
-  const message = `⚠️ <b>Low Stock Alert!</b>
-
-<b>Item:</b> ${offerTitle}
-<b>Quantity left:</b> ${quantityLeft}
-
-Your offer is running low. Consider creating a new offer or updating the quantity.`;
-
-  return sendNotification(partnerId, message, 'partner');
-}
-
-/**
  * Send 15-minute pickup reminder to customer
  */
 export async function notifyCustomerPickupReminder(

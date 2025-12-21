@@ -95,8 +95,20 @@ export function PartnerNotificationSettings({
     }
   };
 
-  const togglePreference = (key: keyof NotificationPreferences) => {
+  const togglePreference = async (key: keyof NotificationPreferences) => {
     const newPrefs = { ...preferences, [key]: !preferences[key] };
+    
+    // Special handling for Telegram toggle
+    if (key === 'telegram' && !preferences.telegram) {
+      // Opening Telegram to connect
+      const { getTelegramBotLink } = await import('@/lib/telegram');
+      const botLink = getTelegramBotLink(partnerId);
+      window.open(botLink, '_blank');
+      toast.success('📱 გახსენი ტელეგრამი და დააჭირე START', {
+        description: 'შეტყობინებები გააქტიურდება დაკავშირების შემდეგ',
+        duration: 8000,
+      });
+    }
     
     // Check if all critical toggles are being disabled
     const criticalKeys: (keyof NotificationPreferences)[] = ['newOrder', 'lowStock', 'cancellation'];

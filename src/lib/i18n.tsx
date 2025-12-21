@@ -1214,7 +1214,6 @@ const translations: Record<Language, Record<string, string>> = {
   // Warnings
   'notifications.criticalWarning': 'მინიმუმ ერთი კრიტიკული შეტყობინება უნდა იყოს ჩართული',
   'notifications.busyModeWarning': 'თქვენი შეთავაზებები ამჟამად შეჩერებულია',
-  'common.close': 'დახურვა',
 
   // Favorites
   'favorites.title': 'ჩემი ფავორიტები',
