@@ -2,7 +2,7 @@
 -- Allows users (customers/partners) to link their Telegram chat to receive notifications
 
 CREATE TABLE IF NOT EXISTS public.notification_preferences (
-  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   telegram_chat_id TEXT,
   telegram_username TEXT,
   enable_telegram BOOLEAN NOT NULL DEFAULT FALSE,
