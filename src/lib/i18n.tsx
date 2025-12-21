@@ -236,6 +236,74 @@ const translations: Record<Language, Record<string, string>> = {
   'analytics.customerLoyalty': 'Customer Loyalty',
   'analytics.noData': 'No data available',
 
+  // Notification Settings
+  'notifications.title': 'Notification Settings',
+  'notifications.description': 'Choose what updates you want to receive',
+  'notifications.presetModes': 'Preset Modes',
+  'notifications.recommended': 'Recommended',
+  'notifications.recommendedDesc': 'Get important updates about orders and time-sensitive alerts',
+  'notifications.quiet': 'Quiet',
+  'notifications.quietDesc': 'Only critical notifications (new orders, cancellations)',
+  'notifications.all': 'All',
+  'notifications.allDesc': 'Get every notification - stay fully informed',
+  
+  // Busy Mode
+  'notifications.busyMode': 'Busy Mode',
+  'notifications.busyModeDesc': 'Temporarily pause all active offers when you need a break',
+  'notifications.busyModeHelper': 'Your offers will be hidden from customers. You can turn this back on anytime.',
+  'notifications.busyModeEnabled': 'Busy Mode is ON - offers are paused',
+  'notifications.busyModeDisabled': 'Busy Mode is OFF - offers are active',
+  
+  // Critical Section
+  'notifications.critical': 'Critical',
+  'notifications.criticalHelper': 'These keep your business running smoothly',
+  'notifications.newOrder': 'New Order',
+  'notifications.newOrderDesc': 'When a customer reserves your offer',
+  'notifications.lowStock': 'Low Stock',
+  'notifications.lowStockDesc': 'When an offer has 2 or fewer left',
+  'notifications.cancellation': 'Cancellation',
+  'notifications.cancellationDesc': 'When a customer cancels their reservation',
+  'notifications.activeExpiring': 'Active Expiring',
+  'notifications.activeExpiringDesc': 'When your active offer is about to expire (1 hour before)',
+  
+  // Analytics Section
+  'notifications.analyticsSection': 'Analytics',
+  'notifications.analyticsHelper': 'Performance insights for your business',
+  'notifications.dailySummary': 'Daily Summary',
+  'notifications.dailySummaryDesc': 'Recap of today\'s pickups and earnings (sent at 9 PM)',
+  'notifications.weeklyReport': 'Weekly Report',
+  'notifications.weeklyReportDesc': 'Full week performance breakdown (sent Mondays)',
+  'notifications.newReview': 'New Review',
+  'notifications.newReviewDesc': 'When a customer leaves feedback',
+  
+  // Wallet Section
+  'notifications.walletSection': 'Wallet',
+  'notifications.walletHelper': 'Track your earnings and rewards',
+  'notifications.pointsChange': 'Points Change',
+  'notifications.pointsChangeDesc': 'When you earn or spend points',
+  'notifications.newBonus': 'New Bonus',
+  'notifications.newBonusDesc': 'Special promotions and bonus point opportunities',
+  
+  // Notification Channels
+  'notifications.channels': 'Notification Channels',
+  'notifications.channelsHelper': 'Choose how you want to receive notifications',
+  'notifications.telegram': 'Telegram',
+  'notifications.telegramDesc': 'Instant notifications via Telegram bot',
+  'notifications.sms': 'SMS',
+  'notifications.smsDesc': 'Text message notifications to your phone',
+  'notifications.email': 'Email',
+  'notifications.emailDesc': 'Email notifications to your registered address',
+  
+  // Actions
+  'notifications.saveChanges': 'Save Changes',
+  'notifications.saving': 'Saving...',
+  'notifications.saved': 'Settings saved successfully',
+  'notifications.saveFailed': 'Failed to save settings',
+  
+  // Warnings
+  'notifications.criticalWarning': 'At least one critical notification must be enabled',
+  'notifications.busyModeWarning': 'Your offers are currently paused',
+
   // Favorites
   'favorites.title': 'My Favorites',
   'favorites.offers': 'Saved Offers',
@@ -1078,6 +1146,74 @@ const translations: Record<Language, Record<string, string>> = {
   'analytics.repeatCustomers': 'მუდმივი მომხმარებლები',
   'analytics.customerLoyalty': 'მომხმარებელთა ლოიალობა',
   'analytics.noData': 'მონაცემები არ არის ხელმისაწვდომი',
+  
+  // Notification Settings
+  'notifications.title': 'შეტყობინებების პარამეტრები',
+  'notifications.description': 'აირჩიეთ რა განახლებების მიღება გსურთ',
+  'notifications.presetModes': 'პარამეტრების შაბლონები',
+  'notifications.recommended': 'რეკომენდებული',
+  'notifications.recommendedDesc': 'მიიღეთ მნიშვნელოვანი განახლებები შეკვეთებისა და დროის მგრძნობიარე გაფრთხილებების შესახებ',
+  'notifications.quiet': 'ჩუმი',
+  'notifications.quietDesc': 'მხოლოდ კრიტიკული შეტყობინებები (ახალი შეკვეთები, გაუქმებები)',
+  'notifications.all': 'ყველა',
+  'notifications.allDesc': 'მიიღეთ ყველა შეტყობინება - იყავით სრულად ინფორმირებული',
+  
+  // Busy Mode
+  'notifications.busyMode': 'დატვირთული რეჟიმი',
+  'notifications.busyModeDesc': 'დროებით შეაჩერეთ ყველა აქტიური შეთავაზება როცა შესვენება გჭირდებათ',
+  'notifications.busyModeHelper': 'თქვენი შეთავაზებები დაიმალება მომხმარებლებისგან. ნებისმიერ დროს შეგიძლიათ ჩართოთ.',
+  'notifications.busyModeEnabled': 'დატვირთული რეჟიმი ჩართულია - შეთავაზებები შეჩერებულია',
+  'notifications.busyModeDisabled': 'დატვირთული რეჟიმი გამორთულია - შეთავაზებები აქტიურია',
+  
+  // Critical Section
+  'notifications.critical': 'კრიტიკული',
+  'notifications.criticalHelper': 'ეს ინახავს თქვენს ბიზნესს გამართულად',
+  'notifications.newOrder': 'ახალი შეკვეთა',
+  'notifications.newOrderDesc': 'მომენტალური შეტყობინება ახალ რეზერვაციაზე',
+  'notifications.lowStock': 'დაბალი მარაგი',
+  'notifications.lowStockDesc': 'როდესაც შეთავაზებული პროდუქტის მარაგი იწურება',
+  'notifications.cancellation': 'გაუქმება',
+  'notifications.cancellationDesc': 'როცა მომხმარებელი აუქმებს ჯავშანს',
+  'notifications.activeExpiring': 'აქტიური ვადის გასვლა',
+  'notifications.activeExpiringDesc': 'როცა აქტიური შეთავაზების ვადა ეთავება (1 საათით ადრე)',
+  
+  // Analytics Section
+  'notifications.analyticsSection': 'ანალიტიკა',
+  'notifications.analyticsHelper': 'ბიზნესის ეფექტურობის ანალიზი',
+  'notifications.dailySummary': 'დღიური შეჯამება',
+  'notifications.dailySummaryDesc': 'დღევანდელი აღებებისა და შემოსავლის რეზიუმე (იგზავნება 21:00 საათზე)',
+  'notifications.weeklyReport': 'კვირის ანგარიში',
+  'notifications.weeklyReportDesc': 'სრული კვირის ეფექტურობის დეტალური ანალიზი (იგზავნება ორშაბათს)',
+  'notifications.newReview': 'ახალი შეფასება',
+  'notifications.newReviewDesc': 'როცა მომხმარებელი ტოვებს გამოხმაურებას',
+  
+  // Wallet Section
+  'notifications.walletSection': 'საფულე',
+  'notifications.walletHelper': 'თვალყური ადევნეთ თქვენს შემოსავალსა და ჯილდოებს',
+  'notifications.pointsChange': 'ქულების ცვლილება',
+  'notifications.pointsChangeDesc': 'როცა გამოიმუშავებთ ან დახარჯავთ ქულებს',
+  'notifications.newBonus': 'ახალი ბონუსი',
+  'notifications.newBonusDesc': 'სპეციალური აქციები და ბონუს ქულების შესაძლებლობები',
+  
+  // Notification Channels
+  'notifications.channels': 'შეტყობინების არხები',
+  'notifications.channelsHelper': 'აირჩიეთ როგორ გსურთ შეტყობინებების მიღება',
+  'notifications.telegram': 'ტელეგრამი',
+  'notifications.telegramDesc': 'მომენტალური შეტყობინებები ტელეგრამ ბოტის მეშვეობით',
+  'notifications.sms': 'SMS',
+  'notifications.smsDesc': 'ტექსტური შეტყობინებები თქვენს ტელეფონზე',
+  'notifications.email': 'ელფოსტა',
+  'notifications.emailDesc': 'შეტყობინებები თქვენს რეგისტრირებულ ელფოსტაზე',
+  
+  // Actions
+  'notifications.saveChanges': 'ცვლილებების შენახვა',
+  'notifications.saving': 'მიმდინარეობს შენახვა...',
+  'notifications.saved': 'პარამეტრები წარმატებით შეინახა',
+  'notifications.saveFailed': 'პარამეტრების შენახვა ვერ მოხერხდა',
+  
+  // Warnings
+  'notifications.criticalWarning': 'მინიმუმ ერთი კრიტიკული შეტყობინება უნდა იყოს ჩართული',
+  'notifications.busyModeWarning': 'თქვენი შეთავაზებები ამჟამად შეჩერებულია',
   'common.close': 'დახურვა',
 
   // Favorites

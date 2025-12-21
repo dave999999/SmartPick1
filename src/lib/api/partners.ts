@@ -573,3 +573,114 @@ export const getPartnerAnalytics = async (partnerId: string) => {
     throw error;
   }
 };
+
+/**
+ * Get partner notification settings
+ */
+export const getPartnerNotificationSettings = async (partnerId: string) => {
+  if (isDemoMode) {
+    return {
+      newOrder: true,
+      lowStock: true,
+      cancellation: true,
+      activeExpiring: false,
+      dailySummary: true,
+      weeklyReport: false,
+      newReview: true,
+      pointsChange: false,
+      newBonus: true,
+    };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('partners')
+      .select('notification_preferences')
+      .eq('id', partnerId)
+      .single();
+
+    if (error) throw error;
+
+    return data?.notification_preferences || {
+      newOrder: true,
+      lowStock: true,
+      cancellation: true,
+      activeExpiring: false,
+      dailySummary: true,
+      weeklyReport: false,
+      newReview: true,
+      pointsChange: false,
+      newBonus: true,
+    };
+  } catch (error) {
+    logger.error('Error fetching notification settings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update partner notification settings
+ */
+export const updatePartnerNotificationSettings = async (
+  partnerId: string, 
+  preferences: any
+) => {
+  if (isDemoMode) {
+    return { success: true };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('partners')
+      .update({ notification_preferences: preferences })
+      .eq('id', partnerId);
+
+    if (error) throw error;
+
+    logger.log('✅ Notification settings updated');
+    return { success: true };
+  } catch (error) {
+    logger.error('Error updating notification settings:', error);
+    throw error;
+  }
+};
+
+/**
+ * Toggle busy mode - pauses/resumes all active offers
+ */
+export const togglePartnerBusyMode = async (partnerId: string, enabled: boolean) => {
+  if (isDemoMode) {
+    return { success: true, offersAffected: 3 };
+  }
+
+  try {
+    // Update partner busy_mode flag
+    const { error: partnerError } = await supabase
+      .from('partners')
+      .update({ busy_mode: enabled })
+      .eq('id', partnerId);
+
+    if (partnerError) throw partnerError;
+
+    // Pause or resume all active offers
+    const newStatus = enabled ? 'PAUSED' : 'ACTIVE';
+    const { data: offers, error: offersError } = await supabase
+      .from('offers')
+      .update({ status: newStatus })
+      .eq('partner_id', partnerId)
+      .eq('status', enabled ? 'ACTIVE' : 'PAUSED')
+      .select('id');
+
+    if (offersError) throw offersError;
+
+    logger.log(`✅ Busy mode ${enabled ? 'enabled' : 'disabled'}, affected ${offers?.length || 0} offers`);
+    
+    return { 
+      success: true, 
+      offersAffected: offers?.length || 0 
+    };
+  } catch (error) {
+    logger.error('Error toggling busy mode:', error);
+    throw error;
+  }
+};

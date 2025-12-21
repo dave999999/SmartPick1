@@ -20,6 +20,7 @@ export interface PartnerModalsState {
   showGallery: boolean;
   showSettings: boolean;
   showAnalytics: boolean;
+  showNotifications: boolean;
   editingOffer: Offer | null;
   isSubmitting: boolean;
   openBuyPointsModal: () => void;
@@ -34,6 +35,8 @@ export interface PartnerModalsState {
   closeSettings: () => void;
   openAnalytics: () => void;
   closeAnalytics: () => void;
+  openNotifications: () => void;
+  closeNotifications: () => void;
   openEditOffer: (offer: Offer) => void;
   closeEditOffer: () => void;
   setIsSubmitting: (submitting: boolean) => void;
@@ -46,6 +49,7 @@ export function usePartnerModals(): PartnerModalsState {
   const [showGallery, setShowGallery] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -56,6 +60,7 @@ export function usePartnerModals(): PartnerModalsState {
     showGallery,
     showSettings,
     showAnalytics,
+    showNotifications,
     editingOffer,
     isSubmitting,
     
@@ -82,6 +87,10 @@ export function usePartnerModals(): PartnerModalsState {
     // Analytics
     openAnalytics: () => setShowAnalytics(true),
     closeAnalytics: () => setShowAnalytics(false),
+    
+    // Notifications
+    openNotifications: () => setShowNotifications(true),
+    closeNotifications: () => setShowNotifications(false),
     
     // Edit Offer
     openEditOffer: (offer: Offer) => setEditingOffer(offer),

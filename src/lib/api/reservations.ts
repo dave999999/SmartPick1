@@ -6,7 +6,11 @@ import {
   RESERVATION_HOLD_MINUTES,
   ERROR_MESSAGES,
 } from '../constants';
-import { notifyPartnerNewReservation, notifyCustomerReservationConfirmed } from '../telegram';
+import { 
+  notifyPartnerNewReservation, 
+  notifyCustomerReservationConfirmed,
+  notifyPartnerLowStock 
+} from '../telegram';
 import { logger } from '../logger';
 import { canUserReserve, getPenaltyDetails } from './penalty';
 import { getOfferById } from './offers';
@@ -261,6 +265,16 @@ export const createReservation = async (
         quantity,
         pickupBy
       ).catch(err => console.warn('Notification service unavailable'));
+
+      // Check if stock is low and notify partner
+      const remainingQuantity = reservation.offer?.quantity_available || 0;
+      if (remainingQuantity <= 2 && remainingQuantity > 0) {
+        notifyPartnerLowStock(
+          partnerUserId,
+          offerTitle,
+          remainingQuantity
+        ).catch(err => console.warn('Low stock notification unavailable'));
+      }
     }
 
     // Notify customer about reservation confirmation

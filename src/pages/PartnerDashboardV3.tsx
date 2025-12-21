@@ -22,7 +22,8 @@ import {
   Home,
   Image as ImageIcon,
   Settings,
-  BarChart3
+  BarChart3,
+  Bell
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
@@ -34,6 +35,7 @@ import CreateOfferWizard from '@/components/partner/CreateOfferWizard';
 import { GalleryModal } from '@/components/partner/GalleryModal';
 import { PartnerSettingsModal } from '@/components/partner/PartnerSettingsModal';
 import { PartnerAnalyticsModal, PartnerAnalytics } from '@/components/partner/PartnerAnalyticsModal';
+import { PartnerNotificationSettings } from '@/components/partner/PartnerNotificationSettings';
 
 /**
  * PARTNER DASHBOARD V3 - APPLE-STYLE MOBILE REDESIGN
@@ -282,6 +284,15 @@ export default function PartnerDashboardV3() {
               className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
             >
               <Home className="w-5 h-5" />
+            </motion.button>
+
+            {/* Notifications Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => modals.openNotifications()}
+              className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
+            >
+              <Bell className="w-5 h-5" />
             </motion.button>
 
             {/* Gallery Button - Product Photos */}
@@ -669,6 +680,13 @@ export default function PartnerDashboardV3() {
         onOpenChange={modals.closeAnalytics}
         analytics={analytics}
         isLoading={loadingAnalytics}
+      />
+
+      {/* Notification Settings Modal */}
+      <PartnerNotificationSettings
+        open={modals.showNotifications}
+        onOpenChange={modals.closeNotifications}
+        partnerId={partner?.id || ''}
       />
     </div>
   );

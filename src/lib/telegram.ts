@@ -138,6 +138,7 @@ export async function getTelegramConnection(userId: string) {
 
 /**
  * Send new reservation notification to partner
+ * Respects partner's notification preferences
  */
 export async function notifyPartnerNewReservation(
   partnerId: string,
@@ -146,14 +147,30 @@ export async function notifyPartnerNewReservation(
   quantity: number,
   pickupBy: string
 ) {
-  const message = `🎉 <b>New Reservation!</b>
+  // Check if partner has this notification enabled
+  const { data: partner } = await supabase
+    .from('partners')
+    .select('notification_preferences')
+    .eq('user_id', partnerId)
+    .single();
 
-<b>Customer:</b> ${customerName}
-<b>Item:</b> ${offerTitle}
-<b>Quantity:</b> ${quantity}
-<b>Pickup by:</b> ${pickupBy}
+  if (partner?.notification_preferences) {
+    const prefs = partner.notification_preferences;
+    // Check if newOrder notification is enabled and telegram channel is enabled
+    if (!prefs.newOrder || !prefs.telegram) {
+      console.log(`Partner ${partnerId} has newOrder or Telegram notifications disabled`);
+      return false;
+    }
+  }
 
-The customer will arrive soon to pick up their order.`;
+  const message = `🎉 <b>ახალი შეკვეთა!</b>
+
+<b>მომხმარებელი:</b> ${customerName}
+<b>პროდუქტი:</b> ${offerTitle}
+<b>რაოდენობა:</b> ${quantity}
+<b>აღება:</b> ${pickupBy}
+
+მომხმარებელი მალე ჩამოვა შეკვეთის ასაღებად.`;
 
   return sendNotification(partnerId, message, 'partner');
 }
@@ -179,7 +196,43 @@ Order successfully completed. Great job! 👏`;
 }
 
 /**
+ * Send low stock notification to partner
+ * Respects partner's notification preferences
+ */
+export async function notifyPartnerLowStock(
+  partnerId: string,
+  offerTitle: string,
+  quantityLeft: number
+) {
+  // Check if partner has this notification enabled
+  const { data: partner } = await supabase
+    .from('partners')
+    .select('notification_preferences')
+    .eq('user_id', partnerId)
+    .single();
+
+  if (partner?.notification_preferences) {
+    const prefs = partner.notification_preferences;
+    // Check if lowStock notification is enabled and telegram channel is enabled
+    if (!prefs.lowStock || !prefs.telegram) {
+      console.log(`Partner ${partnerId} has lowStock or Telegram notifications disabled`);
+      return false;
+    }
+  }
+
+  const message = `⚠️ <b>დაბალი მარაგი!</b>
+
+<b>პროდუქტი:</b> ${offerTitle}
+<b>დარჩენილი:</b> ${quantityLeft}
+
+თქვენი პროდუქტის მარაგი იწურება. ჩაამატეთ მეტი რაოდენობა!`;
+
+  return sendNotification(partnerId, message, 'partner');
+}
+
+/**
  * Send reservation cancelled notification to partner
+ * Respects partner's notification preferences
  */
 export async function notifyPartnerReservationCancelled(
   partnerId: string,
@@ -187,13 +240,29 @@ export async function notifyPartnerReservationCancelled(
   offerTitle: string,
   quantity: number
 ) {
-  const message = `🚫 <b>Reservation Cancelled</b>
+  // Check if partner has this notification enabled
+  const { data: partner } = await supabase
+    .from('partners')
+    .select('notification_preferences')
+    .eq('user_id', partnerId)
+    .single();
 
-<b>Customer:</b> ${customerName}
-<b>Item:</b> ${offerTitle}
-<b>Quantity:</b> ${quantity}
+  if (partner?.notification_preferences) {
+    const prefs = partner.notification_preferences;
+    // Check if cancellation notification is enabled and telegram channel is enabled
+    if (!prefs.cancellation || !prefs.telegram) {
+      console.log(`Partner ${partnerId} has cancellation or Telegram notifications disabled`);
+      return false;
+    }
+  }
 
-The customer cancelled their reservation. Quantity has been restored to your offer.`;
+  const message = `🚫 <b>რეზერვაცია გაუქმდა</b>
+
+<b>მომხმარებელი:</b> ${customerName}
+<b>პროდუქტი:</b> ${offerTitle}
+<b>რაოდენობა:</b> ${quantity}
+
+მომხმარებელმა გააუქმა რეზერვაცია. რაოდენობა დაბრუნდა თქვენს შეთავაზებაში.`;
 
   return sendNotification(partnerId, message, 'partner');
 }
