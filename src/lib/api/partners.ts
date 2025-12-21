@@ -449,6 +449,7 @@ export const getPartnerAnalytics = async (partnerId: string) => {
     const offerMap = new Map<string, { name: string; orders: number; revenue: number; image_url?: string }>();
     topOffersData?.forEach(r => {
       const offerId = r.offer_id;
+      if (!offerId) return; // Skip if no offer_id
       
       if (offerMap.has(offerId)) {
         const existing = offerMap.get(offerId)!;
@@ -465,26 +466,59 @@ export const getPartnerAnalytics = async (partnerId: string) => {
     });
 
     // Now fetch offer details for the top offer IDs
-    const offerIds = Array.from(offerMap.keys());
+    const offerIds = Array.from(offerMap.keys()).filter(id => id); // Remove any null/undefined
+    let topOffers: Array<{ name: string; orders: number; revenue: number; image_url?: string }> = [];
+    
     if (offerIds.length > 0) {
-      const { data: offersData } = await supabase
-        .from('offers')
-        .select('id, product_name, image_url')
-        .in('id', offerIds);
-
-      // Update the names and images
-      offersData?.forEach(offer => {
-        const existing = offerMap.get(offer.id);
-        if (existing) {
-          existing.name = offer.product_name;
-          existing.image_url = offer.image_url;
+      try {
+        logger.log('📊 Fetching details for', offerIds.length, 'offers:', offerIds);
+        
+        // Use different query method based on number of IDs
+        let offersQuery = supabase
+          .from('offers')
+          .select('id, product_name, image_url');
+        
+        if (offerIds.length === 1) {
+          // Single ID - use eq instead of in
+          offersQuery = offersQuery.eq('id', offerIds[0]);
+        } else {
+          // Multiple IDs - use in
+          offersQuery = offersQuery.in('id', offerIds);
         }
-      });
-    }
+        
+        const { data: offersData, error: offersError } = await offersQuery;
 
-    const topOffers = Array.from(offerMap.values())
-      .sort((a, b) => b.orders - a.orders)
-      .slice(0, 5);
+        if (offersError) {
+          logger.error('Error fetching offers details:', offersError);
+          // Use the map without names if fetch fails
+          topOffers = Array.from(offerMap.values())
+            .map(offer => ({
+              ...offer,
+              name: offer.name === 'Loading...' ? 'უცნობი პროდუქტი' : offer.name
+            }))
+            .sort((a, b) => b.orders - a.orders)
+            .slice(0, 5);
+        } else {
+          logger.log('✅ Fetched', offersData?.length, 'offer details');
+          
+          // Update the names and images
+          offersData?.forEach(offer => {
+            const existing = offerMap.get(offer.id);
+            if (existing) {
+              existing.name = offer.product_name || 'უცნობი პროდუქტი';
+              existing.image_url = offer.image_url;
+            }
+          });
+
+          topOffers = Array.from(offerMap.values())
+            .sort((a, b) => b.orders - a.orders)
+            .slice(0, 5);
+        }
+      } catch (error) {
+        logger.error('Exception fetching offers:', error);
+        topOffers = []; // Return empty array on error
+      }
+    }
 
     // Customer insights
     const { data: customerData } = await supabase
