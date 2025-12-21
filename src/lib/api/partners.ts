@@ -433,26 +433,22 @@ export const getPartnerAnalytics = async (partnerId: string) => {
     }
 
     // Top performing offers (last 7 days)
-    const { data: topOffersData } = await supabase
+    // First get reservation data with offer_ids
+    const { data: topOffersData, error: topOffersError } = await supabase
       .from('reservations')
-      .select(`
-        offer_id,
-        total_price,
-        offers (
-          product_name,
-          image_url
-        )
-      `)
+      .select('offer_id, total_price')
       .eq('partner_id', partnerId)
       .eq('status', 'PICKED_UP')
       .gte('picked_up_at', weekAgo.toISOString());
 
-    // Group by offer
+    if (topOffersError) {
+      logger.error('Error fetching top offers data:', topOffersError);
+    }
+
+    // Group by offer first
     const offerMap = new Map<string, { name: string; orders: number; revenue: number; image_url?: string }>();
     topOffersData?.forEach(r => {
       const offerId = r.offer_id;
-      const name = (r.offers as any)?.product_name || 'უცნობი პროდუქტი';
-      const image_url = (r.offers as any)?.image_url;
       
       if (offerMap.has(offerId)) {
         const existing = offerMap.get(offerId)!;
@@ -460,13 +456,31 @@ export const getPartnerAnalytics = async (partnerId: string) => {
         existing.revenue += r.total_price || 0;
       } else {
         offerMap.set(offerId, {
-          name,
+          name: 'Loading...', // Will be fetched below
           orders: 1,
           revenue: r.total_price || 0,
-          image_url,
+          image_url: undefined,
         });
       }
     });
+
+    // Now fetch offer details for the top offer IDs
+    const offerIds = Array.from(offerMap.keys());
+    if (offerIds.length > 0) {
+      const { data: offersData } = await supabase
+        .from('offers')
+        .select('id, product_name, image_url')
+        .in('id', offerIds);
+
+      // Update the names and images
+      offersData?.forEach(offer => {
+        const existing = offerMap.get(offer.id);
+        if (existing) {
+          existing.name = offer.product_name;
+          existing.image_url = offer.image_url;
+        }
+      });
+    }
 
     const topOffers = Array.from(offerMap.values())
       .sort((a, b) => b.orders - a.orders)
