@@ -476,7 +476,7 @@ export const getPartnerAnalytics = async (partnerId: string) => {
         // Use different query method based on number of IDs
         let offersQuery = supabase
           .from('offers')
-          .select('id, product_name, image_url');
+          .select('id, title, images');
         
         if (offerIds.length === 1) {
           // Single ID - use eq instead of in
@@ -505,8 +505,8 @@ export const getPartnerAnalytics = async (partnerId: string) => {
           offersData?.forEach(offer => {
             const existing = offerMap.get(offer.id);
             if (existing) {
-              existing.name = offer.product_name || 'უცნობი პროდუქტი';
-              existing.image_url = offer.image_url;
+              existing.name = offer.title || 'უცნობი პროდუქტი';
+              existing.image_url = offer.images?.[0]; // Use first image from array
             }
           });
 
