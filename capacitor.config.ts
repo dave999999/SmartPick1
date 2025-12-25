@@ -5,7 +5,14 @@ const config: CapacitorConfig = {
   appName: 'SmartPick',
   webDir: 'dist',
   server: {
-    androidScheme: 'https'
+    androidScheme: 'https',
+    cleartext: true, // Allow HTTP for development
+    allowNavigation: ['*']
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true
   },
   plugins: {
     PushNotifications: {
@@ -15,6 +22,9 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       backgroundColor: '#3b82f6',
       showSpinner: false
+    },
+    CapacitorHttp: {
+      enabled: true
     }
   }
 };
