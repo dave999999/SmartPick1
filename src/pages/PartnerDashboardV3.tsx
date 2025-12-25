@@ -14,7 +14,7 @@ import {
   Edit2,
   Pause,
   Play,
-  Copy,
+  RefreshCw,
   MoreVertical,
   Wallet,
   AlertCircle,
@@ -22,8 +22,7 @@ import {
   Home,
   Image as ImageIcon,
   Settings,
-  BarChart3,
-  Bell
+  BarChart3
 } from 'lucide-react';
 import { useOfferActions } from '@/hooks/useOfferActions';
 import EnhancedActiveReservations from '@/components/partner/EnhancedActiveReservations';
@@ -130,8 +129,8 @@ export default function PartnerDashboardV3() {
       const original_price = parseFloat(formData.get('original_price') as string);
       const smart_price = parseFloat(formData.get('smart_price') as string);
       const quantity = parseInt(formData.get('quantity') as string);
-      const autoExpire6hValue = formData.get('auto_expire_6h');
-      const autoExpire6h = autoExpire6hValue === 'true' || autoExpire6hValue === '1' || autoExpire6hValue === 'on';
+      const offerDuration = (formData.get('offer_duration') as string) || '1_week';
+      const customDays = formData.get('custom_days') as string;
       
       // Get images from FormData
       const processedImages = formData
@@ -145,11 +144,59 @@ export default function PartnerDashboardV3() {
         return;
       }
 
-      // Calculate pickup times
-      const { calculatePickupEndTime } = await import('@/lib/utils/businessHours');
+      // Calculate pickup times with business hours scheduling
+      const { getNextOpeningTime, isBusinessOpen } = await import('@/lib/utils/businessHoursHelpers');
+      
       const now = new Date();
-      const pickupStart = now;
-      const pickupEnd = calculatePickupEndTime(partner, autoExpire6h);
+      const businessIsOpen = isBusinessOpen(partner?.business_hours, partner?.open_24h);
+      const pickupStart: Date = businessIsOpen 
+        ? now 
+        : getNextOpeningTime(partner?.business_hours, partner?.open_24h);
+      
+      // Calculate duration in days
+      let durationDays: number;
+      if (offerDuration === 'custom' && customDays) {
+        durationDays = parseInt(customDays);
+      } else {
+        switch (offerDuration) {
+          case '2_days':
+            durationDays = 2;
+            break;
+          case '1_week':
+            durationDays = 7;
+            break;
+          case '2_weeks':
+            durationDays = 14;
+            break;
+          case '1_month':
+            durationDays = 30;
+            break;
+          default:
+            durationDays = 7;
+        }
+      }
+      
+      // Calculate expiration: start + duration
+      let pickupEnd = new Date(pickupStart.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+      // For scheduled businesses: set expiration to closing time on last day
+      if (!partner?.business_hours?.is_24_7 && !partner?.open_24h && partner?.business_hours?.close) {
+        const closingTime = partner.business_hours.close;
+        const [hours, minutes] = closingTime.split(':').map(Number);
+        pickupEnd.setHours(hours, minutes, 0, 0);
+      }
+      
+      console.log('🚀 V3 OFFER SCHEDULING:', {
+        businessIsOpen,
+        is_24_7: partner?.business_hours?.is_24_7 || partner?.open_24h,
+        businessHours: partner?.business_hours,
+        now: now.toISOString(),
+        pickupStart: pickupStart.toISOString(),
+        pickupEnd: pickupEnd.toISOString(),
+        durationDays,
+        offerDuration,
+        willStartLater: pickupStart > now
+      });
 
       // Verify partner authentication
       const { supabase } = await import('@/lib/supabase');
@@ -209,9 +256,11 @@ export default function PartnerDashboardV3() {
     }
   };
 
-  const handleCloneOffer = async (offer: Offer) => {
+  const handleReloadOffer = async (offer: Offer) => {
     setActiveOfferMenu(null);
-    await offerActions.handleCloneOffer(offer);
+    if (window.confirm('დარწმუნებული ხართ? შეთავაზება თავიდან დაიწყება ორიგინალური რაოდენობით და დროით.')) {
+      await offerActions.handleReloadOffer(offer);
+    }
   };
 
   const handlePurchaseSlot = async () => {
@@ -284,15 +333,6 @@ export default function PartnerDashboardV3() {
               className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl shadow-md hover:shadow-lg transition-shadow flex items-center justify-center"
             >
               <Home className="w-5 h-5" />
-            </motion.button>
-
-            {/* Notifications Button */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => modals.openNotifications()}
-              className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center"
-            >
-              <Bell className="w-5 h-5" />
             </motion.button>
 
             {/* Gallery Button - Product Photos */}
@@ -476,7 +516,7 @@ export default function PartnerDashboardV3() {
                       {/* Top Section: Image + Content */}
                       <div className="flex gap-3 mb-2">
                         {/* Thumbnail */}
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 relative">
                           <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                             {offer.images?.[0] ? (
                               <img 
@@ -490,6 +530,39 @@ export default function PartnerDashboardV3() {
                               </div>
                             )}
                           </div>
+                          
+                          {/* Time Remaining Badge */}
+                          {offer.expires_at && (() => {
+                            const now = new Date();
+                            const expiry = new Date(offer.expires_at);
+                            const diff = expiry.getTime() - now.getTime();
+                            
+                            if (diff <= 0) return null;
+                            
+                            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                            
+                            let timeText = '';
+                            if (days > 0) {
+                              timeText = hours > 0 ? `${days}დ ${hours}სთ` : `${days}დ`;
+                            } else if (hours > 0) {
+                              timeText = minutes > 0 ? `${hours}სთ ${minutes}წთ` : `${hours}სთ`;
+                            } else {
+                              timeText = `${minutes}წთ`;
+                            }
+                            
+                            return (
+                              <div className="absolute -bottom-1 -right-1">
+                                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/60 rounded-md shadow-sm">
+                                  <Clock size={10} className="text-orange-600" strokeWidth={2.5} />
+                                  <span className="text-[10px] font-bold text-orange-600 leading-none">
+                                    {timeText}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Content */}
@@ -549,11 +622,11 @@ export default function PartnerDashboardV3() {
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => handleCloneOffer(offer)}
-                            className="flex-1 flex items-center justify-center py-2 px-2 bg-purple-50 hover:bg-purple-100 rounded-lg text-purple-700 transition-colors"
-                            aria-label="კლონი"
+                            onClick={() => handleReloadOffer(offer)}
+                            className="flex-1 flex items-center justify-center py-2 px-2 bg-blue-50 hover:bg-blue-100 rounded-lg text-blue-700 transition-colors"
+                            aria-label="თავიდან დაწყება"
                           >
-                            <Copy className="w-4 h-4" />
+                            <RefreshCw className="w-4 h-4" />
                           </motion.button>
                           <motion.button 
                             whileTap={{ scale: 0.95 }}
@@ -629,6 +702,7 @@ export default function PartnerDashboardV3() {
           isSubmitting={modals.isSubmitting}
           is24HourBusiness={partner.hours_24_7 || false}
           businessType={partner.business_type || 'RESTAURANT'}
+          businessHours={partner.business_hours}
         />
       )}
 
@@ -672,6 +746,7 @@ export default function PartnerDashboardV3() {
         open={modals.showSettings}
         onClose={modals.closeSettings}
         partnerId={partner?.id || ''}
+        userId={partner?.user_id || ''}
       />
 
       {/* Analytics Modal */}
@@ -688,6 +763,7 @@ export default function PartnerDashboardV3() {
         onOpenChange={modals.closeNotifications}
         partnerId={partner?.id || ''}
         userId={partner?.user_id || ''}
+        onDataRefresh={loadPartnerData}
       />
     </div>
   );

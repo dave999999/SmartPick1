@@ -74,13 +74,13 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
             </div>
           ) : partner ? (
             <>
-              {/* Partner Header with Image */}
+              {/* Partner Header with Cover Image */}
               <div className="relative">
-                {/* Partner Image */}
+                {/* Cover Image */}
                 <div className="w-full h-48 bg-gradient-to-br from-orange-400 to-orange-600 relative overflow-hidden">
-                  {partner.images?.[0] ? (
+                  {partner.cover_image_url || partner.images?.[0] ? (
                     <img 
-                      src={partner.images[0]} 
+                      src={partner.cover_image_url || partner.images?.[0]} 
                       alt={partner.business_name}
                       className="w-full h-full object-cover"
                     />
@@ -89,8 +89,8 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
                       <div className="text-6xl text-white opacity-50">🏪</div>
                     </div>
                   )}
-                  {/* Overlay gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                  {/* Overlay gradient for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
                 </div>
 
                 {/* Partner Info Overlay */}

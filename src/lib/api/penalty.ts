@@ -10,6 +10,33 @@ import { logger } from '../logger';
 // TYPES & INTERFACES
 // ============================================
 
+/**
+ * Auto-expire user's old reservations
+ * Called when user opens MyPicks or tries to reserve
+ */
+export async function expireUserReservations(userId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase.rpc('expire_user_reservations', {
+      p_user_id: userId
+    });
+    
+    if (error) {
+      logger.error('Error expiring user reservations:', error);
+      return 0;
+    }
+    
+    const expiredCount = data || 0;
+    if (expiredCount > 0) {
+      logger.log(`⏰ Auto-expired ${expiredCount} old reservation(s) for user ${userId}`);
+    }
+    
+    return expiredCount;
+  } catch (err) {
+    logger.error('Failed to expire user reservations:', err);
+    return 0;
+  }
+}
+
 export interface UserPenalty {
   id: string;
   user_id: string;
@@ -135,6 +162,79 @@ export async function getUserCooldownStatus(userId: string): Promise<{
     logger.error('[Cooldown] Error checking cooldown status:', error);
     // Fail open - allow reservation if check fails
     return { inCooldown: false, cooldownUntil: null, cancellationCount: 0 };
+  }
+}
+
+/**
+ * Get user's cancellation warning info (for progressive warnings before cancel)
+ */
+export async function getUserCancellationWarning(userId: string): Promise<{
+  cancellationCount: number;
+  warningLevel: 'info' | 'warning' | 'final' | 'blocked';
+  message: string;
+  cooldownDurationMinutes: number;
+}> {
+  try {
+    logger.log('[Cancellation] Getting warning info for user:', userId);
+    
+    // Use daily cancellation count (resets each calendar day)
+    const { data, error } = await supabase
+      .rpc('get_user_daily_cancellation_count', { p_user_id: userId });
+    
+    if (error) throw error;
+    
+    // Function returns a TABLE (array of rows), get first row
+    // Handle both array format and direct object format
+    let result;
+    if (Array.isArray(data) && data.length > 0) {
+      result = data[0];
+    } else if (data && typeof data === 'object' && 'cancellation_count' in data) {
+      result = data;
+    } else {
+      // Fallback if data is 0, null, or unexpected format
+      result = { cancellation_count: 0, cooldown_duration_minutes: 30 };
+    }
+    
+    const count = result.cancellation_count || 0;
+    const cooldownMin = result.cooldown_duration_minutes || 30;
+    
+    logger.log('[Cancellation] Raw data from DB:', { data, result, count });
+    
+    // Determine warning level and message
+    let warningLevel: 'info' | 'warning' | 'final' | 'blocked' = 'info';
+    let message = 'Are you sure you want to cancel this reservation?';
+    
+    if (count === 0) {
+      warningLevel = 'info';
+      message = 'Are you sure you want to cancel this reservation? You will lose the points you spent.';
+    } else if (count === 1) {
+      warningLevel = 'warning';
+      message = `⚠️ This is your 2nd cancellation. After 3 cancellations in ${cooldownMin} minutes, you will be blocked from making new reservations for 1 hour.`;
+    } else if (count === 2) {
+      warningLevel = 'final';
+      message = `🚨 FINAL WARNING: This is your 3rd cancellation. You will be blocked from making new reservations for 1 HOUR immediately after canceling.`;
+    } else {
+      warningLevel = 'blocked';
+      message = `You have ${count} recent cancellations and are in cooldown. You cannot cancel any more reservations right now.`;
+    }
+    
+    logger.log('[Cancellation] Warning info:', { count, warningLevel, cooldownMin });
+    
+    return {
+      cancellationCount: count,
+      warningLevel,
+      message,
+      cooldownDurationMinutes: cooldownMin
+    };
+  } catch (error) {
+    logger.error('[Cancellation] Error getting warning info:', error);
+    // Fail open - show basic warning
+    return {
+      cancellationCount: 0,
+      warningLevel: 'info',
+      message: 'Are you sure you want to cancel this reservation?',
+      cooldownDurationMinutes: 30
+    };
   }
 }
 
@@ -346,16 +446,17 @@ export async function acknowledgePenalty(penaltyId: string, userId: string): Pro
     if (fetchError) throw fetchError;
     
     // Determine if penalty should be deactivated
+    // IMPORTANT: Warnings stay active (is_active=true) but are just acknowledged
+    // Only deactivate if suspension has expired
     const shouldDeactivate = 
-      penalty.penalty_type === 'warning' || // Warnings are deactivated when acknowledged
-      (penalty.suspended_until && new Date(penalty.suspended_until) < new Date()); // Expired penalties
+      (penalty.suspended_until && new Date(penalty.suspended_until) < new Date()); // Expired penalties only
     
     const { error } = await supabase
       .from('user_penalties')
       .update({
         acknowledged: true,
         acknowledged_at: new Date().toISOString(),
-        is_active: shouldDeactivate ? false : undefined, // Only update if deactivating
+        is_active: shouldDeactivate ? false : undefined, // Only deactivate expired suspensions
         updated_at: new Date().toISOString()
       })
       .eq('id', penaltyId)
@@ -493,6 +594,57 @@ export async function liftBanWithPoints(penaltyId: string, userId: string): Prom
 // ============================================
 // FORGIVENESS SYSTEM
 // ============================================
+
+/**
+ * Lift penalty with points using database function
+ * Simpler version that calls lift_penalty_with_points()
+ */
+export async function liftPenaltyWithPoints(penaltyId: string, userId: string): Promise<{
+  success: boolean;
+  newBalance?: number;
+  error?: string;
+}> {
+  try {
+    logger.log('[Penalty] Lifting penalty with points via RPC:', { penaltyId, userId });
+    
+    const { data, error } = await supabase.rpc('lift_penalty_with_points', {
+      p_penalty_id: penaltyId,
+      p_user_id: userId
+    });
+    
+    if (error) {
+      logger.error('[Penalty] RPC error:', error);
+      return { success: false, error: error.message };
+    }
+    
+    if (!data) {
+      return { success: false, error: 'No response from database' };
+    }
+    
+    // Parse JSON response
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    
+    if (result.success) {
+      logger.log('[Penalty] Successfully lifted penalty:', result);
+      return {
+        success: true,
+        newBalance: result.new_balance
+      };
+    } else {
+      logger.error('[Penalty] Failed to lift penalty:', result.error);
+      return {
+        success: false,
+        error: result.error
+      };
+    }
+  } catch (error) {
+    logger.error('[Penalty] Error lifting penalty:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
 
 /**
  * User requests forgiveness from partner

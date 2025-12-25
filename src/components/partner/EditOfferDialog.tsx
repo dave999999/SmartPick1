@@ -278,6 +278,7 @@ export function EditOfferDialog({
       <ImageLibraryModal
         open={showImageModal}
         category={partner?.business_type || 'RESTAURANT'}
+        partnerId={partner?.id}
         onSelect={(url) => {
           setSelectedLibraryImage(url);
           setImageFiles([url]);

@@ -1,16 +1,29 @@
 # 📱 SmartPick Telegram Notifications - Complete Guide
 
+## 🚀 ADVANCED NOTIFICATION SYSTEM (v2.0)
+
+This system uses **smart batching**, **trust scores**, and **passive confirmation** to prevent spam and false penalties.
+
+### Key Features:
+- 📦 **Anti-Spam Batching**: Groups notifications every 5 minutes
+- ⭐ **Trust Indicators**: Shows customer reliability (⭐ high, ⚠️ low)
+- ✅ **Passive Confirmation**: Asks partner before marking no-shows
+- 🔕 **Silent Hours**: Respects partner's do-not-disturb times
+- ⚙️ **Smart Config**: Per-partner thresholds and preferences
+
+---
+
 ## 🏪 PARTNER NOTIFICATIONS
 
 ---
 
 ### 1️⃣ New Order Alert (🎉)
 
-**Full Message Text:**
+**Full Message Text (with Trust Indicator):**
 ```
 🎉 ახალი შეკვეთა!
 
-მომხმარებელი: [Customer Name]
+მომხმარებელი: [Customer Name] [Trust Indicator]
 პროდუქტი: [Offer Title]
 რაოდენობა: [Quantity]
 აღება: [Pickup Deadline]
@@ -18,11 +31,17 @@
 მომხმარებელი მალე ჩამოვა შეკვეთის ასაღებად.
 ```
 
+**Trust Indicators:**
+- ⭐ = High trust (95+ score)
+- (no indicator) = Good (85-94)
+- ⚠️ = Caution (70-84)
+- 🔴 = Low reliability (<70)
+
 **English Translation:**
 ```
 🎉 New Order!
 
-Customer: [Customer Name]
+Customer: [Customer Name] [Trust Indicator]
 Product: [Offer Title]
 Quantity: [Quantity]
 Pickup By: [Pickup Deadline]
@@ -35,26 +54,47 @@ The customer will come soon to pick up the order.
 1. **Function Called:** `notifyPartnerNewReservation()`
 2. **Triggered When:** Customer successfully creates a reservation
 3. **Code Location:** `src/lib/api/reservations.ts` - `createReservation()` function
-4. **Trigger Code:**
+4. **Trigger Code (UPDATED):**
 ```typescript
+import { notifyPartnerNewReservation } from '@/lib/telegram';
+import { getCustomerName } from '@/lib/notificationQueue';
+
 // After successful reservation creation
+const customerName = await getCustomerName(userId);
+
 await notifyPartnerNewReservation(
-  partner.user_id,           // Partner's user_id
-  customerName,              // From users table
-  offer.title,               // Offer title
-  quantity,                  // Reservation quantity
-  pickupDeadline             // Format: "Dec 22, 2025 - 5:00 PM"
+  offer.partner_id,          // Partner's user_id (legacy)
+  offer.partners.id,         // Partner's UUID from partners table (NEW)
+  customerName,              // From profiles/auth
+  userId,                    // Customer ID for trust indicator (NEW)
+  offer.title,
+  quantity,
+  pickupDeadline
 );
 ```
 
-5. **Preference Check:**
+5. **Processing Flow:**
+   - Notification queued in `notification_queue` table
+   - Trust score fetched from `user_reliability` table
+   - Trust indicator added to customer name
+   - Batched with other notifications (default 5 min window)
+   - Sent via `flush-notification-queue` Edge Function
+
+6. **Preference Check:**
    - `partners.notification_preferences.newOrder` must be `true`
    - `partners.notification_preferences.telegram` must be `true`
-   - If either is false, notification is NOT sent
+   - Partner must have Telegram connected
+   - If any fails, notification is NOT queued
 
-6. **Required Data:**
-   - Partner's `user_id` (from partners table)
-   - Customer's full name (from auth.users + profiles)
+7. **Batching Behavior:**
+   - If **multiple orders** within 5 minutes → Sent as summary
+   - If **single order** → Sent as individual detailed message
+   - Partner can disable batching: `UPDATE partners SET batching_enabled = false`
+
+8. **Required Data:**
+   - Partner's UUID (from partners table)
+   - Customer's user_id (for trust lookup)
+   - Customer's full name
    - Offer title
    - Quantity reserved
    - Pickup deadline timestamp
@@ -86,47 +126,68 @@ Your product stock is running low. Add more quantity!
 **How It Triggers:**
 
 1. **Function Called:** `notifyPartnerLowStock()`
-2. **Triggered When:** After reservation creation, remaining quantity ≤ 2
+2. **Triggered When:** After reservation creation, remaining quantity ≤ custom threshold
 3. **Code Location:** `src/lib/api/reservations.ts` - `createReservation()` function
-4. **Trigger Code:**
+4. **Trigger Code (UPDATED):**
 ```typescript
+import { notifyPartnerLowStock } from '@/lib/telegram';
+
 // After creating reservation, check remaining quantity
 const remainingQuantity = offer.quantity - quantity;
 
-if (remainingQuantity <= 2 && remainingQuantity > 0) {
+// Get partner's custom threshold (default: 2)
+const { data: partner } = await supabase
+  .from('partners')
+  .select('low_stock_threshold')
+  .eq('id', offer.partners.id)
+  .single();
+
+const threshold = partner?.low_stock_threshold || 2;
+
+if (remainingQuantity <= threshold && remainingQuantity > 0) {
   await notifyPartnerLowStock(
-    partner.user_id,
+    offer.partner_id,        // user_id (legacy)
+    offer.partners.id,       // UUID (NEW)
     offer.title,
     remainingQuantity
   );
 }
 ```
 
-5. **Trigger Conditions:**
-   - `remainingQuantity <= 2` (2 or fewer items left)
+5. **Custom Thresholds:**
+   - Default: 2 items
+   - Partner can set custom: `UPDATE partners SET low_stock_threshold = 5`
+   - Example: High-volume bakery might set threshold to 10
+
+6. **Processing Flow:**
+   - Notification queued in `notification_queue` table
+   - Batched with other notifications
+   - Summary example: "📦 2x Low Stock Alerts"
+
+7. **Trigger Conditions:**
+   - `remainingQuantity <= threshold` (partner's custom or default 2)
    - `remainingQuantity > 0` (not completely sold out)
    - Happens AFTER reservation is created
 
-6. **Preference Check:**
+8. **Preference Check:**
    - `partners.notification_preferences.lowStock` must be `true`
    - `partners.notification_preferences.telegram` must be `true`
-   - If either is false, notification is NOT sent
+   - If either is false, notification is NOT queued
 
-7. **Example Scenarios:**
-   - Offer has 10 items → Customer reserves 8 → 2 left → ⚠️ Notification sent
-   - Offer has 5 items → Customer reserves 4 → 1 left → ⚠️ Notification sent
-   - Offer has 3 items → Customer reserves 1 → 2 left → ⚠️ Notification sent
-   - Offer has 2 items → Customer reserves 2 → 0 left → ❌ No notification (sold out)
+9. **Example Scenarios:**
+   - Threshold=2: Offer has 10 items → Customer reserves 8 → 2 left → ⚠️ Notification
+   - Threshold=5: Offer has 10 items → Customer reserves 6 → 4 left → ❌ No notification (above threshold)
+   - Threshold=2: Offer has 2 items → Customer reserves 2 → 0 left → ❌ No notification (sold out)
 
 ---
 
 ### 3️⃣ Cancellation Notice (🚫)
 
-**Full Message Text:**
+**Full Message Text (with Trust Indicator):**
 ```
 🚫 რეზერვაცია გაუქმდა
 
-მომხმარებელი: [Customer Name]
+მომხმარებელი: [Customer Name] [Trust Indicator]
 პროდუქტი: [Offer Title]
 რაოდენობა: [Quantity]
 
@@ -137,7 +198,7 @@ if (remainingQuantity <= 2 && remainingQuantity > 0) {
 ```
 🚫 Reservation Cancelled
 
-Customer: [Customer Name]
+Customer: [Customer Name] [Trust Indicator]
 Product: [Offer Title]
 Quantity: [Quantity]
 
@@ -149,31 +210,48 @@ Customer cancelled the reservation. Quantity has been returned to your offer.
 1. **Function Called:** `notifyPartnerReservationCancelled()`
 2. **Triggered When:** Customer cancels their active reservation
 3. **Code Location:** `src/lib/api/reservations.ts` - `cancelReservation()` function
-4. **Trigger Code:**
+4. **Trigger Code (UPDATED):**
 ```typescript
+import { notifyPartnerReservationCancelled } from '@/lib/telegram';
+import { getCustomerName } from '@/lib/notificationQueue';
+
 // After successful cancellation and quantity restoration
+const customerName = await getCustomerName(reservation.customer_id);
+
 await notifyPartnerReservationCancelled(
-  partner.user_id,
+  reservation.offers.partner_id,    // user_id (legacy)
+  reservation.offers.partners.id,   // UUID (NEW)
   customerName,
-  offer.title,
+  reservation.customer_id,          // For trust indicator (NEW)
+  reservation.offers.title,
   reservation.quantity
 );
 ```
 
-5. **Trigger Conditions:**
+5. **Processing Flow:**
+   - Notification queued in `notification_queue` table
+   - Trust score shows if customer frequently cancels
+   - Batched: "❌ 2x Cancellations" if multiple happen
+
+6. **Trust Score Impact:**
+   - Each cancellation: -3 points from reliability score
+   - Late cancellation (< 1hr before pickup): -8 points
+   - Partner sees ⚠️ or 🔴 if customer cancels frequently
+
+7. **Trigger Conditions:**
    - Reservation status changes to 'cancelled'
    - Quantity is restored to offer
    - Customer is the one who cancelled (not auto-expired)
 
-6. **Preference Check:**
+8. **Preference Check:**
    - `partners.notification_preferences.cancellation` must be `true`
    - `partners.notification_preferences.telegram` must be `true`
-   - If either is false, notification is NOT sent
+   - If either is false, notification is NOT queued
 
-7. **NOT Sent When:**
+9. **NOT Sent When:**
    - Reservation auto-expires (timeout)
    - Partner cancels the reservation
-   - System marks as no-show
+   - System marks as no-show (separate flow)
 
 ---
 

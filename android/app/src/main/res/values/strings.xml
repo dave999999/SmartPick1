@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SmartPick</string>
+    <string name="title_activity_main">SmartPick</string>
+    <string name="package_name">ge.smartpick.app</string>
+    <string name="custom_url_scheme">ge.smartpick.app</string>
+</resources>

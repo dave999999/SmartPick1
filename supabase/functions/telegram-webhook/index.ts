@@ -46,6 +46,163 @@ serve(async (req) => {
       hasCallbackQuery: !!update.callback_query 
     })
 
+    // ============================================
+    // HANDLE CALLBACK QUERIES (INLINE BUTTONS)
+    // ============================================
+    if (update.callback_query) {
+      const callbackQuery = update.callback_query
+      const callbackChatId = callbackQuery.message.chat.id
+      const callbackData = callbackQuery.data
+      const queryId = callbackQuery.id
+
+      logger.info('Processing callback query', { data: callbackData })
+
+      // Parse callback: "confirm_pickup:{reservation_id}" or "confirm_noshow:{reservation_id}"
+      if (callbackData.startsWith('confirm_pickup:')) {
+        const reservationId = callbackData.split(':')[1]
+        
+        // Update reservation as picked up
+        const { error: updateError } = await supabase
+          .from('reservations')
+          .update({
+            status: 'picked_up',
+            confirmation_status: 'confirmed',
+            confirmation_resolved_at: new Date().toISOString(),
+            auto_confirmed: false,
+          })
+          .eq('id', reservationId)
+
+        if (updateError) {
+          logger.error('Error confirming pickup', updateError)
+          await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: queryId,
+              text: '❌ Error updating reservation',
+            }),
+          })
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200
+          })
+        }
+
+        // Get customer_id to update reliability
+        const { data: reservation } = await supabase
+          .from('reservations')
+          .select('customer_id')
+          .eq('id', reservationId)
+          .single()
+
+        if (reservation) {
+          // Update user reliability (positive action)
+          await supabase.rpc('update_user_reliability_score', {
+            p_user_id: reservation.customer_id,
+            p_action: 'completed',
+          })
+        }
+
+        // Answer callback query (shows toast)
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: queryId,
+            text: '✅ Pickup confirmed!',
+          }),
+        })
+
+        // Edit message to remove buttons
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: callbackChatId,
+            message_id: callbackQuery.message.message_id,
+            text: `✅ <b>Confirmed!</b>\n\n${callbackQuery.message.text}\n\n<i>You confirmed the customer picked up the order.</i>`,
+            parse_mode: 'HTML',
+          }),
+        })
+
+        logger.info('Pickup confirmed successfully', { reservationId })
+      } 
+      else if (callbackData.startsWith('confirm_noshow:')) {
+        const reservationId = callbackData.split(':')[1]
+        
+        // Update reservation as no-show
+        const { error: updateError } = await supabase
+          .from('reservations')
+          .update({
+            status: 'no_show',
+            confirmation_status: 'denied',
+            confirmation_resolved_at: new Date().toISOString(),
+            auto_confirmed: false,
+          })
+          .eq('id', reservationId)
+
+        if (updateError) {
+          logger.error('Error confirming no-show', updateError)
+          await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              callback_query_id: queryId,
+              text: '❌ Error updating reservation',
+            }),
+          })
+          return new Response(JSON.stringify({ ok: true }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 200
+          })
+        }
+
+        // Get customer_id to update reliability
+        const { data: reservation } = await supabase
+          .from('reservations')
+          .select('customer_id')
+          .eq('id', reservationId)
+          .single()
+
+        if (reservation) {
+          // Update user reliability (negative action)
+          await supabase.rpc('update_user_reliability_score', {
+            p_user_id: reservation.customer_id,
+            p_action: 'missed',
+          })
+        }
+
+        // Answer callback query
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: queryId,
+            text: '❌ No-show recorded',
+          }),
+        })
+
+        // Edit message to remove buttons
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: callbackChatId,
+            message_id: callbackQuery.message.message_id,
+            text: `❌ <b>No-Show Recorded</b>\n\n${callbackQuery.message.text}\n\n<i>You confirmed the customer didn't pick up the order.</i>`,
+            parse_mode: 'HTML',
+          }),
+        })
+
+        logger.info('No-show recorded successfully', { reservationId })
+      }
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200
+      })
+    }
+
     if (!update.message) {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { 'Content-Type': 'application/json' },

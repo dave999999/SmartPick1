@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Heart, Clock, RotateCcw, MessageCircle } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface MissedPickupPopupProps {
   /** Number of pickups missed in current penalty window (0-3) */
@@ -34,6 +35,7 @@ export function MissedPickupPopup({
   isOpen,
   compact = false,
 }: MissedPickupPopupProps) {
+  const { t } = useI18n();
   const chancesLeft = maxChances - missedCount;
   
   // Prevent body scroll when open
@@ -50,10 +52,10 @@ export function MissedPickupPopup({
 
   // Warm, reassuring copy (NO guilt, NO fear)
   const getChancesText = () => {
-    if (chancesLeft === 3) return "3 chances left — plenty of room!";
-    if (chancesLeft === 2) return "2 chances left — you're doing great!";
-    if (chancesLeft === 1) return "1 chance left — let's keep it going!";
-    return "All set for next time";
+    if (chancesLeft === 3) return t('missedPickup.chances.three');
+    if (chancesLeft === 2) return t('missedPickup.chances.two');
+    if (chancesLeft === 1) return t('missedPickup.chances.one');
+    return t('missedPickup.chances.done');
   };
 
   const getChancesEmoji = () => {
@@ -64,10 +66,11 @@ export function MissedPickupPopup({
   };
 
   const getHeaderText = () => {
-    if (chancesLeft === 3) return "No stress — these things happen 😊";
-    if (chancesLeft === 2) return "All good! Here's a friendly reminder 😊";
-    if (chancesLeft === 1) return "Quick heads up! Let's stay on track 💛";
-    return "Thanks for checking in";
+    if (chancesLeft === 3) return t('missedPickup.header.noStress');
+    if (chancesLeft === 2) return t('missedPickup.header.allGood');
+    if (chancesLeft === 1) return t('missedPickup.header.headsUp');
+    if (chancesLeft === 0) return t('missedPickup.header.finalWarning');
+    return t('missedPickup.header.thanks');
   };
 
   const getPenaltyText = () => {
@@ -102,7 +105,7 @@ export function MissedPickupPopup({
         role="dialog"
       >
         <DialogTitle className="sr-only">
-          Missed Pickup Reminder
+          {t('missedPickup.dialogTitle')}
         </DialogTitle>
         
         {/* Ultra-compact Header - Tight stack */}
@@ -131,9 +134,17 @@ export function MissedPickupPopup({
             id="missed-pickup-description"
             className="mb-3"
           >
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 text-center">
-              Remaining chances
-            </p>
+            {chancesLeft > 0 && (
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2 text-center">
+                {t('missedPickup.remainingChances')}
+              </p>
+            )}
+            
+            {chancesLeft === 0 && (
+              <p className="text-[12px] font-semibold text-gray-600 mb-2 text-center">
+                {t('missedPickup.stillInYourHands')}
+              </p>
+            )}
             
             {/* Compact Hearts Row - 20% smaller */}
             <div className="flex items-center justify-center gap-2.5 mb-2.5">
@@ -145,7 +156,7 @@ export function MissedPickupPopup({
                     className="relative animate-in zoom-in-50 duration-300"
                     style={{ animationDelay: `${index * 50}ms` }}
                     role="img"
-                    aria-label={isMissed ? "Used" : "Remaining"}
+                    aria-label={isMissed ? t('missedPickup.ariaLabel.used') : t('missedPickup.ariaLabel.remaining')}
                   >
                     <div className={`
                       ${heartSize} rounded-full flex items-center justify-center
@@ -168,45 +179,84 @@ export function MissedPickupPopup({
               })}
             </div>
 
-            {/* Chances text - warm & reassuring */}
-            <p className="text-center text-[14px] font-semibold text-gray-800 leading-tight">
-              {getChancesText()} {getChancesEmoji()}
-            </p>
+            {/* For final warning (0 chances), show longer explanation */}
+            {chancesLeft === 0 ? (
+              <div className="text-center space-y-2">
+                <p className="text-[13px] text-gray-700 leading-relaxed px-2">
+                  {t('missedPickup.finalWarning.explanation')}
+                </p>
+                <p className="text-[12px] text-gray-600 leading-snug px-2">
+                  {t('missedPickup.finalWarning.reassurance')}
+                </p>
+              </div>
+            ) : (
+              /* Chances text - warm & reassuring */
+              <p className="text-center text-[14px] font-semibold text-gray-800 leading-tight">
+                {getChancesText()} {getChancesEmoji()}
+              </p>
+            )}
           </div>
 
           {/* Tiny tips - super compact */}
           <div className="mb-3">
             <p className="text-[11px] font-medium text-gray-600 mb-2">
-              Quick tips to stay bright ✨
+              {chancesLeft === 0 ? t('missedPickup.tipsFuture') : t('missedPickup.tipsTitle')}
             </p>
             
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-[12px] text-gray-700">
-                <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <Clock className="w-3 h-3 text-blue-600" />
-                </div>
-                <span className="leading-snug">Arrive on time</span>
-              </div>
+              {chancesLeft === 0 ? (
+                <>
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.onlyWhenCan')}</span>
+                  </div>
 
-              <div className="flex items-center gap-2 text-[12px] text-gray-700">
-                <div className="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center flex-shrink-0">
-                  <RotateCcw className="w-3 h-3 text-purple-600" />
-                </div>
-                <span className="leading-snug">Cancel early if needed</span>
-              </div>
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center flex-shrink-0">
+                      <RotateCcw className="w-3 h-3 text-purple-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.cancelIfPlansChange')}</span>
+                  </div>
 
-              <div className="flex items-center gap-2 text-[12px] text-gray-700">
-                <div className="w-5 h-5 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
-                  <MessageCircle className="w-3 h-3 text-teal-600" />
-                </div>
-                <span className="leading-snug">Message if running late</span>
-              </div>
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-3 h-3 text-teal-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.message')}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.onTime')}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-purple-50 flex items-center justify-center flex-shrink-0">
+                      <RotateCcw className="w-3 h-3 text-purple-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.cancelEarly')}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[12px] text-gray-700">
+                    <div className="w-5 h-5 rounded-md bg-teal-50 flex items-center justify-center flex-shrink-0">
+                      <MessageCircle className="w-3 h-3 text-teal-600" />
+                    </div>
+                    <span className="leading-snug">{t('missedPickup.tip.message')}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
           {/* Micro footer - tiny & low contrast */}
           <p className="text-[10px] text-center text-gray-400 mb-3 leading-relaxed">
-            Keeps the good vibes going 💛
+            {t('missedPickup.footer')}
           </p>
 
           {/* Friendly button */}
@@ -217,9 +267,9 @@ export function MissedPickupPopup({
               hover:from-orange-600 hover:to-amber-600
               text-white transition-all duration-200 
               hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
-            aria-label="I understand"
+            aria-label={t('missedPickup.ariaLabel.understand')}
           >
-            Got it! 🙌
+            {t('missedPickup.gotItButton')}
           </Button>
         </div>
       </DialogContent>

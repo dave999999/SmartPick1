@@ -30,6 +30,15 @@ interface PenaltyModalProps {
 }
 
 export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: PenaltyModalProps) {
+  // ❌ BLOCK: This modal is ONLY for warnings (offenses 1-3)
+  // Suspensions (4th+ offense) should use SuspensionModal instead
+  const isSuspension = ['1hour', '5hour', '24hour', 'permanent'].includes(penalty?.penalty_type || '');
+  
+  if (isSuspension) {
+    console.error('❌ PenaltyModal should NOT show for suspensions! Use SuspensionModal instead.');
+    return null; // Don't render anything - SuspensionModal should be shown instead
+  }
+
   const [timeRemaining, setTimeRemaining] = useState('');
   const [isLifting, setIsLifting] = useState(false);
   const [showForgivenessModal, setShowForgivenessModal] = useState(false);
@@ -98,13 +107,13 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
     
     const success = await acknowledgePenalty(penalty.id, penalty.user_id);
     if (success) {
-      // For warnings, close modal immediately
-      if (penalty.offense_number === 1) {
+      // For warnings (offenses 1-3), close modal immediately
+      if (penalty.offense_number >= 1 && penalty.offense_number <= 3 && penalty.penalty_type === 'warning') {
         toast.success('Warning acknowledged. Please be more careful with future reservations.');
         onClose();
         onPenaltyLifted(); // Refresh to clear penalty state
       } else {
-        // For suspensions, just mark as acknowledged
+        // For suspensions (4th+ offense), just mark as acknowledged
         setAcknowledged(true);
         toast.info('Acknowledged. Please wait for your ban to expire or choose an option to lift it.');
       }

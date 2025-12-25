@@ -37,8 +37,6 @@ export function useOfferActions(
   };
 
   const handleDeleteOffer = async (offerId: string) => {
-    if (!confirm(t('partner.dashboard.confirm.deleteOffer'))) return;
-
     try {
       await deleteOffer(offerId);
       toast.success(t('partner.dashboard.toast.offerDeleted'));
@@ -162,6 +160,42 @@ export function useOfferActions(
     }
   };
 
+  const handleReloadOffer = async (offer: Offer) => {
+    if (processingIds.has(offer.id)) return;
+
+    try {
+      setProcessingIds(prev => new Set(prev).add(offer.id));
+
+      // Calculate original duration from created_at to expires_at
+      const createdAt = new Date(offer.created_at);
+      const originalExpiresAt = new Date(offer.expires_at);
+      const originalDurationMs = originalExpiresAt.getTime() - createdAt.getTime();
+
+      // Calculate new expires_at based on original duration
+      const now = new Date();
+      const newExpiresAt = new Date(now.getTime() + originalDurationMs);
+
+      // Reset offer to original state
+      await updateOffer(offer.id, {
+        quantity_available: offer.quantity_total, // Reset to original quantity
+        expires_at: newExpiresAt.toISOString(), // Reset time based on original duration
+        status: 'ACTIVE' // Reactivate the offer
+      });
+
+      toast.success(t('partner.dashboard.toast.offerReloaded'));
+      onSuccess();
+    } catch (error) {
+      logger.error('Error reloading offer:', error);
+      toast.error(t('partner.dashboard.toast.offerReloadFailed'));
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(offer.id);
+        return next;
+      });
+    }
+  };
+
   return {
     processingIds,
     handleToggleOffer,
@@ -171,5 +205,6 @@ export function useOfferActions(
     handlePauseOffer,
     handleResumeOffer,
     handleCloneOffer,
+    handleReloadOffer,
   };
 }

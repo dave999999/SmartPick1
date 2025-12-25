@@ -242,50 +242,72 @@ export const createReservation = async (
 
   // Send Telegram notifications (don't block on these)
   if (reservation) {
-    const customerName = reservation.customer?.name || 'Customer';
-    const offerTitle = reservation.offer?.title || 'Offer';
-    const pickupBy = new Date(reservation.expires_at).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-    const partnerName = reservation.partner?.business_name || 'Partner';
-    const partnerAddress = reservation.partner?.address || 'Address not available';
+    // Fetch full details for notifications if not already loaded
+    const { data: fullReservation } = await supabase
+      .from('reservations')
+      .select(`
+        *,
+        offer:offers (
+          title,
+          quantity_total,
+          partner_id,
+          partner:partners (
+            business_name,
+            address,
+            user_id
+          )
+        )
+      `)
+      .eq('id', reservation.id)
+      .single();
 
-    // Notify partner about new reservation
-    // Note: notification_preferences uses user_id, not partner_id
-    const partnerUserId = reservation.partner?.user_id;
-    if (partnerUserId) {
-      notifyPartnerNewReservation(
-        partnerUserId,
-        customerName,
+    if (fullReservation) {
+      const customerName = 'Customer'; // We don't store customer names in reservations
+      const offerTitle = fullReservation.offer?.title || 'Offer';
+      const pickupBy = new Date(fullReservation.expires_at).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+      const partnerName = fullReservation.offer?.partner?.business_name || 'Partner';
+      const partnerAddress = fullReservation.offer?.partner?.address || 'Address not available';
+      const partnerId = fullReservation.offer?.partner_id; // UUID of partner record
+
+      // Notify partner about new reservation
+      if (partnerId) {
+        notifyPartnerNewReservation(
+          partnerId,
+          customerName,
+          customerId, // Pass customer ID
+          offerTitle,
+          quantity,
+          pickupBy
+        ).catch(err => console.warn('Notification service unavailable'));
+
+        // Check if stock is low and notify partner
+        const remainingQuantity = fullReservation.offer?.quantity_available || 0;
+        if (remainingQuantity <= 2 && remainingQuantity > 0) {
+          notifyPartnerLowStock(
+            partnerId,
+            partnerId, // Pass partner UUID
+            offerTitle,
+            remainingQuantity
+          ).catch(err => console.warn('Low stock notification unavailable'));
+        }
+      }
+
+      // Notify customer about reservation confirmation
+      notifyCustomerReservationConfirmed(
+        customerId,
         offerTitle,
         quantity,
+        partnerName,
+        partnerAddress,
         pickupBy
       ).catch(err => console.warn('Notification service unavailable'));
-
-      // Check if stock is low and notify partner
-      const remainingQuantity = reservation.offer?.quantity_available || 0;
-      if (remainingQuantity <= 2 && remainingQuantity > 0) {
-        notifyPartnerLowStock(
-          partnerUserId,
-          offerTitle,
-          remainingQuantity
-        ).catch(err => console.warn('Low stock notification unavailable'));
-      }
     }
-
-    // Notify customer about reservation confirmation
-    notifyCustomerReservationConfirmed(
-      customerId,
-      offerTitle,
-      quantity,
-      partnerName,
-      partnerAddress,
-      pickupBy
-    ).catch(err => console.warn('Notification service unavailable'));
   }
 
   return reservation as Reservation;
@@ -658,7 +680,9 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       const { notifyPartnerReservationCancelled } = await import('@/lib/telegram');
       notifyPartnerReservationCancelled(
         offer.partner_id,
+        offer.partner_id, // Pass partner UUID
         customerName,
+        reservation.customer_id, // Pass customer ID
         offer.title,
         reservation.quantity
       ).catch(err => {

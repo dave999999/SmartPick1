@@ -204,11 +204,11 @@ export default function ReserveOffer() {
         try {
           // Check if this is user's first reservation
           const allReservations = await indexedDBManager.getAll(STORES.RESERVATIONS) as unknown as import('@/lib/types').Reservation[];
-          const userReservations = allReservations.filter(r => r.customer_id === user.id);
+          const userReservations = allReservations.filter(r => r.customer_id === reservation.customer_id);
           
           if (userReservations.length === 1) { // First reservation
             setTimeout(async () => {
-              const subscribed = await subscribeToPush(user.id);
+              const subscribed = await subscribeToPush(reservation.customer_id);
               if (subscribed) {
                 toast.success('🔔 Push notifications enabled! We\'ll notify you about nearby offers');
               }

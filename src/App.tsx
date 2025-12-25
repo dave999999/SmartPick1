@@ -8,7 +8,7 @@ import { getCurrentUser } from './lib/api';
 import { logger } from './lib/logger';
 // supabase dynamically imported to reduce initial bundle size
 import { useActivityTracking } from './hooks/useActivityTracking';
-import { getActivePenalty, getPenaltyDetails } from './lib/api/penalty';
+import { getActivePenalty, getPenaltyDetails, liftPenaltyWithPoints } from './lib/api/penalty';
 import type { UserPenalty } from './lib/api/penalty';
 import { GoogleMapProvider } from './components/map/GoogleMapProvider';
 import { queryClient } from './lib/queryClient';
@@ -77,6 +77,8 @@ const AppContent = () => {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [showPenaltyModal, setShowPenaltyModal] = useState(false);
   const [penaltyData, setPenaltyData] = useState<UserPenalty | null>(null);
+  const [showSuspensionModal, setShowSuspensionModal] = useState(false);
+  const [suspensionPenalty, setSuspensionPenalty] = useState<UserPenalty | null>(null);
   const [userPoints, setUserPoints] = useState(0);
 
   // Track user activity for real-time monitoring
@@ -232,8 +234,32 @@ const AppContent = () => {
         if (activePenalty && activePenalty.penalty_id) {
           const details = await getPenaltyDetails(activePenalty.penalty_id);
           if (cancelled) return;
-          setPenaltyData(details);
-          setShowPenaltyModal(true);
+          
+          // Only show popup if penalty is not yet acknowledged
+          if (details && !details.acknowledged) {
+            // Check if it's a suspension (not a warning)
+            console.log('🔍 PENALTY DEBUG:', {
+              penalty_type: details.penalty_type,
+              offense_number: details.offense_number,
+              suspended_until: details.suspended_until,
+              penalty_id: details.id
+            });
+            
+            const isSuspension = ['1hour', '5hour', '24hour', 'permanent'].includes(details.penalty_type);
+            console.log('🎯 Is Suspension?', isSuspension);
+            
+            if (isSuspension) {
+              // Show new SuspensionModal
+              console.log('✅ Showing SuspensionModal');
+              setSuspensionPenalty(details);
+              setShowSuspensionModal(true);
+            } else {
+              // Show old MissedPickupPopup for warnings
+              console.log('⚠️ Showing old PenaltyModal (warning)');
+              setPenaltyData(details);
+              setShowPenaltyModal(true);
+            }
+          }
         }
       } catch (error) {
         console.error('Error checking penalty on load:', error);
@@ -360,10 +386,18 @@ const AppContent = () => {
       <OverlayOrchestrator
         showPenaltyModal={showPenaltyModal}
         penaltyData={penaltyData}
+        showSuspensionModal={showSuspensionModal}
+        suspensionPenalty={suspensionPenalty}
         userPoints={userPoints}
         onPenaltyClose={() => setShowPenaltyModal(false)}
+        onSuspensionClose={() => {
+          setShowSuspensionModal(false);
+          setSuspensionPenalty(null);
+        }}
+        onLiftPenalty={liftPenaltyWithPoints}
         onPenaltyLifted={async () => {
           setShowPenaltyModal(false);
+          setShowSuspensionModal(false);
           // Refresh user points after lifting
           const { user } = await getCurrentUser();
           if (user) {

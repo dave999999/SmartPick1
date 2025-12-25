@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Search, Mic } from 'lucide-react';
+import { Search, Mic, Clock } from 'lucide-react';
 
 // Search icon is decorative - input has visible placeholder text
 import { motion } from 'framer-motion';
@@ -18,6 +18,31 @@ import { getAllCategories } from '@/lib/categories';
 import { Offer, Partner } from '@/lib/types';
 import { useI18n } from '@/lib/i18n';
 import { useAppleTick } from '@/hooks/useAppleTick';
+import { isBusinessOpen } from '@/lib/utils/businessHoursHelpers';
+
+// Helper to format time remaining
+function formatTimeRemaining(expiresAt: string): string | null {
+  const now = new Date();
+  const expiry = new Date(expiresAt);
+  const diff = expiry.getTime() - now.getTime();
+  
+  if (diff <= 0) return null;
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  // Show days + hours if days > 0
+  if (days > 0) {
+    return hours > 0 ? `${days}დ ${hours}სთ` : `${days}დ`;
+  }
+  // Show hours + minutes if hours > 0
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}სთ ${minutes}წთ` : `${hours}სთ`;
+  }
+  // Show only minutes
+  return `${minutes}წთ`;
+}
 
 interface OffersSheetNewProps {
   isOpen: boolean;
@@ -83,7 +108,13 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
     // Check if offer is not expired
     const isNotExpired = !offer.expires_at || new Date(offer.expires_at) > new Date();
     
-    return matchesPartner && matchesCategory && matchesSearch && offer.status === 'ACTIVE' && isNotExpired;
+    // Check if business is currently open (for non-24h businesses)
+    // Temporarily disabled until migration is applied - will be re-enabled later
+    // const businessIsOpen = !offer.partner?.business_hours || 
+    //   isBusinessOpen(offer.partner.business_hours, offer.partner.open_24h);
+    
+    return matchesPartner && matchesCategory && matchesSearch && 
+           offer.status === 'ACTIVE' && isNotExpired;
   });
 
   // Get special offers (50% or more discount)
@@ -257,6 +288,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                       imageUrl={offer.images?.[0] || '/images/Map.jpg'}
                       priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                       priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
+                      expiresAt={offer.expires_at}
                       onClick={() => onOfferSelect(offer)}
                     />
                   </div>
@@ -436,6 +468,18 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                                   </div>
                                 </div>
                               </div>
+
+                              {/* Time Remaining Badge - Bottom Right */}
+                              {offer.expires_at && formatTimeRemaining(offer.expires_at) && (
+                                <div className="absolute bottom-2 right-2">
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/60 rounded-lg shadow-sm">
+                                    <Clock size={11} className="text-orange-600" strokeWidth={2.5} />
+                                    <span className="text-[11px] font-bold text-orange-600 leading-none">
+                                      {formatTimeRemaining(offer.expires_at)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -488,6 +532,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                       imageUrl={offer.images?.[0] || '/images/Map.jpg'}
                       priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                       priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
+                      expiresAt={offer.expires_at}
                       onClick={() => onOfferSelect(offer)}
                     />
                   ))}

@@ -67,6 +67,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { usePickupBroadcast } from '@/hooks/usePickupBroadcast';
+import { getUserCancellationWarning } from '@/lib/api/penalty';
 
 // ============================================
 // TYPES
@@ -534,37 +535,30 @@ export function ActiveReservationCard({
     };
   }, [showQRModal, reservation?.id, onExpired]);
 
-  // Fetch user's recent cancellation count
-  useEffect(() => {
-    async function fetchCancelCount() {
-      if (!reservation) return;
+  // Function to fetch user's recent cancellation count
+  const fetchCancelCount = async () => {
+    if (!reservation) return;
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      console.log('[ActiveReservationCard] Fetching cancellation count for user:', user.id);
       
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // Only count cancellations in the last 30 minutes (current cooldown window)
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-
-        const { count, error } = await supabase
-          .from('user_cancellation_tracking')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('cancelled_at', thirtyMinutesAgo); // Last 30 minutes only
-
-        if (error) {
-          console.error('Error fetching cancel count:', error);
-          return;
-        }
-
-        setCancelCount(count || 0);
-      } catch (error) {
-        console.error('Error:', error);
-      } finally {
-        setLoadingCancelCount(false);
-      }
+      // Use the proper API function that calls get_user_daily_cancellation_count
+      const warning = await getUserCancellationWarning(user.id);
+      
+      console.log('[ActiveReservationCard] Cancellation warning:', warning);
+      setCancelCount(warning.cancellationCount);
+    } catch (error) {
+      console.error('[ActiveReservationCard] Error fetching cancel count:', error);
+    } finally {
+      setLoadingCancelCount(false);
     }
+  };
 
+  // Fetch cancellation count on mount
+  useEffect(() => {
     fetchCancelCount();
   }, [reservation]);
 
@@ -694,7 +688,11 @@ export function ActiveReservationCard({
           {/* Action Buttons - iOS Standard */}
           <div className="flex gap-2.5 sm:gap-3 mt-auto">
             <motion.button
-              onClick={() => setShowCancelDialog(true)}
+              onClick={async () => {
+                // Fetch latest count before showing dialog
+                await fetchCancelCount();
+                setShowCancelDialog(true);
+              }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', damping: 18, stiffness: 420 }}
               className="flex-1 h-10 sm:h-11 rounded-[12px] sm:rounded-[14px] font-semibold text-[14px] sm:text-[15px] transition-all"
@@ -738,10 +736,19 @@ export function ActiveReservationCard({
       />
 
       {/* Apple-Style Cancel Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+      <Dialog open={showCancelDialog} onOpenChange={(open) => {
+        if (open) {
+          console.log('[ActiveReservationCard] Opening cancel dialog with count:', cancelCount);
+        }
+        setShowCancelDialog(open);
+      }}>
         <DialogContent className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
           <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
-            {cancelCount >= 2 ? t('cancelDialog.critical.title') : cancelCount >= 1 ? t('cancelDialog.warning.title') : t('cancelDialog.title')}
+            {cancelCount >= 4 ? '⚠️ მე-5 გაუქმება' : 
+             cancelCount >= 3 ? '⚠️ მე-4 გაუქმება' : 
+             cancelCount >= 2 ? t('cancelDialog.critical.title') : 
+             cancelCount >= 1 ? t('cancelDialog.warning.title') : 
+             t('cancelDialog.title')}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Confirm if you want to cancel your reservation. You will need to make a new reservation if you change your mind.
@@ -755,11 +762,33 @@ export function ActiveReservationCard({
             <div className="px-5 pt-0 pb-3 text-center">
               <div className="flex justify-center mb-3">
                 <div className="text-[56px] leading-none">
-                  {cancelCount >= 2 ? t('cancelDialog.critical.emoji') : cancelCount >= 1 ? t('cancelDialog.warning.emoji') : t('cancelDialog.emoji')}
+                  {cancelCount >= 4 ? '🚨' : 
+                   cancelCount >= 3 ? '😰' : 
+                   cancelCount >= 2 ? t('cancelDialog.critical.emoji') : 
+                   cancelCount >= 1 ? t('cancelDialog.warning.emoji') : 
+                   t('cancelDialog.emoji')}
                 </div>
               </div>
               <p className="text-[13px] text-gray-600 leading-relaxed mt-2 px-2">
-                {cancelCount >= 2 ? (
+                {cancelCount >= 4 ? (
+                  <>
+                    <strong className="text-red-600">ბოლო შესაძლებლობა! 🙏</strong>
+                    <br /><br />
+                    ეს იქნება თქვენი მე-5 გაუქმება დღეს. თუ გააუქმებთ ამ რეზერვაციას, მომდევნო რეზერვაცია შეძლებთ მხოლოდ ხვალ.
+                    <br /><br />
+                    💙 პარტნიორებს სჭირდებათ სტაბილურობა. მადლობა გაგებისთვის!
+                  </>
+                ) : cancelCount >= 3 ? (
+                  <>
+                    დღეს უკვე 3-ჯერ გააუქმეთ რეზერვაცია.
+                    <br /><br />
+                    შეგიძლიათ გააუქმოთ ეს რეზერვაციაც, თუმცა ამ შემთხვევაში დაგეკისრებათ შეზღუდვა, რომლის მოხსნა შესაძლებელი იქნება მხოლოდ 100 ქულის გამოყენებით.
+                    <br /><br />
+                    გთხოვთ, გააუქმოთ მხოლოდ მაშინ, თუ დარწმუნებული ხართ თქვენს გადაწყვეტილებაში 🙂
+                    <br /><br />
+                    💡 შეზღუდვა აისახება თქვენს ანგარიშზე დაუყოვნებლივ
+                  </>
+                ) : cancelCount >= 2 ? (
                   <>
                     {t('cancelDialog.critical.message1')}
                     <br /><br />
@@ -792,7 +821,11 @@ export function ActiveReservationCard({
                 whileTap={{ scale: 0.98 }}
                 className="w-full h-11 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-[15px] rounded-xl shadow-lg shadow-blue-500/25 transition-all"
               >
-                {cancelCount >= 2 ? t('cancelDialog.critical.keepButton') : cancelCount >= 1 ? t('cancelDialog.warning.keepButton') : t('cancelDialog.keepButton')}
+                {cancelCount >= 4 ? '🛡️ არ გავაუქმო' : 
+                 cancelCount >= 3 ? '✨ შევინარჩუნო' : 
+                 cancelCount >= 2 ? t('cancelDialog.critical.keepButton') : 
+                 cancelCount >= 1 ? t('cancelDialog.warning.keepButton') : 
+                 t('cancelDialog.keepButton')}
               </motion.button>
               <motion.button
                 onClick={() => {

@@ -489,8 +489,10 @@ export default function ReservationModalNew({
         </div>
       </div>
 
-      {/* COOLDOWN MODALS - Show different modal based on resetCount */}
-      {cooldown.isInCooldown && cooldown.resetCount === 0 && (
+      {/* COOLDOWN MODALS - Show different modal based on cancellation count */}
+      
+      {/* 3 cancellations: FREE lift with checkbox */}
+      {cooldown.isInCooldown && cooldown.cancellationCount === 3 && cooldown.resetCount === 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
           <div className="pointer-events-auto">
             <CancellationCooldownCard
@@ -508,15 +510,70 @@ export default function ReservationModalNew({
         </div>
       )}
 
-      {cooldown.isInCooldown && cooldown.resetCount >= 1 && (
+      {/* 4 cancellations: Must pay 100 points to lift */}
+      {cooldown.isInCooldown && cooldown.cancellationCount === 4 && (
         <PaidCooldownLiftModal
           isVisible={true}
           timeUntilUnlock={cooldown.timeUntilUnlock}
-          resetCount={cooldown.resetCount}
-          userPoints={user?.smart_points || 0}
+          resetCount={1} // Force paid lift (100 points)
+          userPoints={userPoints} // Use userPoints state instead of user.smart_points
           onLiftWithPoints={cooldown.liftCooldownWithPoints}
           isLifting={cooldown.resetLoading}
         />
+      )}
+      
+      {/* 5+ cancellations: Blocked until tomorrow - NO LIFT OPTION */}
+      {cooldown.isInCooldown && cooldown.cancellationCount >= 5 && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none">
+          <div className="pointer-events-auto max-w-sm w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header - Red gradient */}
+            <div className="bg-gradient-to-br from-red-500 via-red-400 to-pink-500 px-6 py-5 text-center">
+              <div className="text-5xl mb-3">🌙 😴</div>
+              <h3 className="text-xl font-bold text-white mb-1">
+                დღეს საკმარისია! 🙏
+              </h3>
+              <p className="text-sm text-white/90">
+                დაისვენეთ და ხვალ გააგრძელეთ
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                <p className="text-sm text-red-900 leading-relaxed">
+                  <strong>5 გაუქმება ერთ დღეში</strong> ზედმეტად ბევრია. 
+                  <br /><br />
+                  პარტნიორებს სჭირდებათ სტაბილურობა და თქვენც გჭირდებათ დასვენება! 💙
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="text-center mb-3">
+                  <div className="text-3xl mb-2">🌅</div>
+                  <p className="text-sm font-semibold text-blue-900">
+                    ხვალ ყველაფერი ხელახლა დაიწყება!
+                  </p>
+                </div>
+                <p className="text-xs text-blue-800 text-center leading-relaxed">
+                  ხვალ 00:00 საათიდან შეძლებთ ახალი რეზერვაციების გაკეთებას შეზღუდვის გარეშე
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-xs text-amber-900 text-center leading-relaxed">
+                  💡 <strong>რჩევა:</strong> რეზერვაცია გააკეთეთ მაშინ, როცა დარწმუნებული ხართ, რომ აიღებთ პროდუქტს
+                </p>
+              </div>
+
+              <button
+                onClick={onClose}
+                className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl transition-all active:scale-[0.98] shadow-lg"
+              >
+                გასაგებია, მადლობა 🙏
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modals */}

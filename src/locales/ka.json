@@ -2,5 +2,86 @@
   "welcome": "კეთილი იყოს თქვენი მობრძანება SmartPick-ში",
   "home": "მთავარი",
   "partners": "პარტნიორები",
-  "contact": "კონტაქტი"
+  "contact": "კონტაქტი",
+  
+  "missedPickup.dialogTitle": "გამოტოვებული აღების შეხსენება",
+  "missedPickup.header.noStress": "სტრესის გარეშე — ასეთი რამ ხდება 😊",
+  "missedPickup.header.allGood": "ყველაფერი რიგზეა 😊",
+  "missedPickup.header.headsUp": "სწრაფი ინფორმაცია — დავრჩეთ სწორ გზაზე 💛",
+  "missedPickup.header.thanks": "მადლობა შემოწმებისთვის",
+  "missedPickup.header.finalWarning": "ბოლო მეგობრული შეხსენება",
+  
+  "missedPickup.remainingChances": "დარჩენილი შანსები",
+  "missedPickup.stillInYourHands": "ყველაფერი კვლავ თქვენს ხელშია",
+  
+  "missedPickup.chances.three": "3 შანსი დარჩა — საკმაოდ ბევრია!",
+  "missedPickup.chances.two": "2 შანსი დარჩა — გავაგრძელოთ სწორად! 💛",
+  "missedPickup.chances.one": "1 შანსი დარჩა — გავაგრძელოთ სწორად! 🌟",
+  "missedPickup.chances.done": "ყველაფერი მზადაა შემდეგისთვის",
+  
+  "missedPickup.finalWarning.explanation": "ბოლო პერიოდში რამდენიმე რეზერვაცია ვერ განხორციელდა. თქვენ კვლავ შეგიძლიათ გააკეთოთ რეზერვაციები, თუმცა თუ შემდეგიც გამოტოვებული იქნება, სისტემა დროებით შეგაჩერებთ, რათა სამართლიანი გარემო შევინარჩუნოთ პარტნიორებისთვის.",
+  "missedPickup.finalWarning.reassurance": "ეს არ არის სასჯელი — უბრალოდ მოკლე პაუზაა 💚",
+  
+  "missedPickup.tipsTitle": "სწრაფი რჩევები წარმატებისთვის ✨",
+  "missedPickup.tipsFuture": "სწრაფი რჩევები მომავალისთვის ✨",
+  "missedPickup.tip.onTime": "მოდით დროულად",
+  "missedPickup.tip.onlyWhenCan": "დაჯავშნეთ მხოლოდ მაშინ, როცა ნამდვილად შეძლებთ მოსვლას",
+  "missedPickup.tip.cancelIfPlansChange": "გააუქმეთ ადრე, თუ გეგმები შეიცვლება",
+  "missedPickup.tip.cancelEarly": "თუ საჭიროა, გააუქმეთ ადრე",
+  "missedPickup.tip.message": "თუ იგვიანებთ, შეგვატყობინეთ",
+  
+  "missedPickup.footer": "შევინარჩუნოთ კარგი ვიბები 💛",
+  "missedPickup.gotItButton": "გასაგებია 🙌",
+  
+  "missedPickup.ariaLabel.used": "გამოყენებული",
+  "missedPickup.ariaLabel.remaining": "დარჩენილი",
+  "missedPickup.ariaLabel.understand": "მესმის",
+  
+  "suspension.dialogTitle": "დროებითი პაუზა",
+  "suspension.title": "მოკლე შესვენება ⏰",
+  "suspension.subtitle.1hour": "1-საათიანი პაუზა",
+  "suspension.subtitle.5hour": "5-საათიანი პაუზა",
+  "suspension.subtitle.24hour": "24-საათიანი პაუზა",
+  
+  "suspension.reason.4th": "4 გამოტოვებული აღება",
+  "suspension.reason.5th": "5 გამოტოვებული აღება",
+  "suspension.reason.6th": "6+ გამოტოვებული აღება",
+  
+  "suspension.timeRemaining": "დარჩენილი დრო",
+  "suspension.expiresAt": "გაუქმდება",
+  "suspension.hours": "საათი",
+  "suspension.minutes": "წუთი",
+  "suspension.seconds": "წამი",
+  
+  "suspension.options.title": "რა შემიძლია?",
+  "suspension.option.wait": "დავლოდო",
+  "suspension.option.or": "ან",
+  
+  "suspension.lift.button": "მოხსნა ({points} ქულა)",
+  "suspension.lift.confirm": "ნამდვილად გსურთ {points} ქულის დახარჯვა?",
+  "suspension.lift.success": "პაუზა წარმატებით მოიხსნა! 🎉",
+  "suspension.lift.insufficient": "არასაკმარისი ქულები",
+  
+  "suspension.balance.current": "თქვენი ბალანსი",
+  "suspension.balance.need": "საჭიროა",
+  "suspension.balance.missing": "არ გყოფნით {points} ქულა",
+  
+  "suspension.buyPoints.button": "ქულების შეძენა 💎",
+  "suspension.buyPoints.title": "შეიძინეთ ქულები",
+  "suspension.buyPoints.recommended": "რეკომენდებული",
+  "suspension.buyPoints.package.100": "100 ქულა",
+  "suspension.buyPoints.package.500": "500 ქულა",
+  "suspension.buyPoints.package.1000": "1000 ქულა",
+  "suspension.buyPoints.price": "₾{price}",
+  
+  "suspension.warning.next": "შემდეგი დარღვევა",
+  "suspension.warning.consequence.5hour": "5-საათიანი პაუზა (500 ქულა)",
+  "suspension.warning.consequence.24hour": "24-საათიანი პაუზა (1000 ქულა)",
+  "suspension.warning.consequence.permanent": "პერმანენტული შეზღუდვა",
+  
+  "suspension.explanation": "დაგვიანებული აღება პრობლემას უქმნის პარტნიორებს და ზღუდავს სხვა მომხმარებლების შესაძლებლობებს. მოკლე პაუზა დაგვეხმარება სამართლიანი გარემოს შენარჩუნებაში.",
+  "suspension.noBlame": "ეს არ არის სასჯელი — უბრალოდ პაუზაა 💚",
+  
+  "suspension.close": "დახურვა",
+  "suspension.understand": "გასაგებია"
 }

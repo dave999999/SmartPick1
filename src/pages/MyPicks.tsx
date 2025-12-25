@@ -145,6 +145,10 @@ export default function MyPicks() {
       const userIdToUse = userId || user?.id;
       if (!userIdToUse) return;
 
+      // Auto-expire any old reservations FIRST (before loading)
+      const { expireUserReservations } = await import('@/lib/api/penalty');
+      await expireUserReservations(userIdToUse);
+
       // Auto-cleanup old history items (10+ days old)
       await cleanupOldHistory(userIdToUse);
 
@@ -266,7 +270,6 @@ export default function MyPicks() {
     const reservation = reservations.find(r => r.id === reservationId);
     if (!reservation) return;
 
-    // Use the new split function that does 50/50
     if (!confirm(t('confirm.cancelReservationSplit'))) return;
     
     try {

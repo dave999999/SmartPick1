@@ -3,7 +3,7 @@
  * 
  * Features:
  * - Critical notification toggles
- * - Busy Mode with auto-pause offers
+ * - Telegram/SMS/Email channel management
  * - Protection for critical toggles
  * - Apple-style glassmorphism design
  */
@@ -15,7 +15,6 @@ import { Switch } from '@/components/ui/switch';
 import { 
   X, 
   AlertCircle,
-  Flame,
   Package,
   XCircle,
   MessageSquare,
@@ -43,6 +42,7 @@ interface PartnerNotificationSettingsProps {
   onOpenChange: (open: boolean) => void;
   partnerId: string;
   userId: string;
+  onDataRefresh?: () => void;
 }
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
@@ -58,11 +58,11 @@ export function PartnerNotificationSettings({
   open, 
   onOpenChange,
   partnerId,
-  userId
+  userId,
+  onDataRefresh,
 }: PartnerNotificationSettingsProps) {
   const { t } = useI18n();
   const [preferences, setPreferences] = useState<NotificationPreferences>(DEFAULT_PREFERENCES);
-  const [busyMode, setBusyMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Load preferences on mount
@@ -117,28 +117,12 @@ export function PartnerNotificationSettings({
     const criticalEnabled = criticalKeys.filter(k => newPrefs[k]).length;
     
     if (criticalKeys.includes(key) && criticalEnabled === 0) {
-      toast.error(t('notifications.criticalWarning'));
+      toast.error('მინიმუმ ერთი კრიტიკული შეტყობინება უნდა იყოს ჩართული');
       return;
     }
     
     setPreferences(newPrefs);
     savePreferences(newPrefs);
-  };
-
-  const toggleBusyMode = async () => {
-    try {
-      const { togglePartnerBusyMode } = await import('@/lib/api/partners');
-      const result = await togglePartnerBusyMode(partnerId, !busyMode);
-      setBusyMode(!busyMode);
-      
-      if (!busyMode) {
-        toast.success(`${t('notifications.busyModeEnabled')} - ${result.offersAffected} ${t('analytics.offers').toLowerCase()}`);
-      } else {
-        toast.success(`${t('notifications.busyModeDisabled')} - ${result.offersAffected} ${t('analytics.offers').toLowerCase()}`);
-      }
-    } catch (error) {
-      toast.error(t('notifications.saveFailed'));
-    }
   };
 
   const criticalKeys: (keyof NotificationPreferences)[] = ['newOrder', 'lowStock', 'cancellation'];
@@ -160,40 +144,12 @@ export function PartnerNotificationSettings({
           >
             <X className="w-5 h-5" />
           </button>
-          <h2 className="text-xl font-bold">🔔 {t('notifications.title')}</h2>
-          <p className="text-blue-100 text-sm mt-1">{t('notifications.description')}</p>
+          <h2 className="text-xl font-bold">🔔 შეტყობინებების პარამეტრები</h2>
+          <p className="text-blue-100 text-sm mt-1">აირჩიეთ რა განახლებების მიღება გსურთ</p>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {/* Busy Mode Card */}
-          {busyMode && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mx-4 mt-4"
-            >
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-400 rounded-2xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                    <Flame className="w-5 h-5 text-white animate-pulse" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-orange-900 mb-1">{t('notifications.busyModeWarning')}</h3>
-                    <p className="text-sm text-orange-800 mb-3">{t('notifications.busyModeHelper')}</p>
-                    <button
-                      onClick={toggleBusyMode}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 px-4 rounded-xl transition-colors"
-                    >
-                      {t('common.close')} →
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
           {/* Critical Warning */}
           {allCriticalDisabled && (
             <motion.div
@@ -204,8 +160,8 @@ export function PartnerNotificationSettings({
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-red-900">{t('notifications.critical')}</p>
-                  <p className="text-xs text-red-700 mt-1">{t('notifications.criticalWarning')}</p>
+                  <p className="text-sm font-semibold text-red-900">კრიტიკული</p>
+                  <p className="text-xs text-red-700 mt-1">მინიმუმ ერთი კრიტიკული შეტყობინება უნდა იყოს ჩართული</p>
                 </div>
               </div>
             </motion.div>
@@ -216,24 +172,24 @@ export function PartnerNotificationSettings({
             <div className="space-y-3">
               <ToggleItem
                 icon={<Package className="w-5 h-5 text-emerald-600" />}
-                label={t('notifications.newOrder')}
-                helper={t('notifications.newOrderDesc')}
+                label="ახალი შეკვეთა"
+                helper="მომენტალური შეტყობინება ახალ რეზერვაციაზე"
                 checked={preferences.newOrder}
                 onChange={() => togglePreference('newOrder')}
                 critical
               />
               <ToggleItem
                 icon={<AlertCircle className="w-5 h-5 text-orange-600" />}
-                label={t('notifications.lowStock')}
-                helper={t('notifications.lowStockDesc')}
+                label="დაბალი მარაგი"
+                helper="როდესაც შეთავაზებული პროდუქტის მარაგი იწურება"
                 checked={preferences.lowStock}
                 onChange={() => togglePreference('lowStock')}
                 critical
               />
               <ToggleItem
                 icon={<XCircle className="w-5 h-5 text-red-600" />}
-                label={t('notifications.cancellation')}
-                helper={t('notifications.cancellationDesc')}
+                label="გაუქმება"
+                helper="როცა მომხმარებელი აუქმებს ჯავშანს"
                 checked={preferences.cancellation}
                 onChange={() => togglePreference('cancellation')}
                 critical
@@ -244,21 +200,21 @@ export function PartnerNotificationSettings({
           {/* Notification Channels */}
           <div className="px-4 py-4 border-t bg-gray-50">
             <div className="mb-2">
-              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">{t('notifications.channels')}</h3>
-              <p className="text-xs text-gray-500 mt-1">{t('notifications.channelsHelper')}</p>
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">შეტყობინების არხები</h3>
+              <p className="text-xs text-gray-500 mt-1">აირჩიეთ როგორ გსურთ შეტყობინებების მიღება</p>
             </div>
             <div className="space-y-3 mt-3">
               <ToggleItem
                 icon={<MessageSquare className="w-5 h-5 text-blue-600" />}
-                label={t('notifications.telegram')}
-                helper={t('notifications.telegramDesc')}
+                label="ტელეგრამი"
+                helper="მომენტალური შეტყობინებები ტელეგრამ ბოტის მეშვეობით"
                 checked={preferences.telegram}
                 onChange={() => togglePreference('telegram')}
               />
               <ToggleItem
                 icon={<Smartphone className="w-5 h-5 text-purple-600" />}
-                label={t('notifications.sms')}
-                helper={t('notifications.smsDesc')}
+                label="SMS"
+                helper="ტექსტური შეტყობინებები თქვენს ტელეფონზე"
                 checked={preferences.sms}
                 onChange={() => togglePreference('sms')}
                 disabled
@@ -266,32 +222,12 @@ export function PartnerNotificationSettings({
               />
               <ToggleItem
                 icon={<Mail className="w-5 h-5 text-teal-600" />}
-                label={t('notifications.email')}
-                helper={t('notifications.emailDesc')}
+                label="ელფოსტა"
+                helper="შეტყობინებები თქვენს რეგისტრირებულ ელფოსტაზე"
                 checked={preferences.email}
                 onChange={() => togglePreference('email')}
                 disabled
                 comingSoon
-              />
-            </div>
-          </div>
-
-          {/* Busy Mode Toggle */}
-          <div className="px-4 py-4 border-t bg-gray-50">
-            <div className="flex items-center justify-between p-4 bg-white border-2 border-orange-300 rounded-2xl">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Flame className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">{t('notifications.busyMode')}</p>
-                  <p className="text-xs text-gray-600">{t('notifications.busyModeDesc')}</p>
-                </div>
-              </div>
-              <Switch
-                checked={busyMode}
-                onCheckedChange={toggleBusyMode}
-                className="data-[state=checked]:bg-orange-500"
               />
             </div>
           </div>

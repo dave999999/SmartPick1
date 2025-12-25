@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { getPartnerImages } from '@/lib/api/media';
 
 type Props = {
   open: boolean;
   category: string;
   onSelect: (url: string) => void;
   onClose: () => void;
+  partnerId?: string; // Optional: if provided, shows partner's gallery images
 };
 
 type LibraryResponse = {
@@ -18,10 +20,29 @@ type LibraryResponse = {
 // Simple cache to reduce repeated fetches while the modal stays open
 const cache = new Map<string, string[]>();
 
-export default function ImageLibraryModal({ open, category, onSelect, onClose }: Props) {
+export default function ImageLibraryModal({ open, category, onSelect, onClose, partnerId }: Props) {
   const [images, setImages] = useState<string[]>([]);
+  const [partnerGalleryImages, setPartnerGalleryImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Load partner's gallery images
+  useEffect(() => {
+    if (!open || !partnerId) return;
+
+    const loadPartnerGallery = async () => {
+      try {
+        const { images: galleryImages } = await getPartnerImages(partnerId);
+        // Remove cache-busting timestamp for cleaner URLs
+        const cleanUrls = galleryImages.map(url => url.split('?')[0]);
+        setPartnerGalleryImages(cleanUrls);
+      } catch (error) {
+        console.error('Failed to load partner gallery:', error);
+      }
+    };
+
+    loadPartnerGallery();
+  }, [open, partnerId]);
 
   useEffect(() => {
     if (!open) {
@@ -168,8 +189,53 @@ export default function ImageLibraryModal({ open, category, onSelect, onClose }:
         )}
 
         {!loading && !error && (
-          <div className="grid grid-cols-2 gap-3 px-4 pb-6 sm:grid-cols-3 md:grid-cols-4">
-            {images.map((img) => {
+          <>
+            {/* Partner's Gallery Images Section */}
+            {partnerGalleryImages.length > 0 && (
+              <div className="px-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <span>📸</span>
+                  <span>თქვენი ატვირთული სურათები</span>
+                  <span className="text-xs font-normal text-gray-500">({partnerGalleryImages.length})</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 mb-6">
+                  {partnerGalleryImages.map((img) => (
+                    <button
+                      key={img}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(img);
+                        onClose();
+                      }}
+                      className="flex flex-col overflow-hidden rounded-xl border-2 border-[#00C896] transition hover:border-[#00A876] hover:shadow-md"
+                    >
+                      <img
+                        src={img}
+                        className="h-24 w-full object-cover"
+                        loading="lazy"
+                        alt="Gallery image"
+                      />
+                      <div className="p-1.5 bg-emerald-50 text-center">
+                        <span className="text-[10px] font-medium text-emerald-700">
+                          თქვენი სურათი
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Default Library Images */}
+            {images.length > 0 && (
+              <div className="px-4 pb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <span>🖼️</span>
+                  <span>სტანდარტული სურათები</span>
+                  <span className="text-xs font-normal text-gray-500">({images.length})</span>
+                </h3>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                  {images.map((img) => {
               const filename = img.split('/').pop()?.replace(/\.(webp|jpg|png)$/i, '') || '';
               
               return (
@@ -207,10 +273,13 @@ export default function ImageLibraryModal({ open, category, onSelect, onClose }:
                 </button>
               );
             })}
-            {images.length === 0 && (
-              <div className="col-span-full py-10 text-center text-sm text-gray-500">No images for this category.</div>
+            {images.length === 0 && partnerGalleryImages.length === 0 && (
+              <div className="col-span-full py-10 text-center text-sm text-gray-500">No images available.</div>
             )}
-          </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>

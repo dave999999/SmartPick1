@@ -71,6 +71,9 @@ export interface Partner {
   status: PartnerStatus;
   images: string[];
   approved_for_upload?: boolean;
+  image_quota_used?: number; // Number of images currently uploaded
+  image_quota_max?: number; // Maximum allowed images (default 15)
+  cover_image_url?: string; // Cover photo for map cards and profile
   created_at: string;
   updated_at: string;
   // For backward compatibility with nested location structure

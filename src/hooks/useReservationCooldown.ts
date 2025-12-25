@@ -75,19 +75,19 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
       if (data && data.length > 0) {
         const { 
           in_cooldown,
-          cooldown_end,
+          cooldown_until,  // Fixed: was cooldown_end
           cancellation_count,
           reset_count
         } = data[0];
         
         // Calculate time until unlock
-        const timeUntilMs = cooldown_end ? Math.max(0, new Date(cooldown_end).getTime() - Date.now()) : 0;
+        const timeUntilMs = cooldown_until ? Math.max(0, new Date(cooldown_until).getTime() - Date.now()) : 0;
         
         setCooldownInfo({
           isInCooldown: in_cooldown || false,
           cancellationCount: cancellation_count || 0,
           timeUntilUnlock: timeUntilMs,
-          unlockTime: cooldown_end ? new Date(cooldown_end) : null,
+          unlockTime: cooldown_until ? new Date(cooldown_until) : null,
           resetCooldownUsed: false, // Deprecated - using resetCount now
           cooldownDurationMinutes: 60, // Now 1 hour cooldown
           resetCount: reset_count || 0,

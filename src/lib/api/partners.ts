@@ -662,23 +662,75 @@ export const togglePartnerBusyMode = async (partnerId: string, enabled: boolean)
 
     if (partnerError) throw partnerError;
 
-    // Pause or resume all active offers
-    const newStatus = enabled ? 'PAUSED' : 'ACTIVE';
-    const { data: offers, error: offersError } = await supabase
-      .from('offers')
-      .update({ status: newStatus })
-      .eq('partner_id', partnerId)
-      .eq('status', enabled ? 'ACTIVE' : 'PAUSED')
-      .select('id');
+    if (enabled) {
+      // Pause all ACTIVE offers (not expired or sold out)
+      const { data: offers, error: offersError } = await supabase
+        .from('offers')
+        .update({ status: 'PAUSED' })
+        .eq('partner_id', partnerId)
+        .eq('status', 'ACTIVE')
+        .select('id');
 
-    if (offersError) throw offersError;
+      if (offersError) throw offersError;
 
-    logger.log(`✅ Busy mode ${enabled ? 'enabled' : 'disabled'}, affected ${offers?.length || 0} offers`);
-    
-    return { 
-      success: true, 
-      offersAffected: offers?.length || 0 
-    };
+      logger.log(`✅ Busy mode enabled, paused ${offers?.length || 0} offers`);
+      
+      return { 
+        success: true, 
+        offersAffected: offers?.length || 0 
+      };
+    } else {
+      // Resume PAUSED offers, but check if they're still valid
+      const now = new Date().toISOString();
+      
+      // First, get all paused offers to check their expiry
+      const { data: pausedOffers } = await supabase
+        .from('offers')
+        .select('id, expires_at, quantity_available')
+        .eq('partner_id', partnerId)
+        .eq('status', 'PAUSED');
+
+      if (!pausedOffers || pausedOffers.length === 0) {
+        logger.log('✅ Busy mode disabled, no paused offers to resume');
+        return { success: true, offersAffected: 0 };
+      }
+
+      // Separate valid and expired/sold out offers
+      const validOfferIds = pausedOffers
+        .filter(offer => new Date(offer.expires_at) > new Date() && offer.quantity_available > 0)
+        .map(offer => offer.id);
+
+      const expiredOfferIds = pausedOffers
+        .filter(offer => new Date(offer.expires_at) <= new Date() || offer.quantity_available === 0)
+        .map(offer => offer.id);
+
+      // Resume valid offers
+      if (validOfferIds.length > 0) {
+        const { error: resumeError } = await supabase
+          .from('offers')
+          .update({ status: 'ACTIVE' })
+          .in('id', validOfferIds);
+
+        if (resumeError) throw resumeError;
+      }
+
+      // Mark expired offers
+      if (expiredOfferIds.length > 0) {
+        const { error: expireError } = await supabase
+          .from('offers')
+          .update({ status: 'EXPIRED' })
+          .in('id', expiredOfferIds);
+
+        if (expireError) throw expireError;
+      }
+
+      logger.log(`✅ Busy mode disabled, resumed ${validOfferIds.length} offers, expired ${expiredOfferIds.length} offers`);
+      
+      return { 
+        success: true, 
+        offersAffected: validOfferIds.length 
+      };
+    }
   } catch (error) {
     logger.error('Error toggling busy mode:', error);
     throw error;

@@ -1,33 +1,15 @@
 import { supabase } from './supabase';
+import { queueNotification, sendImmediateNotification } from './notificationQueue';
 
 /**
  * Send a notification via secure Edge Function
  * Bot token is stored securely on the server, not exposed to client
+ * 
+ * @deprecated Use queueNotification for partner notifications (respects batching)
+ * Use sendImmediateNotification for time-critical customer notifications
  */
 async function sendNotification(userId: string, message: string, type: 'partner' | 'customer'): Promise<boolean> {
-  try {
-    const { data, error } = await supabase.functions.invoke('send-notification', {
-      body: { userId, message, type }
-    });
-
-    if (error) {
-      // Silently fail if Edge Function is not deployed
-      console.warn('⚠️ Notification service unavailable:', error.message);
-      return false;
-    }
-
-    if (data && !data.success) {
-      console.log('⚠️ Notification not sent:', data.message || 'User has not enabled Telegram notifications');
-      return false;
-    }
-
-    console.log('✅ Telegram notification sent successfully');
-    return data?.success || false;
-  } catch (error) {
-    // Silently fail - notification is optional
-    console.warn('⚠️ Notification service unavailable');
-    return false;
-  }
+  return sendImmediateNotification(userId, message, type);
 }
 
 /**
@@ -141,30 +123,16 @@ export async function getTelegramConnection(userId: string) {
 /**
  * Send new reservation notification to partner
  * Respects partner's notification preferences
+ * Uses batching system to prevent spam
  */
 export async function notifyPartnerNewReservation(
-  partnerId: string,
+  partnerUUID: string, // The partner's actual UUID from partners table
   customerName: string,
+  customerId: string,
   offerTitle: string,
   quantity: number,
   pickupBy: string
 ) {
-  // Check if partner has this notification enabled
-  const { data: partner } = await supabase
-    .from('partners')
-    .select('notification_preferences')
-    .eq('user_id', partnerId)
-    .single();
-
-  if (partner?.notification_preferences) {
-    const prefs = partner.notification_preferences;
-    // Check if newOrder notification is enabled and telegram channel is enabled
-    if (!prefs.newOrder || !prefs.telegram) {
-      console.log(`Partner ${partnerId} has newOrder or Telegram notifications disabled`);
-      return false;
-    }
-  }
-
   const message = `🎉 <b>ახალი შეკვეთა!</b>
 
 <b>მომხმარებელი:</b> ${customerName}
@@ -174,11 +142,14 @@ export async function notifyPartnerNewReservation(
 
 მომხმარებელი მალე ჩამოვა შეკვეთის ასაღებად.`;
 
-  return sendNotification(partnerId, message, 'partner');
+  return queueNotification(partnerUUID, 'new_order', message, {
+    customer_id: customerId,
+  });
 }
 
 /**
  * Send pickup complete notification to partner
+ * Immediate notification (bypasses queue - already completed)
  */
 export async function notifyPartnerPickupComplete(
   partnerId: string,
@@ -194,34 +165,20 @@ export async function notifyPartnerPickupComplete(
 
 Order successfully completed. Great job! 👏`;
 
-  return sendNotification(partnerId, message, 'partner');
+  return sendImmediateNotification(partnerId, message, 'partner');
 }
 
 /**
  * Send low stock notification to partner
  * Respects partner's notification preferences
+ * Uses batching system to prevent spam
  */
 export async function notifyPartnerLowStock(
   partnerId: string,
+  partnerUUID: string,
   offerTitle: string,
   quantityLeft: number
 ) {
-  // Check if partner has this notification enabled
-  const { data: partner } = await supabase
-    .from('partners')
-    .select('notification_preferences')
-    .eq('user_id', partnerId)
-    .single();
-
-  if (partner?.notification_preferences) {
-    const prefs = partner.notification_preferences;
-    // Check if lowStock notification is enabled and telegram channel is enabled
-    if (!prefs.lowStock || !prefs.telegram) {
-      console.log(`Partner ${partnerId} has lowStock or Telegram notifications disabled`);
-      return false;
-    }
-  }
-
   const message = `⚠️ <b>დაბალი მარაგი!</b>
 
 <b>პროდუქტი:</b> ${offerTitle}
@@ -229,35 +186,22 @@ export async function notifyPartnerLowStock(
 
 თქვენი პროდუქტის მარაგი იწურება. ჩაამატეთ მეტი რაოდენობა!`;
 
-  return sendNotification(partnerId, message, 'partner');
+  return queueNotification(partnerUUID, 'low_stock', message);
 }
 
 /**
  * Send reservation cancelled notification to partner
  * Respects partner's notification preferences
+ * Uses batching system to prevent spam
  */
 export async function notifyPartnerReservationCancelled(
   partnerId: string,
+  partnerUUID: string,
   customerName: string,
+  customerId: string,
   offerTitle: string,
   quantity: number
 ) {
-  // Check if partner has this notification enabled
-  const { data: partner } = await supabase
-    .from('partners')
-    .select('notification_preferences')
-    .eq('user_id', partnerId)
-    .single();
-
-  if (partner?.notification_preferences) {
-    const prefs = partner.notification_preferences;
-    // Check if cancellation notification is enabled and telegram channel is enabled
-    if (!prefs.cancellation || !prefs.telegram) {
-      console.log(`Partner ${partnerId} has cancellation or Telegram notifications disabled`);
-      return false;
-    }
-  }
-
   const message = `🚫 <b>რეზერვაცია გაუქმდა</b>
 
 <b>მომხმარებელი:</b> ${customerName}
@@ -266,11 +210,15 @@ export async function notifyPartnerReservationCancelled(
 
 მომხმარებელმა გააუქმა რეზერვაცია. რაოდენობა დაბრუნდა თქვენს შეთავაზებაში.`;
 
-  return sendNotification(partnerId, message, 'partner');
+  return queueNotification(partnerUUID, 'cancellation', message, {
+    customer_id: customerId,
+  });
 }
 
 /**
  * Send no-show notification to partner
+ * @deprecated Replaced by passive confirmation system
+ * No-shows are now detected by detect-missed-scans Edge Function
  */
 export async function notifyPartnerNoShow(
   partnerId: string,
@@ -286,11 +234,12 @@ export async function notifyPartnerNoShow(
 
 The customer did not pick up their reservation. Penalty has been applied to their account.`;
 
-  return sendNotification(partnerId, message, 'partner');
+  return sendImmediateNotification(partnerId, message, 'partner');
 }
 
 /**
  * Send 15-minute pickup reminder to customer
+ * Time-critical, bypasses queue
  */
 export async function notifyCustomerPickupReminder(
   customerId: string,
@@ -311,11 +260,12 @@ ${partnerAddress}
 
 Don't forget to pick up your order! 🏃‍♂️`;
 
-  return sendNotification(customerId, message, 'customer');
+  return sendImmediateNotification(customerId, message, 'customer');
 }
 
 /**
  * Send new offer notification to customer
+ * Time-critical, bypasses queue
  */
 export async function notifyCustomerNewOffer(
   customerId: string,
@@ -333,11 +283,12 @@ export async function notifyCustomerNewOffer(
 
 Open SmartPick app to reserve now! 🚀`;
 
-  return sendNotification(customerId, message, 'customer');
+  return sendImmediateNotification(customerId, message, 'customer');
 }
 
 /**
  * Send reservation confirmation to customer
+ * Time-critical, bypasses queue
  */
 export async function notifyCustomerReservationConfirmed(
   customerId: string,
@@ -360,5 +311,5 @@ ${partnerAddress}
 
 See you there! 🎉`;
 
-  return sendNotification(customerId, message, 'customer');
+  return sendImmediateNotification(customerId, message, 'customer');
 }

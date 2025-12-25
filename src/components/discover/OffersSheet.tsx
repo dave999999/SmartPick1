@@ -521,6 +521,23 @@ function FlashDealCard({ offer, onClick, userLocation }: FlashDealCardProps) {
 // GRID OFFER CARD - Apple Quality (168×220px)
 // ============================================
 
+// Helper to format time remaining
+function formatTimeRemaining(expiresAt: string): string | null {
+  const now = new Date();
+  const expiry = new Date(expiresAt);
+  const diff = expiry.getTime() - now.getTime();
+  
+  if (diff <= 0) return null;
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (days > 0) return `${days}დ`;
+  if (hours > 0) return `${hours}სთ`;
+  return `${minutes}წთ`;
+}
+
 interface GridOfferCardProps {
   offer: EnrichedOffer;
   userLocation?: [number, number] | null;
@@ -531,6 +548,10 @@ function GridOfferCard({ offer, userLocation, onClick }: GridOfferCardProps) {
   const imageUrl = offer.images?.[0] || '/images/placeholder-food.jpg';
   const discount = offer.discount_percent || 0;
   const hasActiveReservation = offer.user_reservation_id != null;
+  const timeRemaining = formatTimeRemaining(offer.expires_at);
+  
+  // Debug log
+  console.log('Offer expires_at:', offer.expires_at, 'Time remaining:', timeRemaining);
 
   return (
     <button
@@ -564,7 +585,7 @@ function GridOfferCard({ offer, userLocation, onClick }: GridOfferCardProps) {
       </div>
 
       {/* Content Section - Ultra Compact */}
-      <div className="p-2 space-y-1 bg-white">
+      <div className="p-2 space-y-1 bg-white relative">
         <h4 className="text-[14px] font-semibold text-[#1A1A1A] leading-tight line-clamp-1 tracking-tight">
           {offer.title}
         </h4>
@@ -582,16 +603,28 @@ function GridOfferCard({ offer, userLocation, onClick }: GridOfferCardProps) {
           </div>
         </div>
         
-        {/* Price Row - Ultra Compact */}
-        <div className="flex items-baseline gap-1 pt-0.5">
-          {offer.original_price > offer.smart_price && (
-            <span className="text-[11px] text-[#AEAEB2] line-through">
-              {offer.original_price.toFixed(2)}₾
+        {/* Price Row with Time - Ultra Compact */}
+        <div className="flex items-end justify-between pt-0.5">
+          <div className="flex items-baseline gap-1">
+            {offer.original_price > offer.smart_price && (
+              <span className="text-[11px] text-[#AEAEB2] line-through">
+                {offer.original_price.toFixed(2)}₾
+              </span>
+            )}
+            <span className="text-[16px] font-bold text-[#1A1A1A]">
+              {offer.smart_price.toFixed(2)}₾
             </span>
+          </div>
+          
+          {/* Time Remaining Badge - Bottom Right */}
+          {offer.expires_at && formatTimeRemaining(offer.expires_at) && (
+            <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/60 rounded-md">
+              <Clock size={9} className="text-orange-600" strokeWidth={2.5} />
+              <span className="text-[10px] font-bold text-orange-600 leading-none">
+                {formatTimeRemaining(offer.expires_at)}
+              </span>
+            </div>
           )}
-          <span className="text-[16px] font-bold text-[#1A1A1A]">
-            {offer.smart_price.toFixed(2)}₾
-          </span>
         </div>
       </div>
     </button>

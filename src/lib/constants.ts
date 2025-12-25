@@ -82,14 +82,20 @@ export const ALLOWED_IMAGE_TYPES = [
   'image/webp',
 ] as const;
 
-/** Maximum file size in bytes (5MB) */
-export const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+/** Maximum file size in bytes (2MB) */
+export const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 
 /** Maximum file size in MB for display */
-export const MAX_FILE_SIZE_MB = 5;
+export const MAX_FILE_SIZE_MB = 2;
 
 /** Maximum number of images per offer */
 export const MAX_IMAGES_PER_OFFER = 5;
+
+/** Maximum number of images a partner can upload to their gallery */
+export const MAX_PARTNER_IMAGES = 15;
+
+/** Maximum uploads per partner per hour (rate limiting) */
+export const MAX_UPLOADS_PER_HOUR = 10;
 
 // ============================================================================
 // OFFER CONFIGURATION
@@ -210,6 +216,10 @@ export const ERROR_MESSAGES = {
   SERVER_ERROR: 'Server error. Please try again later.',
   INVALID_FILE_TYPE: `Please upload only ${ALLOWED_IMAGE_TYPES.join(', ')} files`,
   FILE_TOO_LARGE: `File size must be less than ${MAX_FILE_SIZE_MB}MB`,
+  FILE_TOO_SMALL: 'File is too small or corrupt',
+  INVALID_FILE_CONTENT: 'File content does not match image format. File may be corrupted or malicious.',
+  QUOTA_EXCEEDED: `Maximum ${MAX_PARTNER_IMAGES} images allowed. Please delete some images first.`,
+  RATE_LIMIT_EXCEEDED: 'Upload rate limit exceeded. Please try again in a few minutes.',
   MAX_RESERVATIONS_REACHED: `You can only reserve up to ${MAX_RESERVATION_QUANTITY} items per offer`,
   UNDER_PENALTY: 'You are currently under penalty and cannot make reservations',
   OFFER_EXPIRED: 'This offer has expired',
