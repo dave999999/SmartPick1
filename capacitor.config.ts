@@ -25,6 +25,10 @@ const config: CapacitorConfig = {
     },
     CapacitorHttp: {
       enabled: true
+    },
+    Geolocation: {
+      permissions: ['location'],
+      accuracy: 'high'
     }
   }
 };
