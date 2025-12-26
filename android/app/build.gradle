@@ -3,13 +3,24 @@ apply plugin: 'com.android.application'
 android {
     namespace = "ge.smartpick.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    
     defaultConfig {
         applicationId "ge.smartpick.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.1.0"
+        versionCode 3
+        versionName "1.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Read API key from local.properties (not committed to git)
+        def localProperties = new Properties()
+        def localPropertiesFile = rootProject.file('local.properties')
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.withInputStream { localProperties.load(it) }
+        }
+        def mapsApiKey = localProperties.getProperty('MAPS_API_KEY', '')
+        manifestPlaceholders = [MAPS_API_KEY: mapsApiKey]
+        
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61

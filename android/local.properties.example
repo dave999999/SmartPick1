@@ -1,0 +1,9 @@
+## This file must be checked in to version control.
+## Add your actual API key to local.properties (which is gitignored)
+
+# SDK location (Auto-generated)
+sdk.dir=C\:\\Users\\YourUsername\\AppData\\Local\\Android\\sdk
+
+# Google Maps API Key for Android
+# Get your key from: https://console.cloud.google.com/apis/credentials
+MAPS_API_KEY=YOUR_ANDROID_MAPS_API_KEY_HERE

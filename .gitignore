@@ -49,6 +49,12 @@ supabase/functions/telegram-webhook/secrets.json
 supabase/.temp
 .aider*
 
+# Android local properties (contains API keys)
+android/local.properties
+android/app/google-services.json
+android/key.properties
+ios/App/GoogleService-Info.plist
+
 # Firebase config files (contains API keys)
 android/app/google-services.json
 ios/App/App/GoogleService-Info.plist
