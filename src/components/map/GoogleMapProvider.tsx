@@ -54,20 +54,41 @@ export function GoogleMapProvider({
   const [googleMap, setGoogleMap] = useState<google.maps.Map | null>(null);
 
   useEffect(() => {
-    // Check if already loaded
+    logger.debug('🎯 GoogleMapProvider RENDER');
+    
+    // FIRST: Check if Google Maps exists in window (regardless of loader state)
+    if (typeof window !== 'undefined' && window.google?.maps) {
+      logger.debug('✅ GoogleMapProvider - Found existing window.google.maps, using it immediately');
+      setIsLoaded(true);
+      setGoogleInstance(window.google);
+      setIsLoading(false);
+      return;
+    }
+    
+    // Check if already loaded via loader
     if (isGoogleMapsLoaded()) {
+      logger.debug('✅ GoogleMapProvider - Loaded via loader');
       setIsLoaded(true);
       setGoogleInstance(window.google);
       return;
     }
+    
+    logger.debug('🎯 GoogleMapProvider: Starting fresh load...');
 
     // Get API key from prop or environment
     const key = apiKey || 
                 import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
                 import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+    logger.debug('🗺️ GoogleMapProvider - API Key Check:', {
+      hasApiKeyProp: !!apiKey,
+      hasEnvKey: !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+      keyLength: key?.length,
+      keyPrefix: key?.substring(0, 20)
+    });
+
     if (!key) {
-      const errorMsg = 'Google Maps API key not found. Please set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY';
+      const errorMsg = 'Google Maps API key not found';
       setError(errorMsg);
       logger.error(errorMsg);
       toast.error('Map configuration missing');
@@ -80,7 +101,7 @@ export function GoogleMapProvider({
       apiKey: key, 
       libraries,
       language: 'en',
-      region: 'GE' // Georgia
+      region: 'GE'
     })
       .then((google) => {
         setGoogleInstance(google);

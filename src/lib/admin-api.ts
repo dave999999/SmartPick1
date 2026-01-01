@@ -25,7 +25,7 @@ export const testAdminConnection = async () => {
       error: testError?.message || userError?.message || null
     };
   } catch (error) {
-    console.error('Admin API: Connection test failed:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Connection test failed:', error instanceof Error ? error.message : String(error));
     return {
       connected: false,
       user: null,
@@ -54,13 +54,13 @@ export const checkAdminAccess = async () => {
     .single();
 
   if (profileError) {
-    console.error('Admin API: Failed to fetch user profile for admin check', profileError instanceof Error ? profileError.message : String(profileError));
+    logger.error('Admin API: Failed to fetch user profile for admin check', profileError instanceof Error ? profileError.message : String(profileError));
     throw new Error('Admin profile verification failed');
   }
 
   const userRole = profile?.role?.toUpperCase();
   if (userRole !== 'ADMIN') {
-    console.warn('Admin API: Access denied - user is not ADMIN');
+    logger.warn('Admin API: Access denied - user is not ADMIN');
     throw new Error('Admin access required');
   }
 
@@ -86,14 +86,14 @@ export const getAllPartners = async () => {
     logger.log('Admin API: Partners query result:', { data, error, count });
 
     if (error) {
-      console.error('Admin API: Error fetching partners:', error instanceof Error ? error.message : String(error));
+      logger.error('Admin API: Error fetching partners:', error instanceof Error ? error.message : String(error));
       throw error;
     }
 
     logger.log('Admin API: Successfully fetched partners:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('Admin API: Exception in getAllPartners:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Exception in getAllPartners:', error instanceof Error ? error.message : String(error));
     return [];
   }
 };
@@ -118,7 +118,7 @@ export const getPendingPartners = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Admin API: Error fetching pending partners:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error fetching pending partners:', error instanceof Error ? error.message : String(error));
     return [];
   }
 };
@@ -149,17 +149,17 @@ export const updatePartner = async (partnerId: string, updates: Partial<Partner>
     
     if (selectError) {
       // Update succeeded but select failed, log and return partial success
-      console.warn('Partner updated but could not fetch updated data:', selectError);
+      logger.warn('Partner updated but could not fetch updated data:', selectError);
     }
     
     try {
       await logAdminAction('PARTNER_UPDATED', 'PARTNER', partnerId, { updates });
     } catch (logError) {
-      console.warn('Failed to log admin action:', logError);
+      logger.warn('Failed to log admin action:', logError);
     }
     return data || { id: partnerId, ...updates };
   } catch (error) {
-    console.error('Admin API: Error updating partner:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error updating partner:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 };
@@ -179,7 +179,7 @@ export const deletePartner = async (partnerId: string) => {
   try {
     await logAdminAction('PARTNER_DELETED', 'PARTNER', partnerId);
   } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
 };
 
@@ -187,7 +187,7 @@ export const approvePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'APPROVED' });
   try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', partnerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -196,7 +196,7 @@ export const pausePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'PAUSED' });
   try { await logAdminAction('PARTNER_PAUSED', 'PARTNER', partnerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -205,7 +205,7 @@ export const unpausePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'APPROVED' });
   try { await logAdminAction('PARTNER_UNPAUSED', 'PARTNER', partnerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -214,7 +214,7 @@ export const disablePartner = async (partnerId: string) => {
   await checkAdminAccess();
   const res = await updatePartner(partnerId, { status: 'BLOCKED' });
   try { await logAdminAction('PARTNER_DISABLED', 'PARTNER', partnerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -227,7 +227,7 @@ export const getAllUsers = async () => {
   }
   
   try {
-    console.log('Admin API: Fetching all users...');
+    logger.debug('Admin API: Fetching all users...');
     await checkAdminAccess();
     
     const { data, error, count } = await supabase
@@ -235,17 +235,17 @@ export const getAllUsers = async () => {
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
-    console.log('Admin API: Users query result:', { data, error, count });
+    logger.debug('Admin API: Users query result:', { data, error, count });
 
     if (error) {
-      console.error('Admin API: Error fetching users:', error instanceof Error ? error.message : String(error));
+      logger.error('Admin API: Error fetching users:', error instanceof Error ? error.message : String(error));
       throw error;
     }
 
-    console.log('Admin API: Successfully fetched users:', data?.length || 0);
+    logger.debug('Admin API: Successfully fetched users:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('Admin API: Exception in getAllUsers:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Exception in getAllUsers:', error instanceof Error ? error.message : String(error));
     return [];
   }
 };
@@ -286,7 +286,7 @@ export const updateUser = async (userId: string, updates: Partial<User>) => {
   try {
     await logAdminAction('USER_UPDATED', 'USER', userId, { updates });
   } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return data;
 };
@@ -304,7 +304,7 @@ export const deleteUser = async (userId: string) => {
     
   if (error) throw error;
   try { await logAdminAction('USER_DELETED', 'USER', userId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
 };
 
@@ -312,7 +312,7 @@ export const disableUser = async (userId: string) => {
   await checkAdminAccess();
   const res = await updateUser(userId, { status: 'DISABLED' });
   try { await logAdminAction('USER_DISABLED', 'USER', userId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -321,7 +321,7 @@ export const enableUser = async (userId: string) => {
   await checkAdminAccess();
   const res = await updateUser(userId, { status: 'ACTIVE' });
   try { await logAdminAction('USER_ENABLED', 'USER', userId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -343,7 +343,7 @@ export const getBannedUsers = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Admin API: Error fetching banned users:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error fetching banned users:', error instanceof Error ? error.message : String(error));
     return [];
   }
 };
@@ -367,10 +367,10 @@ export const unbanUser = async (userId: string) => {
 
     if (error) throw error;
     try { await logAdminAction('USER_UNBANNED', 'USER', userId); } catch (logError) {
-      console.warn('Failed to log admin action:', logError);
+      logger.warn('Failed to log admin action:', logError);
     }
   } catch (error) {
-    console.error('Admin API: Error unbanning user:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error unbanning user:', error instanceof Error ? error.message : String(error));
     throw error;
   }
 };
@@ -394,7 +394,7 @@ export const getAllOffers = async () => {
     if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('Admin API: Error fetching offers:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error fetching offers:', error instanceof Error ? error.message : String(error));
     return [];
   }
 };
@@ -430,7 +430,7 @@ export const updateOffer = async (offerId: string, updates: Partial<Offer>) => {
     
   if (error) throw error;
   try { await logAdminAction('OFFER_UPDATED', 'OFFER', offerId, { updates }); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return data;
 };
@@ -448,7 +448,7 @@ export const deleteOffer = async (offerId: string) => {
     
   if (error) throw error;
   try { await logAdminAction('OFFER_DELETED', 'OFFER', offerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
 };
 
@@ -456,7 +456,7 @@ export const pauseOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'PAUSED' });
   try { await logAdminAction('OFFER_PAUSED', 'OFFER', offerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -465,7 +465,7 @@ export const resumeOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'ACTIVE' });
   try { await logAdminAction('OFFER_RESUMED', 'OFFER', offerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -474,7 +474,7 @@ export const disableOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'EXPIRED' });
   try { await logAdminAction('OFFER_DISABLED', 'OFFER', offerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -483,7 +483,7 @@ export const enableOffer = async (offerId: string) => {
   await checkAdminAccess();
   const res = await updateOffer(offerId, { status: 'ACTIVE' });
   try { await logAdminAction('OFFER_ENABLED', 'OFFER', offerId); } catch (logError) {
-    console.warn('Failed to log admin action:', logError);
+    logger.warn('Failed to log admin action:', logError);
   }
   return res;
 };
@@ -579,7 +579,7 @@ export const getOffersPaged = async (options?: {
 // Dashboard Stats
 export const getDashboardStats = async () => {
   if (isDemoMode) {
-    console.log('Admin API: Demo mode - returning mock stats');
+    logger.debug('Admin API: Demo mode - returning mock stats');
     return {
       totalPartners: 0,
       totalUsers: 0,
@@ -589,7 +589,7 @@ export const getDashboardStats = async () => {
   }
 
   try {
-    console.log('Admin API: Fetching dashboard stats...');
+    logger.debug('Admin API: Fetching dashboard stats...');
     await checkAdminAccess();
 
     // Get all counts in parallel
@@ -600,7 +600,7 @@ export const getDashboardStats = async () => {
       supabase.from('partners').select('id', { count: 'exact', head: true }).eq('status', 'PENDING')
     ]);
 
-    console.log('Admin API: Stats query results:', {
+    logger.debug('Admin API: Stats query results:', {
       partners: partnersResult,
       users: usersResult,
       offers: offersResult,
@@ -614,10 +614,10 @@ export const getDashboardStats = async () => {
       pendingPartners: pendingPartnersResult.count || 0
     };
 
-    console.log('Admin API: Final stats:', stats);
+    logger.debug('Admin API: Final stats:', stats);
     return stats;
   } catch (error) {
-    console.error('Admin API: Error fetching dashboard stats:', error instanceof Error ? error.message : String(error));
+    logger.error('Admin API: Error fetching dashboard stats:', error instanceof Error ? error.message : String(error));
     return {
       totalPartners: 0,
       totalUsers: 0,

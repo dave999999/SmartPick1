@@ -217,22 +217,30 @@ export default function AdminDashboard() {
       if (error) throw error;
       setMaintenanceMode(setting?.value?.enabled === true);
     } catch (error) {
-      console.error('Error loading maintenance mode:', error instanceof Error ? error.message : String(error));
+      logger.error('Error loading maintenance mode:', error instanceof Error ? error.message : String(error));
       setMaintenanceMode(false);
     }
   };
 
   const handleMaintenanceToggle = async (checked: boolean) => {
     try {
-      const { error } = await supabase
+      logger.debug('Attempting to update maintenance mode to:', checked);
+      
+      const { data, error } = await supabase
         .from('system_settings')
         .update({ 
           value: { enabled: checked },
           updated_at: new Date().toISOString()
         })
-        .eq('key', 'maintenance_mode');
+        .eq('key', 'maintenance_mode')
+        .select();
 
-      if (error) throw error;
+      logger.debug('Update result:', { data, error });
+
+      if (error) {
+        logger.error('Update error details:', error);
+        throw error;
+      }
 
       setMaintenanceMode(checked);
       if (checked) {
@@ -241,8 +249,9 @@ export default function AdminDashboard() {
         toast.success('✅ Maintenance mode disabled - Site is now live!');
       }
     } catch (error) {
-      console.error('Error updating maintenance mode:', error instanceof Error ? error.message : String(error));
-      toast.error('Failed to update maintenance mode');
+      logger.error('Error updating maintenance mode:', error instanceof Error ? error.message : String(error));
+      logger.error('Full error object:', error);
+      toast.error(`Failed to update maintenance mode: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -253,7 +262,7 @@ export default function AdminDashboard() {
       // Force a full page reload to clear all auth state
       window.location.href = '/';
     } catch (error) {
-      console.error('Sign out error:', error instanceof Error ? error.message : String(error));
+      logger.error('Sign out error:', error instanceof Error ? error.message : String(error));
       toast.error('Error signing out');
     }
   };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { getPartnerImages } from '@/lib/api/media';
+import { logger } from '@/lib/logger';
 
 type Props = {
   open: boolean;
@@ -37,7 +38,7 @@ export default function ImageLibraryModal({ open, category, onSelect, onClose, p
         const cleanUrls = galleryImages.map(url => url.split('?')[0]);
         setPartnerGalleryImages(cleanUrls);
       } catch (error) {
-        console.error('Failed to load partner gallery:', error);
+        logger.error('Failed to load partner gallery:', error);
       }
     };
 
@@ -83,69 +84,69 @@ export default function ImageLibraryModal({ open, category, onSelect, onClose, p
         setError(null);
         
         // 1) Try uppercase manifest (dev mode: public/ is served directly by Vite)
-        console.log('[ImageLibraryModal] Attempting uppercase manifest:', normalized);
+        logger.debug('[ImageLibraryModal] Attempting uppercase manifest:', normalized);
         const upper = await loadManifest(normalized);
         if (upper) {
-          console.log('[ImageLibraryModal] ✓ Uppercase manifest loaded:', upper.length, 'images');
+          logger.debug('[ImageLibraryModal] Uppercase manifest loaded:', upper.length, 'images');
           cache.set(normalized, upper);
           if (!cancelled) setImages(upper);
           return;
         }
-        console.log('[ImageLibraryModal] ✗ Uppercase manifest not found');
+        logger.debug('[ImageLibraryModal] Uppercase manifest not found');
 
         // 2) Lowercase manifest
         const lowerKey = normalized.toLowerCase();
         if (lowerKey !== normalized) {
-          console.log('[ImageLibraryModal] Attempting lowercase manifest:', lowerKey);
+          logger.debug('[ImageLibraryModal] Attempting lowercase manifest:', lowerKey);
           const lower = await loadManifest(lowerKey);
           if (lower) {
-            console.log('[ImageLibraryModal] ✓ Lowercase manifest loaded:', lower.length, 'images');
+            logger.debug('[ImageLibraryModal] Lowercase manifest loaded:', lower.length, 'images');
             cache.set(normalized, lower);
             if (!cancelled) setImages(lower);
             return;
           }
-          console.log('[ImageLibraryModal] ✗ Lowercase manifest not found');
+          logger.debug('[ImageLibraryModal] Lowercase manifest not found');
         }
 
         // 3) Alias FASTFOOD -> FAST_FOOD style
         const known = ['BAKERY','RESTAURANT','CAFE','GROCERY','ALCOHOL','FAST_FOOD'];
         const alias = known.find((k) => k.replace('_','') === normalized.replace('_',''));
         if (alias && alias !== normalized) {
-          console.log('[ImageLibraryModal] Attempting alias manifest:', alias);
+          logger.debug('[ImageLibraryModal] Attempting alias manifest:', alias);
           const aliased = await loadManifest(alias);
           if (aliased) {
-            console.log('[ImageLibraryModal] ✓ Alias manifest loaded:', aliased.length, 'images');
+            logger.debug('[ImageLibraryModal] Alias manifest loaded:', aliased.length, 'images');
             cache.set(normalized, aliased);
             if (!cancelled) setImages(aliased);
             return;
           }
-          console.log('[ImageLibraryModal] ✗ Alias manifest not found');
+          logger.debug('[ImageLibraryModal] Alias manifest not found');
         }
 
         // 4) Try API route (production only - Vercel serverless function)
-        console.log('[ImageLibraryModal] Attempting API route:', `/api/library?category=${normalized}`);
+        logger.debug('[ImageLibraryModal] Attempting API route:', `/api/library?category=${normalized}`);
         const res = await fetch(`/api/library?category=${encodeURIComponent(normalized)}`);
         if (res.ok) {
           const data: LibraryResponse = await res.json();
-          console.log('[ImageLibraryModal] API response:', data);
+          logger.debug('[ImageLibraryModal] API response received');
           if (Array.isArray(data.images) && data.images.length) {
-            console.log('[ImageLibraryModal] ✓ API route loaded:', data.images.length, 'images');
+            logger.debug('[ImageLibraryModal] API route loaded:', data.images.length, 'images');
             cache.set(normalized, data.images);
             if (!cancelled) setImages(data.images);
             return;
           }
         } else {
-          console.log('[ImageLibraryModal] ✗ API route failed:', res.status, res.statusText);
+          logger.debug('[ImageLibraryModal] API route failed:', res.status, res.statusText);
         }
 
         // Nothing found
-        console.error('[ImageLibraryModal] All loading strategies failed for category:', normalized);
+        logger.error('[ImageLibraryModal] All loading strategies failed for category:', normalized);
         if (!cancelled) {
           setImages([]);
           setError('Could not load images. Please try again.');
         }
       } catch (err) {
-        console.error('[ImageLibraryModal] Exception during image loading:', err);
+        logger.error('[ImageLibraryModal] Exception during image loading:', err);
         if (!cancelled) setError('Could not load images. Please try again.');
       } finally {
         if (!cancelled) setLoading(false);

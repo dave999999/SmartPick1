@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { PageShell } from '@/components/layout/PageShell';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -176,7 +177,7 @@ function Contact() {
         });
 
       if (error) {
-        console.error('Supabase error:', error);
+        logger.error('Supabase error:', error);
         throw new Error('Failed to submit form');
       }
 
@@ -201,7 +202,7 @@ function Contact() {
       setTimeout(() => setShowCaptcha(true), 100);
 
     } catch (error) {
-      console.error('Error submitting contact form:', error);
+      logger.error('Error submitting contact form:', error);
       toast.error('Failed to send message', {
         description: 'Please try again or contact us directly via email, phone, Telegram or WhatsApp.',
       });

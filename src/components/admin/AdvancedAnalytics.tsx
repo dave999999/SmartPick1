@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -85,7 +86,7 @@ export function AdvancedAnalytics() {
         day7Retention
       });
     } catch (error) {
-      console.error('Error fetching analytics:', error instanceof Error ? error.message : String(error));
+      logger.error('Error fetching analytics:', error instanceof Error ? error.message : String(error));
       // Set to 0 on error instead of leaving undefined
       setData({
         dau: 0,

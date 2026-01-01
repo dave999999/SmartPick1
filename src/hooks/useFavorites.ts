@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 const FAVORITES_KEY = 'smartpick-favorites';
 
@@ -22,7 +23,7 @@ export function useFavorites() {
         setFavorites(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      logger.error('Error loading favorites:', error);
     }
   };
 
@@ -31,7 +32,7 @@ export function useFavorites() {
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
       setFavorites(newFavorites);
     } catch (error) {
-      console.error('Error saving favorites:', error);
+      logger.error('Error saving favorites:', error);
     }
   };
 

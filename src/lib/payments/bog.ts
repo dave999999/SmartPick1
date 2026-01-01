@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Bank of Georgia (BOG) Payments API Integration
  * 
@@ -21,9 +22,9 @@ declare const Deno: {
 
 // Simple logger for Deno compatibility
 const log = {
-  log: (...args: unknown[]) => console.log('[BOG]', ...args),
-  error: (...args: unknown[]) => console.error('[BOG ERROR]', ...args),
-  warn: (...args: unknown[]) => console.warn('[BOG WARN]', ...args),
+  log: (...args: unknown[]) => logger.debug('[BOG]', ...args),
+  error: (...args: unknown[]) => logger.error('[BOG ERROR]', ...args),
+  warn: (...args: unknown[]) => logger.warn('[BOG WARN]', ...args),
 };
 
 export interface BOGConfig {

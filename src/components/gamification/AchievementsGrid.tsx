@@ -100,7 +100,7 @@ export function AchievementsGrid({ userId, onUnclaimedCountChange }: Achievement
           });
         }
       } catch (error) {
-        console.error('Failed to poll achievements:', error);
+        logger.error('Failed to poll achievements:', error);
       }
     }, 60000); // 60 seconds
 

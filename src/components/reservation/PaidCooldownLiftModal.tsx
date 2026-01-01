@@ -8,6 +8,7 @@ import { Clock, Coins, Zap } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface PaidCooldownLiftModalProps {
   isVisible: boolean;
@@ -72,7 +73,7 @@ export function PaidCooldownLiftModal({
         });
       }
     } catch (error) {
-      console.error('Error lifting cooldown:', error);
+      logger.error('[PaidCooldownLiftModal] Error lifting cooldown:', error);
       toast.error('შეცდომა', {
         description: 'ვერ მოხერხდა შეზღუდვის მოხსნა',
         duration: 4000,

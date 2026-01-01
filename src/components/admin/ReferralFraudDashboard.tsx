@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
@@ -60,7 +61,7 @@ export default function ReferralFraudDashboard() {
 
       setFlaggedReferrals(enriched);
     } catch (error) {
-      console.error('Error loading flagged referrals:', error);
+      logger.error('Error loading flagged referrals:', error);
       toast.error('Failed to load flagged referrals');
     } finally {
       setIsLoading(false);
@@ -88,7 +89,7 @@ export default function ReferralFraudDashboard() {
         toast.error(result.error || 'Action failed');
       }
     } catch (error) {
-      console.error('Error reviewing referral:', error);
+      logger.error('Error reviewing referral:', error);
       toast.error('Failed to process action');
     } finally {
       setActionInProgress(null);

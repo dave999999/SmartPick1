@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase, isDemoMode } from '../supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -13,7 +14,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
  *   if (!userId) return;
  *   
  *   const channel = subscribeToReservations(userId, (payload) => {
- *     console.log('Update received:', payload);
+ *     logger.debug('Update received:', payload);
  *   });
  *   
  *   // ✅ REQUIRED: Cleanup on unmount

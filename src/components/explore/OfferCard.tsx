@@ -54,7 +54,10 @@ export function OfferCard({ offer, userLocation, onClick, onInView }: OfferCardP
 
   // Intersection observer for map sync
   useEffect(() => {
-    if (!cardRef.current || !onInView) return;
+    if (!onInView) return;
+    
+    const element = cardRef.current;
+    if (!element) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -67,11 +70,13 @@ export function OfferCard({ offer, userLocation, onClick, onInView }: OfferCardP
       { threshold: [0.4] }
     );
 
-    observer.observe(cardRef.current);
+    observer.observe(element);
 
     return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
+      try {
+        observer.unobserve(element);
+      } catch (e) {
+        // Ignore cleanup errors if element is already unmounted
       }
     };
   }, [onInView]);

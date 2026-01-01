@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * ActiveReservationCard - Ultra-Premium Apple Wolt-Style Floating QR
  * 
@@ -466,7 +467,7 @@ export function ActiveReservationCard({
     
     // Log only once per reservation
     if (reservation && !hasLoggedMount.current) {
-      console.log('🎯 ActiveReservationCard mounted:', {
+      logger.debug('🎯 ActiveReservationCard mounted:', {
         reservationId: reservation.id,
         expiresAt: reservation.expiresAt,
         formatted
@@ -476,7 +477,7 @@ export function ActiveReservationCard({
     
     if (isExpired && reservation && !hasCalledExpired.current) {
       hasCalledExpired.current = true;
-      console.log('⏱️ Reservation expired, calling onExpired');
+      logger.debug('⏱️ Reservation expired, calling onExpired');
       onExpired();
     }
   }, [isExpired, reservation, onExpired, formatted]);

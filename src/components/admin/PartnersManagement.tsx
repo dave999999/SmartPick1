@@ -663,8 +663,24 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
   const handleRefreshOffer = async (offer: Offer) => {
     try {
       const now = new Date();
-      const pickupEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 hours
-      const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 hours
+      
+      // Calculate original duration from the offer
+      const originalStart = new Date(offer.pickup_start || offer.created_at);
+      const originalEnd = new Date(offer.pickup_end || offer.expires_at);
+      const originalDuration = originalEnd.getTime() - originalStart.getTime();
+      
+      // Preserve original duration (minimum 24h for safety)
+      const durationToUse = Math.max(originalDuration, 24 * 60 * 60 * 1000);
+      
+      const pickupEnd = new Date(now.getTime() + durationToUse);
+      const expiresAt = new Date(now.getTime() + durationToUse);
+      
+      // For non-24h businesses, adjust pickup_end to closing time on last day
+      if (selectedPartner && !selectedPartner.open_24h && !selectedPartner.business_hours?.is_24_7 && selectedPartner.business_hours?.close) {
+        const closingTime = selectedPartner.business_hours.close;
+        const [hours, minutes] = closingTime.split(':').map(Number);
+        pickupEnd.setHours(hours, minutes, 0, 0);
+      }
       
       // Directly update via Supabase to ensure created_at is updated
       const { error: updateError } = await supabase
@@ -675,15 +691,16 @@ export function PartnersManagement({ onStatsUpdate }: PartnersManagementProps) {
           created_at: now.toISOString(),       // Reset creation time - appears as NEW
           updated_at: now.toISOString(),
           pickup_start: now.toISOString(),     // Start pickup immediately
-          pickup_end: pickupEnd.toISOString(), // Extend pickup window by 24h
-          expires_at: expiresAt.toISOString(), // Extend expiration
+          pickup_end: pickupEnd.toISOString(), // Preserve original duration
+          expires_at: expiresAt.toISOString(), // Preserve original duration
         })
         .eq('id', offer.id);
       
       if (updateError) throw updateError;
       
-      toast.success('Offer refreshed - available for 24h, showing as NEW on map!');
-      await logAction(offer.partner_id, 'REFRESH_OFFER', `Offer ${offer.id} refreshed`);
+      const durationDays = Math.ceil(durationToUse / (24 * 60 * 60 * 1000));
+      toast.success(`Offer refreshed - available for ${durationDays} day${durationDays > 1 ? 's' : ''}, showing as NEW on map!`);
+      await logAction(offer.partner_id, 'REFRESH_OFFER', `Offer ${offer.id} refreshed for ${durationDays} days`);
       
       // Reload offers for this partner
       if (selectedPartner) {

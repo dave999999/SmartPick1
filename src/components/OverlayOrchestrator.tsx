@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Overlay Orchestrator - Smart priority-based overlay management
  * 
@@ -10,20 +11,18 @@
  * 3. CRITICAL (10000) - PenaltyModal (warnings only, blocks actions, must acknowledge)
  * 4. HIGH (9999) - OfflineBanner (affects functionality)
  * 4. MEDIUM (50) - QueueStatus (informational, can wait)
- * 5. LOW (40) - CookieConsent (can be deferred)
  */
 
 import { useState, useEffect, ReactNode } from 'react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { OfflineBanner } from './OfflineBanner';
 import { QueueStatus } from './QueueStatus';
-import { CookieConsent } from './CookieConsent';
 import { PenaltyModal } from './PenaltyModal';
 import { SuspensionModal } from './SuspensionModal';
 import { AdminReviewModal } from './AdminReviewModal';
 import { UserPenalty } from '@/lib/api/penalty';
 
-type OverlayType = 'adminReview' | 'suspension' | 'penalty' | 'offline' | 'queue' | 'cookie';
+type OverlayType = 'adminReview' | 'suspension' | 'penalty' | 'offline' | 'queue';
 
 interface OverlayState {
   type: OverlayType;
@@ -59,7 +58,7 @@ export function OverlayOrchestrator({
   onPenaltyLifted,
 }: OverlayOrchestratorProps) {
   // DEBUG: Log suspension modal state
-  console.log('🔍 OverlayOrchestrator - Suspension state:', {
+  logger.debug('🔍 OverlayOrchestrator - Suspension state:', {
     showSuspensionModal,
     hasSuspensionPenalty: !!suspensionPenalty,
     suspensionPenaltyType: suspensionPenalty?.penalty_type,
@@ -69,7 +68,6 @@ export function OverlayOrchestrator({
   
   const isOnline = useOnlineStatus();
   const [queueCount, setQueueCount] = useState(0);
-  const [cookieConsentNeeded, setCookieConsentNeeded] = useState(false);
   
   // Track which overlays should be visible based on conditions
   const [overlays, setOverlays] = useState<Record<OverlayType, OverlayState>>({
@@ -78,14 +76,7 @@ export function OverlayOrchestrator({
     penalty: { type: 'penalty', priority: 10000, visible: false, canDismiss: true }, // Warnings only
     offline: { type: 'offline', priority: 9999, visible: false, canDismiss: false },
     queue: { type: 'queue', priority: 50, visible: false, canDismiss: true },
-    cookie: { type: 'cookie', priority: 40, visible: false, canDismiss: true },
   });
-
-  // Check cookie consent status
-  useEffect(() => {
-    const savedConsent = localStorage.getItem('cookieConsent');
-    setCookieConsentNeeded(!savedConsent);
-  }, []);
 
   // Monitor queue status
   useEffect(() => {
@@ -123,26 +114,25 @@ export function OverlayOrchestrator({
       penalty: { ...prev.penalty, visible: showPenaltyModal && !!penaltyData },
       offline: { ...prev.offline, visible: !isOnline },
       queue: { ...prev.queue, visible: queueCount > 0 },
-      cookie: { ...prev.cookie, visible: cookieConsentNeeded },
     }));
-  }, [showSuspensionModal, suspensionPenalty, showPenaltyModal, penaltyData, isOnline, queueCount, cookieConsentNeeded]);
+  }, [showSuspensionModal, suspensionPenalty, showPenaltyModal, penaltyData, isOnline, queueCount]);
 
   // Determine which overlay to show based on priority
   const activeOverlay = Object.values(overlays)
     .filter(overlay => overlay.visible)
     .sort((a, b) => b.priority - a.priority)[0];
 
-  console.log('🎯 Active overlays:', Object.entries(overlays)
+  logger.debug('🎯 Active overlays:', Object.entries(overlays)
     .filter(([_, overlay]) => overlay.visible)
     .map(([key, overlay]) => `${key}(priority:${overlay.priority})`));
-  console.log('🏆 Highest priority overlay:', activeOverlay?.type);
+  logger.debug('🏆 Highest priority overlay:', activeOverlay?.type);
 
   // Show lower priority overlays only if no higher priority ones are active
   const shouldShowAdminReview = activeOverlay?.type === 'adminReview';
   const shouldShowSuspension = activeOverlay?.type === 'suspension';
   const shouldShowPenalty = activeOverlay?.type === 'penalty';
   
-  console.log('🔍 Render decisions:', {
+  logger.debug('🔍 Render decisions:', {
     shouldShowAdminReview,
     shouldShowSuspension,
     shouldShowPenalty,
@@ -153,7 +143,6 @@ export function OverlayOrchestrator({
   
   const shouldShowOffline = activeOverlay?.type === 'offline' || (!shouldShowAdminReview && !shouldShowSuspension && !shouldShowPenalty && overlays.offline.visible);
   const shouldShowQueue = activeOverlay?.type === 'queue' || (!shouldShowAdminReview && !shouldShowSuspension && !shouldShowPenalty && !shouldShowOffline && overlays.queue.visible);
-  const shouldShowCookie = activeOverlay?.type === 'cookie' || (!shouldShowAdminReview && !shouldShowSuspension && !shouldShowPenalty && !shouldShowOffline && !shouldShowQueue && overlays.cookie.visible);
 
   return (
     <>
@@ -168,7 +157,7 @@ export function OverlayOrchestrator({
       {/* CRITICAL: Suspension Modal (z-10001) - Full overlay, countdown timer, blocks EVERYTHING */}
       {shouldShowSuspension && suspensionPenalty && onSuspensionClose && onLiftPenalty && (
         <>
-          {console.log('🎯 About to render SuspensionModal with:', { 
+          {logger.debug('🎯 About to render SuspensionModal with:', { 
             penaltyId: suspensionPenalty.id, 
             penaltyType: suspensionPenalty.penalty_type,
             userPoints 
@@ -201,13 +190,6 @@ export function OverlayOrchestrator({
 
       {/* MEDIUM: Queue Status (z-50) - Bottom notification */}
       {shouldShowQueue && <QueueStatus />}
-
-      {/* LOW: Cookie Consent (z-40) - Bottom banner */}
-      {shouldShowCookie && (
-        <div style={{ zIndex: 40 }}>
-          <CookieConsent />
-        </div>
-      )}
     </>
   );
 }

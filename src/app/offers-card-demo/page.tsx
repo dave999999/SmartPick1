@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Offers Card Demo Page
  * Showcases the new HeroOfferCard and OfferListCard components
@@ -11,11 +12,11 @@ import { ChevronRight } from 'lucide-react';
 
 export default function OffersCardDemoPage() {
   const handleOfferClick = (title: string) => {
-    console.log('Clicked offer:', title);
+    logger.debug('Clicked offer:', title);
   };
 
   const handleReserveClick = (title: string) => {
-    console.log('Reserve clicked for:', title);
+    logger.debug('Reserve clicked for:', title);
   };
 
   return (

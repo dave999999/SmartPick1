@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * usePartnerDashboardData - Partner data, offers, reservations state management
  * 
@@ -75,7 +76,7 @@ export function usePartnerDashboardData(): PartnerDashboardData {
       setPartnerPoints(dashboardData.points);
 
     } catch (error) {
-      console.error('[usePartnerDashboardData] Error loading partner data:', error);
+      logger.error('[usePartnerDashboardData] Error loading partner data:', error);
       toast.error('Failed to load dashboard');
     } finally {
       setIsLoading(false);

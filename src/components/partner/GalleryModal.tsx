@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -83,7 +84,7 @@ export function GalleryModal({ open, onClose, partnerId, mode = 'browse', onSele
       setQuotaUsed(quota_used);
       setQuotaMax(quota_max);
     } catch (error) {
-      console.error('Failed to load images:', error);
+      logger.error('Failed to load images:', error);
       toast.error('ვერ მოხერხდა სურათების ჩატვირთვა');
     } finally {
       setIsLoading(false);
@@ -166,7 +167,7 @@ export function GalleryModal({ open, onClose, partnerId, mode = 'browse', onSele
         toast.error(result.error || 'წაშლა ვერ მოხერხდა');
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
       toast.error('წაშლა ვერ მოხერხდა');
     } finally {
       setIsDeleting(false);
@@ -184,7 +185,7 @@ export function GalleryModal({ open, onClose, partnerId, mode = 'browse', onSele
         toast.error(result.error || 'დაყენება ვერ მოხერხდა');
       }
     } catch (error) {
-      console.error('Set cover error:', error);
+      logger.error('Set cover error:', error);
       toast.error('დაყენება ვერ მოხერხდა');
     }
   };

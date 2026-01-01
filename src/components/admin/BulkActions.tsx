@@ -204,16 +204,42 @@ export function BulkActions({
           }
           for (const partnerId of ids) {
             try {
-              // Fetch offers for partner
+              // Fetch partner to get business hours
+              const { data: partner, error: partnerErr } = await supabase
+                .from('partners')
+                .select('open_24h, business_hours')
+                .eq('id', partnerId)
+                .single();
+              if (partnerErr) throw partnerErr;
+
+              // Fetch offers for partner with original timestamps to calculate duration
               const { data: offers, error: offersErr } = await supabase
                 .from('offers')
-                .select('id, quantity_total, quantity_available')
+                .select('id, quantity_total, quantity_available, pickup_start, pickup_end, expires_at, created_at')
                 .eq('partner_id', partnerId);
               if (offersErr) throw offersErr;
+              
               const now = new Date();
-              const pickupEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-              const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+              
               for (const offer of offers || []) {
+                // Calculate original duration in milliseconds
+                const originalStart = new Date(offer.pickup_start || offer.created_at);
+                const originalEnd = new Date(offer.pickup_end || offer.expires_at);
+                const originalDuration = originalEnd.getTime() - originalStart.getTime();
+                
+                // Preserve original duration (minimum 24h for safety)
+                const durationToUse = Math.max(originalDuration, 24 * 60 * 60 * 1000);
+                
+                const pickupEnd = new Date(now.getTime() + durationToUse);
+                const expiresAt = new Date(now.getTime() + durationToUse);
+                
+                // For non-24h businesses, adjust pickup_end to closing time on last day
+                if (!partner?.open_24h && !partner?.business_hours?.is_24_7 && partner?.business_hours?.close) {
+                  const closingTime = partner.business_hours.close;
+                  const [hours, minutes] = closingTime.split(':').map(Number);
+                  pickupEnd.setHours(hours, minutes, 0, 0);
+                }
+
                 const { error: updErr } = await supabase
                   .from('offers')
                   .update({

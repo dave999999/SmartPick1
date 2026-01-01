@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * CSRF Protection Client
  * 
@@ -31,7 +32,7 @@ export async function getCSRFToken(): Promise<string | null> {
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
-      console.warn('No session found, cannot generate CSRF token');
+      logger.warn('No session found, cannot generate CSRF token');
       return null;
     }
 
@@ -49,7 +50,7 @@ export async function getCSRFToken(): Promise<string | null> {
     );
 
     if (!response.ok) {
-      console.error('Failed to generate CSRF token:', response.status);
+      logger.error('Failed to generate CSRF token:', response.status);
       return null;
     }
 
@@ -63,7 +64,7 @@ export async function getCSRFToken(): Promise<string | null> {
     return data.csrfToken;
 
   } catch (error) {
-    console.error('CSRF token generation error:', error);
+    logger.error('CSRF token generation error:', error);
     return null;
   }
 }
@@ -100,7 +101,7 @@ export async function validateCSRFToken(token: string): Promise<boolean> {
     return data.valid === true;
 
   } catch (error) {
-    console.error('CSRF token validation error:', error);
+    logger.error('CSRF token validation error:', error);
     return false;
   }
 }
@@ -170,6 +171,6 @@ supabase.auth.onAuthStateChange((event) => {
     clearCSRFToken();
   } else if (event === 'SIGNED_IN') {
     // Pre-fetch token for better UX
-    getCSRFToken().catch(console.error);
+    getCSRFToken().catch((err) => logger.error('[CSRF] Failed to prefetch token:', err));
   }
 });

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * IndexedDB wrapper for offline data persistence
  */
@@ -48,7 +49,7 @@ class IndexedDBManager {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
-        console.error('[IndexedDB] Failed to open database:', request.error);
+        logger.error('[IndexedDB] Failed to open database:', request.error);
         this.initPromise = null;
         reject(request.error);
       };
@@ -59,7 +60,7 @@ class IndexedDBManager {
 
         // Handle database close events
         this.db.onclose = () => {
-          console.warn('[IndexedDB] Database connection closed');
+          logger.warn('[IndexedDB] Database connection closed');
           this.isClosing = true;
           this.db = null;
           this.initPromise = null;
@@ -67,20 +68,20 @@ class IndexedDBManager {
 
         // Handle version change (another tab upgraded schema)
         this.db.onversionchange = () => {
-          console.warn('[IndexedDB] Database version changed, closing connection');
+          logger.warn('[IndexedDB] Database version changed, closing connection');
           this.db?.close();
           this.isClosing = true;
           this.db = null;
           this.initPromise = null;
         };
 
-        console.log('[IndexedDB] Database opened successfully');
+        logger.debug('[IndexedDB] Database opened successfully');
         resolve();
       };
 
       request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        console.log('[IndexedDB] Upgrading database schema...');
+        logger.debug('[IndexedDB] Upgrading database schema...');
 
         // Offers store
         if (!db.objectStoreNames.contains(STORES.OFFERS)) {
@@ -204,7 +205,7 @@ class IndexedDBManager {
       // Retry once if connection was closed
       if (retryCount < 1 && (error instanceof Error && 
           (error.message.includes('closing') || error.message.includes('closed')))) {
-        console.warn('[IndexedDB] Connection closed, retrying...', { storeName, retryCount });
+        logger.warn('[IndexedDB] Connection closed, retrying...', { storeName, retryCount });
         this.initPromise = null; // Force re-initialization
         return this.getAll<T>(storeName, retryCount + 1);
       }
@@ -288,7 +289,7 @@ class IndexedDBManager {
 
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => {
-        console.log(`[IndexedDB] Cached ${offers.length} offers (TTL: ${ttl}ms, Version: ${version})`);
+        logger.debug(`[IndexedDB] Cached ${offers.length} offers (TTL: ${ttl}ms, Version: ${version})`);
         resolve();
       };
       transaction.onerror = () => reject(transaction.error);
@@ -301,14 +302,14 @@ class IndexedDBManager {
       const cached = await this.get<CachedData>(STORES.OFFERS, 'offers');
       
       if (!cached) {
-        console.log('[IndexedDB] No cached offers found');
+        logger.debug('[IndexedDB] No cached offers found');
         return null;
       }
       
       // Check version
       const currentVersion = (import.meta.env.VITE_APP_VERSION as string) || '1.0.0';
       if (cached.version !== currentVersion) {
-        console.log(`[IndexedDB] Cache version mismatch (cached: ${cached.version}, current: ${currentVersion}), invalidating`);
+        logger.debug(`[IndexedDB] Cache version mismatch (cached: ${cached.version}, current: ${currentVersion}), invalidating`);
         await this.delete(STORES.OFFERS, 'offers');
         return null;
       }
@@ -316,15 +317,15 @@ class IndexedDBManager {
       // Check TTL
       const age = Date.now() - cached.cached_at;
       if (age > cached.ttl) {
-        console.log(`[IndexedDB] Cache expired (age: ${Math.round(age/1000)}s, TTL: ${Math.round(cached.ttl/1000)}s)`);
+        logger.debug(`[IndexedDB] Cache expired (age: ${Math.round(age/1000)}s, TTL: ${Math.round(cached.ttl/1000)}s)`);
         await this.delete(STORES.OFFERS, 'offers');
         return null;
       }
       
-      console.log(`[IndexedDB] Cache hit! Age: ${Math.round(age/1000)}s, ${cached.data.length} offers`);
+      logger.debug(`[IndexedDB] Cache hit! Age: ${Math.round(age/1000)}s, ${cached.data.length} offers`);
       return cached.data;
     } catch (error) {
-      console.error('[IndexedDB] Error reading cached offers:', error);
+      logger.error('[IndexedDB] Error reading cached offers:', error);
       return null;
     }
   }

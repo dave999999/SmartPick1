@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -51,7 +52,7 @@ export default function AuditLogPanel() {
       if (error) throw error;
       setRows(data as AuditLogRow[]);
     } catch (e: any) {
-      console.error('Failed to load audit logs:', e instanceof Error ? e.message : String(e));
+      logger.error('Failed to load audit logs:', e instanceof Error ? e.message : String(e));
       toast.error('Failed to load audit logs');
     } finally {
       setLoading(false);

@@ -17,11 +17,11 @@ import { useCurrentUser } from './hooks/useQueryHooks';
 import { useUserStore } from './stores';
 
 // Eager load: Only Index page (main landing) and essential components
-import Index from './pages/Index';
 import IndexRedesigned from './pages/IndexRedesigned';
 import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import TopRightMenu from './components/layout/TopRightMenu';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Lazy load: All other routes for code splitting (~300 KB savings on initial load)
 const PartnerDashboard = lazy(() => import('./pages/PartnerDashboardV3'));
@@ -107,7 +107,7 @@ const AppContent = () => {
         const isOAuthCallback = urlParams.has('code') || urlParams.has('access_token') || urlParams.has('error');
         
         if (isOAuthCallback) {
-          console.log('OAuth callback detected - skipping maintenance check');
+          logger.debug('OAuth callback detected - skipping maintenance check');
           if (!cancelled) {
             setIsMaintenanceMode(false);
             setIsLoading(false);
@@ -141,7 +141,7 @@ const AppContent = () => {
                 setIsAdmin(role === 'ADMIN' || role === 'SUPER_ADMIN');
               }
             } catch (e) {
-              console.warn('Failed to load profile for maintenance bypass', e);
+              logger.warn('Failed to load profile for maintenance bypass', e);
               if (!cancelled) setIsAdmin(false);
             }
           } else if (!cancelled) {
@@ -150,7 +150,7 @@ const AppContent = () => {
         }
       } catch (error) {
         if (!cancelled) {
-          console.error('Error checking maintenance mode:', error);
+          logger.error('Error checking maintenance mode:', error);
           setIsAdmin(false);
           setIsMaintenanceMode(false);
         }
@@ -169,6 +169,60 @@ const AppContent = () => {
     };
   }, []);
 
+  // Real-time subscription to maintenance mode changes
+  useEffect(() => {
+    let subscription: any = null;
+    
+    (async () => {
+      try {
+        const { supabase } = await import('./lib/supabase');
+        
+        // Subscribe to system_settings changes for maintenance_mode
+        subscription = supabase
+          .channel('maintenance_mode_changes')
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'system_settings',
+              filter: 'key=eq.maintenance_mode'
+            },
+            async (payload: any) => {
+              logger.debug('🔄 Maintenance mode changed:', payload.new?.value?.enabled);
+              const maintenanceEnabled = payload.new?.value?.enabled === true;
+              setIsMaintenanceMode(maintenanceEnabled);
+              
+              // If maintenance mode is enabled, check if current user is admin
+              if (maintenanceEnabled) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const { data: profile } = await supabase
+                    .from('users')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                  const role = (profile?.role || '').toUpperCase();
+                  setIsAdmin(role === 'ADMIN' || role === 'SUPER_ADMIN');
+                } else {
+                  setIsAdmin(false);
+                }
+              }
+            }
+          )
+          .subscribe();
+      } catch (error) {
+        logger.error('Error setting up maintenance mode subscription:', error);
+      }
+    })();
+
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
+  }, []);
+
   // Global auth error handler - catch refresh token errors
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
@@ -178,10 +232,10 @@ const AppContent = () => {
         const { supabase } = await import('./lib/supabase');
         const { data } = supabase.auth.onAuthStateChange((event, session) => {
           if (event === 'TOKEN_REFRESHED') {
-            console.log('✅ Token refreshed successfully');
+            logger.debug('✅ Token refreshed successfully');
           }
           if (event === 'SIGNED_OUT') {
-            console.log('🔐 User signed out');
+            logger.debug('🔐 User signed out');
             // Clear any cached data
             if (typeof window !== 'undefined') {
               localStorage.removeItem('recentAuthTs');
@@ -190,7 +244,7 @@ const AppContent = () => {
         });
         subscription = data.subscription;
       } catch (error) {
-        console.error('Error setting up auth listener:', error);
+        logger.error('Error setting up auth listener:', error);
       }
     })();
 
@@ -238,7 +292,7 @@ const AppContent = () => {
           // Only show popup if penalty is not yet acknowledged
           if (details && !details.acknowledged) {
             // Check if it's a suspension (not a warning)
-            console.log('🔍 PENALTY DEBUG:', {
+            logger.debug('🔍 PENALTY DEBUG:', {
               penalty_type: details.penalty_type,
               offense_number: details.offense_number,
               suspended_until: details.suspended_until,
@@ -246,23 +300,23 @@ const AppContent = () => {
             });
             
             const isSuspension = ['1hour', '5hour', '24hour', 'permanent'].includes(details.penalty_type);
-            console.log('🎯 Is Suspension?', isSuspension);
+            logger.debug('🎯 Is Suspension?', isSuspension);
             
             if (isSuspension) {
               // Show new SuspensionModal
-              console.log('✅ Showing SuspensionModal');
+              logger.debug('✅ Showing SuspensionModal');
               setSuspensionPenalty(details);
               setShowSuspensionModal(true);
             } else {
               // Show old MissedPickupPopup for warnings
-              console.log('⚠️ Showing old PenaltyModal (warning)');
+              logger.debug('⚠️ Showing old PenaltyModal (warning)');
               setPenaltyData(details);
               setShowPenaltyModal(true);
             }
           }
         }
       } catch (error) {
-        console.error('Error checking penalty on load:', error);
+        logger.error('Error checking penalty on load:', error);
       }
     };
 
@@ -327,40 +381,39 @@ const AppContent = () => {
       </a>
       {/* Global quick actions menu (top-right) */}
       <TopRightMenu />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={
-            <GoogleMapProvider>
-              <IndexRedesigned />
-            </GoogleMapProvider>
-          } />
-          <Route path="/old" element={<Index />} />
+      {/* GoogleMapProvider wraps entire app to prevent unmount/remount issues */}
+      <GoogleMapProvider>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<IndexRedesigned />} />
           <Route
             path="/partner"
             element={
-              <ErrorBoundary
-                fallbackRender={({ error }) => (
-                  <div className="p-6 text-center">
-                    <h2 className="text-red-600 font-semibold">⚠️ Something went wrong</h2>
-                    <p className="text-gray-700">{error?.message}</p>
-                    <p className="text-sm text-gray-500">Component: Partner Dashboard</p>
-                  </div>
-                )}
-              >
-                <PartnerDashboard />
-              </ErrorBoundary>
+              <ProtectedRoute>
+                <ErrorBoundary
+                  fallbackRender={({ error }) => (
+                    <div className="p-6 text-center">
+                      <h2 className="text-red-600 font-semibold">⚠️ Something went wrong</h2>
+                      <p className="text-gray-700">{error?.message}</p>
+                      <p className="text-sm text-gray-500">Component: Partner Dashboard</p>
+                    </div>
+                  )}
+                >
+                  <PartnerDashboard />
+                </ErrorBoundary>
+              </ProtectedRoute>
             }
           />
           <Route path="/partner/apply" element={<PartnerApplication />} />
-          <Route path="/my-picks" element={<ReservationHistory />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="/reservation/:id" element={<ReservationDetail />} />
+          <Route path="/my-picks" element={<ProtectedRoute><ReservationHistory /></ProtectedRoute>} />
+          <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+          <Route path="/reservation/:id" element={<ProtectedRoute><ReservationDetail /></ProtectedRoute>} />
           <Route 
             path="/reserve/:offerId" 
             element={
               <Suspense fallback={<PageLoader />}>
-                <ReserveOffer />
+                <ProtectedRoute><ReserveOffer /></ProtectedRoute>
               </Suspense>
             } 
           />
@@ -378,6 +431,7 @@ const AppContent = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      </GoogleMapProvider>
       {/* PWA Install Prompts */}
       <InstallPWA />
       <IOSInstallPrompt />

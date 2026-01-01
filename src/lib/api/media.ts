@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase, isDemoMode } from '../supabase';
 import { 
   ALLOWED_IMAGE_TYPES, 
@@ -249,7 +250,7 @@ export const uploadPartnerImage = async (
     return { success: true, url: publicUrl };
 
   } catch (error: any) {
-    console.error('Upload error:', error);
+    logger.error('Upload error:', error);
     
     // Log failed attempt if we have partner ID
     if (partnerId) {
@@ -264,7 +265,7 @@ export const uploadPartnerImage = async (
           p_error_message: error.message || 'Unknown error'
         });
       } catch (logError) {
-        console.error('Failed to log upload attempt:', logError);
+        logger.error('Failed to log upload attempt:', logError);
       }
     }
     
@@ -299,7 +300,7 @@ export const deletePartnerImage = async (
     
     const filePath = urlParts.slice(bucketIndex + 1).join('/');
 
-    console.log('Deleting image from storage:', filePath); // Debug log
+    logger.debug('Deleting image from storage:', filePath); // Debug log
 
     // Delete from storage
     const { error: deleteError } = await supabase.storage
@@ -307,7 +308,7 @@ export const deletePartnerImage = async (
       .remove([filePath]);
 
     if (deleteError) {
-      console.error('Storage delete error:', deleteError);
+      logger.error('Storage delete error:', deleteError);
       throw deleteError;
     }
 
@@ -366,7 +367,7 @@ export const deletePartnerImage = async (
     return { success: true };
 
   } catch (error: any) {
-    console.error('Delete error:', error);
+    logger.error('Delete error:', error);
     return { 
       success: false, 
       error: error.message || 'Delete failed. Please try again.' 
@@ -417,7 +418,7 @@ export const getPartnerImages = async (
     };
 
   } catch (error) {
-    console.error('Error fetching partner images:', error);
+    logger.error('Error fetching partner images:', error);
     return { images: [], quota_used: 0, quota_max: MAX_PARTNER_IMAGES };
   }
 };
@@ -443,13 +444,13 @@ export const setCoverImage = async (partnerId: string, imageUrl: string): Promis
       .eq('id', partnerId);
 
     if (error) {
-      console.error('Error setting cover image:', error);
+      logger.error('Error setting cover image:', error);
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Exception setting cover image:', error);
+    logger.error('Exception setting cover image:', error);
     return { success: false, error: 'Failed to set cover image' };
   }
 };

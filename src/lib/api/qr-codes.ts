@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { QR_CODE_SIZE, QR_CODE_MARGIN } from '../constants';
 
 /**
@@ -18,7 +19,7 @@ export const generateQRCodeDataURL = async (text: string): Promise<string> => {
       },
     });
   } catch (err) {
-    console.error('QR Code generation error:', err);
+    logger.error('QR Code generation error:', err);
     return '';
   }
 };

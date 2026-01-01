@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,7 +48,7 @@ export function CommunicationPanel() {
       });
 
       if (functionError) {
-        console.error('Error sending notifications:', functionError);
+        logger.error('Error sending notifications:', functionError);
         toast.warning('Announcement saved but notifications may have failed');
       } else {
         const stats = functionData?.stats;
@@ -62,7 +63,7 @@ export function CommunicationPanel() {
       setMessage('');
       setPriority('medium');
     } catch (error: any) {
-      console.error('Error sending announcement:', error);
+      logger.error('Error sending announcement:', error);
       toast.error(error.message || 'Failed to send announcement');
     } finally {
       setSending(false);

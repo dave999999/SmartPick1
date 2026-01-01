@@ -26,6 +26,7 @@ L.Icon.Default.mergeOptions({
 // New compact UI components
 import CountdownBar from '@/components/reservations/CountdownBar';
 import PickupSuccessModal from '@/components/PickupSuccessModal';
+import { usePickupBroadcast } from '@/hooks/usePickupBroadcast';
 
 export default function ReservationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,36 @@ export default function ReservationDetail() {
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [savedAmount, setSavedAmount] = useState(0);
   const [pointsEarned, setPointsEarned] = useState(0);
+
+  // 🎧 Listen for instant pickup confirmation via broadcast (when QR modal is open)
+  usePickupBroadcast({
+    reservationId: id || null,
+    enabled: qrModalOpen && reservation?.status === 'ACTIVE',
+    onPickupConfirmed: ({ savedAmount, pointsEarned }) => {
+      logger.debug('🎉 Pickup confirmed via broadcast!', { savedAmount, pointsEarned });
+      
+      // Close QR modal
+      setQrModalOpen(false);
+      
+      // Calculate actual savings from reservation
+      const originalPrice = reservation?.offer?.original_price || 0;
+      const smartPrice = reservation?.total_price || 0;
+      const actualSaved = (originalPrice * (reservation?.quantity || 0)) - Number(smartPrice);
+      
+      setSavedAmount(actualSaved);
+      setPointsEarned(0); // User spent points, didn't earn
+      
+      // Show success modal immediately
+      setSuccessModalOpen(true);
+      
+      // Mark as celebrated to avoid showing again when DB updates
+      const celebrationKey = `pickup-celebrated-${id}`;
+      localStorage.setItem(celebrationKey, 'true');
+      
+      // Reload reservation to get updated status
+      loadReservation();
+    }
+  });
 
   const loadReservation = async () => {
     try {
@@ -89,7 +120,7 @@ export default function ReservationDetail() {
   useEffect(() => {
     if (!id) return;
 
-    console.log('🔔 Setting up real-time subscription for reservation:', id);
+    logger.debug('🔔 Setting up real-time subscription for reservation:', id);
 
     const channel = supabase
       .channel(`reservation-${id}`)
@@ -102,25 +133,25 @@ export default function ReservationDetail() {
           filter: `id=eq.${id}`
         },
         (payload) => {
-          console.log('🚨 REAL-TIME UPDATE RECEIVED:', payload);
+          logger.debug('🚨 REAL-TIME UPDATE RECEIVED:', payload);
           logger.info('Reservation updated:', payload);
           
           // Immediately update the local state with the new data
           if (payload.new) {
-            console.log('📦 Updating reservation with new data:', payload.new);
+            logger.debug('📦 Updating reservation with new data:', payload.new);
             loadReservation();
           }
         }
       )
       .subscribe((status) => {
-        console.log('📡 Subscription status:', status);
+        logger.debug('📡 Subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Successfully subscribed to reservation updates');
+          logger.debug('✅ Successfully subscribed to reservation updates');
         }
       });
 
     return () => {
-      console.log('🔌 Cleaning up subscription for reservation:', id);
+      logger.debug('🔌 Cleaning up subscription for reservation:', id);
       supabase.removeChannel(channel);
     };
   }, [id]);
@@ -133,9 +164,9 @@ export default function ReservationDetail() {
   useEffect(() => {
     if (!reservation || reservation.status !== 'ACTIVE') return;
 
-    console.log('🔄 Starting polling for reservation status updates');
+    logger.debug('🔄 Starting polling for reservation status updates');
     const pollInterval = setInterval(() => {
-      console.log('🔍 Polling for reservation updates...');
+      logger.debug('🔍 Polling for reservation updates...');
       loadReservation().catch(err => {
         // Silently handle polling errors to avoid console spam
         logger.debug('Polling error (expected if CORS issue):', err);
@@ -143,7 +174,7 @@ export default function ReservationDetail() {
     }, 5000); // Poll every 5 seconds (reduced frequency)
 
     return () => {
-      console.log('⏹️ Stopping polling');
+      logger.debug('⏹️ Stopping polling');
       clearInterval(pollInterval);
     };
   }, [reservation?.status]);
@@ -152,12 +183,12 @@ export default function ReservationDetail() {
   // Detect when order is picked up and show success modal
   useEffect(() => {
     if (reservation && reservation.status === 'PICKED_UP') {
-      console.log('🎉 Order picked up detected! Status:', reservation.status);
+      logger.debug('🎉 Order picked up detected! Status:', reservation.status);
       const celebrationKey = `pickup-celebrated-${reservation.id}`;
       const alreadyCelebrated = localStorage.getItem(celebrationKey);
       
       if (!alreadyCelebrated) {
-        console.log('🎊 Showing celebration modal for the first time');
+        logger.debug('🎊 Showing celebration modal for the first time');
         // Calculate savings
         const originalPrice = reservation.offer?.original_price || 0;
         const smartPrice = reservation.total_price;
@@ -173,7 +204,7 @@ export default function ReservationDetail() {
         // Mark as celebrated
         localStorage.setItem(celebrationKey, 'true');
       } else {
-        console.log('✨ Celebration already shown for this reservation');
+        logger.debug('✨ Celebration already shown for this reservation');
       }
     }
   }, [reservation]);

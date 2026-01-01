@@ -145,18 +145,34 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   const markersRef = useRef<any[]>([]);
   const markerClustererRef = useRef<MarkerClusterer | null>(null);
   const userMarkerRef = useRef<any>(null);
+  const destinationMarkerRef = useRef<any>(null); // Ref for active reservation destination marker
   const pulseOverlayRef = useRef<any>(null);
   const directionsRendererRef = useRef<any>(null);
   const hasInitiallyFitBoundsRef = useRef<string | null>(null); // Track if we've already fit bounds for this reservation
   const activeReservationRouteDrawnRef = useRef<string | null>(null); // Track if route has been drawn for current reservation
+  
+  // 🔧 ANDROID FIX: Default location for Android if GPS fails
+  // Tbilisi - Freedom Square (Tavisuplebis Moedani)
+  const ANDROID_FALLBACK_LOCATION: [number, number] = [41.6925, 44.8073];
+  
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     externalUserLocation || null
   );
 
-  // Sync external userLocation
+  // Debug: Log component mount and Google Maps state
   useEffect(() => {
+    // Silent mount on Android for performance
+  }, []);
+
+  // 🔧 ANDROID FIX: Use fallback location if no location detected on Android
+  useEffect(() => {
+    const isAndroid = (window as any).Capacitor;
+    
     if (externalUserLocation) {
       setUserLocation(externalUserLocation);
+    } else if (isAndroid && !externalUserLocation) {
+      // Android device has no GPS location - use fallback silently
+      setUserLocation(ANDROID_FALLBACK_LOCATION);
     }
   }, [externalUserLocation]);
 
@@ -218,9 +234,81 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // Initialize map
   useEffect(() => {
-    if (!isLoaded || !google || !mapContainerRef.current) return;
-    if (mapRef.current) return; // Already initialized
+    if (!isLoaded || !google || !mapContainerRef.current) {
+      logger.error('🔴 MAP INIT BLOCKED:', { 
+        isLoaded, 
+        hasGoogle: !!google, 
+        hasContainer: !!mapContainerRef.current,
+        containerElement: mapContainerRef.current?.tagName,
+        containerParent: mapContainerRef.current?.parentElement?.tagName
+      });
+      return;
+    }
+    
+    // Ensure google.maps.Map constructor exists
+    if (!google.maps || !google.maps.Map) {
+      logger.error('🔴 google.maps.Map constructor not available!', { 
+        hasGoogleMaps: !!google.maps,
+        googleKeys: google ? Object.keys(google) : []
+      });
+      return;
+    }
+    
+    if (mapRef.current) {
+      logger.debug('✅ Map already initialized, skipping');
+      return;
+    }
 
+    logger.debug('🗺️ INITIALIZING MAP NOW', {
+      containerWidth: mapContainerRef.current.offsetWidth,
+      containerHeight: mapContainerRef.current.offsetHeight,
+      isVisible: mapContainerRef.current.offsetParent !== null,
+      isElement: mapContainerRef.current instanceof Element
+    });
+    
+    // Critical: Ensure container is a valid DOM Element for Android WebView
+    if (!(mapContainerRef.current instanceof Element)) {
+      logger.error('🔴 MAP CONTAINER IS NOT A VALID DOM ELEMENT!');
+      return;
+    }
+    
+    // Ensure container has dimensions
+    if (mapContainerRef.current.offsetWidth === 0 || mapContainerRef.current.offsetHeight === 0) {
+      logger.error('🔴 MAP CONTAINER HAS NO DIMENSIONS!');
+      // Try again after a short delay
+      setTimeout(() => {
+        if (mapContainerRef.current && !mapRef.current && mapContainerRef.current instanceof Element) {
+          logger.debug('🔄 Retrying map initialization...');
+          const map = new google.maps.Map(mapContainerRef.current, {
+            center: { lat: 41.7151, lng: 44.8271 },
+            zoom: 13,
+            disableDefaultUI: true,
+            zoomControl: false,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            gestureHandling: 'greedy',
+            clickableIcons: false,
+            styles: SMARTPICK_MAP_STYLE,
+          });
+          mapRef.current = map;
+          setGoogleMap(map);
+          logger.debug('✅ Map initialized on retry');
+        }
+      }, 100);
+      return;
+    }
+    
+    // ANDROID WEBVIEW FIX: Add small delay to ensure DOM is fully rendered
+    // This prevents IntersectionObserver errors in Android WebView
+    const initDelay = 50; // ms
+    
+    setTimeout(() => {
+      // Recheck that container still exists after delay
+      if (!mapContainerRef.current || mapRef.current) {
+        return;
+      }
+    
     try {
       const map = new google.maps.Map(mapContainerRef.current, {
         center: { lat: 41.7151, lng: 44.8271 }, // Tbilisi
@@ -393,6 +481,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
       mapRef.current = map;
       setGoogleMap(map); // Expose map instance to context
+      logger.debug('✅ Google Map initialized successfully');
       logger.log('Google Map initialized');
 
       // Clear selection on map click
@@ -434,9 +523,18 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         });
       }
     } catch (error) {
+      logger.error('🔴 FAILED TO INITIALIZE GOOGLE MAP:', error);
+      logger.error('Error details:', {
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        hasGoogle: !!google,
+        hasGoogleMaps: !!google?.maps,
+        hasMapConstructor: !!google?.maps?.Map,
+      });
       logger.error('Failed to initialize Google Map:', error);
       toast.error('Failed to load map');
     }
+    }, initDelay); // End of setTimeout for Android WebView fix
 
     return () => {
       // Cleanup on unmount only
@@ -452,164 +550,32 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     if (!mapRef.current || !google) return;
 
     const map = mapRef.current;
-    const currentReservationId = activeReservation?.id || null;
 
-    console.log('🗺️ Markers effect running:', { 
-      hideMarkers, 
-      hasActiveReservation: !!activeReservation,
-      hasPartner: !!activeReservation?.offer?.partner,
-      userLocation: userLocation,
-      routeAlreadyDrawn: activeReservationRouteDrawnRef.current === currentReservationId,
-    });
-
-    // If we have an active reservation and the route is already drawn, skip the entire effect
-    if (hideMarkers && activeReservation && activeReservationRouteDrawnRef.current === currentReservationId) {
-      console.log('⏭️ Skipping markers effect - route already drawn for this reservation');
+    // If markers should be hidden (active reservation), clear partner markers and return
+    // Note: User marker and route renderer are managed by separate effects
+    if (hideMarkers) {
+      // Clear partner markers only
+      markersRef.current.forEach(marker => {
+        if (marker.setMap) marker.setMap(null);
+      });
+      markersRef.current = [];
+      
+      if (markerClustererRef.current) {
+        markerClustererRef.current.clearMarkers();
+      }
       return;
     }
 
-    // Clear all existing markers first
+    // Clear all existing partner markers
     markersRef.current.forEach(marker => {
       if (marker.setMap) marker.setMap(null);
     });
     markersRef.current = [];
 
-    // Clear any existing directions renderer
+    // Clear any existing directions renderer when switching from active reservation to normal view
     if (directionsRendererRef.current) {
       directionsRendererRef.current.setMap(null);
       directionsRendererRef.current = null;
-    }
-    
-    // Reset fitBounds tracking when reservation ends
-    if (!activeReservation) {
-      hasInitiallyFitBoundsRef.current = null;
-      activeReservationRouteDrawnRef.current = null;
-    }
-    
-    // If markers should be hidden but there's an active reservation, show only partner marker and route
-    if (hideMarkers && activeReservation) {
-      if (markerClustererRef.current) {
-        markerClustererRef.current.clearMarkers();
-      }
-      
-      // Show only the partner marker for the active reservation
-      // Try multiple sources for partner location data
-      const partner = activeReservation?.offer?.partner || activeReservation?.partner;
-      
-      if (partner && userLocation) {
-        const partnerLat = partner.latitude || partner.location?.latitude;
-        const partnerLng = partner.longitude || partner.location?.longitude;
-        
-        console.log('🎯 Active Reservation Partner:', {
-          name: partner.business_name,
-          lat: partnerLat,
-          lng: partnerLng,
-          category: activeReservation.offer?.category,
-          hasPartnerData: !!partner,
-          hasLocation: !!(partner.latitude || partner.location?.latitude),
-        });
-        
-        if (typeof partnerLat === 'number' && typeof partnerLng === 'number' && 
-            isFinite(partnerLat) && isFinite(partnerLng)) {
-          
-          console.log('✅ Creating partner marker at:', partnerLat, partnerLng);
-          
-          // Create partner marker using the same icon as regular markers
-          // Create user marker at route start
-          const userMarker = new google.maps.Marker({
-            position: { lat: userLocation[0], lng: userLocation[1] },
-            map: mapRef.current,
-            title: 'Your location (route start)',
-            icon: {
-              url: '/icons/map-pins/user.png',
-              scaledSize: new google.maps.Size(32, 32),
-              anchor: new google.maps.Point(16, 32),
-              optimized: false
-            },
-            zIndex: 10001, // Higher than partner to show on top
-          });
-          
-          markersRef.current.push(userMarker);
-          console.log('✅ User marker created at route start');
-          
-          // Create partner marker at route end
-          const partnerMarker = new google.maps.Marker({
-            position: { lat: partnerLat, lng: partnerLng },
-            map: mapRef.current,
-            title: partner.business_name,
-            icon: {
-              url: '/icons/map-pins/all.png?v=2',
-              scaledSize: new google.maps.Size(60, 42),
-              anchor: new google.maps.Point(30, 40.5),
-              optimized: false
-            },
-            zIndex: 10000,
-            animation: google.maps.Animation.DROP,
-          });
-          
-          markersRef.current.push(partnerMarker);
-          console.log('✅ Partner marker created at route end');
-          
-          // Draw route between user and partner
-          console.log('🗺️ Drawing route from user to partner...');
-          const directionsService = new google.maps.DirectionsService();
-          directionsRendererRef.current = new google.maps.DirectionsRenderer({
-            map: mapRef.current,
-            suppressMarkers: true, // We're using our own custom markers
-            polylineOptions: {
-              strokeColor: '#4285F4',
-              strokeWeight: 5,
-              strokeOpacity: 0.9,
-            },
-          });
-          
-          directionsService.route({
-            origin: { lat: userLocation[0], lng: userLocation[1] },
-            destination: { lat: partnerLat, lng: partnerLng },
-            travelMode: google.maps.TravelMode.DRIVING,
-          }, (result, status) => {
-            if (status === 'OK' && result) {
-              directionsRendererRef.current?.setDirections(result);
-              console.log('✅ Route drawn successfully');
-            } else {
-              console.error('❌ Directions request failed:', status);
-            }
-          });
-          
-          // Center map to show both user and partner locations (only once per reservation)
-          const reservationId = activeReservation?.id || 'no-id';
-          if (hasInitiallyFitBoundsRef.current !== reservationId) {
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
-            bounds.extend({ lat: partnerLat, lng: partnerLng });
-            map.fitBounds(bounds, { padding: 80 });
-            hasInitiallyFitBoundsRef.current = reservationId;
-            console.log('✅ Initial bounds fitted for reservation:', reservationId);
-          } else {
-            console.log('⏭️ Skipping fitBounds - already centered for this reservation');
-          }
-          
-          // Mark route as drawn for this reservation to prevent re-renders
-          activeReservationRouteDrawnRef.current = reservationId;
-        } else {
-          console.warn('⚠️ Invalid partner coordinates:', { partnerLat, partnerLng });
-        }
-      } else {
-        console.warn('⚠️ Missing partner or user location data:', {
-          hasPartner: !!partner,
-          hasUserLocation: !!userLocation,
-        });
-      }
-      
-      return;
-    }
-    
-    // If markers should be hidden (no active reservation), return after clearing
-    if (hideMarkers) {
-      if (markerClustererRef.current) {
-        markerClustererRef.current.clearMarkers();
-      }
-      return;
     }
 
     // Recreate markers based on current groupedLocations
@@ -648,10 +614,14 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       });
 
       // Create Google Maps marker with custom icon
+      // Use relative path for both web and Capacitor
+      const iconUrl = `/icons/map-pins/all.png?v=2`;
+      
       const marker = new google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
+        map: mapRef.current, // CRITICAL: Attach marker to map!
         icon: {
-          url: '/icons/map-pins/all.png?v=2',
+          url: iconUrl,
           scaledSize: new google.maps.Size(60, 42),
           anchor: new google.maps.Point(30, 40.5), // Consistent proportional anchor
           optimized: false
@@ -753,8 +723,9 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     // Add all markers directly to map (no clustering)
     if (markers.length > 0) {
-      console.log('🗺️ Creating markers:', {
+      logger.debug('🗺️ Creating markers:', {
         totalMarkers: markers.length,
+        hasActiveReservation: !!activeReservation,
         locations: groupedLocations.map(loc => ({
           lat: loc.lat,
           lng: loc.lng,
@@ -766,10 +737,12 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       markers.forEach((marker, index) => {
         marker.setMap(map);
         const locationData = (marker as any).locationData;
-        console.log(`  📌 Marker ${index + 1}:`, {
+        logger.debug(`  📌 Marker ${index + 1}:`, {
           partner: locationData?.partnerName,
+          position: marker.getPosition()?.toJSON(),
           visible: marker.getVisible(),
           hasMap: !!marker.getMap(),
+          zIndex: marker.getZIndex(),
           offerCount: locationData?.offers?.length
         });
       });
@@ -780,7 +753,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         oldMarkers.forEach(marker => {
           if (marker.setMap) marker.setMap(null);
         });
-        console.log(`🧹 Removed ${oldMarkers.length} old markers`);
+        logger.debug(`🧹 Removed ${oldMarkers.length} old markers`);
       }, 100);
     }
 
@@ -789,13 +762,41 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // Update user location marker
   useEffect(() => {
-    if (!mapRef.current || !google || !userLocation) return;
+    if (!mapRef.current || !google || !userLocation) {
+      logger.debug('[UserMarker] Waiting for dependencies:', { 
+        hasMap: !!mapRef.current, 
+        hasGoogle: !!google, 
+        hasUserLocation: !!userLocation,
+        userLocation 
+      });
+      return;
+    }
 
     const map = mapRef.current;
+    logger.debug('[UserMarker] Creating user location marker at:', userLocation);
 
-    // Remove existing user marker
+    // 🔧 PRIORITY #1 FIX: Don't recreate user marker during active reservation
+    // This prevents marker from disappearing during route rendering
+    // Instead, just update its position if it already exists
+    if (activeReservation && userMarkerRef.current) {
+      // Update position of existing marker
+      userMarkerRef.current.setPosition({
+        lat: userLocation[0],
+        lng: userLocation[1]
+      });
+      
+      // Ensure it stays on top
+      userMarkerRef.current.setZIndex(99999);
+      userMarkerRef.current.setVisible(true);
+      logger.debug('[UserMarker] Updated existing marker position during active reservation');
+      
+      return;
+    }
+
+    // Remove existing user marker (only when NOT in active reservation)
     if (userMarkerRef.current) {
       userMarkerRef.current.setMap(null);
+      logger.debug('[UserMarker] Removed old user marker');
     }
 
     // Create pulsing glow overlay for user location
@@ -868,90 +869,126 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     );
     pulseOverlayInstance.setMap(map);
 
-    // Create user marker with custom icon and glow
+    // Create user marker with green dot icon
     const userMarker = new google.maps.Marker({
       position: { lat: userLocation[0], lng: userLocation[1] },
       map: map,
       icon: {
-        url: '/icons/map-pins/user.png',
-        scaledSize: new google.maps.Size(32, 32), // Smaller user pin size
-        anchor: new google.maps.Point(16, 32), // Center horizontally, anchor at bottom
-        optimized: false
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#10b981',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 2
       },
-      zIndex: 9999, // Keep user marker on top
+      zIndex: 9999,
       title: 'Your location'
     });
 
     userMarkerRef.current = userMarker;
+    logger.debug('[UserMarker] ✅ User marker created successfully at:', userLocation);
 
-    // Validate and center map on user (but skip during active reservation to avoid aggressive re-centering)
-    if (!activeReservation) {
-      const [lat, lng] = userLocation;
-      if (typeof lat === 'number' && typeof lng === 'number' && 
-          isFinite(lat) && isFinite(lng)) {
+    // Validate and center map on user location when marker is first created
+    const [lat, lng] = userLocation;
+    if (typeof lat === 'number' && typeof lng === 'number' && 
+        isFinite(lat) && isFinite(lng)) {
+      // Only pan if we're not already centered (avoid aggressive re-centering)
+      const currentCenter = map.getCenter();
+      if (!currentCenter || 
+          Math.abs(currentCenter.lat() - lat) > 0.001 || 
+          Math.abs(currentCenter.lng() - lng) > 0.001) {
         map.panTo({ lat, lng });
         if (map.getZoom() < 13) {
           map.setZoom(13);
         }
-      } else {
-        logger.warn('Invalid user location coordinates:', userLocation);
       }
+    } else {
+      logger.warn('Invalid user location coordinates:', userLocation);
     }
 
     // Cleanup function to remove pulse overlay
     return () => {
       pulseOverlayInstance.setMap(null);
     };
-  }, [userLocation, google, activeReservation]);
+  }, [userLocation, google, activeReservation]); // Added activeReservation dependency
 
   // Dedicated effect for active reservation route - ensures route is drawn when reservation is created
   useEffect(() => {
-    if (!mapRef.current || !google || !activeReservation || !userLocation) {
-      console.log('🗺️ Route effect skipped:', {
-        hasMap: !!mapRef.current,
-        hasGoogle: !!google,
-        hasActiveReservation: !!activeReservation,
-        hasUserLocation: !!userLocation,
-      });
-      return;
-    }
+    if (!mapRef.current || !google || !activeReservation || !userLocation) return;
 
-    console.log('🎯 Active reservation route effect triggered');
+    // Small delay for Android WebView  
+    const isCapacitor = !!(window as any).Capacitor;
+    const delay = isCapacitor ? 100 : 0; // Minimal delay
     
-    // Get partner location from multiple possible sources
-    const partner = activeReservation?.offer?.partner || activeReservation?.partner;
-    
-    if (!partner) {
-      console.warn('⚠️ No partner data in active reservation');
+    const timeoutId = setTimeout(() => {
+      // Get partner location from multiple possible sources
+      const partner = activeReservation?.offer?.partner || activeReservation?.partner;
+      
+      if (!partner) {
+        logger.warn('⚠️ No partner data in active reservation:', activeReservation);
+        return;
+      }
+
+      const partnerLat = partner.latitude || partner.location?.latitude;
+      const partnerLng = partner.longitude || partner.location?.longitude;
+
+      if (typeof partnerLat !== 'number' || typeof partnerLng !== 'number' || 
+          !isFinite(partnerLat) || !isFinite(partnerLng)) {
+      logger.warn('⚠️ Invalid partner coordinates in route effect:', { partnerLat, partnerLng, partner });
       return;
     }
 
-    const partnerLat = partner.latitude || partner.location?.latitude;
-    const partnerLng = partner.longitude || partner.location?.longitude;
-
-    if (typeof partnerLat !== 'number' || typeof partnerLng !== 'number' || 
-        !isFinite(partnerLat) || !isFinite(partnerLng)) {
-      console.warn('⚠️ Invalid partner coordinates in route effect:', { partnerLat, partnerLng });
-      return;
-    }
-
-    console.log('✅ Drawing route:', {
+    logger.debug('✅ Drawing route:', {
       from: userLocation,
       to: [partnerLat, partnerLng],
       partnerName: partner.business_name,
+      currentMarkers: markersRef.current.length,
+      isCapacitor: !!(window as any).Capacitor,
     });
 
     // Create directions service and renderer
     const directionsService = new google.maps.DirectionsService();
+    
+    // Clear existing renderer if any
+    if (directionsRendererRef.current) {
+      directionsRendererRef.current.setMap(null);
+    }
+    
+    // Clear existing destination marker if any
+    if (destinationMarkerRef.current) {
+      destinationMarkerRef.current.setMap(null);
+    }
+    
     const directionsRenderer = new google.maps.DirectionsRenderer({
       map: mapRef.current,
-      suppressMarkers: true,
+      suppressMarkers: true, // We'll add our own custom markers
       polylineOptions: {
         strokeColor: '#4285F4',
         strokeWeight: 5,
         strokeOpacity: 0.9,
       },
     });
+    
+    // Store in ref for cleanup
+    directionsRendererRef.current = directionsRenderer;
+
+    // Create destination marker - use custom partner pin
+    const destinationMarker = new google.maps.Marker({
+      position: { lat: partnerLat, lng: partnerLng },
+      map: mapRef.current,
+      icon: {
+        url: `/icons/map-pins/all.png?v=2`,
+        scaledSize: new google.maps.Size(60, 42),
+        anchor: new google.maps.Point(30, 40.5),
+        optimized: false
+      },
+      title: partner.business_name,
+      zIndex: 10000,
+    });
+    
+    destinationMarkerRef.current = destinationMarker;
+    destinationMarker.setVisible(true);
+    destinationMarker.setZIndex(10000);
 
     // Request route
     directionsService.route({
@@ -961,25 +998,66 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
     }, (result, status) => {
       if (status === 'OK' && result) {
         directionsRenderer.setDirections(result);
-        console.log('✅ Route drawn successfully from dedicated effect');
+        
+        // Ensure user marker stays visible and on top
+        if (userMarkerRef.current) {
+          userMarkerRef.current.setZIndex(99999);
+          userMarkerRef.current.setVisible(true);
+        }
         
         // Fit map to show both locations
         const bounds = new google.maps.LatLngBounds();
         bounds.extend({ lat: userLocation[0], lng: userLocation[1] });
         bounds.extend({ lat: partnerLat, lng: partnerLng });
         mapRef.current?.fitBounds(bounds, { padding: 80 });
+        
+        // 🔧 ANDROID FIX: Re-verify markers immediately after fitBounds
+        if ((window as any).Capacitor) {
+          if (destinationMarkerRef.current) {
+            destinationMarkerRef.current.setMap(mapRef.current);
+            destinationMarkerRef.current.setVisible(true);
+            destinationMarkerRef.current.setZIndex(10000);
+          }
+          if (userMarkerRef.current) {
+            userMarkerRef.current.setMap(mapRef.current);
+            userMarkerRef.current.setVisible(true);
+            userMarkerRef.current.setZIndex(99999);
+          }
+        }
+        
+        // 🔧 PRIORITY #4 FIX: Force visibility check after 200ms
+        setTimeout(() => {
+          // Check destination marker
+          if (destinationMarkerRef.current && !destinationMarkerRef.current.getMap()) {
+            destinationMarkerRef.current.setMap(mapRef.current);
+            destinationMarkerRef.current.setZIndex(10000);
+          }
+          
+          // Check user marker
+          if (userMarkerRef.current && !userMarkerRef.current.getMap()) {
+            userMarkerRef.current.setMap(mapRef.current);
+            userMarkerRef.current.setZIndex(99999);
+          }
+        }, 200); // Wait 200ms after route drawn
       } else {
-        console.error('❌ Directions request failed in dedicated effect:', status);
+        logger.error('❌ Directions request failed in dedicated effect:', status);
       }
     });
+    }, delay); // End of setTimeout
 
     // Cleanup when reservation changes or is cleared
     return () => {
-      if (directionsRenderer) {
-        directionsRenderer.setMap(null);
+      clearTimeout(timeoutId);
+      if (directionsRendererRef.current) {
+        directionsRendererRef.current.setMap(null);
+        directionsRendererRef.current = null;
+      }
+      if (destinationMarkerRef.current) {
+        destinationMarkerRef.current.setMap(null);
+        destinationMarkerRef.current = null;
       }
     };
-  }, [activeReservation?.id, userLocation, google]); // Only depend on reservation ID to avoid re-renders
+  }, [activeReservation, userLocation, google]); // Use full activeReservation to match the check above
 
   // Center on selected offer
   useEffect(() => {
@@ -1004,7 +1082,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   // Extracted highlighting logic (defined before useEffect that uses it)
   const highlightMarker = useCallback(() => {
     if (!google || !highlightedOfferId || markersRef.current.length === 0) {
-      console.log('🔴 highlightMarker: Early exit', { 
+      logger.debug('🔴 highlightMarker: Early exit', { 
         hasGoogle: !!google, 
         highlightedOfferId, 
         markersCount: markersRef.current.length 
@@ -1021,7 +1099,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       return locationData.offers.some((offer: Offer) => offer.id === highlightedOfferId);
     });
 
-    console.log('📍 highlightMarker: Search result', { 
+    logger.debug('📍 highlightMarker: Search result', { 
       highlightedOfferId, 
       foundMarker: !!marker,
       totalMarkers: markersRef.current.length,
@@ -1031,7 +1109,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
     // If same marker is already highlighted, skip
     if (marker === previouslyHighlightedMarkerRef.current) {
-      console.log('⏭️ highlightMarker: Same marker already highlighted, skipping');
+      logger.debug('⏭️ highlightMarker: Same marker already highlighted, skipping');
       return;
     }
 
@@ -1046,13 +1124,13 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
         });
       }
       previouslyHighlightedMarkerRef.current.setZIndex(1);
-      console.log('✅ Reset previous marker to normal size');
+      logger.debug('✅ Reset previous marker to normal size');
     }
 
     if (marker) {
       // Ensure marker is visible and on the map
       if (!marker.getMap()) {
-        console.warn('⚠️ Marker found but not on map! Re-adding...');
+        logger.warn('⚠️ Marker found but not on map! Re-adding...');
         marker.setMap(mapRef.current);
       }
       
@@ -1064,7 +1142,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           scaledSize: new google.maps.Size(76, 54),
           anchor: new google.maps.Point(38, 52), // Proportional: 38/76 = 50%, 52/54 = 96.3%
         });
-        console.log('✅ Set marker icon to 88x88');
+        logger.debug('✅ Set marker icon to 88x88');
       }
       
       // Add gentle DROP animation (lighter than BOUNCE)
@@ -1075,7 +1153,7 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       
       // Bring to front
       marker.setZIndex(1000);
-      console.log('✅ Highlighted marker for offer:', highlightedOfferId);
+      logger.debug('✅ Highlighted marker for offer:', highlightedOfferId);
       
       // Get partner info from marker
       const locationData = (marker as any).locationData;
@@ -1205,10 +1283,23 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
 
   // Handle "Near Me" button
   const handleNearMe = () => {
-    if (!('geolocation' in navigator)) {
-      toast.error('Geolocation is not supported by your browser');
+    // 🔧 ANDROID FIX: Always use Tbilisi location on Android
+    const isAndroid = (window as any).Capacitor;
+    if (isAndroid) {
+      const tbilisiLocation: [number, number] = [41.7151, 44.8271];
+      setUserLocation(tbilisiLocation);
+      onLocationChange?.(tbilisiLocation);
+      if (mapRef.current) {
+        mapRef.current.panTo({ 
+          lat: tbilisiLocation[0], 
+          lng: tbilisiLocation[1] 
+        });
+        mapRef.current.setZoom(15);
+      }
       return;
     }
+
+    if (!('geolocation' in navigator)) return;
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -1226,12 +1317,18 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
           });
           mapRef.current.setZoom(14);
         }
-
-        toast.success('Showing offers near you');
       },
-      (error) => {
-        logger.error('Error getting location:', error);
-        toast.error('Could not get your location');
+      () => {
+        const tbilisiLocation: [number, number] = [41.7151, 44.8271];
+        setUserLocation(tbilisiLocation);
+        onLocationChange?.(tbilisiLocation);
+        if (mapRef.current) {
+          mapRef.current.panTo({ 
+            lat: tbilisiLocation[0], 
+            lng: tbilisiLocation[1] 
+          });
+          mapRef.current.setZoom(14);
+        }
       }
     );
   };
@@ -1239,6 +1336,20 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
   // Render map container immediately (Google Maps loads asynchronously)
   return (
     <div className="w-full h-full relative">
+      {/* Debug info for Android WebView */}
+      {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-2xl z-10">
+          <div className="text-center p-4">
+            <div className="text-lg font-semibold mb-2">Loading Map...</div>
+            <div className="text-sm text-gray-600">
+              {!google && 'Waiting for Google Maps API...'}
+              {google && !mapContainerRef.current && 'Waiting for container...'}
+              {google && mapContainerRef.current && 'Initializing map...'}
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Animations for highlighted marker */}
       <style>{`
         @keyframes markerPulse {
@@ -1263,7 +1374,15 @@ const SmartPickGoogleMap = memo(function SmartPickGoogleMap({
       <div
         ref={mapContainerRef}
         className="w-full h-full rounded-2xl"
-        style={{ minHeight: '400px' }}
+        style={{ 
+          minHeight: '400px',
+          minWidth: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'block',
+          width: '100%',
+          height: '100%'
+        }}
       />
 
       {/* Near Me Button */}

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offer } from '@/lib/types';
@@ -37,7 +38,7 @@ export default function Favorites() {
       
       setOffers(filteredOffers);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      logger.error('Error loading favorites:', error);
     } finally {
       setIsLoading(false);
     }

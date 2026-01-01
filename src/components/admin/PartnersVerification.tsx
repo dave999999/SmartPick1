@@ -75,13 +75,13 @@ export default function PartnersVerification({ onStatsUpdate, isActive = true }:
       if (action === 'approve') {
         await approvePartner(selected.id);
         try { await logAdminAction('PARTNER_APPROVED', 'PARTNER', selected.id, { note }); } catch (logError) {
-          console.warn('Failed to log admin action:', logError);
+          logger.warn('Failed to log admin action:', logError);
         }
         toast.success('Partner approved');
       } else {
         await updatePartner(selected.id, { status: 'REJECTED' as any });
         try { await logAdminAction('PARTNER_REJECTED', 'PARTNER', selected.id, { note }); } catch (logError) {
-          console.warn('Failed to log admin action:', logError);
+          logger.warn('Failed to log admin action:', logError);
         }
         toast.success('Partner rejected');
       }

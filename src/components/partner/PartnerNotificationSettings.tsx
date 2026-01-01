@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Partner Notification Settings Modal
  * 
@@ -78,7 +79,7 @@ export function PartnerNotificationSettings({
       const prefs = await getPartnerNotificationSettings(partnerId);
       setPreferences(prefs);
     } catch (error) {
-      console.error('Failed to load notification preferences:', error);
+      logger.error('Failed to load notification preferences:', error);
       toast.error('პარამეტრების ჩატვირთვა ვერ მოხერხდა');
     }
   };

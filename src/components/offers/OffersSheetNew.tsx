@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * OffersSheetNew.tsx
  * Premium Offers Sheet with new card designs
@@ -9,6 +10,8 @@ import { Search, Mic, Clock } from 'lucide-react';
 
 // Search icon is decorative - input has visible placeholder text
 import { motion } from 'framer-motion';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { HeroOfferCard } from './HeroOfferCard';
 import { OfferListCard } from './OfferListCard';
@@ -68,11 +71,19 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   const previousIsMinimizedRef = useRef<boolean>(isMinimized);
   
   // Use parent-provided offers if available (viewport-filtered), otherwise fetch all
-  const { offers: allOffers, loading } = useOffers();
+  const { offers: allOffers, loading, refetch: refetchOffers } = useOffers();
   const offers = parentFilteredOffers || allOffers;
   const { partners } = usePartners();
 
-  console.log('🎠 OffersSheetNew render:', {
+  // Pull-to-refresh functionality (only when pulling down at top)
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await refetchOffers();
+    },
+    threshold: 80,
+  });
+
+  logger.debug('🎠 OffersSheetNew render:', {
     isMinimized,
     parentOffersCount: parentFilteredOffers?.length,
     totalOffersCount: offers.length,
@@ -195,7 +206,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
       scrollTimeout = setTimeout(() => {
         if (onCenteredOfferChange) {
           const centeredOffer = filteredOffers[closestIndex];
-          console.log('🎠 Carousel centered on offer:', {
+          logger.debug('🎠 Carousel centered on offer:', {
             index: closestIndex,
             offerId: centeredOffer?.id,
             title: centeredOffer?.title,
@@ -218,7 +229,7 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
 
   // If minimized, render carousel with enhanced card design
   if (isOpen && isMinimized) {
-    console.log('🎠 Rendering carousel with', filteredOffers.length, 'offers');
+    logger.debug('🎠 Rendering carousel with', filteredOffers.length, 'offers');
     
     return (
       <div className="fixed bottom-24 left-0 right-0 px-4" style={{ zIndex: 40 }}>
@@ -328,7 +339,12 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
         <SheetTitle className="absolute w-[1px] h-[1px] p-0 -m-[1px] overflow-hidden clip-[rect(0,0,0,0)] whitespace-nowrap border-0">
           {t('offers.discoverDeals')}
         </SheetTitle>
-        <div className="h-full overflow-y-auto overflow-x-hidden" ref={scrollContainerRef}>
+        <div className="h-full overflow-y-auto overflow-x-hidden" ref={pullToRefresh.containerRef}>
+          <PullToRefreshIndicator 
+            pullDistance={pullToRefresh.pullDistance}
+            isRefreshing={pullToRefresh.isRefreshing}
+            threshold={80}
+          />
           {/* Hidden dummy input to prevent search bar from getting focus */}
           <input type="text" style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} tabIndex={-1} />
           

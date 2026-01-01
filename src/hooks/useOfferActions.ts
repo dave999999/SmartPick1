@@ -166,20 +166,34 @@ export function useOfferActions(
     try {
       setProcessingIds(prev => new Set(prev).add(offer.id));
 
-      // Calculate original duration from created_at to expires_at
-      const createdAt = new Date(offer.created_at);
-      const originalExpiresAt = new Date(offer.expires_at);
-      const originalDurationMs = originalExpiresAt.getTime() - createdAt.getTime();
+      // Calculate original duration
+      const originalStart = new Date(offer.pickup_start || offer.created_at);
+      const originalEnd = new Date(offer.pickup_end || offer.expires_at);
+      const originalDurationMs = originalEnd.getTime() - originalStart.getTime();
 
-      // Calculate new expires_at based on original duration
+      // Preserve original duration (minimum 24h for safety)
+      const durationToUse = Math.max(originalDurationMs, 24 * 60 * 60 * 1000);
+
+      // Calculate new timestamps
       const now = new Date();
-      const newExpiresAt = new Date(now.getTime() + originalDurationMs);
+      const newPickupEnd = new Date(now.getTime() + durationToUse);
+      const newExpiresAt = new Date(now.getTime() + durationToUse);
 
-      // Reset offer to original state
+      // For non-24h businesses, adjust pickup_end to closing time on last day
+      if (partner && !partner.open_24h && !partner.business_hours?.is_24_7 && partner.business_hours?.close) {
+        const closingTime = partner.business_hours.close;
+        const [hours, minutes] = closingTime.split(':').map(Number);
+        newPickupEnd.setHours(hours, minutes, 0, 0);
+      }
+
+      // Reset offer with all timestamps updated
       await updateOffer(offer.id, {
         quantity_available: offer.quantity_total, // Reset to original quantity
-        expires_at: newExpiresAt.toISOString(), // Reset time based on original duration
-        status: 'ACTIVE' // Reactivate the offer
+        created_at: now.toISOString(),           // Reset creation time - shows as NEW
+        pickup_start: now.toISOString(),         // Start pickup now
+        pickup_end: newPickupEnd.toISOString(),  // Preserve original duration
+        expires_at: newExpiresAt.toISOString(),  // Preserve original duration
+        status: 'ACTIVE'                         // Reactivate the offer
       });
 
       toast.success(t('partner.dashboard.toast.offerReloaded'));

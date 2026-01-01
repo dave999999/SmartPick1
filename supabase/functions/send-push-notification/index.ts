@@ -1,42 +1,71 @@
 // Edge Function: send-push-notification
-// Sends Web Push notifications for location-based, favorite partner, and expiring offers
+// Sends push notifications using Firebase Cloud Messaging V1 API
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 interface PushNotificationPayload {
-  type: 'nearby' | 'favorite_partner' | 'expiring';
-  offer_id: string;
+  userId: string;
   title: string;
   body: string;
-  icon?: string;
-  badge?: string;
   data?: Record<string, any>;
-  user_ids?: string[]; // Optional: target specific users
-  location?: { lat: number; lng: number; radius_km: number }; // For nearby notifications
-  partner_id?: string; // For favorite partner notifications
+}
+
+// Get Firebase access token using service account
+async function getFirebaseAccessToken(): Promise<string> {
+  const projectId = Deno.env.get('FIREBASE_PROJECT_ID')!
+  const clientEmail = Deno.env.get('FIREBASE_CLIENT_EMAIL')!
+  const privateKey = Deno.env.get('FIREBASE_PRIVATE_KEY')!.replace(/\\n/g, '\n')
+
+  // Create JWT
+  const now = Math.floor(Date.now() / 1000)
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const payload = {
+    iss: clientEmail,
+    sub: clientEmail,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging'
+  }
+
+  // Encode JWT (using jose library for Deno)
+  const jose = await import('https://deno.land/x/jose@v4.14.4/index.ts')
+  const privateKeyObj = await jose.importPKCS8(privateKey, 'RS256')
+  const jwt = await new jose.SignJWT(payload)
+    .setProtectedHeader(header)
+    .sign(privateKeyObj)
+
+  // Exchange JWT for access token
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    })
+  })
+
+  const data = await response.json()
+  return data.access_token
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return handleCorsPreflightRequest(req)
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const secureHeaders = getCorsHeaders(req)
-
   try {
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false },
-      db: { schema: 'public' },
-      global: {
-        headers: { 'x-connection-pool': 'transaction' }
-      }
-    })
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
     // Get Web Push VAPID keys
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
@@ -46,116 +75,57 @@ serve(async (req) => {
     // Parse request body
     const payload: PushNotificationPayload = await req.json()
 
-    // Get target users based on notification type
-    let targetUserIds: string[] = payload.user_ids || []
+    const { userId, title, body, data = {} }: PushNotificationPayload = await req.json()
 
-    if (!targetUserIds.length) {
-      // Determine target users based on notification type
-      if (payload.type === 'nearby' && payload.location) {
-        // Find users within radius (requires location data in customers table)
-        // For now, get all users with nearby notifications enabled
-        const { data: subscriptions } = await supabase
-          .from('push_subscriptions')
-          .select('user_id, subscription')
-          .eq('notification_types->nearby', true)
-
-        targetUserIds = subscriptions?.map(s => s.user_id) || []
-      } else if (payload.type === 'favorite_partner' && payload.partner_id) {
-        // Find users who favorited this partner
-        const { data: favorites } = await supabase
-          .from('customer_favorites')
-          .select('customer_id')
-          .eq('partner_id', payload.partner_id)
-
-        const favoritedUserIds = favorites?.map(f => f.customer_id) || []
-
-        // Filter to users with favorite_partner notifications enabled
-        const { data: subscriptions } = await supabase
-          .from('push_subscriptions')
-          .select('user_id, subscription')
-          .eq('notification_types->favorite_partner', true)
-          .in('user_id', favoritedUserIds)
-
-        targetUserIds = subscriptions?.map(s => s.user_id) || []
-      } else if (payload.type === 'expiring') {
-        // Send to all users with expiring notifications enabled
-        const { data: subscriptions } = await supabase
-          .from('push_subscriptions')
-          .select('user_id, subscription')
-          .eq('notification_types->expiring', true)
-
-        targetUserIds = subscriptions?.map(s => s.user_id) || []
-      }
+    if (!userId || !title || !body) {
+      throw new Error('Missing required fields: userId, title, body')
     }
 
-    // Get push subscriptions for target users
-    const { data: subscriptions, error: subError } = await supabase
+    // Get user's FCM token
+    const { data: subscription, error: subError } = await supabase
       .from('push_subscriptions')
-      .select('user_id, subscription')
-      .in('user_id', targetUserIds)
+      .select('fcm_token')
+      .eq('user_id', userId)
+      .maybeSingle()
 
-    if (subError) {
-      throw new Error(`Failed to fetch subscriptions: ${subError.message}`)
-    }
-
-    if (!subscriptions || subscriptions.length === 0) {
+    if (subError) throw subError
+    
+    if (!subscription?.fcm_token) {
       return new Response(
-        JSON.stringify({ success: true, sent: 0, message: 'No subscriptions found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        JSON.stringify({ success: false, message: 'No FCM token found for user' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
       )
     }
 
-    // Prepare notification
-    const notification = {
-      title: payload.title,
-      body: payload.body,
-      icon: payload.icon || '/icon-192x192.png',
-      badge: payload.badge || '/badge-72x72.png',
-      tag: `${payload.type}-${payload.offer_id}`,
-      data: {
-        url: `/offer/${payload.offer_id}`,
-        type: payload.type,
-        offer_id: payload.offer_id,
-        ...payload.data
+    // Get Firebase access token
+    const accessToken = await getFirebaseAccessToken()
+    const projectId = Deno.env.get('FIREBASE_PROJECT_ID')!
+
+    // Send FCM message using V1 API
+    const fcmUrl = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+    const fcmResponse = await fetch(fcmUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
       },
-      actions: [
-        {
-          action: 'view',
-          title: 'View Offer'
-        },
-        {
-          action: 'close',
-          title: 'Dismiss'
+      body: JSON.stringify({
+        message: {
+          token: subscription.fcm_token,
+          notification: {
+            title,
+            body
+          },
+          data,
+          android: {
+            priority: 'high',
+            notification: {
+              sound: 'default',
+              click_action: 'FLUTTER_NOTIFICATION_CLICK'
+            }
+          }
         }
-      ]
-    }
-
-    // Send push notifications using web-push
-    const results = await Promise.allSettled(
-      subscriptions.map(async (sub) => {
-        try {
-          const subscription = JSON.parse(sub.subscription)
-          
-          // Use web-push library (via npm:web-push in Deno)
-          const webpush = await import('npm:web-push@3.6.6')
-          
-          webpush.setVapidDetails(
-            vapidSubject,
-            vapidPublicKey,
-            vapidPrivateKey
-          )
-
-          await webpush.sendNotification(
-            subscription,
-            JSON.stringify(notification)
-          )
-
-          return { user_id: sub.user_id, success: true }
-        } catch (error) {
-          console.error(`Failed to send notification to user ${sub.user_id}:`, error)
-          
-          // If subscription is invalid, remove it
-          if (error.statusCode === 410 || error.statusCode === 404) {
+      }|| error.statusCode === 404) {
             await supabase
               .from('push_subscriptions')
               .delete()

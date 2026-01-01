@@ -5,6 +5,7 @@ import { Send, Bell, AlertTriangle } from 'lucide-react';
 import { getTelegramBotLink } from '@/lib/telegram';
 import { useTelegramStatus } from '@/hooks/useTelegramStatus';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,14 +30,12 @@ export function TelegramConnect({ userId, userType }: TelegramConnectProps) {
   const handleConnect = () => {
     const botLink = getTelegramBotLink(userId);
     const timestamp = new Date().toLocaleTimeString();
-    console.log(`🔗 [${timestamp}] Fresh Telegram bot link generated:`, botLink);
-    console.log('👤 User ID:', userId);
+    logger.debug('[TelegramConnect] Fresh Telegram bot link generated at', timestamp);
     
     // Decode and verify the start parameter
     const startParam = botLink.split('?start=')[1];
     const decoded = atob(startParam.replace(/-/g, '+').replace(/_/g, '/'));
-    console.log('🔓 Decoded userId:', decoded);
-    console.log('✅ UUIDs match:', decoded === userId);
+    logger.debug('[TelegramConnect] Decoded userId validation:', decoded === userId);
     
     window.open(botLink, '_blank');
     toast.success(`🔗 Fresh link opened at ${timestamp}`, {

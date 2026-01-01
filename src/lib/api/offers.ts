@@ -1,8 +1,10 @@
+import { logger } from '@/lib/logger';
 import { supabase, isDemoMode } from '../supabase';
 import { Offer, CreateOfferDTO, OfferFilters } from '../types';
 import { mockOffers } from '../mockData';
 import { uploadImages } from './media';
 import { secureRequest } from '../secureRequest';
+import { notifyNewOffersNearby, notifyFavoritePartner } from '../pushNotifications';
 
 /**
  * Offers Module
@@ -67,7 +69,7 @@ export const getActiveOffersInViewport = async (
     });
 
     if (error) {
-      console.error('Error fetching offers in viewport:', error);
+      logger.error('Error fetching offers in viewport:', error);
       throw error;
     }
 
@@ -108,10 +110,10 @@ export const getActiveOffersInViewport = async (
       return new Date(offer.expires_at) > now;
     });
   } catch (error) {
-    console.error('Failed to fetch offers in viewport:', error);
+    logger.error('Failed to fetch offers in viewport:', error);
     // Return empty array instead of dangerous full-load fallback
     // React Query will use cached data, or caller can handle empty state
-    console.warn('⚠️ Viewport query failed - returning empty (cache may be used)');
+    logger.warn('⚠️ Viewport query failed - returning empty (cache may be used)');
     return [];
   }
 };
@@ -168,7 +170,7 @@ export const getActiveOffersNearLocation = async (
     });
 
     if (error) {
-      console.error('Error fetching nearby offers:', error);
+      logger.error('Error fetching nearby offers:', error);
       throw error;
     }
 
@@ -201,9 +203,9 @@ export const getActiveOffersNearLocation = async (
       distance_meters: row.distance_meters,
     })) as Offer[];
   } catch (error) {
-    console.error('Failed to fetch nearby offers:', error);
+    logger.error('Failed to fetch nearby offers:', error);
     // Return empty array to prevent full-load fallback
-    console.warn('⚠️ Nearby query failed - returning empty (cache may be used)');
+    logger.warn('⚠️ Nearby query failed - returning empty (cache may be used)');
     return [];
   }
 };
@@ -248,7 +250,7 @@ export const getActiveOffers = async (filters?: OfferFilters, limit: number = 50
   const { data: offers, error } = await query;
 
   if (error) {
-    console.error('Error fetching active offers:', error);
+    logger.error('Error fetching active offers:', error);
     throw error;
   }
 
@@ -392,9 +394,9 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
     expires_at: offerData.pickup_window.end.toISOString(),
   };
 
-  console.log('Creating offer with data:', insertData);
+  logger.debug('Creating offer with data:', insertData);
 
-  return await secureRequest<Offer>({
+  const offer = await secureRequest<Offer>({
     operation: 'createOffer',
     execute: async () => {
       const { data, error } = await supabase
@@ -403,12 +405,19 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
         .select()
         .single();
       if (error) {
-        console.error('Offer creation error:', error);
+        logger.error('Offer creation error:', error);
         throw new Error(`Failed to create offer: ${error.message}`);
       }
       return data as Offer;
     }
   });
+
+  // Notify users about new offer (fire-and-forget)
+  notifyUsersAboutNewOffer(offer, partnerId).catch(err => 
+    logger.warn('New offer notifications failed (non-blocking):', err)
+  );
+
+  return offer;
 };
 
 export const updateOffer = async (id: string, updates: Partial<Offer>): Promise<Offer> => {
@@ -538,7 +547,7 @@ export const relistOffer = async (offerId: string, partnerId: string) => {
     if (createError) throw createError;
     return newOffer;
   } catch (error) {
-    console.error('Error relisting offer:', error);
+    logger.error('Error relisting offer:', error);
     throw error;
   }
 };
@@ -656,3 +665,46 @@ export const duplicateOffer = async (offerId: string, partnerId: string): Promis
   if (error) throw error;
   return data as Offer;
 };
+
+/**
+ * Notify nearby users and favorite followers about new offer
+ */
+async function notifyUsersAboutNewOffer(offer: Offer, partnerId: string): Promise<void> {
+  try {
+    // Get partner details
+    const { data: partner } = await supabase
+      .from('partners')
+      .select('business_name, latitude, longitude')
+      .eq('id', partnerId)
+      .single();
+
+    if (!partner) return;
+
+    // Get users who favorited this partner
+    const { data: favorites } = await supabase
+      .from('favorite_partners')
+      .select('user_id')
+      .eq('partner_id', partnerId);
+
+    // Get users' notification preferences from fcm_tokens
+    const { data: tokens } = await supabase
+      .from('fcm_tokens')
+      .select('userId, notificationTypes')
+      .in('userId', favorites?.map(f => f.user_id) || []);
+
+    // Notify favorite followers
+    const favoriteNotifications = tokens?.filter(t => 
+      t.notificationTypes?.favoritePartners === true
+    ).map(t =>
+      notifyFavoritePartner(t.userId, partner.business_name, offer.title)
+    ) || [];
+
+    await Promise.allSettled(favoriteNotifications);
+
+    // For nearby notifications, we'd need a spatial query
+    // Simplified version: just notify favorites for now
+    logger.debug(`Notified ${favoriteNotifications.length} users about new offer from ${partner.business_name}`);
+  } catch (error) {
+    logger.error('Error notifying users about new offer:', error);
+  }
+}

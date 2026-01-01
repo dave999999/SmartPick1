@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -29,7 +30,7 @@ export function ThemeProvider({
   const [theme, setThemeState] = useState<Theme>(
     () => {
       // Always use light theme
-      console.log('[ThemeProvider init] Forcing light theme');
+      logger.debug('[ThemeProvider init] Forcing light theme');
       return 'light';
     }
   );
@@ -40,13 +41,13 @@ export function ThemeProvider({
     // Always apply light theme
     root.classList.remove('light', 'dark');
     root.classList.add('light');
-    console.log('[ThemeProvider] Light theme applied');
+    logger.debug('[ThemeProvider] Light theme applied');
   }, [theme]);
 
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
-      console.log('[ThemeProvider] setTheme called:', { old: theme, new: newTheme });
+      logger.debug('[ThemeProvider] setTheme called:', { old: theme, new: newTheme });
       localStorage.setItem(storageKey, newTheme);
       setThemeState(newTheme);
       
@@ -56,11 +57,11 @@ export function ThemeProvider({
         root.classList.remove('light', 'dark');
         if (newTheme !== 'system') {
           root.classList.add(newTheme);
-          console.log('[ThemeProvider] Force applied class:', newTheme, 'Classes:', root.className);
+          logger.debug('[ThemeProvider] Force applied class:', newTheme, 'Classes:', root.className);
         }
       }, 0);
       
-      console.log('[ThemeProvider] Theme updated, localStorage:', localStorage.getItem(storageKey));
+      logger.debug('[ThemeProvider] Theme updated, localStorage:', localStorage.getItem(storageKey));
     },
   };
 

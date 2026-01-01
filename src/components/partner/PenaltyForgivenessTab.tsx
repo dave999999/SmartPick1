@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,7 @@ export default function PenaltyForgivenessTab({ partnerId }: PenaltyForgivenessT
       const pendingRequests = await getPendingForgivenessRequests(partnerId);
       setRequests(pendingRequests);
     } catch (err) {
-      console.error('Error loading forgiveness requests:', err);
+      logger.error('Error loading forgiveness requests:', err);
       setError(err instanceof Error ? err.message : 'Failed to load requests');
     } finally {
       setIsLoading(false);

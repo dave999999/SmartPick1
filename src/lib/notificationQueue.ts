@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from './supabase';
 
 /**
@@ -42,7 +43,7 @@ async function getUserTrustIndicator(userId: string): Promise<string> {
       return ' 🔴'; // Low reliability
     }
   } catch (error) {
-    console.error('Error fetching user trust indicator:', error);
+    logger.error('Error fetching user trust indicator:', error);
     return ''; // Fail gracefully
   }
 }
@@ -70,7 +71,7 @@ export async function queueNotification(
       .single();
 
     if (!partner) {
-      console.error(`Partner ${partnerId} not found`);
+      logger.error(`Partner ${partnerId} not found`);
       return false;
     }
 
@@ -89,7 +90,7 @@ export async function queueNotification(
       const prefKey = prefMap[typeKey];
       
       if (prefKey && (!prefs[prefKey] || !prefs.telegram)) {
-        console.log(`Partner ${partnerId} has ${messageType} or Telegram notifications disabled`);
+        logger.debug(`Partner ${partnerId} has ${messageType} or Telegram notifications disabled`);
         return false;
       }
     }
@@ -102,7 +103,7 @@ export async function queueNotification(
       .maybeSingle();
 
     if (!telegramPrefs?.telegram_chat_id) {
-      console.log(`Partner ${partnerId} has no Telegram connected`);
+      logger.debug(`Partner ${partnerId} has no Telegram connected`);
       return false;
     }
 
@@ -133,14 +134,14 @@ export async function queueNotification(
       });
 
     if (error) {
-      console.error('Error queuing notification:', error);
+      logger.error('Error queuing notification:', error);
       return false;
     }
 
-    console.log(`✅ Notification queued: ${messageType} for partner ${partnerId}`);
+    logger.debug(`✅ Notification queued: ${messageType} for partner ${partnerId}`);
     return true;
   } catch (error) {
-    console.error('Error queuing notification:', error);
+    logger.error('Error queuing notification:', error);
     return false;
   }
 }
@@ -160,19 +161,19 @@ export async function sendImmediateNotification(
     });
 
     if (error) {
-      console.warn('⚠️ Notification service unavailable:', error.message);
+      logger.warn('⚠️ Notification service unavailable:', error.message);
       return false;
     }
 
     if (data && !data.success) {
-      console.log('⚠️ Notification not sent:', data.message || 'User has not enabled notifications');
+      logger.debug('⚠️ Notification not sent:', data.message || 'User has not enabled notifications');
       return false;
     }
 
-    console.log('✅ Immediate notification sent successfully');
+    logger.debug('✅ Immediate notification sent successfully');
     return data?.success || false;
   } catch (error) {
-    console.warn('⚠️ Notification service unavailable');
+    logger.warn('⚠️ Notification service unavailable');
     return false;
   }
 }
@@ -196,7 +197,7 @@ export async function getCustomerName(customerId: string): Promise<string> {
 
     return data.full_name;
   } catch (error) {
-    console.error('Error fetching customer name:', error);
+    logger.error('Error fetching customer name:', error);
     return 'Customer';
   }
 }

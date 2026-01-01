@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase, isDemoMode } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, Store, AlertCircle, MapPin, Navigation, Eye, EyeOff, Shield, CheckCircle2, Clock, Check, Loader2, Star, TrendingUp, Users, Zap, Save } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useI18n } from '@/lib/i18n';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
@@ -134,10 +134,34 @@ export default function PartnerApplication() {
 
   const totalSteps = 4;
   const steps = [
-    { number: 1, title: t('partner.step.account'), icon: '🔐' },
-    { number: 2, title: t('partner.step.location'), icon: '📍' },
-    { number: 3, title: t('partner.step.business'), icon: '🏪' },
-    { number: 4, title: t('partner.step.contact'), icon: '📞' },
+    { 
+      number: 1, 
+      title: t('partner.step.account'), 
+      icon: Shield,
+      description: 'Create your secure account',
+      color: 'from-indigo-500 to-purple-600'
+    },
+    { 
+      number: 2, 
+      title: t('partner.step.location'), 
+      icon: MapPin,
+      description: 'Where is your business?',
+      color: 'from-emerald-500 to-teal-600'
+    },
+    { 
+      number: 3, 
+      title: t('partner.step.business'), 
+      icon: Store,
+      description: 'Tell us about your business',
+      color: 'from-amber-500 to-orange-600'
+    },
+    { 
+      number: 4, 
+      title: t('partner.step.contact'), 
+      icon: Zap,
+      description: 'How can customers reach you?',
+      color: 'from-blue-500 to-indigo-600'
+    },
   ];
 
   // Address autocomplete
@@ -146,6 +170,38 @@ export default function PartnerApplication() {
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
   const [addressAutoDetected, setAddressAutoDetected] = useState(false);
   const addressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-save draft
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Step completion tracking
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Form data - MUST be declared before hooks that use it
+  const [formData, setFormData] = useState({
+    // Account fields
+    email: '',
+    password: '',
+    confirmPassword: '',
+
+    // Business fields
+    business_name: '',
+    business_type: '',
+    description: '',
+    opening_hours: '',
+    closing_hours: '',
+    pickup_notes: '',
+    address: '',
+    city: 'Tbilisi',
+    latitude: 41.7151,
+    longitude: 44.8271,
+    phone: '',
+    telegram: '',
+    whatsapp: '',
+    open_24h: false,
+  });
 
   // Check if user is already logged in on mount
   useEffect(() => {
@@ -180,7 +236,7 @@ export default function PartnerApplication() {
             .from('partners')
             .select('id, status')
             .eq('user_id', session.user.id)
-            .single();
+            .maybeSingle();
           
           if (existingPartner) {
             if (existingPartner.status === 'PENDING') {
@@ -217,28 +273,100 @@ export default function PartnerApplication() {
     checkExistingAuth();
   }, [navigate]);
 
-  const [formData, setFormData] = useState({
-    // Account fields
-    email: '',
-    password: '',
-    confirmPassword: '',
+  // Auto-save draft functionality
+  const saveDraft = useCallback(async () => {
+    if (!existingUserId || isUserLoggedIn) return;
+    
+    setIsSaving(true);
+    try {
+      const draftData = {
+        ...formData,
+        currentStep,
+        acceptedTerms,
+        open24h,
+        lastModified: new Date().toISOString(),
+      };
+      localStorage.setItem(`partner_draft_${existingUserId}`, JSON.stringify(draftData));
+      setLastSaved(new Date());
+    } catch (error) {
+      logger.error('Failed to save draft:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [formData, currentStep, acceptedTerms, open24h, existingUserId, isUserLoggedIn]);
 
-    // Business fields
-    business_name: '',
-    business_type: '',
-    description: '',
-    opening_hours: '',
-    closing_hours: '',
-    pickup_notes: '',
-    address: '',
-    city: 'Tbilisi',
-    latitude: 41.7151,
-    longitude: 44.8271,
-    phone: '',
-    telegram: '',
-    whatsapp: '',
-    open_24h: false,
-  });
+  // Trigger auto-save on form changes
+  useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      saveDraft();
+    }, 3000); // Save 3 seconds after last change
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [formData, saveDraft]);
+
+  // Check for existing draft on mount
+  useEffect(() => {
+    if (existingUserId && isUserLoggedIn) {
+      const savedDraft = localStorage.getItem(`partner_draft_${existingUserId}`);
+      if (savedDraft) {
+        try {
+          const draftData = JSON.parse(savedDraft);
+          const draftAge = Date.now() - new Date(draftData.lastModified).getTime();
+          // Only restore if draft is less than 7 days old
+          if (draftAge < 7 * 24 * 60 * 60 * 1000) {
+            setFormData(draftData);
+            setCurrentStep(draftData.currentStep || 2);
+            setAcceptedTerms(draftData.acceptedTerms || false);
+            setOpen24h(draftData.open24h || false);
+            toast.info('Previous draft restored', {
+              description: 'Your previous application has been restored.',
+            });
+          }
+        } catch (error) {
+          logger.error('Failed to restore draft:', error);
+        }
+      }
+    }
+  }, [existingUserId, isUserLoggedIn]);
+
+  // Mark step as completed when valid
+  const markStepCompleted = useCallback((step: number) => {
+    setCompletedSteps(prev => new Set([...prev, step]));
+  }, []);
+
+  // Check if current step is valid
+  const isStepValid = useCallback((step: number): boolean => {
+    switch(step) {
+      case 1:
+        return !!(formData.email && formData.password && formData.confirmPassword && 
+                 formData.password === formData.confirmPassword && 
+                 validateEmail(formData.email) && 
+                 passwordStrength === 'strong');
+      case 2:
+        return !!(formData.address && formData.city && formData.latitude && formData.longitude);
+      case 3:
+        return !!(formData.business_name && formData.business_type && formData.description && 
+                 (open24h || (formData.opening_hours && formData.closing_hours)));
+      case 4:
+        return !!(formData.phone && acceptedTerms);
+      default:
+        return false;
+    }
+  }, [formData, passwordStrength, acceptedTerms, open24h]);
+
+  // Update completed steps when form changes
+  useEffect(() => {
+    if (isStepValid(currentStep)) {
+      markStepCompleted(currentStep);
+    }
+  }, [currentStep, isStepValid, markStepCompleted]);
 
   // Reverse geocoding: map position -> address
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
@@ -664,7 +792,7 @@ export default function PartnerApplication() {
     if (Object.keys(errors).length > 0) {
       const errorFields = Object.keys(errors).join(', ');
       toast.error(`Please complete all required fields: ${errorFields}`);
-      console.log('Validation errors:', errors);
+      logger.debug('Validation errors:', errors);
       return false;
     }
 
@@ -886,50 +1014,163 @@ export default function PartnerApplication() {
   }, [showAddressSuggestions]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Success Modal */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/20 to-teal-50/20">
+      {/* Success Modal - Enhanced */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle2 aria-hidden="true" className="w-10 h-10 text-green-600" />
+            <div className="flex justify-center mb-4 relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full animate-pulse"></div>
+              </div>
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/50 relative z-10 animate-bounce">
+                <CheckCircle2 aria-hidden="true" className="w-12 h-12 text-white" />
               </div>
             </div>
-            <DialogTitle className="text-center text-2xl">{t('partner.dialog.submittedTitle')}</DialogTitle>
-            <DialogDescription className="text-center text-base pt-2 space-y-3">
-              <span className="block">✅ {t('partner.dialog.submittedDescription')}</span>
-              <span className="block text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
-                📱 <strong>Next Step:</strong> Set up Telegram notifications from your partner dashboard to receive instant alerts about new reservations!
-              </span>
+            <DialogTitle className="text-center text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              {t('partner.dialog.submittedTitle')}
+            </DialogTitle>
+            <DialogDescription className="text-center text-base pt-4 space-y-4">
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
+                <p className="text-emerald-900 font-semibold mb-2">🎉 {t('partner.dialog.submittedDescription')}</p>
+                <p className="text-sm text-emerald-700">Application ID: <span className="font-mono font-bold">P2026-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</span></p>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-left">
+                <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  What happens next?
+                </p>
+                <ol className="text-sm text-blue-800 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">1.</span>
+                    <span>Review by our team (~24 hours)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">2.</span>
+                    <span>Email notification with decision</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">3.</span>
+                    <span>Access your partner dashboard</span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                <p className="text-sm text-amber-900">
+                  💡 <strong>Pro Tip:</strong> Set up Telegram notifications after approval to get instant alerts for new orders!
+                </p>
+              </div>
             </DialogDescription>
           </DialogHeader>
+          <div className="flex gap-3 mt-6">
+            <Button
+              onClick={() => navigate('/')}
+              variant="outline"
+              className="flex-1"
+            >
+              Go to Home
+            </Button>
+            <Button
+              onClick={() => navigate('/partner')}
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700"
+            >
+              Check Status
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Header with Progress */}
-      <header className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-lg">
-        <div className="container mx-auto px-4 py-4 max-w-3xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-white">
-              Partner Registration
-            </span>
-            <span className="text-xs font-medium text-white/90">
-              Step {isUserLoggedIn ? currentStep - 1 : currentStep} of {isUserLoggedIn ? 3 : totalSteps}
-            </span>
+      {/* Header with Enhanced Progress - Professional Design */}
+      <header className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 shadow-xl sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-6 max-w-4xl">
+          {/* Top Row - Title and Stats */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-xl font-bold text-white flex items-center gap-2">
+                <Store className="w-6 h-6" />
+                Partner Registration
+              </h1>
+              <p className="text-emerald-50 text-sm mt-1">Join 500+ partners in Tbilisi</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {isSaving && (
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <Loader2 className="w-3 h-3 text-white animate-spin" />
+                  <span className="text-xs text-white">Saving...</span>
+                </div>
+              )}
+              {lastSaved && !isSaving && (
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                  <Check className="w-3 h-3 text-emerald-200" />
+                  <span className="text-xs text-white">Auto-saved</span>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white transition-all duration-500 ease-out rounded-full shadow-lg"
-              style={{ width: `${((isUserLoggedIn ? currentStep - 1 : currentStep) / (isUserLoggedIn ? 3 : totalSteps)) * 100}%` }}
-            />
+
+          {/* Step Indicators - Enhanced Design */}
+          <div className="flex items-center justify-between relative">
+            {/* Progress Line */}
+            <div className="absolute top-5 left-0 right-0 h-1 bg-white/20 rounded-full" style={{ left: '32px', right: '32px' }}>
+              <div 
+                className="h-full bg-white rounded-full transition-all duration-500 ease-out shadow-lg shadow-white/30"
+                style={{ width: `${((isUserLoggedIn ? currentStep - 1 : currentStep) / (isUserLoggedIn ? 3 : totalSteps)) * 100}%` }}
+              />
+            </div>
+
+            {/* Step Circles */}
+            {steps.map((step) => {
+              if (isUserLoggedIn && step.number === 1) return null;
+              
+              const displayStep = isUserLoggedIn ? step.number - 1 : step.number;
+              const isActive = displayStep === (isUserLoggedIn ? currentStep - 1 : currentStep);
+              const isCompleted = completedSteps.has(step.number) || displayStep < (isUserLoggedIn ? currentStep - 1 : currentStep);
+              const Icon = step.icon;
+              
+              return (
+                <div key={step.number} className="flex flex-col items-center relative z-10">
+                  <div 
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                      isActive 
+                        ? 'bg-white text-emerald-600 shadow-xl shadow-white/50 scale-110' 
+                        : isCompleted
+                        ? 'bg-white text-emerald-600 shadow-lg'
+                        : 'bg-white/20 text-white/60 backdrop-blur-sm'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-6 h-6" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="mt-2 text-center hidden sm:block">
+                    <p className={`text-xs font-semibold ${
+                      isActive ? 'text-white' : 'text-white/70'
+                    }`}>
+                      {step.title}
+                    </p>
+                    <p className="text-[10px] text-white/50 mt-0.5">{step.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Mobile Step Counter */}
+          <div className="sm:hidden mt-4 text-center">
+            <span className="text-xs font-medium text-white/90">
+              Step {isUserLoggedIn ? currentStep - 1 : currentStep} of {isUserLoggedIn ? 3 : totalSteps}: {steps[currentStep - 1]?.title}
+            </span>
           </div>
         </div>
       </header>
 
       {/* Demo Mode Alert */}
       {isDemoMode && (
-        <div className="container mx-auto px-4 pt-6">
+        <div className="container mx-auto px-4 pt-6 max-w-4xl">
           <Alert className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm">
             <AlertCircle aria-hidden="true" className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-900 font-medium">
@@ -940,23 +1181,26 @@ export default function PartnerApplication() {
       )}
 
       {/* Application Form */}
-      <div className="container mx-auto px-4 py-4 pb-24 max-w-3xl">
-        <Card className="shadow-xl border border-slate-700 overflow-hidden bg-slate-800">
+      <div className="container mx-auto px-4 py-4 pb-32 max-w-4xl">
+        <Card className="shadow-2xl border-0 overflow-hidden bg-white/80 backdrop-blur-sm">
           <CardContent className="pt-6">
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Step 1: Account Creation Section */}
               {currentStep === 1 && (
-              <div className="space-y-3 p-4 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700 shadow-sm">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-                  <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
-                    <Shield aria-hidden="true" className="w-4 h-4 text-white" />
+              <div className="space-y-4 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-200 shadow-sm">
+                <div className="flex items-center gap-3 pb-3 border-b border-indigo-200">
+                  <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+                    <Shield aria-hidden="true" className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-xs font-bold text-white">{t('partner.section.account')}</h3>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">{t('partner.section.account')}</h3>
+                    <p className="text-xs text-gray-600">Secure your account credentials</p>
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="email" className="text-xs font-semibold text-slate-200">{t('partner.form.email')} *</Label>
+                  <Label htmlFor="email" className="text-sm font-semibold text-gray-700">{t('partner.form.email')} *</Label>
                   <Input
                     id="email"
                     type="email"
@@ -968,29 +1212,37 @@ export default function PartnerApplication() {
                     onBlur={handleEmailBlur}
                     placeholder="partner@example.com"
                     required
-                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.email ? 'border-red-500' : ''}`}
+                    className={`mt-2 h-11 text-sm bg-white border-2 transition-all ${
+                      fieldErrors.email 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : !emailError && formData.email && validateEmail(formData.email)
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {isCheckingEmail && (
-                    <p className="text-xs text-gray-500 mt-1">{t('partner.emailChecking')}</p>
+                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      {t('partner.emailChecking')}
+                    </p>
                   )}
                   {(emailError || fieldErrors.email) && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {emailError || fieldErrors.email}
                     </p>
                   )}
                   {!emailError && !fieldErrors.email && formData.email && validateEmail(formData.email) && !isCheckingEmail && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <CheckCircle2 aria-hidden="true" className="w-3 h-3" />
-                      {/* Simplified success text could be localized if needed */}
                       Email is available
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="password" className="text-xs font-semibold text-slate-200">Password *</Label>
-                  <div className="relative mt-1.5">
+                  <Label htmlFor="password" className="text-sm font-semibold text-gray-700">Password *</Label>
+                  <div className="relative mt-2">
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
@@ -999,19 +1251,25 @@ export default function PartnerApplication() {
                       placeholder="Min 8 chars, 1 number, 1 uppercase"
                       required
                       minLength={8}
-                      className={`bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 pr-10 ${fieldErrors.password ? 'border-red-500' : ''}`}
+                      className={`h-11 pr-10 border-2 transition-all ${
+                        fieldErrors.password
+                          ? 'border-red-500 focus:border-red-500'
+                          : passwordStrength === 'strong'
+                          ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                          : 'border-gray-300 focus:border-emerald-500'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       {showPassword ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                     </button>
                   </div>
                   {fieldErrors.password && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.password}
                     </p>
@@ -1021,21 +1279,35 @@ export default function PartnerApplication() {
                       <div className="flex items-center gap-2 mb-1">
                         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full transition-all ${getPasswordStrengthColor()}`}
+                            className={`h-full transition-all duration-300 ${
+                              passwordStrength === 'weak' 
+                                ? 'bg-red-500' 
+                                : passwordStrength === 'medium' 
+                                ? 'bg-yellow-500' 
+                                : 'bg-emerald-500'
+                            }`}
                             style={{
                               width: passwordStrength === 'weak' ? '33%' : passwordStrength === 'medium' ? '66%' : '100%'
                             }}
                           />
                         </div>
-                        <span className="text-xs font-medium">{getPasswordStrengthText()}</span>
+                        <span className={`text-xs font-semibold ${
+                          passwordStrength === 'weak' 
+                            ? 'text-red-600' 
+                            : passwordStrength === 'medium' 
+                            ? 'text-yellow-600' 
+                            : 'text-emerald-600'
+                        }`}>
+                          {getPasswordStrengthText()}
+                        </span>
                       </div>
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="confirmPassword" className="text-xs font-semibold text-slate-700">Confirm Password *</Label>
-                  <div className="relative mt-1.5">
+                  <Label htmlFor="confirmPassword" className="text-sm font-semibold text-gray-700">Confirm Password *</Label>
+                  <div className="relative mt-2">
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -1044,25 +1316,31 @@ export default function PartnerApplication() {
                       placeholder="Re-enter your password"
                       required
                       minLength={8}
-                      className={`bg-white border-slate-300 focus:border-emerald-500 focus:ring-emerald-500 pr-10 ${fieldErrors.confirmPassword ? 'border-red-500' : ''}`}
+                      className={`h-11 pr-10 border-2 transition-all ${
+                        fieldErrors.confirmPassword
+                          ? 'border-red-500 focus:border-red-500'
+                          : formData.confirmPassword && formData.password === formData.confirmPassword
+                          ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                          : 'border-gray-300 focus:border-emerald-500'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff aria-hidden="true" className="w-4 h-4" /> : <Eye aria-hidden="true" className="w-4 h-4" />}
                     </button>
                   </div>
                   {fieldErrors.confirmPassword && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.confirmPassword}
                     </p>
                   )}
                   {!fieldErrors.confirmPassword && formData.confirmPassword && formData.password === formData.confirmPassword && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <CheckCircle2 aria-hidden="true" className="w-3 h-3" />
                       Passwords match
                     </p>
@@ -1073,19 +1351,22 @@ export default function PartnerApplication() {
 
               {/* Step 2: Location Section */}
               {currentStep === 2 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-                  <div className="p-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
-                    <MapPin aria-hidden="true" className="w-4 h-4 text-white" />
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 -m-6 mb-4 p-6 rounded-t-2xl">
+                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg">
+                    <MapPin aria-hidden="true" className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-xs font-bold text-white">{t('partner.section.location')}</h3>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">{t('partner.section.location')}</h3>
+                    <p className="text-xs text-gray-600">Help customers find you easily</p>
+                  </div>
                 </div>
 
                 <div className="relative">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <Label htmlFor="address" className="text-xs font-semibold text-slate-200">Street Address *</Label>
+                  <div className="flex items-center justify-between mb-2">
+                    <Label htmlFor="address" className="text-sm font-semibold text-gray-700">Street Address *</Label>
                     {addressAutoDetected && (
-                      <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
+                      <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium bg-emerald-50 px-2 py-0.5 rounded-full animate-in fade-in">
                         <MapPin aria-hidden="true" className="w-3 h-3" /> Auto-detected
                       </span>
                     )}
@@ -1097,10 +1378,16 @@ export default function PartnerApplication() {
                     onClick={(e) => e.stopPropagation()}
                     placeholder="e.g., 123 Rustaveli Avenue"
                     required
-                    className={`bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.address ? 'border-red-500' : ''}`}
+                    className={`h-11 border-2 transition-all ${
+                      fieldErrors.address 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : formData.address
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {fieldErrors.address && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.address}
                     </p>
@@ -1108,55 +1395,72 @@ export default function PartnerApplication() {
 
                   {showAddressSuggestions && addressSuggestions.length > 0 && (
                     <div
-                      className="absolute z-50 w-full mt-1 bg-slate-900 border border-slate-600 rounded-xl shadow-xl max-h-60 overflow-y-auto"
+                      className="absolute z-50 w-full mt-2 bg-white border-2 border-emerald-500 rounded-xl shadow-2xl max-h-60 overflow-y-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {addressSuggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="px-4 py-3 hover:bg-gradient-to-r hover:from-emerald-900/30 hover:to-teal-900/30 cursor-pointer border-b border-slate-700 last:border-b-0 transition-colors"
+                          className="px-4 py-3 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                           onClick={() => handleSelectAddressSuggestion(suggestion)}
                         >
-                          <p className="text-sm text-slate-100">{suggestion.display_name}</p>
+                          <p className="text-sm text-gray-900">{suggestion.display_name}</p>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {isLoadingAddress && (
-                    <p className="text-xs text-gray-500 mt-1">{t('partner.addressSearching')}</p>
+                    <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      {t('partner.addressSearching')}
+                    </p>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="city" className="text-xs font-semibold text-slate-200">City *</Label>
+                  <Label htmlFor="city" className="text-sm font-semibold text-gray-700">City *</Label>
                   <Input
                     id="city"
                     value={formData.city}
                     onChange={(e) => handleChange('city', e.target.value)}
                     placeholder="e.g., Tbilisi"
                     required
-                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.city ? 'border-red-500' : ''}`}
+                    className={`mt-2 h-11 border-2 transition-all ${
+                      fieldErrors.city 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : formData.city
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {fieldErrors.city && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.city}
                     </p>
                   )}
                 </div>
 
-                {/* Map Section */}
-                <div className="space-y-2 p-3 bg-gradient-to-br from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700">
-                  <div className="w-full h-[380px] md:h-[480px] rounded-lg overflow-hidden border border-slate-600 shadow-lg relative">
+                {/* Map Section - Enhanced */}
+                <div className="space-y-3 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-gray-200 shadow-inner">
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-emerald-600" />
+                      Drag marker to adjust location
+                    </Label>
                     <Button
                       type="button"
                       onClick={handleUseCurrentLocation}
-                      className="absolute top-3 right-3 z-10 h-9 px-3 bg-white hover:bg-gray-50 text-emerald-600 border-2 border-emerald-500 shadow-lg hover:shadow-xl transition-all font-semibold"
+                      size="sm"
+                      className="h-9 bg-white hover:bg-gray-50 text-emerald-600 border-2 border-emerald-500 shadow-md hover:shadow-lg transition-all font-semibold"
                     >
                       <Navigation aria-hidden="true" className="w-4 h-4 mr-1.5" />
-                      Use My Location
+                      My Location
                     </Button>
+                  </div>
+                  
+                  <div className="w-full h-[420px] md:h-[480px] rounded-xl overflow-hidden border-2 border-gray-300 shadow-xl relative">
                     <MapContainer
                       center={markerPosition}
                       zoom={14}
@@ -1181,7 +1485,7 @@ export default function PartnerApplication() {
                   <input type="hidden" name="longitude" value={formData.longitude} />
 
                   {fieldErrors.location && (
-                    <p className="text-xs text-red-600 flex items-center gap-1">
+                    <p className="text-xs text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.location}
                     </p>
@@ -1192,56 +1496,88 @@ export default function PartnerApplication() {
 
               {/* Step 3: Business Information */}
               {currentStep === 3 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-                  <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
-                    <Store aria-hidden="true" className="w-4 h-4 text-white" />
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 -m-6 mb-4 p-6 rounded-t-2xl">
+                  <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
+                    <Store aria-hidden="true" className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-sm font-bold text-white">{t('partner.section.business')}</h3>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">{t('partner.section.business')}</h3>
+                    <p className="text-xs text-gray-600">Tell customers about your business</p>
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="business_name" className="text-xs font-semibold text-slate-200">Business Name *</Label>
+                  <Label htmlFor="business_name" className="text-sm font-semibold text-gray-700">Business Name *</Label>
                   <Input
                     id="business_name"
                     value={formData.business_name}
                     onChange={(e) => handleChange('business_name', e.target.value)}
                     placeholder="e.g., Fresh Bakery"
                     required
-                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.business_name ? 'border-red-500' : ''}`}
+                    className={`mt-2 h-11 border-2 transition-all ${
+                      fieldErrors.business_name 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : formData.business_name
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {fieldErrors.business_name && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.business_name}
                     </p>
                   )}
                 </div>
 
-                {/* Business Type - Icon Buttons */}
+                {/* Business Type - Enhanced Icon Buttons */}
                 <div>
-                  <Label className="text-xs font-semibold text-slate-200">Business Type *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
-                    {BUSINESS_TYPES.map((type) => (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => {
-                          handleChange('business_type', type.value);
-                          if (fieldErrors.business_type) {
-                            setFieldErrors(prev => ({ ...prev, business_type: '' }));
-                          }
-                        }}
-                        className={`p-2 rounded-lg border transition-all duration-300 flex flex-col items-center justify-center gap-1 ${
-                          formData.business_type === type.value
-                            ? 'border-emerald-500 bg-gradient-to-br from-emerald-900/40 to-teal-900/40 text-emerald-300 font-semibold shadow-lg scale-105'
-                            : 'border-slate-600 bg-slate-800 hover:bg-slate-700 hover:border-slate-500 hover:shadow-md text-slate-300'
-                        }`}
-                      >
-                        <span className="text-xl">{type.emoji}</span>
-                        <span className="text-[10px] font-medium">{type.label}</span>
-                      </button>
-                    ))}
+                  <Label className="text-xs font-semibold text-slate-700 mb-3 block">Business Type *</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {BUSINESS_TYPES.map((type) => {
+                      const isSelected = formData.business_type === type.value;
+                      const isPopular = type.value === 'CAFE' || type.value === 'RESTAURANT';
+                      
+                      return (
+                        <button
+                          key={type.value}
+                          type="button"
+                          onClick={() => {
+                            handleChange('business_type', type.value);
+                            if (fieldErrors.business_type) {
+                              setFieldErrors(prev => ({ ...prev, business_type: '' }));
+                            }
+                          }}
+                          className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-2 group ${
+                            isSelected
+                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg shadow-emerald-200/50 scale-105'
+                              : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-md hover:scale-102'
+                          }`}
+                        >
+                          {isPopular && (
+                            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                              ⭐ Popular
+                            </div>
+                          )}
+                          <span className={`text-3xl transition-transform duration-300 ${
+                            isSelected ? 'scale-110' : 'group-hover:scale-110'
+                          }`}>
+                            {type.emoji}
+                          </span>
+                          <span className={`text-sm font-medium transition-colors ${
+                            isSelected ? 'text-emerald-700' : 'text-gray-700 group-hover:text-emerald-600'
+                          }`}>
+                            {type.label}
+                          </span>
+                          {isSelected && (
+                            <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1 shadow-lg">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                   {fieldErrors.business_type && (
                     <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
@@ -1252,7 +1588,7 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="description" className="text-xs font-semibold text-slate-200">Business Description *</Label>
+                  <Label htmlFor="description" className="text-sm font-semibold text-gray-700">Business Description *</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
@@ -1260,126 +1596,150 @@ export default function PartnerApplication() {
                     placeholder="Tell us about your business..."
                     rows={3}
                     required
-                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.description ? 'border-red-500' : ''}`}
+                    className={`mt-2 border-2 transition-all resize-none ${
+                      fieldErrors.description 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : formData.description
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {fieldErrors.description && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.description}
                     </p>
                   )}
+                  <p className="text-xs text-gray-500 mt-1.5">{formData.description.length}/500 characters</p>
                 </div>
 
                 {/* Business Hours */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="opening_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-                      <Clock aria-hidden="true" className="w-4 h-4 text-emerald-600" />
-                      Opening Hours {!open24h && '*'}
-                    </Label>
-
-                    <Select
-                      value={formData.opening_hours}
-                      onValueChange={(value) => handleChange('opening_hours', value)}
-                      disabled={open24h}
-                    >
-                      <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.opening_hours ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select opening time" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto bg-slate-900 border-slate-600 text-white">
-                        {[...Array(48)].map((_, i) => {
-                          const hours = Math.floor(i / 2);
-                          const minutes = i % 2 === 0 ? '00' : '30';
-                          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
-                          return (
-                            <SelectItem key={label} value={label}>
-                              {label}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-
-                    {fieldErrors.opening_hours && (
-                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle aria-hidden="true" className="w-3 h-3" />
-                        {fieldErrors.opening_hours}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="closing_hours" className="flex items-center gap-2 text-xs font-semibold text-slate-200">
-                      <Clock aria-hidden="true" className="w-4 h-4 text-emerald-600" />
-                      Closing Hours {!open24h && '*'}
-                    </Label>
-
-                    <Select
-                      value={formData.closing_hours}
-                      onValueChange={(value) => handleChange('closing_hours', value)}
-                      disabled={open24h}
-                    >
-                      <SelectTrigger className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white ${fieldErrors.closing_hours ? 'border-red-500' : ''}`}>
-                        <SelectValue placeholder="Select closing time" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60 overflow-y-auto bg-slate-900 border-slate-600 text-white">
-                        {[...Array(48)].map((_, i) => {
-                          const hours = Math.floor(i / 2);
-                          const minutes = i % 2 === 0 ? '00' : '30';
-                          const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
-                          return (
-                            <SelectItem key={label} value={label}>
-                              {label}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-
-                    {fieldErrors.closing_hours && (
-                      <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                        <AlertCircle aria-hidden="true" className="w-3 h-3" />
-                        {fieldErrors.closing_hours}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* 24-Hour Checkbox */}
-                <div className="flex items-center space-x-2.5 p-3.5 bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-xl border border-slate-700">
-                  <Checkbox
-                    id="open_24h"
-                    checked={open24h}
-                    onCheckedChange={(checked) => {
-                      setOpen24h(checked as boolean);
-                      if (checked) {
-                        setFieldErrors(prev => {
-                          const newErrors = { ...prev };
-                          delete newErrors.opening_hours;
-                          delete newErrors.closing_hours;
-                          return newErrors;
-                        });
-                      }
-                    }}
-                  />
-                  <Label htmlFor="open_24h" className="text-sm font-medium text-slate-200 cursor-pointer">
-                    My business operates 24 hours
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200">
+                  <Label className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
+                    <Clock aria-hidden="true" className="w-4 h-4 text-blue-600" />
+                    Business Hours
                   </Label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="opening_hours" className="text-xs font-medium text-gray-700 mb-1.5 block">
+                        Opening Time {!open24h && '*'}
+                      </Label>
+
+                      <Select
+                        value={formData.opening_hours}
+                        onValueChange={(value) => handleChange('opening_hours', value)}
+                        disabled={open24h}
+                      >
+                        <SelectTrigger className={`h-11 bg-white border-2 ${
+                          fieldErrors.opening_hours 
+                            ? 'border-red-500' 
+                            : formData.opening_hours
+                            ? 'border-emerald-500'
+                            : 'border-gray-300'
+                        } ${open24h ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <SelectValue placeholder="Select opening time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {[...Array(48)].map((_, i) => {
+                            const hours = Math.floor(i / 2);
+                            const minutes = i % 2 === 0 ? '00' : '30';
+                            const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                            return (
+                              <SelectItem key={label} value={label}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+
+                      {fieldErrors.opening_hours && (
+                        <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
+                          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+                          {fieldErrors.opening_hours}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <Label htmlFor="closing_hours" className="text-xs font-medium text-gray-700 mb-1.5 block">
+                        Closing Time {!open24h && '*'}
+                      </Label>
+
+                      <Select
+                        value={formData.closing_hours}
+                        onValueChange={(value) => handleChange('closing_hours', value)}
+                        disabled={open24h}
+                      >
+                        <SelectTrigger className={`h-11 bg-white border-2 ${
+                          fieldErrors.closing_hours 
+                            ? 'border-red-500' 
+                            : formData.closing_hours
+                            ? 'border-emerald-500'
+                            : 'border-gray-300'
+                        } ${open24h ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                          <SelectValue placeholder="Select closing time" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60 overflow-y-auto">
+                          {[...Array(48)].map((_, i) => {
+                            const hours = Math.floor(i / 2);
+                            const minutes = i % 2 === 0 ? '00' : '30';
+                            const label = `${hours.toString().padStart(2, '0')}:${minutes}`;
+                            return (
+                              <SelectItem key={label} value={label}>
+                                {label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+
+                      {fieldErrors.closing_hours && (
+                        <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
+                          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+                          {fieldErrors.closing_hours}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 24-Hour Checkbox */}
+                  <div className="flex items-center space-x-3 mt-4 p-3 bg-white rounded-lg border border-gray-200">
+                    <Checkbox
+                      id="open_24h"
+                      checked={open24h}
+                      onCheckedChange={(checked) => {
+                        setOpen24h(checked as boolean);
+                        if (checked) {
+                          setFieldErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.opening_hours;
+                            delete newErrors.closing_hours;
+                            return newErrors;
+                          });
+                        }
+                      }}
+                    />
+                    <Label htmlFor="open_24h" className="text-sm font-medium text-gray-700 cursor-pointer flex-1">
+                      My business operates 24 hours a day
+                    </Label>
+                  </div>
                 </div>
 
                 {/* Pickup Instructions */}
                 <div>
-                  <Label htmlFor="pickup_notes" className="text-xs font-semibold text-slate-200">Pickup Instructions (Optional)</Label>
+                  <Label htmlFor="pickup_notes" className="text-sm font-semibold text-gray-700">Pickup Instructions (Optional)</Label>
                   <Textarea
                     id="pickup_notes"
                     value={formData.pickup_notes}
                     onChange={(e) => handleChange('pickup_notes', e.target.value)}
                     placeholder="e.g., Enter through the side door, ring the bell twice..."
                     rows={2}
-                    className="mt-1 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="mt-2 border-2 border-gray-300 focus:border-emerald-500 transition-all resize-none"
                   />
-                  <p className="text-xs text-slate-400 mt-1.5">
-                    Help customers find your pickup location easily
+                  <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
+                    💡 Help customers find your pickup location easily
                   </p>
                 </div>
               </div>
@@ -1387,16 +1747,19 @@ export default function PartnerApplication() {
 
               {/* Step 4: Contact Information */}
               {currentStep === 4 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pb-2 border-b border-slate-700">
-                  <div className="p-1.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                    <span className="text-base">📞</span>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 pb-3 border-b border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 -m-6 mb-4 p-6 rounded-t-2xl">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                    <Zap className="w-5 h-5 text-white" />
                   </div>
-                  <h3 className="text-sm font-bold text-white">{t('partner.section.contact')}</h3>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900">{t('partner.section.contact')}</h3>
+                    <p className="text-xs text-gray-600">How customers can reach you</p>
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="phone" className="text-xs font-semibold text-slate-200">Phone Number *</Label>
+                  <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">Phone Number *</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -1404,10 +1767,16 @@ export default function PartnerApplication() {
                     onChange={(e) => handleChange('phone', e.target.value)}
                     placeholder="+995 XXX XXX XXX"
                     required
-                    className={`mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500 ${fieldErrors.phone ? 'border-red-500' : ''}`}
+                    className={`mt-2 h-11 border-2 transition-all ${
+                      fieldErrors.phone 
+                        ? 'border-red-500 focus:border-red-500' 
+                        : formData.phone
+                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                        : 'border-gray-300 focus:border-emerald-500'
+                    }`}
                   />
                   {fieldErrors.phone && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
                       <AlertCircle aria-hidden="true" className="w-3 h-3" />
                       {fieldErrors.phone}
                     </p>
@@ -1416,11 +1785,11 @@ export default function PartnerApplication() {
 
                 {/* Telegram Notifications - Only show if user is logged in */}
                 {isUserLoggedIn && existingUserId && (
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-200 mb-2 block">Telegram Notifications (optional)</Label>
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200">
+                    <Label className="text-sm font-semibold text-gray-900 mb-3 block">Telegram Notifications (optional)</Label>
                     {/* Debug: Show userId being used */}
                     {import.meta.env.DEV && (
-                      <div className="text-[10px] text-slate-400 mb-1 p-2 bg-slate-800 rounded">
+                      <div className="text-[10px] text-gray-600 mb-3 p-2 bg-white rounded border border-gray-200">
                         <p>🔍 Debug Info:</p>
                         <p>userId = {existingUserId}</p>
                         <p>isUUID = {/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existingUserId)}</p>
@@ -1433,49 +1802,55 @@ export default function PartnerApplication() {
                 
                 {/* Show info message for non-logged-in users */}
                 {!isUserLoggedIn && (
-                  <div className="p-3 bg-blue-900/30 border border-blue-500/50 rounded-lg">
-                    <p className="text-xs text-blue-200">
-                      💡 <strong>Telegram notifications</strong> can be set up after your account is created. You'll find this option in your partner dashboard.
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl">
+                    <p className="text-sm text-blue-900 flex items-start gap-2">
+                      <span className="text-lg">💡</span>
+                      <span>
+                        <strong>Telegram notifications</strong> can be set up after your account is created. You'll find this option in your partner dashboard.
+                      </span>
                     </p>
                   </div>
                 )}
 
                 <div>
-                  <Label htmlFor="whatsapp" className="text-xs font-semibold text-slate-200">WhatsApp (optional)</Label>
+                  <Label htmlFor="whatsapp" className="text-sm font-semibold text-gray-700">WhatsApp (optional)</Label>
                   <Input
                     id="whatsapp"
                     type="tel"
                     value={formData.whatsapp}
                     onChange={(e) => handleChange('whatsapp', e.target.value)}
                     placeholder="+995 XXX XXX XXX"
-                    className="mt-1 h-9 text-sm bg-slate-900 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="mt-2 h-11 border-2 border-gray-300 focus:border-emerald-500 transition-all"
                   />
+                  <p className="text-xs text-gray-500 mt-1.5">Optional: For customer support via WhatsApp</p>
                 </div>
 
                 {/* Terms and Conditions */}
-                <div className="flex items-start space-x-2 p-3 bg-gradient-to-r from-slate-800/50 to-slate-900/50 rounded-lg border border-slate-700">
-                <Checkbox
-                  id="terms"
-                  checked={acceptedTerms}
-                  onCheckedChange={(checked) => {
-                    setAcceptedTerms(checked as boolean);
-                    if (fieldErrors.terms) {
-                      setFieldErrors(prev => ({ ...prev, terms: '' }));
-                    }
-                  }}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <Label htmlFor="terms" className="text-xs font-medium text-slate-200 cursor-pointer leading-snug">
-                    I agree to the SmartPick Terms of Service and Privacy Policy. I understand that my application will be reviewed by the admin team before approval. *
-                  </Label>
-                  {fieldErrors.terms && (
-                    <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
-                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
-                      {fieldErrors.terms}
-                    </p>
-                  )}
-                </div>
+                <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptedTerms}
+                      onCheckedChange={(checked) => {
+                        setAcceptedTerms(checked as boolean);
+                        if (fieldErrors.terms) {
+                          setFieldErrors(prev => ({ ...prev, terms: '' }));
+                        }
+                      }}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="terms" className="text-sm font-medium text-gray-700 cursor-pointer leading-relaxed">
+                        I agree to the SmartPick Terms of Service and Privacy Policy. I understand that my application will be reviewed by the admin team before approval. *
+                      </Label>
+                      {fieldErrors.terms && (
+                        <p className="text-xs text-red-600 mt-2 flex items-center gap-1 animate-in slide-in-from-top-1">
+                          <AlertCircle aria-hidden="true" className="w-3 h-3" />
+                          {fieldErrors.terms}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
               )}
@@ -1485,15 +1860,16 @@ export default function PartnerApplication() {
         </Card>
       </div>
 
-      {/* Navigation Buttons - Sticky at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-50 border-t-2 border-slate-300 shadow-2xl p-4 z-[9999]" style={{backgroundColor: '#f9fafb'}}>
-        <div className="container mx-auto max-w-3xl">
+      {/* Navigation Buttons - Enhanced Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t-2 border-emerald-200 shadow-2xl p-4 z-[9999] animate-in slide-in-from-bottom-4">
+        <div className="container mx-auto max-w-4xl">
           <div className="flex gap-3">
             {currentStep > 1 && (
               <Button
                 type="button"
                 onClick={handlePrevStep}
-                className="flex-1 h-12 bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-300 font-bold text-base shadow-md hover:shadow-lg transition-all rounded-xl"
+                variant="outline"
+                className="flex-1 h-12 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 font-bold text-base rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98]"
               >
                 ← Back
               </Button>
@@ -1503,25 +1879,38 @@ export default function PartnerApplication() {
               <Button
                 type="button"
                 onClick={handleNextStep}
-                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all rounded-xl"
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 transition-all rounded-xl relative overflow-hidden group active:scale-[0.98]"
               >
-                Next →
+                <span className="relative z-10">Next →</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Button>
             ) : (
               <Button
                 type="submit"
-                disabled={isSubmitting || isDemoMode}
+                disabled={isSubmitting || isDemoMode || !isStepValid(4)}
                 onClick={handleSubmit}
-                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl transition-all rounded-xl disabled:opacity-50"
+                className="flex-1 h-12 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-base shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 transition-all rounded-xl disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group active:scale-[0.98]"
               >
-                {isSubmitting ? 'Creating Account...' : 'Submit Application'}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Creating Account...
+                  </span>
+                ) : (
+                  <span className="relative z-10 flex items-center gap-2">
+                    <CheckCircle2 className="w-5 h-5" />
+                    Submit Application
+                  </span>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Button>
             )}
 
             <Button
               type="button"
               onClick={() => navigate('/')}
-              className={`h-12 bg-red-50 hover:bg-red-100 text-red-600 border-2 border-red-300 hover:border-red-400 font-bold text-base shadow-md hover:shadow-lg transition-all rounded-xl ${currentStep === 1 ? 'flex-1' : 'px-6'}`}
+              variant="outline"
+              className={`h-12 border-2 border-red-200 hover:border-red-300 hover:bg-red-50 text-red-600 font-bold text-base shadow-sm hover:shadow-md transition-all rounded-xl active:scale-[0.98] ${currentStep === 1 ? 'flex-1' : 'px-6'}`}
             >
               Cancel
             </Button>

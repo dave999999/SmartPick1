@@ -250,7 +250,15 @@ export default function ReservationModalNew({
   return (
     <>
       {/* Dark Backdrop - Map Visible */}
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" onClick={onClose} />
+      <div 
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" 
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onClose();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      />
 
       {/* Modal Container */}
       <div className="fixed inset-0 z-[51] flex items-center justify-center p-3 pointer-events-none">
@@ -258,7 +266,11 @@ export default function ReservationModalNew({
 
           {/* Close Button */}
           <button
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
             className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-white flex items-center justify-center text-gray-900 shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
             <X className="w-4 h-4" strokeWidth={2.5} />
@@ -266,6 +278,8 @@ export default function ReservationModalNew({
 
           {/* MAIN CARD - Transparent Glass */}
           <div
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
             className="relative overflow-hidden rounded-[32px] shadow-[0_10px_60px_rgba(0,0,0,0.25)] border border-white/20"
             style={{
               background: 'rgba(255,255,255,0.15)',
@@ -361,7 +375,11 @@ export default function ReservationModalNew({
                         <span className="text-[11px] font-medium text-gray-500">points</span>
                       </div>
                       <button
-                        onClick={() => setShowBuyPointsModal(true)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowBuyPointsModal(true);
+                        }}
                         className="w-6 h-6 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center transition-all active:scale-90"
                         title={t('reservation.addPoints')}
                       >
@@ -382,7 +400,11 @@ export default function ReservationModalNew({
                 }}
               >
                 <button
-                  onClick={() => quantity > 1 && setQuantity(quantity - 1)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (quantity > 1) setQuantity(quantity - 1);
+                  }}
                   disabled={quantity <= 1}
                   className="w-9 h-9 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
                 >
@@ -395,7 +417,11 @@ export default function ReservationModalNew({
                 </div>
 
                 <button
-                  onClick={() => quantity < maxQuantity && setQuantity(quantity + 1)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (quantity < maxQuantity) setQuantity(quantity + 1);
+                  }}
                   disabled={quantity >= maxQuantity}
                   className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 shadow-md"
                   style={{
@@ -453,7 +479,11 @@ export default function ReservationModalNew({
 
               {/* RESERVE BUTTON - Final Cosmic Orange */}
               <button
-                onClick={handleReserve}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleReserve();
+                }}
                 disabled={isReserving || !isOnline || cooldown.isInCooldown}
                 className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 style={{

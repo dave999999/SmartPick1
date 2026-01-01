@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Client-Side Rate Limiter
  *
@@ -186,7 +187,7 @@ class RateLimiter {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(records));
     } catch (error) {
-      console.error('Failed to save rate limit records:', error instanceof Error ? error.message : String(error));
+      logger.error('Failed to save rate limit records:', error instanceof Error ? error.message : String(error));
     }
   }
 }

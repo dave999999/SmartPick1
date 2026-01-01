@@ -48,7 +48,13 @@ import { useOfferFilters } from '@/hooks/pages/useOfferFilters';
 import { useOfferManagement } from '@/hooks/pages/useOfferManagement';
 import { useMapControls } from '@/hooks/pages/useMapControls';
 import { useReservationFlow } from '@/hooks/pages/useReservationFlow';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { handleNotificationTap } from '@/lib/notificationHandlers';
+import { NearbyOffersSheet } from '@/components/notifications/NearbyOffersSheet';
+import { ReferralRewardsModal } from '@/components/notifications/ReferralRewardsModal';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 
 export default function IndexRedesigned() {
   const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
@@ -77,7 +83,7 @@ export default function IndexRedesigned() {
     data: viewportOffers = [], 
     isLoading, 
     error: offersError,
-    isFetching 
+    isFetching
   } = useViewportOffers(
     map.isMapIdle ? map.debouncedBounds : null, // Don't fetch during active dragging
     undefined, 
@@ -99,10 +105,33 @@ export default function IndexRedesigned() {
   // Track recently viewed offers for history
   const { addRecentlyViewed } = useRecentlyViewed();
   
+  // Initialize push notifications (registers FCM token on app startup)
+  logger.debug('BEFORE CALLING PUSH HOOK');
+  usePushNotifications();
+  logger.debug('AFTER CALLING PUSH HOOK');
+  
   // Ref to track last highlighted offer (prevents duplicate highlights causing re-renders)
   const lastHighlightedOfferRef = useRef<string | null>(null);
   const [currentPath, setCurrentPath] = useState<string>('/');
   const isOnline = useOnlineStatus();
+
+  // Notification tap routing state
+  const [showNearbyOffersSheet, setShowNearbyOffersSheet] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [referralData, setReferralData] = useState<{ code: string; points: number } | null>(null);
+
+  // Debug: Expose notification test functions to window for testing
+  useEffect(() => {
+    (window as any).testNearbyOffers = () => {
+      logger.debug('🎯 Opening NearbyOffersSheet');
+      setShowNearbyOffersSheet(true);
+    };
+    (window as any).testReferral = () => {
+      logger.debug('🎁 Opening ReferralRewardsModal');
+      setReferralData({ code: 'TESTCODE2025', points: 100 });
+      setShowReferralModal(true);
+    };
+  }, []);
 
   // Handle offline mode with cached offers
   useEffect(() => {
@@ -119,6 +148,83 @@ export default function IndexRedesigned() {
       });
     }
   }, [isOnline, offers.length, isLoading]);
+
+  // Handle notification taps - route users to appropriate screens (native only)
+  useEffect(() => {
+    // Only register listener on native platforms (Android/iOS)
+    if (typeof window === 'undefined' || Capacitor.getPlatform() === 'web') return;
+
+    const setupListener = async () => {
+      try {
+        const listener = await PushNotifications.addListener(
+          'pushNotificationActionPerformed',
+          (notification) => {
+            const data = notification.notification.data;
+            
+            handleNotificationTap(data, {
+              onExpiringSoon: () => {
+                logger.info('[Notification] Expiring soon tapped');
+              },
+              onReservationExpired: () => {
+                toast.error('⏱️ Reservation Expired', {
+                  description: 'Your pickup window has passed',
+                });
+                logger.info('[Notification] Reservation expired tapped');
+              },
+              onReservationCancelled: () => {
+                logger.info('[Notification] Reservation cancelled tapped');
+              },
+              onNewOffersNearby: () => {
+                setShowNearbyOffersSheet(true);
+                logger.info('[Notification] New offers nearby tapped');
+              },
+              onFavoritePartners: (partnerId) => {
+                if (partnerId) {
+                  offerMgmt.setSelectedPartnerId(partnerId);
+                }
+                logger.info('[Notification] Favorite partner tapped', { partnerId });
+              },
+              onAchievements: () => {
+                window.location.href = '/profile?tab=achievements';
+                logger.info('[Notification] Achievements tapped');
+              },
+              onReferralRewards: (referralCode) => {
+                setReferralData({
+                  code: referralCode || '',
+                  points: parseInt(data.pointsEarned || '100')
+                });
+                setShowReferralModal(true);
+                logger.info('[Notification] Referral rewards tapped', { referralCode });
+              },
+              onPartnerNewReservation: () => {
+                // Redirect to partner dashboard, new reservations tab
+                window.location.href = '/partner?tab=new';
+                logger.info('[Notification] Partner new reservation tapped');
+              },
+              onPartnerCancellation: () => {
+                // Redirect to partner dashboard, new reservations tab
+                window.location.href = '/partner?tab=new';
+                logger.info('[Notification] Partner cancellation tapped');
+              },
+              onPartnerLowStock: () => {
+                // Redirect to partner dashboard (no specific tab)
+                window.location.href = '/partner';
+                logger.info('[Notification] Partner low stock tapped');
+              },
+            });
+          }
+        );
+
+        return () => {
+          listener?.remove();
+        };
+      } catch (error) {
+        // Silently ignore errors
+      }
+    };
+
+    setupListener();
+  }, [offerMgmt]);
   
   // Handle errors gracefully
   useEffect(() => {
@@ -310,17 +416,17 @@ export default function IndexRedesigned() {
       // If searching for a partner, apply category filter to the carousel only
       // The category filter is applied AFTER partner filter so it only filters the partner's offers
       if (filterState.selectedCategory && filterState.selectedCategory !== '') {
-        console.log('🔍 Filtering partner offers by category:', filterState.selectedCategory);
+        logger.debug('🔍 Filtering partner offers by category:', filterState.selectedCategory);
         filtered = filtered.filter(o => o.category === filterState.selectedCategory);
       }
     } else {
       // If NOT searching for a partner, apply category filter globally (affects map)
       if (filterState.selectedCategory && filterState.selectedCategory !== '') {
-        console.log('🔍 Filtering all offers by category:', filterState.selectedCategory);
-        console.log('📊 Total offers before category filter:', filtered.length);
+        logger.debug('🔍 Filtering all offers by category:', filterState.selectedCategory);
+        logger.debug('📊 Total offers before category filter:', filtered.length);
         filtered = filtered.filter(o => o.category === filterState.selectedCategory);
-        console.log('✅ Offers after category filter:', filtered.length);
-        console.log('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
+        logger.debug('✅ Offers after category filter:', filtered.length);
+        logger.debug('📦 Sample filtered offers:', filtered.slice(0, 3).map(o => ({ title: o.title, category: o.category })));
       }
     }
 
@@ -564,11 +670,7 @@ export default function IndexRedesigned() {
           <div className="absolute inset-0 w-full h-full z-10">
             {googleMapsLoaded && (
               <SmartPickGoogleMap
-                offers={offerMgmt.discoverSheetOpen ? offers : mapFilteredOffers}
-                onOfferClick={handleOfferClick}
-                onMarkerClick={handleMarkerClick}
-                selectedCategory={filterState.selectedCategory}
-                onCategorySelect={filterState.setSelectedCategory}
+                offers={offers}
                 onLocationChange={location.setUserLocation}
                 userLocation={location.userLocation}
                 selectedOffer={offerMgmt.selectedOffer}
@@ -576,6 +678,14 @@ export default function IndexRedesigned() {
                 highlightedOfferId={offerMgmt.highlightedOfferId}
                 hideMarkers={!!reservation.activeReservation}
                 activeReservation={reservation.activeReservation}
+                onMarkerClick={(partnerName, partnerAddress, offers) => {
+                  // Find partner ID from offers
+                  if (offers && offers.length > 0) {
+                    const partnerId = offers[0].partner_id;
+                    offerMgmt.setSelectedPartnerId(partnerId);
+                    offerMgmt.setShowPartnerSheet(true);
+                  }
+                }}
                 onMapBoundsChange={!reservation.activeReservation ? (bounds) => {
                   // 🚀 SCALABILITY: Track map bounds and reload offers when map moves
                   // Disabled during active reservation to prevent constant reloading
@@ -835,6 +945,25 @@ export default function IndexRedesigned() {
           }
         }}
       />
+
+      {/* Notification Tap Handlers */}
+      <NearbyOffersSheet 
+        isOpen={showNearbyOffersSheet}
+        onClose={() => setShowNearbyOffersSheet(false)}
+        userLocation={location.userLocation}
+      />
+
+      {referralData && (
+        <ReferralRewardsModal
+          isOpen={showReferralModal}
+          onClose={() => {
+            setShowReferralModal(false);
+            setReferralData(null);
+          }}
+          referralCode={referralData.code}
+          pointsEarned={referralData.points}
+        />
+      )}
     </>
   );
 }

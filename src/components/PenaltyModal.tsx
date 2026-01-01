@@ -35,7 +35,7 @@ export function PenaltyModal({ penalty, userPoints, onClose, onPenaltyLifted }: 
   const isSuspension = ['1hour', '5hour', '24hour', 'permanent'].includes(penalty?.penalty_type || '');
   
   if (isSuspension) {
-    console.error('❌ PenaltyModal should NOT show for suspensions! Use SuspensionModal instead.');
+    logger.error('[PenaltyModal] Should NOT show for suspensions! Use SuspensionModal instead.');
     return null; // Don't render anything - SuspensionModal should be shown instead
   }
 

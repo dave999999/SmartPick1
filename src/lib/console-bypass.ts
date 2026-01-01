@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Console bypass for React DevTools
  * Prevents "Cannot convert object to primitive value" errors by intercepting console calls
@@ -44,10 +45,21 @@ const safeStringify = (arg: any): string => {
   }
 };
 
-// Override console methods globally to prevent React DevTools errors (in both dev and production)
-console.log = (...args: any[]) => original.log(args.map(safeStringify).join(' '));
-console.warn = (...args: any[]) => original.warn(args.map(safeStringify).join(' '));
-console.error = (...args: any[]) => original.error(args.map(safeStringify).join(' '));
+// Override console methods globally
+// In production: disable ALL logging for maximum performance
+// In development: safe stringify to prevent React DevTools errors
+if (import.meta.env.PROD) {
+  console.log = () => {};
+  console.warn = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  // Keep console.error for critical issues only
+  console.error = (...args: any[]) => original.error(args.map(safeStringify).join(' '));
+} else {
+  console.log = (...args: any[]) => original.log(args.map(safeStringify).join(' '));
+  console.warn = (...args: any[]) => original.warn(args.map(safeStringify).join(' '));
+  console.error = (...args: any[]) => original.error(args.map(safeStringify).join(' '));
+}
 console.info = (...args: any[]) => original.info(args.map(safeStringify).join(' '));
 console.debug = (...args: any[]) => original.debug(args.map(safeStringify).join(' '));
 

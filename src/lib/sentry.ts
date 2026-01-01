@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import * as Sentry from "@sentry/react";
 
 // Track if Sentry has already been initialized
@@ -6,7 +7,7 @@ let isInitialized = false;
 export const initSentry = () => {
   // Prevent multiple initializations
   if (isInitialized) {
-    console.log('⚠️ Sentry already initialized, skipping...');
+    logger.debug('⚠️ Sentry already initialized, skipping...');
     return;
   }
 
@@ -14,7 +15,7 @@ export const initSentry = () => {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   
   if (!dsn || dsn === '' || dsn.includes('...')) {
-    console.log('⚠️ Sentry DSN not configured or invalid. Error monitoring disabled.');
+    logger.debug('⚠️ Sentry DSN not configured or invalid. Error monitoring disabled.');
     return;
   }
 
@@ -72,7 +73,7 @@ export const initSentry = () => {
   });
 
   isInitialized = true;
-  console.log('✅ Sentry initialized for error monitoring');
+  logger.debug('✅ Sentry initialized for error monitoring');
 };
 
 // Helper to manually capture exceptions

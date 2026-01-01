@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -195,7 +196,7 @@ export default function CreateOfferWizard({
       return;
     }
 
-    console.log('🎯 CreateOfferWizard submitting:', {
+    logger.debug('🎯 CreateOfferWizard submitting:', {
       offerDuration: draft.offerDuration,
       customDays: draft.customDays,
       is24HourBusiness
@@ -215,7 +216,7 @@ export default function CreateOfferWizard({
         formData.append('custom_days', draft.customDays);
       }
 
-      console.log('📤 Sending FormData:', {
+      logger.debug('📤 Sending FormData:', {
         offer_duration: formData.get('offer_duration'),
         custom_days: formData.get('custom_days')
       });
@@ -227,7 +228,7 @@ export default function CreateOfferWizard({
       handleClose();
     } catch (error) {
       // Error handling is done in parent, but ensure we don't close on error
-      console.error('Error submitting offer:', error);
+      logger.error('Error submitting offer:', error);
     }
   };
 
