@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from './supabase';
 import { emitPointsChange } from './pointsEventBus';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -41,7 +42,7 @@ export interface AddPointsResult {
  */
 export async function getUserPoints(userId: string): Promise<UserPoints | null> {
   try {
-    console.log('🔍 getUserPoints called for userId:', userId);
+    logger.debug('🔍 getUserPoints called for userId:', userId);
     
     // Check if user is a partner
     const { data: profile } = await supabase
@@ -51,11 +52,11 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       .eq('status', 'APPROVED')
       .maybeSingle();
     
-    console.log('👤 Partner check result:', { partnerId: profile?.id, isPartner: !!profile?.id });
+    logger.debug('👤 Partner check result:', { partnerId: profile?.id, isPartner: !!profile?.id });
 
     // If user is a partner, get partner points
     if (profile?.id) {
-      console.log('💼 Fetching partner_points for user:', userId);
+      logger.debug('💼 Fetching partner_points for user:', userId);
       const { data, error } = await supabase
         .from('partner_points')
         .select('*')
@@ -63,11 +64,11 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
         .maybeSingle();
 
       if (error) {
-        console.error('❌ Error fetching partner points:', error instanceof Error ? error.message : String(error));
+        logger.error('❌ Error fetching partner points:', error instanceof Error ? error.message : String(error));
         return null;
       }
 
-      console.log('💼 Partner points data:', data);
+      logger.debug('💼 Partner points data:', data);
       
       // Map partner_points to UserPoints interface for compatibility
       const result = data ? {
@@ -76,12 +77,12 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
         partner_id: profile.id
       } as UserPoints : null;
       
-      console.log('✅ Returning partner points:', result);
+      logger.debug('✅ Returning partner points:', result);
       return result;
     }
 
     // Regular customer points
-    console.log('👥 Fetching user_points for user:', userId);
+    logger.debug('👥 Fetching user_points for user:', userId);
     const { data, error } = await supabase
       .from('user_points')
       .select('*')
@@ -89,15 +90,15 @@ export async function getUserPoints(userId: string): Promise<UserPoints | null> 
       .maybeSingle();
 
     if (error) {
-      console.error('❌ Error fetching user points:', error instanceof Error ? error.message : String(error));
+      logger.error('❌ Error fetching user points:', error instanceof Error ? error.message : String(error));
       return null;
     }
 
-    console.log('👥 User points data:', data);
-    console.log('✅ Returning user points:', data);
+    logger.debug('👥 User points data:', data);
+    logger.debug('✅ Returning user points:', data);
     return data;
   } catch (error) {
-    console.error('Error in getUserPoints:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getUserPoints:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -157,7 +158,7 @@ export async function getPointTransactions(
       .slice(0, limit);
 
   } catch (error) {
-    console.error('Error in getPointTransactions:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getPointTransactions:', error instanceof Error ? error.message : String(error));
     return [];
   }
 }
@@ -184,7 +185,7 @@ export async function deductPoints(
     });
 
     if (error) {
-      console.error('Error deducting points:', error instanceof Error ? error.message : String(error));
+      logger.error('Error deducting points:', error instanceof Error ? error.message : String(error));
       return {
         success: false,
         error: 'Failed to deduct points'
@@ -200,7 +201,7 @@ export async function deductPoints(
 
     return result;
   } catch (error) {
-    console.error('Error in deductPoints:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in deductPoints:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       error: 'Network error'
@@ -230,7 +231,7 @@ export async function addPoints(
     });
 
     if (error) {
-      console.error('Error adding points:', error instanceof Error ? error.message : String(error));
+      logger.error('Error adding points:', error instanceof Error ? error.message : String(error));
       return {
         success: false
       };
@@ -245,7 +246,7 @@ export async function addPoints(
 
     return result;
   } catch (error) {
-    console.error('Error in addPoints:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in addPoints:', error instanceof Error ? error.message : String(error));
     return {
       success: false
     };
@@ -299,7 +300,7 @@ export async function purchasePoints(
       error: 'Failed to add points'
     };
   } catch (error) {
-    console.error('Error purchasing points:', error instanceof Error ? error.message : String(error));
+    logger.error('Error purchasing points:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       error: 'Purchase failed'

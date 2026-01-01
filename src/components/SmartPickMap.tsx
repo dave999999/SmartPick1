@@ -135,12 +135,12 @@ const SmartPickMap = memo(({
                        import.meta.env.NEXT_PUBLIC_MAPTILER_KEY ||
                        import.meta.env.MAPTILER_KEY;
         if (envKey && envKey !== 'your_maptiler_api_key_here') {
-          console.log('✅ Using MapTiler key from environment');
+          logger.debug('Using MapTiler key from environment');
           setMapTilerKey(envKey);
           return;
         }
 
-        console.log('⏳ Fetching MapTiler key from Supabase...');
+        logger.debug('Fetching MapTiler key from Supabase...');
         // Fetch from Supabase app_config table
         const { data, error } = await supabase
           .from('app_config')
@@ -149,20 +149,20 @@ const SmartPickMap = memo(({
           .single();
 
         if (error) {
-          console.warn('Failed to fetch MapTiler key from Supabase:', error);
+          logger.warn('Failed to fetch MapTiler key from Supabase:', error);
           logger.error('Map configuration not found');
           toast.error('Map configuration missing. Please contact support.');
           return;
         }
 
         if (data?.config_value && data.config_value !== 'your_maptiler_api_key_here') {
-          console.log('✅ Using MapTiler key from Supabase');
+          logger.debug('Using MapTiler key from Supabase');
           setMapTilerKey(data.config_value);
         } else {
-          console.error('❌ No valid MapTiler key found');
+          logger.error('No valid MapTiler key found');
         }
       } catch (err) {
-        console.error('Error fetching map config:', err);
+        logger.error('Error fetching map config:', err);
         logger.error('Map configuration error');
       }
     };
@@ -213,7 +213,7 @@ const SmartPickMap = memo(({
       
       // Force markers to be added after map loads
       map.once('load', () => {
-        console.log('🗺️ Map loaded, ready for markers');
+        logger.debug('Map loaded, ready for markers');
       });
 
       return () => {
@@ -263,14 +263,14 @@ const SmartPickMap = memo(({
       }
       const data = await response.json();
       
-      console.log('🗺️ OSRM API response:', data);
+      logger.debug('OSRM API response received');
 
       if (!data.routes || data.routes.length === 0) {
         throw new Error('No route found');
       }
 
       const route = data.routes[0];
-      console.log('🗺️ Route data:', route);
+      logger.debug('Route data retrieved');
       
       // OSRM returns distance in meters, duration in seconds
       const distance = route.distance / 1000; // Convert meters to km
@@ -284,7 +284,7 @@ const SmartPickMap = memo(({
 
       // OSRM returns GeoJSON geometry with geometries=geojson parameter
       const routeCoordinates = route.geometry.coordinates;
-      console.log('🗺️ Route coordinates count:', routeCoordinates.length);
+      logger.debug('Route coordinates count:', routeCoordinates.length);
       
       if (!routeCoordinates || routeCoordinates.length < 2) {
         throw new Error('Invalid route coordinates');
@@ -417,7 +417,7 @@ const SmartPickMap = memo(({
   const memoizedOffers = useMemo(() => offers, [offers.length, offers.map(o => o.id).join(',')]);
   
   useEffect(() => {
-    console.log('📍 Map received offers:', memoizedOffers.length);
+    logger.debug('Map received offers:', memoizedOffers.length);
     setFilteredOffers(memoizedOffers);
   }, [memoizedOffers]);
 
@@ -427,7 +427,7 @@ const SmartPickMap = memo(({
     
     filteredOffers.forEach(offer => {
       if (!offer.partner?.latitude || !offer.partner?.longitude) {
-        console.log('⚠️ Offer missing location:', offer.title);
+        logger.debug('Offer missing location:', offer.title);
         return;
       }
       
@@ -449,7 +449,7 @@ const SmartPickMap = memo(({
     });
     
     const locations = Object.values(locationMap);
-    console.log('📍 Grouped locations for markers:', locations.length);
+    logger.debug('Grouped locations for markers:', locations.length);
     return locations;
   }, [filteredOffers]);
 
@@ -457,12 +457,12 @@ const SmartPickMap = memo(({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) {
-      console.log('⚠️ Cannot update markers: map not initialized');
+      logger.debug('Cannot update markers: map not initialized');
       return;
     }
 
     const updateMarkers = () => {
-      console.log('🎯 Updating markers, grouped locations:', groupedLocations.length);
+      logger.debug('Updating markers, grouped locations:', groupedLocations.length);
       
       // Clear existing markers
       markersRef.current.forEach(marker => marker.remove());
@@ -509,23 +509,23 @@ const SmartPickMap = memo(({
       markersRef.current.push(marker);
       });
       
-      console.log('✅ Added', markersRef.current.length, 'markers to map');
+      logger.debug('Added markers to map:', markersRef.current.length);
     };
 
     // If map is already loaded, update markers immediately
     if (map.loaded()) {
-      console.log('🗺️ Map already loaded, updating markers now');
+      logger.debug('Map already loaded, updating markers now');
       updateMarkers();
     } else {
       // Otherwise wait for the map to load
-      console.log('⏳ Waiting for map to load before adding markers');
+      logger.debug('Waiting for map to load before adding markers');
       map.once('load', updateMarkers);
     }
     
     // Re-add markers when style changes (theme switch)
     const handleStyleData = () => {
       if (map.isStyleLoaded()) {
-        console.log('🎨 Map style loaded, re-adding markers');
+        logger.debug('Map style loaded, re-adding markers');
         updateMarkers();
       }
     };

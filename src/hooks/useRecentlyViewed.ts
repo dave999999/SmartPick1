@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 
 const RECENTLY_VIEWED_KEY = 'smartpick-recently-viewed';
@@ -23,7 +24,7 @@ export function useRecentlyViewed() {
         setRecentlyViewed(JSON.parse(stored));
       }
     } catch (error) {
-      console.error('Error loading recently viewed:', error);
+      logger.error('Error loading recently viewed:', error);
     }
   };
 
@@ -32,7 +33,7 @@ export function useRecentlyViewed() {
       localStorage.setItem(RECENTLY_VIEWED_KEY, JSON.stringify(items));
       setRecentlyViewed(items);
     } catch (error) {
-      console.error('Error saving recently viewed:', error);
+      logger.error('Error saving recently viewed:', error);
     }
   };
 

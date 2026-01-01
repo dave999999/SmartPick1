@@ -6,13 +6,13 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    cleartext: true, // Allow HTTP for development
-    allowNavigation: ['*']
+    cleartext: false, // Disable for production/better emulator performance
+    allowNavigation: ['https://*'] // Restrict to HTTPS only
   },
   android: {
-    allowMixedContent: true,
+    allowMixedContent: false, // Disable for security
     captureInput: true,
-    webContentsDebuggingEnabled: true
+    webContentsDebuggingEnabled: false // Disable to prevent cache issues
   },
   plugins: {
     PushNotifications: {

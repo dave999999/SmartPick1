@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * useAppleTick Hook
  * Apple-style haptic and sound feedback for carousel interactions
@@ -21,7 +22,7 @@ export function useAppleTick() {
         isInitializedRef.current = true;
       }
     } catch (error) {
-      console.warn('Failed to initialize AudioContext:', error);
+      logger.warn('Failed to initialize AudioContext:', error);
     }
   }, []);
 
@@ -63,7 +64,7 @@ export function useAppleTick() {
       oscillator.start(now);
       oscillator.stop(now + 0.03); // Stop after 30ms
     } catch (error) {
-      console.warn('Failed to play tick sound:', error);
+      logger.warn('Failed to play tick sound:', error);
     }
   }, [initializeAudio]);
 

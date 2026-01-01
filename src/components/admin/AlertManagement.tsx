@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,7 @@ export function AlertManagement() {
       if (error) throw error;
       setRules(data || []);
     } catch (error) {
-      console.error('Error fetching alert rules:', error);
+      logger.error('Error fetching alert rules:', error);
     } finally {
       setLoading(false);
     }
@@ -82,7 +83,7 @@ export function AlertManagement() {
       // Refresh list
       fetchRules();
     } catch (error: any) {
-      console.error('Error creating alert rule:', error);
+      logger.error('Error creating alert rule:', error);
       toast.error(error.message || 'Failed to create alert rule');
     }
   };
@@ -99,7 +100,7 @@ export function AlertManagement() {
       toast.success(`Alert rule ${!currentState ? 'enabled' : 'disabled'}`);
       fetchRules();
     } catch (error: any) {
-      console.error('Error toggling alert rule:', error);
+      logger.error('Error toggling alert rule:', error);
       toast.error(error.message || 'Failed to update alert rule');
     }
   };

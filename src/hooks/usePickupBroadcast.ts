@@ -33,27 +33,27 @@ export function usePickupBroadcast({
       return;
     }
 
-    console.log('🎧 Listening for pickup confirmation on:', reservationId);
+    logger.debug('[usePickupBroadcast] Listening for pickup confirmation on:', reservationId);
     
     // Join broadcast channel for this specific reservation
     const channel = supabase
       .channel(`pickup-${reservationId}`)
       .on('broadcast', { event: 'pickup_confirmed' }, (payload) => {
-        console.log('📢 Pickup broadcast received:', payload);
+        logger.debug('[usePickupBroadcast] Pickup broadcast received');
         
         const { savedAmount = 0 } = payload.payload || {};
         const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
         
-        logger.log('✅ Pickup confirmed via broadcast!');
+        logger.log('[usePickupBroadcast] Pickup confirmed via broadcast!');
         callbackRef.current({ savedAmount, pointsEarned });
       })
       .subscribe((status) => {
-        console.log('🎧 Broadcast channel status:', status);
+        logger.debug('[usePickupBroadcast] Broadcast channel status:', status);
       });
 
     // Cleanup when modal closes or component unmounts
     return () => {
-      console.log('🔌 Unsubscribing from pickup broadcast');
+      logger.debug('[usePickupBroadcast] Unsubscribing from pickup broadcast');
       channel.unsubscribe();
       supabase.removeChannel(channel);
     };

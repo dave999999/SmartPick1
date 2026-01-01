@@ -22,7 +22,7 @@ export const getPartnerByUserId = async (userId: string): Promise<Partner | null
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching partner by user_id:', error);
+    logger.error('Error fetching partner by user_id:', error);
     return null;
   }
   return data as Partner;
@@ -37,7 +37,7 @@ export const getPartnerById = async (partnerId: string): Promise<Partner | null>
     .eq('id', partnerId)
     .maybeSingle();
   if (error) {
-    console.error('Error fetching partner by id:', error);
+    logger.error('Error fetching partner by id:', error);
     return null;
   }
   return data as Partner;

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from '../supabase';
 import crypto from 'crypto-js';
 
@@ -21,7 +22,7 @@ const checkRateLimit = async (email: string, actionType: 'verification' | 'passw
   });
 
   if (error) {
-    console.error('Rate limit check error:', error);
+    logger.error('Rate limit check error:', error);
     return false; // Deny on error (fail-safe)
   }
 
@@ -54,7 +55,7 @@ const sendEmailViaResend = async (to: string, subject: string, html: string): Pr
   }
 
   const result = await response.json();
-  console.log('Email sent successfully:', result);
+  logger.debug('Email sent successfully:', result);
 };
 
 // Generate verification email HTML
@@ -315,7 +316,7 @@ export const verifyEmailWithToken = async (token: string): Promise<{ success: bo
       message: data.message || 'Email verified successfully!',
     };
   } catch (error) {
-    console.error('Error verifying email:', error);
+    logger.error('Error verifying email:', error);
     throw error;
   }
 };
@@ -345,7 +346,7 @@ export const resetPasswordWithToken = async (token: string, newPassword: string)
       message: data.message || 'Password reset successfully!',
     };
   } catch (error) {
-    console.error('Error resetting password:', error);
+    logger.error('Error resetting password:', error);
     throw error;
   }
 };

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react';
 import { Reservation } from '@/lib/types';
 
@@ -13,7 +14,7 @@ export function usePickupReminders() {
 
   const requestPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
-      console.warn('This browser does not support notifications');
+      logger.warn('This browser does not support notifications');
       return false;
     }
 

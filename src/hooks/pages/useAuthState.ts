@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { User } from '@/lib/types';
 import { getCurrentUser } from '@/lib/api-lite';
 import { supabase } from '@/lib/supabase';
@@ -27,6 +27,7 @@ export interface AuthState {
 
 export function useAuthState(): AuthState {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -90,6 +91,19 @@ export function useAuthState(): AuthState {
       toast.success(`🎁 Welcome! Referral code ${refParam.toUpperCase()} is ready to use!`);
     }
   }, [searchParams]);
+
+  // Handle redirect from protected routes - open auth modal if user was redirected
+  useEffect(() => {
+    const state = location.state as { openAuth?: boolean; from?: string } | null;
+    if (state?.openAuth) {
+      setShowAuthDialog(true);
+      setDefaultAuthTab('signin');
+      if (state.from) {
+        logger.log('🔒 User redirected from protected route:', state.from);
+        toast.info('Please sign in to continue');
+      }
+    }
+  }, [location]);
 
   // Check user on mount
   useEffect(() => {

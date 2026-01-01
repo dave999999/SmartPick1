@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Version Check - Auto-reload on new deployment
  * Checks for new version every 5 minutes and reloads if detected
@@ -45,13 +46,13 @@ async function checkForNewVersion(): Promise<boolean> {
     
     // Check if version changed
     if (latestVersion !== currentVersion) {
-      console.log('[Version Check] New version detected:', latestVersion, '(current:', currentVersion + ')');
+      logger.debug('[Version Check] New version detected:', latestVersion, '(current:', currentVersion + ')');
       return true;
     }
     
     return false;
   } catch (error) {
-    console.error('[Version Check] Error:', error);
+    logger.error('[Version Check] Error:', error);
     return false;
   }
 }
@@ -62,15 +63,15 @@ async function checkForNewVersion(): Promise<boolean> {
 export function initVersionCheck() {
   // Get initial version
   currentVersion = getCurrentVersion();
-  console.log('[Version Check] Current version:', currentVersion);
+  logger.debug('[Version Check] Current version:', currentVersion);
   
   // Check for updates periodically
   setInterval(async () => {
-    console.log('[Version Check] Checking for updates...');
+    logger.debug('[Version Check] Checking for updates...');
     const hasNewVersion = await checkForNewVersion();
     
     if (hasNewVersion) {
-      console.log('[Version Check] New version available, reloading...');
+      logger.debug('[Version Check] New version available, reloading...');
       
       // Clear any cached data
       if ('caches' in window) {
@@ -86,11 +87,11 @@ export function initVersionCheck() {
   // Also check when page becomes visible
   document.addEventListener('visibilitychange', async () => {
     if (!document.hidden) {
-      console.log('[Version Check] Page visible, checking for updates...');
+      logger.debug('[Version Check] Page visible, checking for updates...');
       const hasNewVersion = await checkForNewVersion();
       
       if (hasNewVersion) {
-        console.log('[Version Check] New version available, reloading...');
+        logger.debug('[Version Check] New version available, reloading...');
         
         // Clear caches
         if ('caches' in window) {

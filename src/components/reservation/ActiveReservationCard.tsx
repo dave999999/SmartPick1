@@ -68,6 +68,7 @@ import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { usePickupBroadcast } from '@/hooks/usePickupBroadcast';
 import { getUserCancellationWarning } from '@/lib/api/penalty';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -480,14 +481,14 @@ export function ActiveReservationCard({
 
   // Debug QR modal state
   useEffect(() => {
-    console.log('🔍 QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
+    logger.debug('[ActiveReservationCard] QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
   }, [showQRModal, reservation?.id]);
 
   // Poll for pickup status when QR modal is open (lightweight fallback)
   useEffect(() => {
     if (!showQRModal || !reservation?.id) return;
     
-    console.log('🔄 Starting pickup polling for reservation:', reservation.id);
+    logger.debug('[ActiveReservationCard] Starting pickup polling for reservation:', reservation.id);
     
     const checkPickupStatus = async () => {
       try {
@@ -498,7 +499,7 @@ export function ActiveReservationCard({
           .single();
         
         if (!error && data?.status === 'PICKED_UP') {
-          console.log('✅ Pickup detected via polling!');
+          logger.debug('[ActiveReservationCard] Pickup detected via polling');
           
           // Check if already celebrated
           const celebrationKey = `pickup-celebrated-${reservation.id}`;
@@ -522,7 +523,7 @@ export function ActiveReservationCard({
           }
         }
       } catch (err) {
-        console.error('Error checking pickup status:', err);
+        logger.error('[ActiveReservationCard] Error checking pickup status:', err);
       }
     };
     
@@ -530,7 +531,7 @@ export function ActiveReservationCard({
     const interval = setInterval(checkPickupStatus, 2000);
     
     return () => {
-      console.log('🛑 Stopping pickup polling');
+      logger.debug('[ActiveReservationCard] Stopping pickup polling');
       clearInterval(interval);
     };
   }, [showQRModal, reservation?.id, onExpired]);
@@ -543,15 +544,15 @@ export function ActiveReservationCard({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('[ActiveReservationCard] Fetching cancellation count for user:', user.id);
+      logger.debug('[ActiveReservationCard] Fetching cancellation count for user');
       
       // Use the proper API function that calls get_user_daily_cancellation_count
       const warning = await getUserCancellationWarning(user.id);
       
-      console.log('[ActiveReservationCard] Cancellation warning:', warning);
+      logger.debug('[ActiveReservationCard] Cancellation warning:', warning);
       setCancelCount(warning.cancellationCount);
     } catch (error) {
-      console.error('[ActiveReservationCard] Error fetching cancel count:', error);
+      logger.error('[ActiveReservationCard] Error fetching cancel count:', error);
     } finally {
       setLoadingCancelCount(false);
     }
@@ -738,7 +739,7 @@ export function ActiveReservationCard({
       {/* Apple-Style Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={(open) => {
         if (open) {
-          console.log('[ActiveReservationCard] Opening cancel dialog with count:', cancelCount);
+          logger.debug('[ActiveReservationCard] Opening cancel dialog with count:', cancelCount);
         }
         setShowCancelDialog(open);
       }}>

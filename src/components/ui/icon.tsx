@@ -17,6 +17,7 @@
 
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   icon: LucideIcon;
@@ -40,7 +41,7 @@ export function Icon({
 }: IconProps) {
   // Validate: standalone icons must have labels
   if (!decorative && !label && process.env.NODE_ENV === 'development') {
-    console.warn(
+    logger.warn(
       `Icon: Non-decorative icon missing aria-label. ` +
       `Either add label prop or set decorative={true} if icon is next to text.`
     );

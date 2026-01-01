@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Gift, Sparkles, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
+import { logger } from '@/lib/logger';
 
 interface Achievement {
   id: string;
@@ -38,7 +39,7 @@ export default function PickupSuccessModal({
 
   // Debug logging
   useEffect(() => {
-    console.log('🎊 PickupSuccessModal render:', { open, savedAmount, pointsEarned });
+    logger.debug('[PickupSuccessModal] render:', { open, savedAmount, pointsEarned });
   }, [open, savedAmount, pointsEarned]);
 
   const handleClose = () => {

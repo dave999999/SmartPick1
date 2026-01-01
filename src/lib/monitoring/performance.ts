@@ -16,11 +16,11 @@
  * 
  * // Check database health
  * const health = await performanceMonitor.checkDatabaseHealth();
- * console.log('Database healthy:', health.healthy);
+ * logger.debug('Database healthy:', health.healthy);
  * 
  * // Get performance metrics
  * const metrics = performanceMonitor.getMetrics();
- * console.log('Avg query time:', metrics.avgDuration, 'ms');
+ * logger.debug('Avg query time:', metrics.avgDuration, 'ms');
  * ```
  */
 

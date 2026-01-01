@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/supabase';
@@ -74,7 +75,7 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
         todayRevenue
       });
     } catch (error) {
-      console.error('Error fetching live stats:', error);
+      logger.error('Error fetching live stats:', error);
     } finally {
       setLoading(false);
     }
@@ -83,30 +84,30 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
   useEffect(() => {
     // Only poll when tab is active AND window is visible
     if (!isActive || document.hidden) {
-      console.log('⏸️ [LiveMonitoring] Paused - tab not active or window hidden');
+      logger.debug('⏸️ [LiveMonitoring] Paused - tab not active or window hidden');
       return;
     }
 
-    console.log('▶️ [LiveMonitoring] Starting polling - admin is viewing this tab');
+    logger.debug('▶️ [LiveMonitoring] Starting polling - admin is viewing this tab');
     fetchLiveStats();
     
     // Increased to 120 seconds / 2 minutes (50% reduction from 60s)
     const interval = setInterval(() => {
       // Double-check visibility before each poll
       if (!document.hidden && isActive) {
-        console.log('🔄 [LiveMonitoring] Polling update');
+        logger.debug('🔄 [LiveMonitoring] Polling update');
         fetchLiveStats();
       } else {
-        console.log('⏭️ [LiveMonitoring] Skipping poll - not visible');
+        logger.debug('⏭️ [LiveMonitoring] Skipping poll - not visible');
       }
     }, 120000);
     
     // Listen for visibility changes
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log('👁️ [LiveMonitoring] Tab hidden - pausing polls');
+        logger.debug('👁️ [LiveMonitoring] Tab hidden - pausing polls');
       } else if (isActive) {
-        console.log('👁️ [LiveMonitoring] Tab visible - resuming polls');
+        logger.debug('👁️ [LiveMonitoring] Tab visible - resuming polls');
         fetchLiveStats(); // Immediate refresh when tab becomes visible
       }
     };
@@ -114,7 +115,7 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
-      console.log('🛑 [LiveMonitoring] Cleanup - stopping polling');
+      logger.debug('🛑 [LiveMonitoring] Cleanup - stopping polling');
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

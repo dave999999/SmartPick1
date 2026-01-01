@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -48,7 +49,7 @@ export const ForgotPassword = () => {
       toast.success('Password reset email sent! Check your inbox.');
     } catch (error) {
       toast.error('Failed to send reset email. Please try again.');
-      console.error('Password reset error:', error);
+      logger.error('Password reset error:', error);
     } finally {
       setIsLoading(false);
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // 🍎 Apple-Level Profile Page Redesign - Premium Variant
 // Merges Apple Wallet + Apple Fitness aesthetics
 // Maintains ALL existing business logic
@@ -15,6 +16,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Capacitor } from '@capacitor/core';
 
 // Lazy-loaded components for better performance
 const SmartPointsWallet = lazy(() => import('@/components/SmartPointsWallet').then(m => ({ default: m.SmartPointsWallet })));
@@ -39,6 +46,7 @@ interface User {
   smart_points: number;
   level: number;
   is_partner: boolean;
+  role?: string;
 }
 
 // Animation Variants
@@ -331,11 +339,26 @@ export default function UserProfileApple() {
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState<'wallet' | 'achievements' | 'referrals' | 'support' | 'notifications' | 'security' | 'language' | 'payments' | null>(null);
   
-  // Notification settings state
+  // Push notifications hook
+  const pushNotifications = usePushNotifications();
+  const { syncNotifications, isSyncing, fcmToken } = pushNotifications;
+
+  const buildVersion = (() => {
+    if (typeof document === 'undefined') return 'unknown';
+    const getMeta = (name: string) => document.querySelector(`meta[name="${name}"]`)?.getAttribute('content');
+    return getMeta('build-version') ?? getMeta('version') ?? getMeta('app-version') ?? 'unknown';
+  })();
+  
+  // Notification settings state - Reworked for best UX
   const [notificationSettings, setNotificationSettings] = useState({
-    newOffers: true,
-    reservationReminders: true,
-    pointsUpdates: true,
+    // Reservation Alerts (Critical)
+    expiringSoon: true,
+    reservationExpired: true,
+    reservationCancelled: true,
+    // Offers & Deals
+    newOffersNearby: true,
+    favoritePartners: true,
+    // Rewards & Progress
     achievements: true,
     referralRewards: true
   });
@@ -371,7 +394,7 @@ export default function UserProfileApple() {
         .eq('user_id', authUser.id)
         .maybeSingle();
 
-      console.log('🔍 Points Query Result:', { 
+      logger.debug('🔍 Points Query Result:', { 
         userId: authUser.id,
         isPartner: !!partnerProfile?.id,
         tableName,
@@ -410,7 +433,7 @@ export default function UserProfileApple() {
         });
       }
     } catch (error) {
-      console.error('Error loading user:', error);
+      logger.error('Error loading user:', error);
     } finally {
       setLoading(false);
     }
@@ -419,6 +442,15 @@ export default function UserProfileApple() {
   useEffect(() => {
     loadUser();
   }, [loadUser]);
+
+  // Pull to refresh functionality
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await loadUser();
+      toast.success('Profile refreshed');
+    },
+    threshold: 80,
+  });
 
   // Refetch points when page becomes visible (user returns from another tab)
   useEffect(() => {
@@ -437,7 +469,7 @@ export default function UserProfileApple() {
               setUser(prev => prev ? { ...prev, smart_points: pointsData.balance || 0 } : null);
             }
           } catch (error) {
-            console.error('Error refetching points:', error);
+            logger.error('Error refetching points:', error);
           }
         };
         refetchPoints();
@@ -464,12 +496,49 @@ export default function UserProfileApple() {
     else if (route === 'support') navigate('/contact');
   };
 
-  const handleNotificationToggle = (key: keyof typeof notificationSettings) => {
+  const handleNotificationToggle = async (key: keyof typeof notificationSettings) => {
+    const newValue = !notificationSettings[key];
+    
+    logger.debug('[NotificationToggle]', key, '→', newValue);
+    
+    // Update local state
     setNotificationSettings(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: newValue
     }));
-    toast.success('Notification preferences updated');
+
+    try {
+      if (!user) {
+        logger.error('[NotificationToggle] No user found');
+        toast.error('User not found');
+        return;
+      }
+
+      logger.debug('[NotificationToggle] Saving to Firestore for user:', user.id);
+      
+      // Save preferences to Firestore
+      await setDoc(doc(db, 'fcm_tokens', user.id), {
+        userId: user.id,
+        token: pushNotifications.fcmToken || 'pending',
+        platform: Capacitor.isNativePlatform() ? 'android' : 'web',
+        notificationTypes: {
+          ...notificationSettings,
+          [key]: newValue
+        },
+        updatedAt: new Date()
+      }, { merge: true });
+
+      logger.debug('[NotificationToggle] ✅ Saved successfully');
+      toast.success(newValue ? 'Notification enabled' : 'Notification disabled');
+    } catch (error) {
+      logger.error('[NotificationToggle] Error:', error);
+      toast.error('Failed to update settings');
+      // Revert toggle
+      setNotificationSettings(prev => ({
+        ...prev,
+        [key]: !newValue
+      }));
+    }
   };
 
   if (loading) {
@@ -485,7 +554,13 @@ export default function UserProfileApple() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB]">
+    <div ref={pullToRefresh.containerRef} className="min-h-screen bg-[#F8F9FB] overflow-y-auto">
+      <PullToRefreshIndicator 
+        pullDistance={pullToRefresh.pullDistance}
+        isRefreshing={pullToRefresh.isRefreshing}
+        threshold={80}
+      />
+      
       {/* Status Bar Safe Area */}
       <div className="h-11" />
 
@@ -564,61 +639,161 @@ export default function UserProfileApple() {
               Notification Settings
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="new-offers" className="text-[15px] font-medium">New Offers</Label>
-                <p className="text-[13px] text-[#6F6F6F]">Get notified when new offers are available</p>
+          <div className="space-y-6 py-4">
+            {/* Token Sync Section - Only on Native */}
+            {Capacitor.isNativePlatform() && (
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border-2 border-blue-200">
+                <div className="text-xs font-bold text-red-600 mb-2">
+                  🚀 BUILD: {buildVersion}
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[13px] font-semibold text-gray-700">Token Status</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {fcmToken ? `✅ Generated: ${fcmToken.substring(0, 15)}...` : '⚠️ Missing token'}
+                    </p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      User ID: {user?.id ?? 'Not logged in'}
+                    </p>
+                  </div>
+                  {fcmToken && (
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                  )}
+                </div>
+                {/* Admin-only manual sync button */}
+                {user?.role === 'ADMIN' && (
+                  <Button
+                    onClick={async () => {
+                      if (syncNotifications) {
+                        const success = await syncNotifications(user?.id ?? '');
+                        if (success) {
+                          toast.success('🔔 Notifications synced successfully!');
+                        } else {
+                          toast.error('Failed to sync. Please try again.');
+                        }
+                      }
+                    }}
+                    disabled={isSyncing}
+                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px]"
+                  >
+                    {isSyncing ? '🔄 Syncing...' : '🔄 Sync Notifications (Admin)'}
+                  </Button>
+                )}
               </div>
-              <Switch
-                id="new-offers"
-                checked={notificationSettings.newOffers}
-                onCheckedChange={() => handleNotificationToggle('newOffers')}
-              />
+            )}
+            
+            {Capacitor.isNativePlatform() && <div className="border-t border-[#E5E7EB]" />}
+
+            {/* Reservation Alerts Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-[#FF8A00] uppercase tracking-wide">
+                <Bell size={16} />
+                Reservation Alerts
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="expiring-soon" className="text-[15px] font-medium">Expiring Soon ⚠️</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">Alert 15 minutes before pickup deadline</p>
+                </div>
+                <Switch
+                  id="expiring-soon"
+                  checked={notificationSettings.expiringSoon}
+                  onCheckedChange={() => handleNotificationToggle('expiringSoon')}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="expired" className="text-[15px] font-medium">Reservation Expired</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">If you didn't arrive in time</p>
+                </div>
+                <Switch
+                  id="expired"
+                  checked={notificationSettings.reservationExpired}
+                  onCheckedChange={() => handleNotificationToggle('reservationExpired')}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="cancelled" className="text-[15px] font-medium">Reservation Cancelled</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">If partner or system cancels</p>
+                </div>
+                <Switch
+                  id="cancelled"
+                  checked={notificationSettings.reservationCancelled}
+                  onCheckedChange={() => handleNotificationToggle('reservationCancelled')}
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="reminders" className="text-[15px] font-medium">Reservation Reminders</Label>
-                <p className="text-[13px] text-[#6F6F6F]">Reminders before your reservation time</p>
+
+            <div className="border-t border-[#E5E7EB]" />
+
+            {/* Offers & Deals Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-[#34C759] uppercase tracking-wide">
+                <span>🎯</span>
+                Offers & Deals
               </div>
-              <Switch
-                id="reminders"
-                checked={notificationSettings.reservationReminders}
-                onCheckedChange={() => handleNotificationToggle('reservationReminders')}
-              />
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="nearby" className="text-[15px] font-medium">New Offers Nearby</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">Deals within 2km of your location</p>
+                </div>
+                <Switch
+                  id="nearby"
+                  checked={notificationSettings.newOffersNearby}
+                  onCheckedChange={() => handleNotificationToggle('newOffersNearby')}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="favorites" className="text-[15px] font-medium">Favorite Partners</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">New offers from places you favorited</p>
+                </div>
+                <Switch
+                  id="favorites"
+                  checked={notificationSettings.favoritePartners}
+                  onCheckedChange={() => handleNotificationToggle('favoritePartners')}
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="points" className="text-[15px] font-medium">SmartPoints Updates</Label>
-                <p className="text-[13px] text-[#6F6F6F]">When you earn or spend points</p>
+
+            <div className="border-t border-[#E5E7EB]" />
+
+            {/* Rewards & Progress Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[13px] font-semibold text-[#5856D6] uppercase tracking-wide">
+                <span>⭐</span>
+                Rewards & Progress
               </div>
-              <Switch
-                id="points"
-                checked={notificationSettings.pointsUpdates}
-                onCheckedChange={() => handleNotificationToggle('pointsUpdates')}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="achievements" className="text-[15px] font-medium">Achievements</Label>
-                <p className="text-[13px] text-[#6F6F6F]">When you unlock new achievements</p>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="achievements" className="text-[15px] font-medium">Achievements</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">When you unlock new badges</p>
+                </div>
+                <Switch
+                  id="achievements"
+                  checked={notificationSettings.achievements}
+                  onCheckedChange={() => handleNotificationToggle('achievements')}
+                />
               </div>
-              <Switch
-                id="achievements"
-                checked={notificationSettings.achievements}
-                onCheckedChange={() => handleNotificationToggle('achievements')}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label htmlFor="referrals" className="text-[15px] font-medium">Referral Rewards</Label>
-                <p className="text-[13px] text-[#6F6F6F]">When friends join using your code</p>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="referrals" className="text-[15px] font-medium">Referral Rewards</Label>
+                  <p className="text-[13px] text-[#6F6F6F]">When friends join using your code</p>
+                </div>
+                <Switch
+                  id="referrals"
+                  checked={notificationSettings.referralRewards}
+                  onCheckedChange={() => handleNotificationToggle('referralRewards')}
+                />
               </div>
-              <Switch
-                id="referrals"
-                checked={notificationSettings.referralRewards}
-                onCheckedChange={() => handleNotificationToggle('referralRewards')}
-              />
             </div>
           </div>
         </DialogContent>

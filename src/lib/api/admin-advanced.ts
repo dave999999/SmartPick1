@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Advanced Admin API
  * Provides functions for admin dashboard features:
@@ -50,7 +51,7 @@ export const logAdminAction = async (
       p_details: details,
     });
   } catch (error) {
-    console.error('Failed to log admin action:', error);
+    logger.error('Failed to log admin action:', error);
   }
 };
 
@@ -456,7 +457,7 @@ export const logSystemError = async (
       user_id: (await supabase.auth.getUser()).data.user?.id,
     });
   } catch (error) {
-    console.error('Failed to log system error:', error);
+    logger.error('Failed to log system error:', error);
   }
 };
 

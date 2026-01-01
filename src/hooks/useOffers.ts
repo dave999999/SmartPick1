@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Offer } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 export function useOffers() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -30,7 +31,7 @@ export function useOffers() {
           table: 'offers',
         },
         async (payload) => {
-          console.log('🔔 Offer changed:', payload.eventType, payload);
+          logger.debug('[useOffers] Offer changed:', payload.eventType);
 
           if (payload.eventType === 'INSERT') {
             // New offer added - fetch full details with partner data
@@ -60,7 +61,7 @@ export function useOffers() {
               };
               
               setOffers(prev => [offerWithLocation, ...prev]);
-              console.log('✅ New offer added to list:', offerWithLocation.title);
+              logger.debug('[useOffers] New offer added to list:', offerWithLocation.title);
             }
           } else if (payload.eventType === 'UPDATE') {
             // Offer updated - update in list or remove if no longer active
@@ -102,17 +103,17 @@ export function useOffers() {
                   }
                   return prev;
                 });
-                console.log('✅ Offer updated:', offerWithLocation.title);
+                logger.debug('[useOffers] Offer updated:', offerWithLocation.title);
               }
             } else {
               // Offer is no longer active, remove it
               setOffers(prev => prev.filter(o => o.id !== updatedOffer.id));
-              console.log('❌ Offer removed (inactive):', updatedOffer.id);
+              logger.debug('[useOffers] Offer removed (inactive):', updatedOffer.id);
             }
           } else if (payload.eventType === 'DELETE') {
             // Offer deleted - remove from list
             setOffers(prev => prev.filter(o => o.id !== payload.old.id));
-            console.log('❌ Offer deleted:', payload.old.id);
+            logger.debug('[useOffers] Offer deleted:', payload.old.id);
           }
         }
       )
@@ -142,7 +143,7 @@ export function useOffers() {
         .order('created_at', { ascending: false });
 
       if (fetchError) {
-        console.error('❌ Supabase error:', fetchError);
+        logger.error('[useOffers] Supabase error:', fetchError);
         throw fetchError;
       }
       
@@ -158,12 +159,12 @@ export function useOffers() {
         } : null
       }));
       
-      console.log('📦 Loaded offers with partner data:', offersWithLocation?.length, 'offers');
-      console.log('🔍 Sample offer:', offersWithLocation?.[0]);
+      logger.debug('[useOffers] Loaded offers with partner data:', offersWithLocation?.length, 'offers');
+      logger.debug('[useOffers] Sample offer:', offersWithLocation?.[0]);
       
       setOffers(offersWithLocation || []);
     } catch (err) {
-      console.error('❌ Error fetching offers:', err);
+      logger.error('[useOffers] Error fetching offers:', err);
       setError(err as Error);
     } finally {
       setLoading(false);

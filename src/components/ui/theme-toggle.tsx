@@ -2,6 +2,7 @@ import { Moon, Sun } from 'lucide-react';
 import { useTheme } from '@/components/theme-provider';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -35,7 +36,7 @@ export function ThemeToggle() {
   const toggleTheme = () => {
     // Always toggle between light and dark explicitly (not system)
     const newTheme = isDark ? 'light' : 'dark';
-    console.log('Toggle theme:', { current: theme, resolved: resolvedTheme, isDark, newTheme });
+    logger.debug('Toggle theme:', { current: theme, resolved: resolvedTheme, isDark, newTheme });
     setTheme(newTheme);
   };
 

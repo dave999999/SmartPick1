@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * Server-Side Rate Limiter Client
  * 
@@ -51,7 +52,7 @@ export async function checkServerRateLimit(
     }
 
     if (!response.ok) {
-      console.error('Rate limit check failed:', response.status, response.statusText);
+      logger.error('Rate limit check failed:', response.status, response.statusText);
       // Fail open (allow) on errors to prevent service disruption
       // This includes 400, 404, 500, etc.
       return { allowed: true, remaining: 99 };
@@ -66,7 +67,7 @@ export async function checkServerRateLimit(
     };
 
   } catch (error) {
-    console.error('Rate limit error:', error instanceof Error ? error.message : String(error));
+    logger.error('Rate limit error:', error instanceof Error ? error.message : String(error));
     // Fail open (allow) on network errors
     return { allowed: true, remaining: 99 };
   }
@@ -138,7 +139,7 @@ async function checkClientRateLimit(
     return { allowed: true, remaining };
 
   } catch (error) {
-    console.error('Client rate limit error:', error instanceof Error ? error.message : String(error));
+    logger.error('Client rate limit error:', error instanceof Error ? error.message : String(error));
     return { allowed: true, remaining: 99 };
   }
 }
@@ -157,7 +158,7 @@ export function recordClientAttempt(action: string, identifier: string): void {
 
     localStorage.setItem(key, JSON.stringify(attempts));
   } catch (error) {
-    console.error('Failed to record attempt:', error instanceof Error ? error.message : String(error));
+    logger.error('Failed to record attempt:', error instanceof Error ? error.message : String(error));
   }
 }
 

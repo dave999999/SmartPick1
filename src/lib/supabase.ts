@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { createClient } from '@supabase/supabase-js';
 
 // Read Supabase configuration from env variables
@@ -105,7 +106,7 @@ export const signUpWithEmail = async (
         },
       });
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      logger.error('Failed to send verification email:', emailError);
     }
   }
 

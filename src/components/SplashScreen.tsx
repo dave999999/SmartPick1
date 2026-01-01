@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { logger } from '@/lib/logger';
 
 const SPLASH_SHOWN_KEY = 'smartpick-splash-shown';
 
@@ -30,17 +31,17 @@ export default function SplashScreen() {
         video.volume = 1.0;
         await video.play();
         setCanPlayWithSound(true);
-        console.log('✅ Splash video playing with sound');
+        logger.debug('✅ Splash video playing with sound');
       } catch (error) {
-        console.warn('⚠️ Autoplay with sound blocked, falling back to muted:', error);
+        logger.warn('⚠️ Autoplay with sound blocked, falling back to muted');
         // Fallback to muted autoplay (required by most browsers)
         try {
           video.muted = true;
           await video.play();
           setCanPlayWithSound(false);
-          console.log('✅ Splash video playing muted');
+          logger.debug('✅ Splash video playing muted');
         } catch (mutedError) {
-          console.error('❌ Video autoplay failed completely:', mutedError);
+          logger.error('❌ Video autoplay failed completely:', mutedError);
           setHasError(true);
           // Hide splash immediately if video can't play
           setIsVisible(false);
@@ -55,7 +56,7 @@ export default function SplashScreen() {
     };
 
     const handleError = (e: Event) => {
-      console.error('❌ Video failed to load:', e);
+      logger.error('❌ Video failed to load:', e);
       setHasError(true);
       // Hide splash if video fails to load
       setIsVisible(false);
@@ -80,7 +81,7 @@ export default function SplashScreen() {
 
   // Handle video end
   const handleVideoEnded = () => {
-    console.log('✅ Splash video ended');
+    logger.debug('✅ Splash video ended');
     // Mark splash as shown permanently
     localStorage.setItem(SPLASH_SHOWN_KEY, 'true');
     setIsVisible(false);
@@ -91,7 +92,7 @@ export default function SplashScreen() {
     if (!isVisible) return; // Don't set timeout if splash shouldn't show
     
     hideTimerRef.current = setTimeout(() => {
-      console.log('⏱️ Splash timeout - hiding after 5s');
+      logger.debug('⏱️ Splash timeout - hiding after 5s');
       localStorage.setItem(SPLASH_SHOWN_KEY, 'true');
       setIsVisible(false);
     }, 5000);

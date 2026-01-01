@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase, isDemoMode } from '../supabase';
 import { User } from '../types';
 import { setUser as setSentryUser, clearUser as clearSentryUser } from '../sentry';
@@ -39,7 +40,7 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
     // Handle invalid refresh token error
     if (error) {
       if (error.message?.includes('Invalid Refresh Token') || error.message?.includes('Refresh Token Not Found')) {
-        console.warn('🔐 Invalid refresh token detected - clearing session');
+        logger.warn('🔐 Invalid refresh token detected - clearing session');
         try {
           await supabase.auth.signOut();
           // Clear local storage
@@ -47,7 +48,7 @@ export const getCurrentUser = async (): Promise<{ user: User | null; error?: unk
             localStorage.removeItem('recentAuthTs');
           }
         } catch (signOutError) {
-          console.error('Error signing out:', signOutError);
+          logger.error('Error signing out:', signOutError);
         }
       }
       return { user: null, error };
@@ -163,7 +164,7 @@ export const signUpWithEmail = async (email: string, password: string, name: str
           },
         });
       } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
+        logger.error('Failed to send verification email:', emailError);
       }
     }
   } catch {}
@@ -228,7 +229,7 @@ export const updateUserProfile = async (userId: string, updates: Partial<User>) 
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    logger.error('Error updating user profile:', error);
     return { data: null, error };
   }
 };
@@ -250,7 +251,7 @@ export const updatePassword = async (newPassword: string) => {
     if (error) throw error;
     return { error: null };
   } catch (error) {
-    console.error('Error updating password:', error);
+    logger.error('Error updating password:', error);
     return { error };
   }
 };

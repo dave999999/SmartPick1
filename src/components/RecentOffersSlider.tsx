@@ -23,24 +23,29 @@ export default function RecentOffersSlider({ offers, onOfferClick, title = "Rece
 
   // Lazy load when component becomes visible
   useEffect(() => {
-    if (containerRef.current) {
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              setIsVisible(true);
-              observerRef.current?.disconnect();
-            }
-          });
-        },
-        { rootMargin: '50px' }
-      );
+    const element = containerRef.current;
+    if (!element) return;
 
-      observerRef.current.observe(containerRef.current);
-    }
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true);
+            observerRef.current?.disconnect();
+          }
+        });
+      },
+      { rootMargin: '50px' }
+    );
+
+    observerRef.current.observe(element);
 
     return () => {
-      observerRef.current?.disconnect();
+      try {
+        observerRef.current?.disconnect();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
     };
   }, []);
 

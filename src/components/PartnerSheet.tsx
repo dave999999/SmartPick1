@@ -9,6 +9,7 @@ import { MapPin, Clock, Star, Phone } from 'lucide-react';
 import { Partner, Offer } from '@/lib/types';
 import { getPartnerById } from '@/lib/api';
 import { OfferListCard } from './offers/OfferListCard';
+import { logger } from '@/lib/logger';
 
 interface PartnerSheetProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
         const partnerOffers = await getPartnerOffers(partnerId);
         setOffers(partnerOffers.filter(o => o.status === 'ACTIVE'));
       } catch (error) {
-        console.error('Failed to load partner data:', error);
+        logger.error('[PartnerSheet] Failed to load partner data:', error);
       } finally {
         setLoading(false);
       }

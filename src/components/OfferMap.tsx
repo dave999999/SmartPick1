@@ -299,16 +299,16 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
   const groupedLocations = useMemo((): GroupedLocation[] => {
     const locationMap = new Map<string, GroupedLocation>();
 
-    console.log('🔍 Grouping offers by location, total filtered offers:', filteredOffers.length);
+    logger.debug('Grouping offers by location, total filtered offers:', filteredOffers.length);
 
     filteredOffers.forEach(offer => {
       const location = getPartnerLocation(offer);
       if (!location) {
-        console.warn('⚠️ Offer missing location:', offer.id, offer.title);
+        logger.debug('Offer missing location:', offer.id, offer.title);
         return;
       }
       if (!offer.partner) {
-        console.warn('⚠️ Offer missing partner:', offer.id, offer.title);
+        logger.warn('⚠️ Offer missing partner:', offer.id, offer.title);
         return;
       }
 
@@ -317,7 +317,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
       if (locationMap.has(key)) {
         locationMap.get(key)!.offers.push(offer);
       } else {
-        console.log('✅ Creating marker at:', location.lat, location.lng, 'for', offer.partner.business_name);
+        logger.debug('✅ Creating marker at:', location.lat, location.lng, 'for', offer.partner.business_name);
         locationMap.set(key, {
           lat: location.lat,
           lng: location.lng,
@@ -330,7 +330,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
     });
 
     const result = Array.from(locationMap.values());
-    console.log('📍 Total grouped locations (markers):', result.length);
+    logger.debug('📍 Total grouped locations (markers):', result.length);
     return result;
   }, [filteredOffers]);
 
@@ -373,7 +373,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
   };
 
   // Debug logging
-  console.log('🗺️ OfferMap Debug:', {
+  logger.debug('🗺️ OfferMap Debug:', {
     totalOffers: offers.length,
     filteredOffers: filteredOffers.length,
     groupedLocations: groupedLocations.length,
@@ -455,7 +455,7 @@ const OfferMap = memo(({ offers, onOfferClick, onMarkerClick, selectedCategory, 
                   icon={makeCategoryIcon(primaryOffer.category, location.offers.length, isHighlighted)}
                   eventHandlers={{
                     click: (e) => {
-                      console.log('🎯 Marker clicked:', location.partnerName);
+                      logger.debug('🎯 Marker clicked:', location.partnerName);
 
                       // Prevent event from bubbling to map
                       if (e.originalEvent) {

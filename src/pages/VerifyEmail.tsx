@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -58,7 +59,7 @@ export const VerifyEmail = () => {
           }, 3000);
         }
       } catch (error) {
-        console.error('Verification error:', error);
+        logger.error('Verification error:', error);
         setStatus('error');
         setMessage(error instanceof Error ? error.message : 'Verification failed. Please try again.');
       }

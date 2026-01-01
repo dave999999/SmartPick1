@@ -58,6 +58,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
+  const captchaRef = useRef<any>(null);
 
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -291,8 +292,11 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
         setShowCaptcha(true);
       }
       
-      // Reset CAPTCHA token for retry
+      // Reset CAPTCHA token and widget for retry
       setCaptchaToken(null);
+      if (captchaRef.current) {
+        captchaRef.current.reset();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -483,6 +487,12 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
       logger.error('Sign up error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
+      
+      // Reset CAPTCHA token and widget for retry
+      setCaptchaToken(null);
+      if (captchaRef.current) {
+        captchaRef.current.reset();
+      }
     } finally {
       setIsLoading(false);
     }
@@ -727,6 +737,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 {/* CAPTCHA - Compact */}
                 <div className="flex justify-center py-2">
                   <Turnstile
+                    ref={captchaRef}
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKnWhPNRi7fs'}
                     onSuccess={(token) => {
                       setCaptchaToken(token);
@@ -1087,6 +1098,7 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                 {/* CAPTCHA - Compact */}
                 <div className="flex justify-center py-1">
                   <Turnstile
+                    ref={captchaRef}
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKnWhPNRi7fs'}
                     onSuccess={(token) => {
                       setCaptchaToken(token);

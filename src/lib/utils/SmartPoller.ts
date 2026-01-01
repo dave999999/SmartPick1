@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * SmartPoller - Intelligent Polling System
  * 
@@ -63,7 +64,7 @@ export class SmartPoller<T = any> {
       initialIntervalIndex: 0,
       slowDownAfter: 3, // Slow down after 3 polls without activity
       pauseWhenHidden: true,
-      onError: (error) => console.error('SmartPoller error:', error),
+      onError: (error) => logger.error('SmartPoller error:', error),
       ...config
     };
     

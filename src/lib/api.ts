@@ -150,7 +150,7 @@ export interface PartnerPointTransaction {
 
 export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | null> => {
   try {
-    console.log('🔍 getPartnerPoints called with userId:', userId);
+    logger.debug('🔍 getPartnerPoints called with userId:', userId);
 
     // First get partner_id from user_id
     const { data: partner, error: partnerError } = await supabase
@@ -160,7 +160,7 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
       .maybeSingle();
 
     if (partnerError || !partner) {
-      console.warn('⚠️ Partner not found for userId:', userId);
+      logger.warn('⚠️ Partner not found for userId:', userId);
       return null;
     }
 
@@ -173,16 +173,16 @@ export const getPartnerPoints = async (userId: string): Promise<PartnerPoints | 
 
     if (error) {
       // Table might not exist - return null instead of throwing
-      console.warn('⚠️ getPartnerPoints error (table might not exist):', error);
+      logger.warn('⚠️ getPartnerPoints error (table might not exist):', error);
       logger.warn('Partner points table not available', { error, userId });
       return null;
     }
 
-    console.log('✅ getPartnerPoints result:', data);
+    logger.debug('✅ getPartnerPoints result:', data);
     return data;
   } catch (error) {
     // Don't throw - return null to allow dashboard to load
-    console.warn('⚠️ getPartnerPoints exception:', error);
+    logger.warn('⚠️ getPartnerPoints exception:', error);
     logger.warn('Error in getPartnerPoints', { error, userId });
     return null;
   }

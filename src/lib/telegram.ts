@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { supabase } from './supabase';
 import { queueNotification, sendImmediateNotification } from './notificationQueue';
 
@@ -55,13 +56,13 @@ export async function connectTelegramAccount(
       });
 
     if (error) {
-      console.error('Error saving Telegram connection:', error);
+      logger.error('Error saving Telegram connection:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error connecting Telegram:', error);
+    logger.error('Error connecting Telegram:', error);
     return false;
   }
 }
@@ -82,13 +83,13 @@ export async function disconnectTelegramAccount(userId: string): Promise<boolean
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error disconnecting Telegram:', error);
+      logger.error('Error disconnecting Telegram:', error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error disconnecting Telegram:', error);
+    logger.error('Error disconnecting Telegram:', error);
     return false;
   }
 }
@@ -105,13 +106,13 @@ export async function getTelegramConnection(userId: string) {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching Telegram connection:', error);
+      logger.error('Error fetching Telegram connection:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error fetching Telegram connection:', error);
+    logger.error('Error fetching Telegram connection:', error);
     return null;
   }
 }

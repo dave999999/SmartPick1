@@ -27,6 +27,13 @@ export function useUserLocation(): UserLocationState {
 
   // Request user's location on mount
   useEffect(() => {
+    // 🔧 ANDROID EMULATOR FIX: Force Tbilisi location on Capacitor
+    const isAndroid = (window as any).Capacitor;
+    if (isAndroid) {
+      setUserLocation(DEFAULT_LOCATION);
+      return;
+    }
+    
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {

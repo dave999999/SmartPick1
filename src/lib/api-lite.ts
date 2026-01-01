@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 // Minimal API surface for landing page to avoid pulling full api.ts & its transitive imports.
 // Uses lazy supabase loader. Mirrors signatures of original functions used on Index.
 
@@ -15,9 +16,9 @@ export async function getActiveOffers(): Promise<Offer[]> {
     .select('*', { count: 'exact', head: false })
     .limit(5);
   
-  console.log('🔍 Total offers in DB:', totalOffers?.length || 0);
+  logger.debug('🔍 Total offers in DB:', totalOffers?.length || 0);
   if (totalOffers && totalOffers.length > 0) {
-    console.log('📦 Sample offer:', {
+    logger.debug('📦 Sample offer:', {
       id: totalOffers[0].id,
       status: totalOffers[0].status,
       expires_at: totalOffers[0].expires_at,
@@ -37,11 +38,11 @@ export async function getActiveOffers(): Promise<Offer[]> {
     .limit(100);
   
   if (error) {
-    console.warn('[api-lite] getActiveOffers error', error);
+    logger.warn('[api-lite] getActiveOffers error', error);
     return [];
   }
 
-  console.log('✅ Active offers found:', offers?.length || 0);
+  logger.debug('✅ Active offers found:', offers?.length || 0);
 
   if (!offers || offers.length === 0) {
     return [];

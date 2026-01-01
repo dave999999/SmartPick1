@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 /**
  * OffersSheet - Ultra-Compact Apple-Grade Premium Design
  * 
@@ -551,7 +552,7 @@ function GridOfferCard({ offer, userLocation, onClick }: GridOfferCardProps) {
   const timeRemaining = formatTimeRemaining(offer.expires_at);
   
   // Debug log
-  console.log('Offer expires_at:', offer.expires_at, 'Time remaining:', timeRemaining);
+  logger.debug('Offer expires_at:', offer.expires_at, 'Time remaining:', timeRemaining);
 
   return (
     <button

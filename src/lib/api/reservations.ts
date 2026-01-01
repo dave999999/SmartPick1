@@ -7,10 +7,14 @@ import {
   ERROR_MESSAGES,
 } from '../constants';
 import { 
-  notifyPartnerNewReservation, 
-  notifyCustomerReservationConfirmed,
-  notifyPartnerLowStock 
+  notifyPartnerNewReservation as notifyPartnerTelegram, 
+  notifyCustomerReservationConfirmed as notifyCustomerTelegram,
+  notifyPartnerLowStock as notifyPartnerLowStockTelegram
 } from '../telegram';
+import { 
+  notifyPartnerNewReservation as notifyPartnerPush,
+  notifyReservationConfirmed as notifyCustomerPush
+} from '../pushNotifications';
 import { logger } from '../logger';
 import { canUserReserve, getPenaltyDetails } from './penalty';
 import { getOfferById } from './offers';
@@ -274,39 +278,58 @@ export const createReservation = async (
       const partnerName = fullReservation.offer?.partner?.business_name || 'Partner';
       const partnerAddress = fullReservation.offer?.partner?.address || 'Address not available';
       const partnerId = fullReservation.offer?.partner_id; // UUID of partner record
+      const partnerUserId = fullReservation.offer?.partner?.user_id; // UUID of partner's user account
 
       // Notify partner about new reservation
-      if (partnerId) {
-        notifyPartnerNewReservation(
+      if (partnerUserId) {
+        // Firebase push notification (primary) - MUST use user_id, not partner_id
+        notifyPartnerPush(
+          partnerUserId,
+          customerName,
+          offerTitle,
+          quantity
+        ).catch(err => logger.warn('Push notification failed:', err));
+
+        // Telegram notification (optional backup)
+        notifyPartnerTelegram(
           partnerId,
           customerName,
           customerId, // Pass customer ID
           offerTitle,
           quantity,
           pickupBy
-        ).catch(err => console.warn('Notification service unavailable'));
+        ).catch(err => logger.warn('Telegram notification unavailable'));
 
         // Check if stock is low and notify partner
         const remainingQuantity = fullReservation.offer?.quantity_available || 0;
         if (remainingQuantity <= 2 && remainingQuantity > 0) {
-          notifyPartnerLowStock(
+          notifyPartnerLowStockTelegram(
             partnerId,
             partnerId, // Pass partner UUID
             offerTitle,
             remainingQuantity
-          ).catch(err => console.warn('Low stock notification unavailable'));
+          ).catch(err => logger.warn('Low stock notification unavailable'));
         }
       }
 
       // Notify customer about reservation confirmation
-      notifyCustomerReservationConfirmed(
+      // Firebase push notification (primary)
+      notifyCustomerPush(
+        customerId,
+        offerTitle,
+        partnerName,
+        pickupBy
+      ).catch(err => logger.warn('Push notification failed:', err));
+
+      // Telegram notification (optional backup)
+      notifyCustomerTelegram(
         customerId,
         offerTitle,
         quantity,
         partnerName,
         partnerAddress,
         pickupBy
-      ).catch(err => console.warn('Notification service unavailable'));
+      ).catch(err => logger.warn('Telegram notification unavailable'));
     }
   }
 
@@ -421,7 +444,7 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
   // Validate and pickup using Edge Function (has service_role to handle points)
   if (autoMarkAsPickedUp) {
     try {
-      console.log('🔍 QR Scanner: Validating and marking as picked up:', qrCode);
+      logger.debug('🔍 QR Scanner: Validating and marking as picked up:', qrCode);
       
       // First, find the reservation by QR code
       const { data: reservation, error: findError } = await supabase
@@ -436,7 +459,7 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
         return { valid: false, error: 'Invalid or expired QR code' };
       }
 
-      console.log('✅ Found reservation:', reservation.id);
+      logger.debug('✅ Found reservation:', reservation.id);
 
       // Get auth session for Edge Function
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -463,7 +486,7 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
         return { valid: false, error: functionResult?.error || 'Failed to mark as picked up' };
       }
 
-      console.log('✅ Successfully marked as picked up via QR scan');
+      logger.debug('✅ Successfully marked as picked up via QR scan');
 
       // Fetch updated reservation with full details
       const { data: fetched, error: fetchError } = await supabase
@@ -499,7 +522,7 @@ export const validateQRCode = async (qrCode: string, autoMarkAsPickedUp: boolean
     .single();
 
   if (error) {
-    console.error('Supabase error:', error);
+    logger.error('Supabase error:', error);
     return { valid: false, error: `Database error: ${error.message}` };
   }
 
@@ -515,7 +538,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error('Demo mode: Please configure Supabase');
   }
 
-  console.log('🔍 Marking reservation as picked up (using RPC):', reservationId);
+  logger.debug('🔍 Marking reservation as picked up (using RPC):', reservationId);
 
   // Use RPC function with SECURITY DEFINER (apply migration 20251220_partner_mark_pickup_rpc.sql)
   const { data, error } = await supabase.rpc('partner_mark_reservation_picked_up', {
@@ -523,7 +546,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
   });
 
   if (error) {
-    console.error('❌ RPC error:', error);
+    logger.error('❌ RPC error:', error);
     throw new Error(error.message || 'Failed to mark as picked up');
   }
 
@@ -532,18 +555,18 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
   }
 
   const reservation = data[0] as Reservation;
-  console.log('✅ Marked as picked up successfully');
+  logger.debug('✅ Marked as picked up successfully');
   
   // 🚀 BROADCAST pickup confirmation to customer (lightweight, real-time)
   // Customer listens to this channel when QR modal is open
   try {
-    console.log('📢 Attempting to broadcast to channel:', `pickup-${reservationId}`);
+    logger.debug('📢 Attempting to broadcast to channel:', `pickup-${reservationId}`);
     const channel = supabase.channel(`pickup-${reservationId}`);
     
     // Subscribe first, then send
     await new Promise((resolve, reject) => {
       channel.subscribe(async (status) => {
-        console.log('📡 Partner broadcast channel status:', status);
+        logger.debug('📡 Partner broadcast channel status:', status);
         
         if (status === 'SUBSCRIBED') {
           try {
@@ -556,10 +579,10 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
                 timestamp: new Date().toISOString()
               }
             });
-            console.log('✅ Broadcast sent successfully to customer');
+            logger.debug('✅ Broadcast sent successfully to customer');
             resolve(true);
           } catch (sendError) {
-            console.error('❌ Failed to send broadcast:', sendError);
+            logger.error('❌ Failed to send broadcast:', sendError);
             reject(sendError);
           }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
@@ -578,13 +601,13 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     }, 2000);
   } catch (broadcastError) {
     // Non-critical - customer will see via polling fallback
-    console.warn('⚠️ Broadcast failed (non-critical):', broadcastError);
+    logger.warn('⚠️ Broadcast failed (non-critical):', broadcastError);
   }
   
   return reservation;
 
   if (!functionResult?.success) {
-    console.error('❌ Edge Function returned error:', {
+    logger.error('❌ Edge Function returned error:', {
       result: functionResult,
       reservationId,
       errorMessage: functionResult?.error
@@ -592,7 +615,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     throw new Error(functionResult?.error || 'Failed to mark as picked up');
   }
 
-  console.log('✅ Successfully marked as picked up:', functionResult);
+  logger.debug('✅ Successfully marked as picked up:', functionResult);
 
   // Fetch updated reservation with full details
   const { data: updatedReservation, error: fetchError } = await supabase
@@ -606,7 +629,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
     .single();
 
   if (fetchError) {
-    console.error('Failed to fetch updated reservation:', fetchError);
+    logger.error('Failed to fetch updated reservation:', fetchError);
     throw fetchError;
   }
 
@@ -656,7 +679,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   // Restore offer quantity to partner
   const { data: offer } = await supabase
     .from('offers')
-    .select('quantity_available, partner_id, title')
+    .select('quantity_available, partner_id, title, partner:partners(user_id)')
     .eq('id', reservation.offer_id)
     .single();
 
@@ -674,9 +697,22 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
       .single();
     
     const customerName = userData?.name || userData?.email?.split('@')[0] || 'Customer';
+    const partnerUserId = (offer.partner as any)?.user_id;
 
     // Notify partner about cancellation (fire-and-forget)
-    if (offer.partner_id) {
+    if (partnerUserId) {
+      // Firebase push notification (primary) - MUST use user_id, not partner_id
+      const { notifyPartnerReservationCancelled: notifyPartnerCancelledPush } = await import('@/lib/pushNotifications');
+      notifyPartnerCancelledPush(
+        partnerUserId,
+        customerName,
+        offer.title,
+        reservation.quantity
+      ).catch(err => {
+        logger.log('Push notification failed (non-blocking):', err);
+      });
+
+      // Telegram notification (optional backup)
       const { notifyPartnerReservationCancelled } = await import('@/lib/telegram');
       notifyPartnerReservationCancelled(
         offer.partner_id,
@@ -686,7 +722,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
         offer.title,
         reservation.quantity
       ).catch(err => {
-        logger.log('Partner notification failed (non-blocking):', err);
+        logger.log('Telegram notification failed (non-blocking):', err);
       });
     }
   }

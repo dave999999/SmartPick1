@@ -13,7 +13,10 @@ export const OfferCard: React.FC<Props> = ({ offer, onClick, onInView }) => {
 
   // Intersection observer for map sync
   useEffect(() => {
-    if (!onInView || !cardRef.current) return;
+    if (!onInView) return;
+    
+    const element = cardRef.current;
+    if (!element) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -26,8 +29,15 @@ export const OfferCard: React.FC<Props> = ({ offer, onClick, onInView }) => {
       { threshold: 0.5 }
     );
 
-    observer.observe(cardRef.current);
-    return () => observer.disconnect();
+    observer.observe(element);
+    
+    return () => {
+      try {
+        observer.disconnect();
+      } catch (e) {
+        // Ignore cleanup errors
+      }
+    };
   }, [onInView]);
 
   const discountPercent = offer.discount_percent || 

@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { AchievementDefinition, UserAchievement, getAchievementTierColor } from '@/lib/gamification-api';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +31,7 @@ export function AchievementBadge({
   const tierColor = getAchievementTierColor(definition.tier);
   
   // Debug logging
-  console.log(`Achievement ${definition.name}:`, {
+  logger.debug(`Achievement ${definition.name}:`, {
     isUnlocked,
     hasUserAchievement: !!userAchievement,
     userAchievement,

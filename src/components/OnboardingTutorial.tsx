@@ -1,3 +1,4 @@
+import { logger } from '@/lib/logger';
 import { useState } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -200,7 +201,7 @@ export default function OnboardingTutorial({ open, onComplete, userName, userId 
             .update({ onboarding_completed: true })
             .eq('id', userId);
         } catch (error) {
-          console.error('Failed to mark onboarding as completed:', error);
+          logger.error('Failed to mark onboarding as completed:', error);
         }
       }
       onComplete();

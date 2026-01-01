@@ -1,4 +1,6 @@
+import { logger } from '@/lib/logger';
 import { supabase } from './supabase';
+import { notifyAchievement, notifyReferralReward } from './pushNotifications';
 
 // ============================================
 // DEVICE FINGERPRINTING
@@ -156,13 +158,13 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching user stats:', error instanceof Error ? error.message : String(error));
+      logger.error('Error fetching user stats:', error instanceof Error ? error.message : String(error));
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in getUserStats:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getUserStats:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -182,13 +184,13 @@ export async function getUserAchievements(userId: string): Promise<UserAchieveme
       .order('unlocked_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching user achievements:', error instanceof Error ? error.message : String(error));
+      logger.error('Error fetching user achievements:', error instanceof Error ? error.message : String(error));
       return [];
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getUserAchievements:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getUserAchievements:', error instanceof Error ? error.message : String(error));
     return [];
   }
 }
@@ -198,17 +200,41 @@ export async function getUserAchievements(userId: string): Promise<UserAchieveme
  */
 export async function claimAchievement(achievementId: string): Promise<{ success: boolean; awarded_now?: boolean; reward_points?: number; balance?: number } | null> {
   try {
-    console.log('🎯 Claiming achievement:', achievementId);
+    logger.debug('🎯 Claiming achievement:', achievementId);
     const { data, error } = await supabase.rpc('claim_achievement', { p_achievement_id: achievementId });
     if (error) {
-      console.error('❌ RPC error claiming achievement:', error instanceof Error ? error.message : String(error));
-      console.error('Error details:', JSON.stringify(error, null, 2));
+      logger.error('❌ RPC error claiming achievement:', error instanceof Error ? error.message : String(error));
+      logger.error('Error details:', JSON.stringify(error, null, 2));
       return null;
     }
-    console.log('✅ Claim successful:', data);
+    logger.debug('✅ Claim successful:', data);
+    
+    // Send push notification for achievement unlock (fire-and-forget)
+    if (data && data.success && data.awarded_now) {
+      const user = (await supabase.auth.getUser()).data.user;
+      if (user?.id) {
+        // Get achievement details to include in notification
+        const { data: achievement } = await supabase
+          .from('achievement_definitions')
+          .select('name, reward_points')
+          .eq('id', achievementId)
+          .single();
+        
+        if (achievement) {
+          notifyAchievement(
+            user.id,
+            achievement.name,
+            achievement.reward_points
+          ).catch(err => 
+            logger.warn('Achievement push notification failed (non-blocking):', err)
+          );
+        }
+      }
+    }
+    
     return data as any;
   } catch (error) {
-    console.error('💥 Exception in claimAchievement:', error instanceof Error ? error.message : String(error));
+    logger.error('💥 Exception in claimAchievement:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -218,7 +244,7 @@ export async function claimAchievement(achievementId: string): Promise<{ success
  */
 export async function getAllAchievements(): Promise<AchievementDefinition[]> {
   try {
-    console.log('Fetching all achievements from database...');
+    logger.debug('Fetching all achievements from database...');
     const { data, error } = await supabase
       .from('achievement_definitions')
       .select('*')
@@ -226,14 +252,14 @@ export async function getAllAchievements(): Promise<AchievementDefinition[]> {
       .order('tier', { ascending: true });
 
     if (error) {
-      console.error('Error fetching achievements:', error instanceof Error ? error.message : String(error));
+      logger.error('Error fetching achievements:', error instanceof Error ? error.message : String(error));
       return [];
     }
 
-    console.log('Fetched achievements:', data?.length || 0);
+    logger.debug('Fetched achievements:', data?.length || 0);
     return data || [];
   } catch (error) {
-    console.error('Error in getAllAchievements:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getAllAchievements:', error instanceof Error ? error.message : String(error));
     return [];
   }
 }
@@ -253,13 +279,13 @@ export async function markAchievementViewed(achievementId: string, userId: strin
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error marking achievement as viewed:', error instanceof Error ? error.message : String(error));
+      logger.error('Error marking achievement as viewed:', error instanceof Error ? error.message : String(error));
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Error in markAchievementViewed:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in markAchievementViewed:', error instanceof Error ? error.message : String(error));
     return false;
   }
 }
@@ -319,7 +345,7 @@ export async function generateReferralCode(userId: string): Promise<string | nul
     const { data, error } = await supabase.rpc('generate_referral_code');
 
     if (error) {
-      console.error('Error generating referral code:', error instanceof Error ? error.message : String(error));
+      logger.error('Error generating referral code:', error instanceof Error ? error.message : String(error));
       return null;
     }
 
@@ -332,13 +358,13 @@ export async function generateReferralCode(userId: string): Promise<string | nul
       .eq('id', userId);
 
     if (updateError) {
-      console.error('Error updating user with referral code:', updateError instanceof Error ? updateError.message : String(updateError));
+      logger.error('Error updating user with referral code:', updateError instanceof Error ? updateError.message : String(updateError));
       return null;
     }
 
     return code;
   } catch (error) {
-    console.error('Error in generateReferralCode:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in generateReferralCode:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -355,12 +381,12 @@ export async function getUserReferralCode(userId: string): Promise<string | null
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching referral code:', error instanceof Error ? error.message : String(error));
+      logger.error('Error fetching referral code:', error instanceof Error ? error.message : String(error));
       return null;
     }
 
     if (!data) {
-      console.warn('User not found for referral code lookup:', userId);
+      logger.warn('User not found for referral code lookup:', userId);
       return null;
     }
 
@@ -371,7 +397,7 @@ export async function getUserReferralCode(userId: string): Promise<string | null
 
     return data.referral_code;
   } catch (error) {
-    console.error('Error in getUserReferralCode:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in getUserReferralCode:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -402,7 +428,7 @@ export async function applyReferralCode(
     });
 
     if (error) {
-      console.error('Error applying referral code:', error instanceof Error ? error.message : String(error));
+      logger.error('Error applying referral code:', error instanceof Error ? error.message : String(error));
       return { success: false, error: 'Failed to apply referral code' };
     }
 
@@ -420,10 +446,36 @@ export async function applyReferralCode(
 
     // Log if flagged for monitoring
     if (result.flagged) {
-      console.warn('Referral flagged for review:', {
+      logger.warn('Referral flagged for review:', {
         suspiciousScore: result.suspicious_score,
         referralCode
       });
+    }
+
+    // Send push notification to referrer about successful referral (fire-and-forget)
+    if (result.success && result.points_awarded) {
+      // Get referrer ID and new user name from the referral code
+      const { data: referralData } = await supabase
+        .from('referral_codes')
+        .select('user_id, users:users(name)')
+        .eq('code', referralCode)
+        .single();
+      
+      if (referralData?.user_id) {
+        const { data: newUser } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', newUserId)
+          .single();
+        
+        notifyReferralReward(
+          referralData.user_id,
+          newUser?.name || 'New user',
+          result.points_awarded
+        ).catch(err => 
+          logger.warn('Referral push notification failed (non-blocking):', err)
+        );
+      }
     }
 
     return {
@@ -432,7 +484,7 @@ export async function applyReferralCode(
       flagged: result.flagged || false
     };
   } catch (error) {
-    console.error('Error in applyReferralCode:', error instanceof Error ? error.message : String(error));
+    logger.error('Error in applyReferralCode:', error instanceof Error ? error.message : String(error));
     return { success: false, error: 'Network error' };
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { connectTelegramAccount, disconnectTelegramAccount } from '@/lib/telegram'
+import { logger } from '@/lib/logger'
 
 export function useTelegramStatus(userId?: string) {
   const [loading, setLoading] = useState(true)
@@ -16,8 +17,7 @@ export function useTelegramStatus(userId?: string) {
       .eq('user_id', userId)
       .maybeSingle()
     
-    console.log('🔍 Telegram Status Debug:', {
-      userId,
+    logger.debug('[useTelegramStatus] Telegram status debug:', {
       data,
       error,
       enable_telegram: data?.enable_telegram,
@@ -29,11 +29,11 @@ export function useTelegramStatus(userId?: string) {
     if (!error && data) {
       // User is connected only if enable_telegram is true AND telegram_chat_id exists
       const isConnected = !!data.enable_telegram && !!(data as any).telegram_chat_id
-      console.log('✅ Setting connected status:', isConnected)
+      logger.debug('[useTelegramStatus] Setting connected status:', isConnected);
       setConnected(isConnected)
       setUsername((data as any).telegram_username || null)
     } else if (!data) {
-      console.log('❌ No data found, creating initial row...')
+      logger.debug('[useTelegramStatus] No data found, creating initial row...');
       // Create initial row with defaults
       const { error: insertError } = await supabase
         .from('notification_preferences')
@@ -47,15 +47,15 @@ export function useTelegramStatus(userId?: string) {
         })
       
       if (insertError) {
-        console.error('❌ Error creating initial row:', insertError)
+        logger.error('[useTelegramStatus] Error creating initial row:', insertError);
       } else {
-        console.log('✅ Initial row created successfully')
+        logger.debug('[useTelegramStatus] Initial row created successfully');
       }
       
       setConnected(false)
       setUsername(null)
     } else if (error) {
-      console.error('❌ Error fetching telegram status:', error)
+      logger.error('[useTelegramStatus] Error fetching telegram status:', error);
       setConnected(false)
       setUsername(null)
     }
