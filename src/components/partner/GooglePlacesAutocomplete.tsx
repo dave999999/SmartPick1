@@ -40,6 +40,20 @@ export function GooglePlacesAutocomplete({
       return;
     }
 
+    // Check if script is already in DOM (from previous component mount)
+    const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+    if (existingScript) {
+      // Script exists, wait for it to load
+      const checkLoaded = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          setGoogleLoaded(true);
+          clearInterval(checkLoaded);
+        }
+      }, 100);
+      
+      return () => clearInterval(checkLoaded);
+    }
+
     // Load Google Maps script
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
@@ -54,12 +68,6 @@ export function GooglePlacesAutocomplete({
     script.onload = () => setGoogleLoaded(true);
     script.onerror = () => console.error('Failed to load Google Maps script');
     document.head.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -89,7 +97,7 @@ export function GooglePlacesAutocomplete({
         const place = autocompleteRef.current?.getPlace();
         
         if (!place || !place.geometry || !place.geometry.location) {
-          console.warn('No valid place selected');
+          console.warn('No valid place selected', place);
           return;
         }
 
@@ -105,6 +113,8 @@ export function GooglePlacesAutocomplete({
           website: place.website,
           types: place.types
         };
+
+        console.log('Place selected:', placeData);
 
         // Update the input value with the business name
         onChange(place.name || '');
@@ -172,13 +182,6 @@ export function GooglePlacesAutocomplete({
         <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
           <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
           Loading Google Maps...
-        </p>
-      )}
-      
-      {googleLoaded && !isSelected && value && (
-        <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1">
-          <MapPin className="w-3 h-3" aria-hidden="true" />
-          Start typing to see suggestions from Google Maps
         </p>
       )}
       

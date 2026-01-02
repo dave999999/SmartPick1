@@ -22,12 +22,18 @@ import { TelegramConnect } from '@/components/TelegramConnect';
 import { GooglePlacesAutocomplete } from '@/components/partner/GooglePlacesAutocomplete';
 
 const BUSINESS_TYPES = [
-  { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
-  { value: 'CAFE', label: 'Cafe', emoji: '☕' },
   { value: 'RESTAURANT', label: 'Restaurant', emoji: '🍽️' },
   { value: 'FAST_FOOD', label: 'Fast Food', emoji: '🍔' },
-  { value: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
+  { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
+  { value: 'DESSERTS_SWEETS', label: 'Desserts', emoji: '🍰' },
+  { value: 'CAFE', label: 'Cafe', emoji: '☕' },
+  { value: 'DRINKS_JUICE', label: 'Drinks', emoji: '🧃' },
   { value: 'GROCERY', label: 'Grocery', emoji: '🛒' },
+  { value: 'MINI_MARKET', label: 'Mini Market', emoji: '🏪' },
+  { value: 'MEAT_BUTCHER', label: 'Butcher', emoji: '🥩' },
+  { value: 'FISH_SEAFOOD', label: 'Seafood', emoji: '🐟' },
+  { value: 'ALCOHOL', label: 'Alcohol', emoji: '🍷' },
+  { value: 'DRIVE', label: 'Drive-Thru', emoji: '🚗' },
 ];
 
 // Custom marker icon
@@ -1031,37 +1037,39 @@ export default function PartnerApplication() {
             <DialogTitle className="text-center text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               {t('partner.dialog.submittedTitle')}
             </DialogTitle>
-            <DialogDescription className="text-center text-base pt-4 space-y-4">
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
-                <p className="text-emerald-900 font-semibold mb-2">🎉 {t('partner.dialog.submittedDescription')}</p>
-                <p className="text-sm text-emerald-700">Application ID: <span className="font-mono font-bold">P2026-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</span></p>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-left">
-                <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  What happens next?
-                </p>
-                <ol className="text-sm text-blue-800 space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">1.</span>
-                    <span>Review by our team (~24 hours)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">2.</span>
-                    <span>Email notification with decision</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 font-bold">3.</span>
-                    <span>Access your partner dashboard</span>
-                  </li>
-                </ol>
-              </div>
+            <DialogDescription asChild>
+              <div className="text-center text-base pt-4 space-y-4">
+                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
+                  <p className="text-emerald-900 font-semibold mb-2">🎉 {t('partner.dialog.submittedDescription')}</p>
+                  <p className="text-sm text-emerald-700">Application ID: <span className="font-mono font-bold">P2026-{Math.floor(Math.random() * 10000).toString().padStart(4, '0')}</span></p>
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-left">
+                  <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    What happens next?
+                  </p>
+                  <ol className="text-sm text-blue-800 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">1.</span>
+                      <span>Review by our team (~24 hours)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">2.</span>
+                      <span>Email notification with decision</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-600 font-bold">3.</span>
+                      <span>Access your partner dashboard</span>
+                    </li>
+                  </ol>
+                </div>
 
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
-                <p className="text-sm text-amber-900">
-                  💡 <strong>Pro Tip:</strong> Set up Telegram notifications after approval to get instant alerts for new orders!
-                </p>
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+                  <p className="text-sm text-amber-900">
+                    💡 <strong>Pro Tip:</strong> Set up Telegram notifications after approval to get instant alerts for new orders!
+                  </p>
+                </div>
               </div>
             </DialogDescription>
           </DialogHeader>
@@ -1378,31 +1386,35 @@ export default function PartnerApplication() {
                     value={formData.business_name}
                     onChange={(name) => handleChange('business_name', name)}
                     onPlaceSelected={(place) => {
+                      console.log('🎯 Place selected callback fired!');
+                      console.log('Full place data:', place);
+                      
                       // Auto-fill ALL business information from Google Maps
                       handleChange('business_name', place.name);
-                      handleChange('address', place.address);
-                      handleChange('contact_phone', place.phone || formData.contact_phone);
                       
-                      // Extract city from address (usually last part before country)
-                      const addressParts = place.address.split(',');
-                      if (addressParts.length >= 2) {
-                        const cityPart = addressParts[addressParts.length - 2].trim();
-                        handleChange('city', cityPart);
-                      }
+                      // CRITICAL: Set address immediately
+                      console.log('Setting address to:', place.address);
+                      handleChange('address', place.address);
+                      
+                      handleChange('phone', place.phone || formData.phone);
                       
                       // Update location on map
                       if (place.lat && place.lng) {
-                        setSelectedLocation({
-                          lat: place.lat,
-                          lng: place.lng
-                        });
+                        console.log('Updating map position to:', place.lat, place.lng);
+                        // Update marker position
+                        setMarkerPosition([place.lat, place.lng]);
+                        
+                        // Update form data
                         setFormData(prev => ({
                           ...prev,
-                          location_lat: place.lat,
-                          location_lng: place.lng
+                          latitude: place.lat,
+                          longitude: place.lng
                         }));
+                        
                         setAddressAutoDetected(true);
                       }
+                      
+                      console.log('Form data after update:', formData);
                       
                       // Show success toast
                       toast.success('🎉 Business found!', {
@@ -1411,10 +1423,6 @@ export default function PartnerApplication() {
                     }}
                     placeholder="Search: e.g., Machakhela, Barbarestan, Georgian Bread..."
                   />
-                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    Can't find your business? Fill in the details manually below
-                  </p>
                 </div>
 
                 <div className="relative">
@@ -1473,49 +1481,9 @@ export default function PartnerApplication() {
                   )}
                 </div>
 
-                <div>
-                  <Label htmlFor="city" className="text-sm font-semibold text-gray-700">City *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => handleChange('city', e.target.value)}
-                    placeholder="e.g., Tbilisi"
-                    required
-                    className={`mt-2 h-11 border-2 transition-all ${
-                      fieldErrors.city 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : formData.city
-                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
-                        : 'border-gray-300 focus:border-emerald-500'
-                    }`}
-                  />
-                  {fieldErrors.city && (
-                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
-                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
-                      {fieldErrors.city}
-                    </p>
-                  )}
-                </div>
-
                 {/* Map Section - Enhanced */}
                 <div className="space-y-3 p-5 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl border-2 border-gray-200 shadow-inner">
-                  <div className="flex items-center justify-between mb-2">
-                    <Label className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-emerald-600" />
-                      Drag marker to adjust location
-                    </Label>
-                    <Button
-                      type="button"
-                      onClick={handleUseCurrentLocation}
-                      size="sm"
-                      className="h-9 bg-white hover:bg-gray-50 text-emerald-600 border-2 border-emerald-500 shadow-md hover:shadow-lg transition-all font-semibold"
-                    >
-                      <Navigation aria-hidden="true" className="w-4 h-4 mr-1.5" />
-                      My Location
-                    </Button>
-                  </div>
-                  
-                  <div className="w-full h-[420px] md:h-[480px] rounded-xl overflow-hidden border-2 border-gray-300 shadow-xl relative">
+                  <div className="w-full h-[550px] md:h-[650px] rounded-xl overflow-hidden border-2 border-gray-300 shadow-xl relative">
                     <MapContainer
                       center={markerPosition}
                       zoom={14}
@@ -1599,10 +1567,9 @@ export default function PartnerApplication() {
                 {/* Business Type - Enhanced Icon Buttons */}
                 <div>
                   <Label className="text-xs font-semibold text-slate-700 mb-3 block">Business Type *</Label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                     {BUSINESS_TYPES.map((type) => {
                       const isSelected = formData.business_type === type.value;
-                      const isPopular = type.value === 'CAFE' || type.value === 'RESTAURANT';
                       
                       return (
                         <button
@@ -1614,30 +1581,25 @@ export default function PartnerApplication() {
                               setFieldErrors(prev => ({ ...prev, business_type: '' }));
                             }
                           }}
-                          className={`relative p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-2 group ${
+                          className={`relative p-3 rounded-lg border-2 transition-all duration-200 flex flex-col items-center justify-center gap-1.5 group ${
                             isSelected
-                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-lg shadow-emerald-200/50 scale-105'
-                              : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-md hover:scale-102'
+                              ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 shadow-md'
+                              : 'border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm'
                           }`}
                         >
-                          {isPopular && (
-                            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-                              ⭐ Popular
-                            </div>
-                          )}
-                          <span className={`text-3xl transition-transform duration-300 ${
-                            isSelected ? 'scale-110' : 'group-hover:scale-110'
+                          <span className={`text-2xl transition-transform duration-200 ${
+                            isSelected ? 'scale-110' : 'group-hover:scale-105'
                           }`}>
                             {type.emoji}
                           </span>
-                          <span className={`text-sm font-medium transition-colors ${
+                          <span className={`text-xs font-medium text-center transition-colors leading-tight ${
                             isSelected ? 'text-emerald-700' : 'text-gray-700 group-hover:text-emerald-600'
                           }`}>
                             {type.label}
                           </span>
                           {isSelected && (
-                            <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1 shadow-lg">
-                              <Check className="w-3 h-3 text-white" />
+                            <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-0.5 shadow-lg">
+                              <Check className="w-2.5 h-2.5 text-white" />
                             </div>
                           )}
                         </button>
@@ -1852,15 +1814,6 @@ export default function PartnerApplication() {
                 {isUserLoggedIn && existingUserId && (
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border border-blue-200">
                     <Label className="text-sm font-semibold text-gray-900 mb-3 block">Telegram Notifications (optional)</Label>
-                    {/* Debug: Show userId being used */}
-                    {import.meta.env.DEV && (
-                      <div className="text-[10px] text-gray-600 mb-3 p-2 bg-white rounded border border-gray-200">
-                        <p>🔍 Debug Info:</p>
-                        <p>userId = {existingUserId}</p>
-                        <p>isUUID = {/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(existingUserId)}</p>
-                        <p>type = {typeof existingUserId}</p>
-                      </div>
-                    )}
                     <TelegramConnect userId={existingUserId} userType="partner" />
                   </div>
                 )}
