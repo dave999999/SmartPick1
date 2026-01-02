@@ -19,6 +19,7 @@ import { useI18n } from '@/lib/i18n';
 import { checkServerRateLimit } from '@/lib/rateLimiter-server';
 import { logger } from '@/lib/logger';
 import { TelegramConnect } from '@/components/TelegramConnect';
+import { GooglePlacesAutocomplete } from '@/components/partner/GooglePlacesAutocomplete';
 
 const BUSINESS_TYPES = [
   { value: 'BAKERY', label: 'Bakery', emoji: '🥐' },
@@ -1508,27 +1509,44 @@ export default function PartnerApplication() {
                 </div>
 
                 <div>
-                  <Label htmlFor="business_name" className="text-sm font-semibold text-gray-700">Business Name *</Label>
-                  <Input
-                    id="business_name"
-                    value={formData.business_name}
-                    onChange={(e) => handleChange('business_name', e.target.value)}
-                    placeholder="e.g., Fresh Bakery"
-                    required
-                    className={`mt-2 h-11 border-2 transition-all ${
-                      fieldErrors.business_name 
-                        ? 'border-red-500 focus:border-red-500' 
-                        : formData.business_name
-                        ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
-                        : 'border-gray-300 focus:border-emerald-500'
-                    }`}
-                  />
-                  {fieldErrors.business_name && (
-                    <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
-                      <AlertCircle aria-hidden="true" className="w-3 h-3" />
-                      {fieldErrors.business_name}
-                    </p>
-                  )}
+                  <Label htmlFor="business_name" className="text-sm font-semibold text-gray-700">
+                    Business Name * 
+                    <span className="text-xs text-gray-500 font-normal ml-2">
+                      (Search on Google Maps for auto-fill)
+                    </span>
+                  </Label>
+                  <div className="mt-2">
+                    <GooglePlacesAutocomplete
+                      value={formData.business_name}
+                      onChange={(name) => handleChange('business_name', name)}
+                      onPlaceSelected={(place) => {
+                        // Auto-fill business information from Google Maps
+                        handleChange('business_name', place.name);
+                        handleChange('address', place.address);
+                        handleChange('contact_phone', place.phone || formData.contact_phone);
+                        
+                        // Update location on map
+                        if (place.lat && place.lng) {
+                          setSelectedLocation({
+                            lat: place.lat,
+                            lng: place.lng
+                          });
+                          setFormData(prev => ({
+                            ...prev,
+                            location_lat: place.lat,
+                            location_lng: place.lng
+                          }));
+                        }
+                        
+                        // Show success toast
+                        toast.success('Business information loaded from Google Maps', {
+                          description: 'Address and location have been auto-filled'
+                        });
+                      }}
+                      placeholder="e.g., Fresh Bakery, Georgian Bread, My Restaurant"
+                      error={fieldErrors.business_name}
+                    />
+                  </div>
                 </div>
 
                 {/* Business Type - Enhanced Icon Buttons */}
