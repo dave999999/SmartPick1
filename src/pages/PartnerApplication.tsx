@@ -1363,6 +1363,60 @@ export default function PartnerApplication() {
                   </div>
                 </div>
 
+                {/* Google Places Business Search - Find your business first! */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border-2 border-blue-200">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="p-1.5 bg-blue-500 rounded-lg">
+                      <Store className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-bold text-gray-900 mb-0.5">Find Your Business</h4>
+                      <p className="text-xs text-gray-600">Search for your business on Google Maps to auto-fill all details</p>
+                    </div>
+                  </div>
+                  <GooglePlacesAutocomplete
+                    value={formData.business_name}
+                    onChange={(name) => handleChange('business_name', name)}
+                    onPlaceSelected={(place) => {
+                      // Auto-fill ALL business information from Google Maps
+                      handleChange('business_name', place.name);
+                      handleChange('address', place.address);
+                      handleChange('contact_phone', place.phone || formData.contact_phone);
+                      
+                      // Extract city from address (usually last part before country)
+                      const addressParts = place.address.split(',');
+                      if (addressParts.length >= 2) {
+                        const cityPart = addressParts[addressParts.length - 2].trim();
+                        handleChange('city', cityPart);
+                      }
+                      
+                      // Update location on map
+                      if (place.lat && place.lng) {
+                        setSelectedLocation({
+                          lat: place.lat,
+                          lng: place.lng
+                        });
+                        setFormData(prev => ({
+                          ...prev,
+                          location_lat: place.lat,
+                          location_lng: place.lng
+                        }));
+                        setAddressAutoDetected(true);
+                      }
+                      
+                      // Show success toast
+                      toast.success('🎉 Business found!', {
+                        description: 'Address, location, and details auto-filled from Google Maps'
+                      });
+                    }}
+                    placeholder="Search: e.g., Machakhela, Barbarestan, Georgian Bread..."
+                  />
+                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Can't find your business? Fill in the details manually below
+                  </p>
+                </div>
+
                 <div className="relative">
                   <div className="flex items-center justify-between mb-2">
                     <Label htmlFor="address" className="text-sm font-semibold text-gray-700">Street Address *</Label>
@@ -1510,42 +1564,35 @@ export default function PartnerApplication() {
 
                 <div>
                   <Label htmlFor="business_name" className="text-sm font-semibold text-gray-700">
-                    Business Name * 
-                    <span className="text-xs text-gray-500 font-normal ml-2">
-                      (Search on Google Maps for auto-fill)
-                    </span>
+                    Business Name *
                   </Label>
                   <div className="mt-2">
-                    <GooglePlacesAutocomplete
+                    <Input
+                      id="business_name"
                       value={formData.business_name}
-                      onChange={(name) => handleChange('business_name', name)}
-                      onPlaceSelected={(place) => {
-                        // Auto-fill business information from Google Maps
-                        handleChange('business_name', place.name);
-                        handleChange('address', place.address);
-                        handleChange('contact_phone', place.phone || formData.contact_phone);
-                        
-                        // Update location on map
-                        if (place.lat && place.lng) {
-                          setSelectedLocation({
-                            lat: place.lat,
-                            lng: place.lng
-                          });
-                          setFormData(prev => ({
-                            ...prev,
-                            location_lat: place.lat,
-                            location_lng: place.lng
-                          }));
-                        }
-                        
-                        // Show success toast
-                        toast.success('Business information loaded from Google Maps', {
-                          description: 'Address and location have been auto-filled'
-                        });
-                      }}
-                      placeholder="e.g., Fresh Bakery, Georgian Bread, My Restaurant"
-                      error={fieldErrors.business_name}
+                      onChange={(e) => handleChange('business_name', e.target.value)}
+                      placeholder="e.g., Fresh Bakery, Georgian Bread"
+                      required
+                      className={`h-11 border-2 transition-all ${
+                        fieldErrors.business_name 
+                          ? 'border-red-500 focus:border-red-500' 
+                          : formData.business_name
+                          ? 'border-emerald-500 bg-emerald-50/30 focus:border-emerald-500'
+                          : 'border-gray-300 focus:border-emerald-500'
+                      }`}
                     />
+                    {fieldErrors.business_name && (
+                      <p className="text-xs text-red-600 mt-1.5 flex items-center gap-1 animate-in slide-in-from-top-1">
+                        <AlertCircle aria-hidden="true" className="w-3 h-3" />
+                        {fieldErrors.business_name}
+                      </p>
+                    )}
+                    {formData.business_name && !fieldErrors.business_name && (
+                      <p className="text-xs text-emerald-600 mt-1.5 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Business name set
+                      </p>
+                    )}
                   </div>
                 </div>
 
