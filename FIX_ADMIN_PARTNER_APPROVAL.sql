@@ -1,10 +1,24 @@
 -- Fix: Allow admins to approve partners by updating RLS policies
 -- Issue: users_manage_own_partner_profile policy blocks status changes
 
--- Drop the restrictive policy
+-- STEP 1: Check current policies
+SELECT 
+  schemaname,
+  tablename,
+  policyname,
+  permissive,
+  roles,
+  cmd,
+  qual as using_expression,
+  with_check as with_check_expression
+FROM pg_policies 
+WHERE tablename = 'partners' 
+ORDER BY policyname;
+
+-- STEP 2: Drop the restrictive policy
 DROP POLICY IF EXISTS "users_manage_own_partner_profile" ON public.partners;
 
--- Recreate with proper admin bypass
+-- STEP 3: Recreate with proper admin bypass
 CREATE POLICY "users_manage_own_partner_profile"
   ON public.partners FOR UPDATE
   USING (
@@ -22,7 +36,7 @@ CREATE POLICY "users_manage_own_partner_profile"
     )
   );
 
--- Verify policies
+-- STEP 4: Verify the fix
 SELECT 
   schemaname,
   tablename,
@@ -33,3 +47,6 @@ SELECT
 FROM pg_policies 
 WHERE tablename = 'partners' 
 ORDER BY policyname;
+
+-- STEP 5: Test the update (replace with actual partner ID)
+-- UPDATE partners SET status = 'APPROVED' WHERE id = 'bcc49af1-5e95-469b-8552-b1ebd6e68f4e';
