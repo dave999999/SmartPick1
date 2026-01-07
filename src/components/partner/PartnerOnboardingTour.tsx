@@ -1,18 +1,16 @@
 import { useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
+import { useI18n } from '@/lib/i18n';
 import { 
-  Plus, 
-  QrCode, 
-  Package, 
   TrendingUp,
-  CheckCircle2,
   ArrowRight,
-  Sparkles,
-  Camera,
-  Clock
+  Plus,
+  Bell,
+  QrCode
 } from 'lucide-react';
 
 interface PartnerOnboardingTourProps {
@@ -24,30 +22,21 @@ interface PartnerOnboardingTourProps {
 const steps = [
   {
     id: 1,
-    title: "Welcome Partner! 🎉",
-    icon: Sparkles,
-    content: (name?: string) => (
-      <div className="text-center space-y-4">
-        <div className="inline-block bg-gradient-to-br from-teal-50 to-emerald-50 rounded-2xl p-6">
-          <Sparkles className="w-16 h-16 text-teal-500 mx-auto" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900">
-          Welcome, {name || 'Partner'}!
-        </h2>
-        <p className="text-gray-600">Quick 30-second tour of your dashboard</p>
-        
-        <div className="grid grid-cols-3 gap-3 pt-4">
-          <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-teal-300 transition-colors">
-            <Plus className="w-8 h-8 text-teal-500 mx-auto mb-2" />
-            <p className="text-xs font-medium text-gray-700">Create Offers</p>
+    icon: Plus,
+    color: 'teal',
+    content: (name: string | undefined, t: (key: string) => string) => (
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 shadow-lg shadow-teal-500/20">
+            <Plus className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-amber-300 transition-colors">
-            <QrCode className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-            <p className="text-xs font-medium text-gray-700">Scan QR</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-200 hover:border-emerald-300 transition-colors">
-            <TrendingUp className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-            <p className="text-xs font-medium text-gray-700">Track Stats</p>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">
+              {t('partner.onboarding.step1.title')}{name ? `, ${name}` : ''}
+            </h2>
+            <p className="text-gray-600 text-base leading-relaxed max-w-md mx-auto font-light">
+              {t('partner.onboarding.step1.text')}
+            </p>
           </div>
         </div>
       </div>
@@ -55,36 +44,45 @@ const steps = [
   },
   {
     id: 2,
-    title: "Create Offers 📦",
-    icon: Plus,
-    content: () => (
-      <div className="space-y-4">
-        <div className="bg-white rounded-xl p-5 border border-gray-200 hover:border-teal-300 transition-colors">
-          <div className="flex gap-4">
-            <div className="bg-teal-100 rounded-xl p-3 flex-shrink-0">
-              <Plus className="w-7 h-7 text-teal-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-1">Add Your First Offer</h3>
-              <p className="text-sm text-gray-600">Click the "+ Create Offer" button to list food items at discounted prices.</p>
-              <div className="flex gap-2 mt-2">
-                <span className="text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full font-medium">Photos</span>
-                <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">Smart Price</span>
-                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">Quantity</span>
-              </div>
-            </div>
+    icon: Bell,
+    color: 'blue',
+    content: (_name: string | undefined, t: (key: string) => string) => (
+      <div className="space-y-6">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 shadow-lg shadow-blue-500/20">
+            <Bell className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
+          <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
+            {t('partner.onboarding.step2.title')}
+          </h3>
         </div>
-
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex gap-3">
-            <Package className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-amber-900 font-semibold mb-1">Offer Slots</p>
-              <p className="text-sm text-amber-800">
-                Each offer uses one slot. You start with 5 slots. Earn more by completing pickups!
-              </p>
+        
+        <div className="space-y-2.5 max-w-md mx-auto">
+          <div className="flex gap-3 items-start bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center font-medium text-white text-xs">
+              1
             </div>
+            <p className="text-sm text-gray-700 pt-0.5 font-light">{t('partner.onboarding.step2.bullet1')}</p>
+          </div>
+          
+          <div className="flex gap-3 items-start bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center font-medium text-white text-xs">
+              2
+            </div>
+            <p className="text-sm text-gray-700 pt-0.5 font-light">{t('partner.onboarding.step2.bullet2')}</p>
+          </div>
+          
+          <div className="flex gap-3 items-start bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center font-medium text-white text-xs">
+              3
+            </div>
+            <p className="text-sm text-gray-700 pt-0.5 font-light">{t('partner.onboarding.step2.bullet3')}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100/50 mt-3">
+            <p className="text-xs text-gray-700 leading-relaxed font-light">
+              {t('partner.onboarding.step2.note')}
+            </p>
           </div>
         </div>
       </div>
@@ -92,119 +90,21 @@ const steps = [
   },
   {
     id: 3,
-    title: "Scan QR Codes 📱",
     icon: QrCode,
-    content: () => (
-      <div className="space-y-3">
-        <div className="flex gap-3 items-start">
-          <div className="bg-teal-500 text-white w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
-          <div>
-            <p className="font-semibold text-gray-900">Customer shows QR code</p>
-            <p className="text-sm text-gray-600">When they arrive for pickup</p>
+    color: 'emerald',
+    content: (_name: string | undefined, t: (key: string) => string) => (
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/20">
+            <QrCode className="w-8 h-8 text-white" strokeWidth={2.5} />
           </div>
-        </div>
-        
-        <div className="flex gap-3 items-start">
-          <div className="bg-teal-500 text-white w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
-          <div>
-            <p className="font-semibold text-gray-900">Open QR Scanner</p>
-            <p className="text-sm text-gray-600">Click "Scan QR" button or enter code manually</p>
-          </div>
-        </div>
-        
-        <div className="flex gap-3 items-start">
-          <div className="bg-teal-500 text-white w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">3</div>
-          <div>
-            <p className="font-semibold text-gray-900">Confirm pickup</p>
-            <p className="text-sm text-gray-600">System marks order complete & you earn points!</p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border-2 border-teal-200 mt-4">
-          <div className="flex gap-3 items-center">
-            <Camera className="w-6 h-6 text-teal-600" />
-            <div>
-              <p className="text-sm font-semibold text-teal-900">Two scan options:</p>
-              <p className="text-xs text-teal-700">📷 Camera scan or ✍️ Manual code entry</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 4,
-    title: "Track Performance 📊",
-    icon: TrendingUp,
-    content: () => (
-      <div className="space-y-4">
-        <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl p-5 text-white">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-lg">Analytics Dashboard</h3>
-              <p className="text-sm text-emerald-100">Monitor your success</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
-              <p className="text-2xl font-bold">Live</p>
-              <p className="text-xs text-emerald-100">Active offers</p>
-            </div>
-            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-3">
-              <p className="text-2xl font-bold">Real-time</p>
-              <p className="text-xs text-emerald-100">Reservations</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">View daily revenue & sales trends</p>
-          </div>
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">See which items are most popular</p>
-          </div>
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">Track pickup completion rates</p>
-          </div>
-        </div>
-      </div>
-    )
-  },
-  {
-    id: 5,
-    title: "You're Ready! 🚀",
-    icon: CheckCircle2,
-    content: () => (
-      <div className="text-center space-y-4">
-        <div className="inline-block bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6">
-          <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900">All Set!</h2>
-        <p className="text-gray-600">Time to create your first offer</p>
-        
-        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-4 space-y-2 text-left">
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">Click "+ Create Offer" to start</p>
-          </div>
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">Use QR scanner when customers arrive</p>
-          </div>
-          <div className="flex gap-2 items-start">
-            <CheckCircle2 className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">Check analytics to track your growth</p>
-          </div>
-          <div className="flex gap-2 items-start">
-            <Clock className="w-4 h-4 text-teal-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-gray-700">Set pickup windows that work for you</p>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">
+              {t('partner.onboarding.step3.title')}
+            </h2>
+            <p className="text-gray-600 text-base leading-relaxed max-w-md mx-auto font-light">
+              {t('partner.onboarding.step3.text')}
+            </p>
           </div>
         </div>
       </div>
@@ -213,6 +113,7 @@ const steps = [
 ];
 
 export default function PartnerOnboardingTour({ open, onComplete, partnerName }: PartnerOnboardingTourProps) {
+  const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const step = steps[currentStep];
@@ -238,99 +139,78 @@ export default function PartnerOnboardingTour({ open, onComplete, partnerName }:
   const isLastStep = currentStep === steps.length - 1;
   const isFirstStep = currentStep === 0;
 
+  const StepIcon = step.icon;
+
   return (
     <Dialog open={open} onOpenChange={handleSkip}>
-      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden bg-gradient-to-br from-slate-50 to-gray-50">
+      <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden bg-white border-0 shadow-2xl rounded-2xl">
+        <VisuallyHidden>
+          <DialogTitle>{t('partner.onboarding.ariaLabel')}</DialogTitle>
+        </VisuallyHidden>
+        
         {/* Progress bar */}
-        <div className="h-1.5 bg-gray-200/50">
-          <div 
-            className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500 ease-out"
-            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-          />
+        <div className="h-0.5 bg-gray-100 flex">
+          {steps.map((_, index) => (
+            <div
+              key={index}
+              className={`flex-1 transition-all duration-500 ease-out ${
+                index <= currentStep ? 'bg-teal-600' : 'bg-gray-100'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Step indicator badge */}
+        <div className="absolute top-6 right-6 z-10">
+          <div className="bg-gray-100/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-medium text-gray-600">
+            {currentStep + 1} / {steps.length}
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-8 pb-6">
-          {/* Step indicator */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="font-medium text-teal-600">Step {currentStep + 1}</span>
-              <span className="text-gray-400">of {steps.length}</span>
+        <div className="px-8 py-10 pb-8">
+          <div className="min-h-[340px] flex items-center justify-center">
+            <div className="w-full">
+              {step.content(partnerName, t)}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleSkip}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              Skip tour
-            </Button>
-          </div>
-
-          {/* Step content with smooth transition */}
-          <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-            {step.content(partnerName)}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200/50 bg-white/60 backdrop-blur-sm px-8 py-4 space-y-3">
-          {/* Don't show again checkbox */}
-          <div className="flex items-center space-x-2">
+        <div className="border-t border-gray-100 bg-gray-50/30 px-8 py-5 space-y-4">
+          {/* Don't show again */}
+          <div className="flex items-center space-x-2.5">
             <Checkbox
               id="dontShowAgain"
               checked={dontShowAgain}
               onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
+              className="border-gray-300 data-[state=checked]:bg-teal-600 data-[state=checked]:border-teal-600"
             />
             <Label
               htmlFor="dontShowAgain"
-              className="text-sm text-gray-600 cursor-pointer select-none"
+              className="text-sm text-gray-600 cursor-pointer select-none font-light"
             >
-              Don't show this tutorial again
+              {t('partner.onboarding.dontShowAgain')}
             </Label>
           </div>
 
-          {/* Navigation buttons */}
+          {/* Navigation */}
           <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            disabled={isFirstStep}
-            className="text-gray-600"
-          >
-            Back
-          </Button>
-
-          <div className="flex gap-1.5">
-            {steps.map((_, index) => (
-              <div
-                key={index}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentStep 
-                    ? 'w-8 bg-teal-500' 
-                    : index < currentStep 
-                      ? 'w-1.5 bg-teal-300' 
-                      : 'w-1.5 bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              disabled={isFirstStep}
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-5 py-2 disabled:opacity-40 rounded-xl font-light"
+            >
+              {t('partner.onboarding.back')}
+            </Button>
 
             <Button
               onClick={handleNext}
-              className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+              className="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 shadow-lg shadow-teal-600/25 rounded-xl font-medium transition-all duration-200 hover:shadow-xl hover:shadow-teal-600/30"
             >
-              {isLastStep ? (
-                <>
-                  Get Started
-                  <CheckCircle2 className="ml-2 h-4 w-4" />
-                </>
-              ) : (
-                <>
-                  Next
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
+              {isLastStep ? t('partner.onboarding.getStarted') : t('partner.onboarding.next')}
+              <ArrowRight className="ml-2 h-4 w-4" strokeWidth={2.5} />
             </Button>
           </div>
         </div>

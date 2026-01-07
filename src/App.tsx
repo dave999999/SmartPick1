@@ -15,6 +15,7 @@ import { queryClient } from './lib/queryClient';
 import { OverlayOrchestrator } from './components/OverlayOrchestrator';
 import { useCurrentUser } from './hooks/useQueryHooks';
 import { useUserStore } from './stores';
+import { DeepLinkHandler } from './hooks/useDeepLinking';
 
 // Eager load: Only Index page (main landing) and essential components
 import IndexRedesigned from './pages/IndexRedesigned';
@@ -80,6 +81,8 @@ const AppContent = () => {
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionPenalty, setSuspensionPenalty] = useState<UserPenalty | null>(null);
   const [userPoints, setUserPoints] = useState(0);
+  const [showMissedPickupDialog, setShowMissedPickupDialog] = useState(false);
+  const [missedPickupWarning, setMissedPickupWarning] = useState<any>(null);
 
   // Track user activity for real-time monitoring
   useActivityTracking();
@@ -263,18 +266,10 @@ const AppContent = () => {
 
         const { supabase } = await import('./lib/supabase');
         
-        // Check if user is a partner
-        const { data: partnerProfile } = await supabase
-          .from('partners')
-          .select('id')
-          .eq('user_id', (user as any).id)
-          .eq('status', 'APPROVED')
-          .maybeSingle();
-
-        // Use partner_points if partner, otherwise user_points
-        const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
+        // ALWAYS use user_points for penalty lifting (even if user is also a partner)
+        // Missed pickup penalties are for USER behavior, not partner business
         const { data: userPoints } = await supabase
-          .from(tableName)
+          .from('user_points')
           .select('balance')
           .eq('user_id', (user as any).id)
           .maybeSingle();
@@ -282,7 +277,7 @@ const AppContent = () => {
         if (cancelled) return;
         setUserPoints(userPoints?.balance || 0);
 
-        const activePenalty = await getActivePenalty((user as any).id);
+        let activePenalty = await getActivePenalty((user as any).id);
         if (cancelled) return;
         
         if (activePenalty && activePenalty.penalty_id) {
@@ -314,6 +309,121 @@ const AppContent = () => {
               setShowPenaltyModal(true);
             }
           }
+        }
+        
+        // Check for missed pickup warnings (separate from penalties)
+        const { data: missedPickupStatus, error: missedError } = await supabase
+          .rpc('get_user_missed_pickup_status', {
+            p_user_id: (user as any).id
+          })
+          .maybeSingle();
+
+        if (cancelled) return;
+        
+        // If user has 4+ missed pickups, ensure penalty exists and show suspension
+        if (missedPickupStatus && missedPickupStatus.total_missed >= 4) {
+          logger.debug('🚫 User has 4+ missed pickups, checking for suspension penalty');
+          
+          // Check if penalty record already exists (active or recently created)
+          let penaltyExists = activePenalty && activePenalty.penalty_id;
+          
+          if (!penaltyExists) {
+            // Check if there's a recently lifted penalty for this offense level
+            const { data: recentPenalty } = await supabase
+              .from('user_penalties')
+              .select('id, is_active, acknowledged_at')
+              .eq('user_id', (user as any).id)
+              .eq('offense_number', missedPickupStatus.total_missed)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            // If penalty exists and was recently lifted (within last hour), don't recreate
+            if (recentPenalty && recentPenalty.acknowledged_at) {
+              const timeSinceLift = Date.now() - new Date(recentPenalty.acknowledged_at).getTime();
+              if (timeSinceLift < 3600000) { // 1 hour
+                logger.debug('⏭️ Penalty was recently lifted, skipping');
+                penaltyExists = false; // Don't show modal
+              }
+            } else if (!recentPenalty) {
+              // Only create new penalty if no recent one exists
+              // Get the latest missed pickup with reservation and partner info
+              const { data: latestMissedPickup } = await supabase
+                .from('user_missed_pickups')
+                .select('reservation_id')
+                .eq('user_id', (user as any).id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              
+              if (latestMissedPickup?.reservation_id) {
+                // Get partner_id from the reservation
+                const { data: reservation } = await supabase
+                  .from('reservations')
+                  .select('partner_id')
+                  .eq('id', latestMissedPickup.reservation_id)
+                  .maybeSingle();
+                
+                if (reservation?.partner_id) {
+                  // Create penalty record in database
+                  logger.debug('⚠️ No penalty record found, creating one now');
+                  
+                  const { data: newPenalty, error: createError } = await supabase
+                    .from('user_penalties')
+                    .insert({
+                      user_id: (user as any).id,
+                      reservation_id: latestMissedPickup.reservation_id,
+                      partner_id: reservation.partner_id,
+                      offense_type: 'missed_pickup',
+                      penalty_type: missedPickupStatus.total_missed === 4 ? '1hour' : 
+                                   missedPickupStatus.total_missed === 5 ? '24hour' : 'permanent',
+                      offense_number: missedPickupStatus.total_missed,
+                      is_active: true,
+                      suspended_until: new Date(Date.now() + (
+                        missedPickupStatus.total_missed === 4 ? 3600000 : // 1 hour
+                        missedPickupStatus.total_missed === 5 ? 86400000 : // 24 hours
+                        604800000 // 7 days
+                      )).toISOString(),
+                      acknowledged: false,
+                      can_lift_with_points: true,
+                      points_required: missedPickupStatus.total_missed === 4 ? 100 : 
+                                      missedPickupStatus.total_missed === 5 ? 500 : 1000,
+                      created_at: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                
+                  if (createError) {
+                    logger.error('Failed to create penalty:', createError);
+                  } else if (newPenalty) {
+                    logger.debug('✅ Created suspension penalty:', newPenalty.id);
+                    penaltyExists = true;
+                    activePenalty = { penalty_id: newPenalty.id };
+                  }
+                }
+              }
+            }
+          }
+          
+          // Now fetch and show the penalty only if it's active
+          if (penaltyExists && activePenalty?.penalty_id) {
+            const details = await getPenaltyDetails(activePenalty.penalty_id);
+            if (details && details.is_active) {
+              logger.debug('✅ Showing suspension modal with penalty:', details.id);
+              setSuspensionPenalty({
+                ...details,
+                can_lift_with_points: true // Enable lift button
+              });
+              setShowSuspensionModal(true);
+            } else {
+              logger.debug('⏭️ Penalty exists but not active, skipping modal');
+            }
+          }
+        } else if (missedPickupStatus && missedPickupStatus.needs_warning) {
+          // 1-3 missed pickups: show friendly warning
+          logger.debug('💛 Missed pickup warning:', missedPickupStatus);
+          setMissedPickupWarning(missedPickupStatus);
+          setShowMissedPickupDialog(true);
         }
       } catch (error) {
         logger.error('Error checking penalty on load:', error);
@@ -383,6 +493,7 @@ const AppContent = () => {
       <TopRightMenu />
       {/* GoogleMapProvider wraps entire app to prevent unmount/remount issues */}
       <GoogleMapProvider>
+        <DeepLinkHandler />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<IndexRedesigned />} />
@@ -443,10 +554,28 @@ const AppContent = () => {
         showSuspensionModal={showSuspensionModal}
         suspensionPenalty={suspensionPenalty}
         userPoints={userPoints}
+        showMissedPickupDialog={showMissedPickupDialog}
+        missedPickupWarning={missedPickupWarning}
         onPenaltyClose={() => setShowPenaltyModal(false)}
         onSuspensionClose={() => {
           setShowSuspensionModal(false);
           setSuspensionPenalty(null);
+        }}
+        onMissedPickupClose={async () => {
+          // Mark warning as shown
+          if (missedPickupWarning) {
+            const { user } = await getCurrentUser();
+            if (user) {
+              const { supabase } = await import('./lib/supabase');
+              await supabase
+                .from('user_missed_pickups')
+                .update({ warning_shown: true })
+                .eq('user_id', (user as any).id)
+                .eq('warning_shown', false);
+            }
+          }
+          setShowMissedPickupDialog(false);
+          setMissedPickupWarning(null);
         }}
         onLiftPenalty={liftPenaltyWithPoints}
         onPenaltyLifted={async () => {

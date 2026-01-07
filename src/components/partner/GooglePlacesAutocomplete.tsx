@@ -57,7 +57,7 @@ export function GooglePlacesAutocomplete({
     // Load Google Maps script
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
-      console.error('Google Maps API key is missing');
+      logger.error('Google Maps API key is missing');
       return;
     }
 
@@ -66,7 +66,7 @@ export function GooglePlacesAutocomplete({
     script.async = true;
     script.defer = true;
     script.onload = () => setGoogleLoaded(true);
-    script.onerror = () => console.error('Failed to load Google Maps script');
+    script.onerror = () => logger.error('Failed to load Google Maps script');
     document.head.appendChild(script);
   }, []);
 
@@ -114,7 +114,7 @@ export function GooglePlacesAutocomplete({
           types: place.types
         };
 
-        console.log('Place selected:', placeData);
+        logger.debug('Place selected');
 
         // Update the input value with the business name
         onChange(place.name || '');
@@ -125,7 +125,7 @@ export function GooglePlacesAutocomplete({
         setIsLoading(false);
       });
     } catch (err) {
-      console.error('Error initializing Google Places Autocomplete:', err);
+      logger.error('Error initializing Google Places Autocomplete:', err);
     }
 
     return () => {

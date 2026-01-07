@@ -226,14 +226,20 @@ export default function AdminDashboard() {
     try {
       logger.debug('Attempting to update maintenance mode to:', checked);
       
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Use the SECURITY DEFINER function instead of direct UPDATE
+      // This bypasses RLS and ensures admin users can update settings
       const { data, error } = await supabase
-        .from('system_settings')
-        .update({ 
-          value: { enabled: checked },
-          updated_at: new Date().toISOString()
-        })
-        .eq('key', 'maintenance_mode')
-        .select();
+        .rpc('update_system_setting', {
+          setting_key: 'maintenance_mode',
+          setting_value: { enabled: checked },
+          admin_user_id: user.id
+        });
 
       logger.debug('Update result:', { data, error });
 
@@ -252,6 +258,8 @@ export default function AdminDashboard() {
       logger.error('Error updating maintenance mode:', error instanceof Error ? error.message : String(error));
       logger.error('Full error object:', error);
       toast.error(`Failed to update maintenance mode: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Revert the toggle on error
+      setMaintenanceMode(!checked);
     }
   };
 

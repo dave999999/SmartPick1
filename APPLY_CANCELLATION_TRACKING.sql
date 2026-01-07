@@ -30,7 +30,7 @@ DROP POLICY IF EXISTS user_cancellation_tracking_insert ON public.user_cancellat
 
 CREATE POLICY user_cancellation_tracking_select ON public.user_cancellation_tracking
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY user_cancellation_tracking_insert ON public.user_cancellation_tracking
   FOR INSERT
@@ -100,7 +100,7 @@ BEGIN
   -- Only track when status changes to CANCELLED
   IF OLD.status != 'CANCELLED' AND NEW.status = 'CANCELLED' THEN
     INSERT INTO user_cancellation_tracking (user_id, reservation_id, cancelled_at)
-    VALUES (NEW.user_id, NEW.id, NOW())
+    VALUES (NEW.customer_id, NEW.id, NOW())
     ON CONFLICT (reservation_id) DO NOTHING;
   END IF;
   

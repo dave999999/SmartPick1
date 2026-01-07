@@ -11,6 +11,7 @@ CREATE OR REPLACE FUNCTION lift_penalty_with_points(
 RETURNS JSON
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = 'public'
 AS $$
 DECLARE
   v_penalty RECORD;

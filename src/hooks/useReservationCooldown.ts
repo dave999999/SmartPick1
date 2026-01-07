@@ -1,4 +1,3 @@
-import { logger } from '@/lib/logger';
 /**
  * useReservationCooldown.ts
  * Hook to check if user is in reservation cooldown due to cancellations
@@ -68,7 +67,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
       );
 
       if (error) {
-        logger.error('Error checking cooldown status:', error);
+        console.error('Error checking cooldown status:', error);
         setLoading(false);
         return;
       }
@@ -95,7 +94,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
         });
       }
     } catch (err) {
-      logger.error('Error fetching cooldown status:', err);
+      console.error('Error fetching cooldown status:', err);
     } finally {
       setLoading(false);
     }
@@ -117,7 +116,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
       });
 
       if (error) {
-        logger.error('Error resetting cooldown:', error);
+        console.error('Error resetting cooldown:', error);
         return { success: false, message: 'Failed to reset cooldown' };
       }
 
@@ -135,7 +134,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
 
       return { success: false, message: 'Unexpected response from server' };
     } catch (err) {
-      logger.error('Error resetting cooldown:', err);
+      console.error('Error resetting cooldown:', err);
       return { success: false, message: 'An error occurred while resetting cooldown' };
     } finally {
       setResetLoading(false);
@@ -154,7 +153,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
       });
 
       if (error) {
-        logger.error('Error lifting cooldown:', error);
+        console.error('Error lifting cooldown:', error);
         return { success: false, message: 'Failed to lift cooldown' };
       }
 
@@ -172,7 +171,7 @@ export function useReservationCooldown(user: User | null, enabled: boolean = tru
 
       return { success: false, message: 'Unexpected response from server' };
     } catch (err) {
-      logger.error('Error lifting cooldown:', err);
+      console.error('Error lifting cooldown:', err);
       return { success: false, message: 'An error occurred while lifting cooldown' };
     } finally {
       setResetLoading(false);

@@ -1,42 +1,61 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Offer } from '@/lib/types';
+import { Offer, Partner } from '@/lib/types';
 import { getActiveOffers } from '@/lib/api';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, MapPin, Clock, Heart, AlertCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Clock, Heart, AlertCircle, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { resolveOfferImageUrl } from '@/lib/api';
 import { BottomNavBar as FloatingBottomNav } from '@/components/navigation/BottomNavBar';
+import { supabase } from '@/lib/supabase';
 
 export default function Favorites() {
   const navigate = useNavigate();
   const { favorites, getFavoritesByType, removeFavorite } = useFavorites();
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'offers' | 'partners'>('partners');
 
   useEffect(() => {
-    loadFavoriteOffers();
+    loadFavoriteData();
   }, [favorites]);
 
-  const loadFavoriteOffers = async () => {
+  const loadFavoriteData = async () => {
     try {
+      // Load favorite offers
       const favoriteOffers = getFavoritesByType('offer');
-      if (favoriteOffers.length === 0) {
+      if (favoriteOffers.length > 0) {
+        const allOffers = await getActiveOffers();
+        const favoriteIds = favoriteOffers.map(fav => fav.id);
+        const filteredOffers = allOffers.filter(offer => favoriteIds.includes(offer.id));
+        setOffers(filteredOffers);
+      } else {
         setOffers([]);
-        setIsLoading(false);
-        return;
       }
 
-      // Get all active offers
-      const allOffers = await getActiveOffers();
-      
-      // Filter to only favorites
-      const favoriteIds = favoriteOffers.map(fav => fav.id);
-      const filteredOffers = allOffers.filter(offer => favoriteIds.includes(offer.id));
-      
-      setOffers(filteredOffers);
+      // Load favorite partners
+      const favoritePartners = getFavoritesByType('partner');
+      if (favoritePartners.length > 0) {
+        const partnerIds = favoritePartners.map(fav => fav.id);
+        logger.log('[Favorites] Loading partners with IDs:', partnerIds);
+        
+        const { data: partnersData, error } = await supabase
+          .from('partners')
+          .select('*')
+          .in('id', partnerIds);
+        
+        if (error) {
+          logger.error('[Favorites] Error loading partners:', error);
+        } else {
+          logger.log('[Favorites] Loaded partners:', partnersData);
+          setPartners(partnersData || []);
+        }
+      } else {
+        setPartners([]);
+      }
     } catch (error) {
       logger.error('Error loading favorites:', error);
     } finally {
@@ -48,9 +67,9 @@ export default function Favorites() {
     navigate(`/?offer=${offer.id}`);
   };
 
-  const handleRemoveFavorite = (e: React.MouseEvent, offerId: string) => {
+  const handleRemoveFavorite = (e: React.MouseEvent, id: string, type: 'offer' | 'partner') => {
     e.stopPropagation();
-    removeFavorite(offerId, 'offer');
+    removeFavorite(id, type);
   };
 
   // Check if favorited offer is still available in active offers
@@ -58,22 +77,59 @@ export default function Favorites() {
     return offers.some(offer => offer.id === offerId);
   };
 
+  const isPartnerAvailable = (partnerId: string) => {
+    return partners.some(partner => partner.id === partnerId);
+  };
+
   const favoriteOfferIds = getFavoritesByType('offer').map(fav => fav.id);
+  const favoritePartnerIds = getFavoritesByType('partner').map(fav => fav.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 via-white to-gray-50">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 py-4">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="h-10 w-10"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold text-gray-900">Favorites</h1>
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+        <div className="px-4 py-4">
+          <div className="flex items-center gap-3 mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              className="h-10 w-10"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-bold text-gray-900">Favorites</h1>
+          </div>
+          
+          {/* Tabs */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('partners')}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                activeTab === 'partners'
+                  ? 'bg-[#FF6B35] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Store className="w-4 h-4" />
+                Partners ({favoritePartnerIds.length})
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('offers')}
+              className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                activeTab === 'offers'
+                  ? 'bg-[#FF6B35] text-white shadow-md'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <Heart className="w-4 h-4" />
+                Offers ({favoriteOfferIds.length})
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -84,7 +140,101 @@ export default function Favorites() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B35] mx-auto"></div>
             <p className="text-gray-500 mt-4">Loading favorites...</p>
           </div>
+        ) : activeTab === 'partners' ? (
+          /* Partners Tab */
+          favoritePartnerIds.length === 0 ? (
+            <div className="text-center py-12">
+              <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">No favorite partners yet</h2>
+              <p className="text-gray-500 mb-6">Start adding partners to your favorites!</p>
+              <Button onClick={() => navigate('/')} className="bg-[#FF6B35] hover:bg-[#E55A25]">
+                Browse Offers
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {favoritePartnerIds.map((partnerId) => {
+                const partner = partners.find(p => p.id === partnerId);
+                const isAvailable = isPartnerAvailable(partnerId);
+
+                return (
+                  <Card
+                    key={partnerId}
+                    className={`overflow-hidden cursor-pointer transition-all ${
+                      isAvailable 
+                        ? 'hover:shadow-lg' 
+                        : 'opacity-60 bg-gray-50'
+                    }`}
+                    onClick={() => isAvailable && partner && navigate(`/?partner=${partnerId}`)}
+                  >
+                    <div className="flex gap-4 p-4">
+                      {/* Image */}
+                      <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 relative">
+                        {partner ? (
+                          <>
+                            {partner.cover_image_url || partner.images?.[0] ? (
+                              <img
+                                src={partner.cover_image_url || partner.images?.[0]}
+                                alt={partner.business_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Store className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                            {!isAvailable && (
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                <AlertCircle className="w-8 h-8 text-white" />
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                            <Store className="w-8 h-8 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900 line-clamp-2 text-base">
+                            {partner?.business_name || 'Loading...'}
+                          </h3>
+                          <button
+                            onClick={(e) => handleRemoveFavorite(e, partnerId, 'partner')}
+                            className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          >
+                            <Heart className="w-5 h-5 fill-red-500 text-red-500" />
+                          </button>
+                        </div>
+
+                        {partner ? (
+                          <>
+                            <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-1">
+                              <MapPin className="w-4 h-4 flex-shrink-0" />
+                              <span className="line-clamp-1">{partner.address}</span>
+                            </div>
+                            {partner.description && (
+                              <p className="text-sm text-gray-500 line-clamp-2">{partner.description}</p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500">Partner ID: {partnerId}</p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )
         ) : favoriteOfferIds.length === 0 ? (
+          /* Offers Tab - Empty */
           <div className="text-center py-12">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No favorites yet</h2>
@@ -94,6 +244,7 @@ export default function Favorites() {
             </Button>
           </div>
         ) : (
+          /* Offers Tab - With Offers */
           <div className="space-y-4">
             {favoriteOfferIds.map((offerId) => {
               const offer = offers.find(o => o.id === offerId);
@@ -142,7 +293,7 @@ export default function Favorites() {
                           {offer?.title || 'Offer no longer available'}
                         </h3>
                         <button
-                          onClick={(e) => handleRemoveFavorite(e, offerId)}
+                          onClick={(e) => handleRemoveFavorite(e, offerId, 'offer')}
                           className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-full transition-colors"
                         >
                           <Heart className="w-5 h-5 fill-red-500 text-red-500" />

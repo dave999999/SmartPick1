@@ -29,7 +29,8 @@ export function PurchaseSlotDialog({
   const { t } = useI18n();
 
   const calculateSlotCost = (slots: number): number => {
-    // Price calculation: (slots - 9) * 100
+    // Cost for NEXT slot: 11th=100pts, 12th=200pts, 13th=300pts
+    // Formula: (next_slot - 10) * 100 = (current_slots + 1 - 10) * 100 = (current_slots - 9) * 100
     return (slots - 9) * 100;
   };
 

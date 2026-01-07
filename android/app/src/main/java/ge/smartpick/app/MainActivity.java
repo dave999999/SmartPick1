@@ -13,8 +13,10 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Enable WebView debugging
-        WebView.setWebContentsDebuggingEnabled(true);
+        
+        // SECURITY: WebView debugging disabled in production
+        // Enable only during development by uncommenting the line below
+        // WebView.setWebContentsDebuggingEnabled(true);
         
         // Create notification channels with custom sound
         createNotificationChannels();

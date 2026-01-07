@@ -2,7 +2,7 @@
 -- RESET ALL PENALTIES FOR USER
 -- ============================================
 -- Purpose: Clean slate - remove all penalties and reset counts
--- User: batumashvili.davit@gmail.com
+-- User: davetest@gmail.com
 -- Created: 2025-12-26
 -- ============================================
 
@@ -16,7 +16,7 @@ SELECT
   suspended_until,
   reliability_score
 FROM users
-WHERE email = 'batumashvili.davit@gmail.com';
+WHERE email = 'davetest@gmail.com';
 
 -- Step 2: Show all current penalties
 SELECT 
@@ -28,12 +28,12 @@ SELECT
   up.acknowledged,
   up.created_at
 FROM user_penalties up
-WHERE up.user_id = (SELECT id FROM users WHERE email = 'batumashvili.davit@gmail.com')
+WHERE up.user_id = (SELECT id FROM users WHERE email = 'davetest@gmail.com')
 ORDER BY up.created_at DESC;
 
 -- Step 3: Delete ALL penalty records
 DELETE FROM user_penalties
-WHERE user_id = (SELECT id FROM users WHERE email = 'batumashvili.davit@gmail.com');
+WHERE user_id = (SELECT id FROM users WHERE email = 'davetest@gmail.com');
 
 -- Step 4: Reset user's penalty counts and status
 UPDATE users
@@ -44,7 +44,7 @@ SET
   suspended_until = NULL,
   reliability_score = 100,  -- Reset to perfect score
   updated_at = NOW()
-WHERE email = 'batumashvili.davit@gmail.com';
+WHERE email = 'davetest@gmail.com';
 
 -- Step 5: Verify clean state AFTER reset
 SELECT 
@@ -56,21 +56,21 @@ SELECT
   suspended_until,
   reliability_score
 FROM users
-WHERE email = 'batumashvili.davit@gmail.com';
+WHERE email = 'davetest@gmail.com';
 
 -- Step 6: Verify no penalties exist
 SELECT 
   'REMAINING PENALTIES:' as status,
   COUNT(*) as penalty_count
 FROM user_penalties
-WHERE user_id = (SELECT id FROM users WHERE email = 'batumashvili.davit@gmail.com');
+WHERE user_id = (SELECT id FROM users WHERE email = 'davetest@gmail.com');
 
 -- Step 7: Check if user can now reserve
 SELECT 
   'CAN USER RESERVE:' as status,
   *
 FROM can_user_reserve(
-  (SELECT id FROM users WHERE email = 'batumashvili.davit@gmail.com')
+  (SELECT id FROM users WHERE email = 'davetest@gmail.com')
 );
 
 -- ============================================

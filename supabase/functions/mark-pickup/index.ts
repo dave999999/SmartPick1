@@ -3,7 +3,7 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
-import { checkRateLimit, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimitAdvanced, getRequestMetadata, getRateLimitIdentifier, rateLimitResponse } from '../_shared/rateLimitAdvanced.ts'
 import { getCorsHeaders, handleCorsPreflightRequest } from '../_shared/cors.ts'
 
 // Declare Deno for TypeScript tooling (runtime has it)
@@ -51,13 +51,21 @@ serve(async (req: Request) => {
       throw new Error('Unauthorized')
     }
 
-    // SECURITY: Rate limiting - 30 pickups per minute per user
+    // SECURITY: Enhanced rate limiting with IP tracking - 30 pickups per minute per user/IP
+    const metadata = getRequestMetadata(req);
     const rateLimitId = getRateLimitIdentifier(req, user.id);
-    const rateLimit = await checkRateLimit(supabaseAdmin, rateLimitId, 'mark-pickup', 30, 60);
+    const rateLimit = await checkRateLimitAdvanced(
+      supabaseAdmin, 
+      rateLimitId, 
+      'mark-pickup', 
+      30, 
+      60,
+      metadata
+    );
     
     if (!rateLimit.allowed) {
-      console.log(`[mark-pickup] Rate limit exceeded for ${rateLimitId}`);
-      return rateLimitResponse(rateLimit);
+      console.log(`[mark-pickup] Rate limit exceeded for ${rateLimitId} from IP ${metadata.ip}`);
+      return rateLimitResponse(rateLimit, corsHeaders);
     }
 
     // Get request body
@@ -132,7 +140,7 @@ serve(async (req: Request) => {
       customer_id: reservation.customer_id
     })
 
-    // Update reservation to PICKED_UP
+    // Update reservation to PICKED_UP (atomic status check prevents replay attacks)
     const { data: updateData, error: updateError } = await supabaseAdmin
       .from('reservations')
       .update({
@@ -140,6 +148,7 @@ serve(async (req: Request) => {
         picked_up_at: new Date().toISOString()
       })
       .eq('id', reservation_id)
+      .eq('status', 'ACTIVE')  // SECURITY: Atomic check - prevents QR replay if already PICKED_UP/CANCELLED
       .eq('partner_id', partner.id)
       .select()
 

@@ -944,6 +944,63 @@ const translations: Record<Language, Record<string, string>> = {
   'missedPickup.ariaLabel.used': 'Used',
   'missedPickup.ariaLabel.remaining': 'Remaining',
   'missedPickup.ariaLabel.understand': 'I understand',
+
+  // Partner Onboarding Tour
+  'partner.onboarding.ariaLabel': 'Partner Dashboard Onboarding Tour',
+  'partner.onboarding.dontShowAgain': 'Don\'t show this tutorial again',
+  'partner.onboarding.back': 'Back',
+  'partner.onboarding.next': 'Next',
+  'partner.onboarding.getStarted': 'Get started',
+  
+  // Step 1: Welcome
+  'partner.onboarding.step1.title': 'Welcome',
+  'partner.onboarding.step1.text': 'SmartPick lets you publish discounted offers and manage customer price reservations.',
+  
+  // Step 2: How it works
+  'partner.onboarding.step2.title': 'How it works',
+  'partner.onboarding.step2.bullet1': 'You create an offer',
+  'partner.onboarding.step2.bullet2': 'The customer reserves the offered price',
+  'partner.onboarding.step2.bullet3': 'You confirm the pickup',
+  'partner.onboarding.step2.note': 'The price is fixed after reservation confirmation and remains valid within the selected time window.',
+  
+  // Step 3: Pickup & payment
+  'partner.onboarding.step3.title': 'Pickup & payment',
+  'partner.onboarding.step3.text': 'The customer comes to your location, shows the QR code, and pays the offered price on site.',
+  
+  // Suspension Modal
+  'suspension.dialogTitle': 'Time for a little pause',
+  'suspension.title': 'Time for a little pause ⏸️',
+  'suspension.explanation.4th': 'You\'ve missed 4 pickups today.\nWe\'re temporarily limiting reservations\nto protect our partners\' time and products 💛',
+  'suspension.explanation.5th': 'You\'ve missed 5 pickups today.\nWe\'re temporarily limiting reservations\nto protect our partners\' time and products 💛',
+  'suspension.explanation.6th': 'You\'ve missed 6 pickups today.\nWe\'re temporarily limiting reservations\nto protect our partners\' time and products 💛',
+  'suspension.goodNews': '✨ Good news:',
+  'suspension.canContinue': 'You can continue immediately',
+  'suspension.withPoints': 'by using points',
+  'suspension.timeRemaining': 'Time remaining',
+  'suspension.hours': 'hr',
+  'suspension.minutes': 'min',
+  'suspension.seconds': 'sec',
+  'suspension.lift.button': 'Continue',
+  'suspension.lift.insufficient': 'Insufficient points to lift',
+  'suspension.lift.success': 'Suspension lifted! 🎉',
+  'suspension.balance.current': 'Balance',
+  'suspension.balance.need': 'Need',
+  'suspension.buyPoints.button': 'Buy Points',
+  'suspension.expired': 'Suspension ended! Welcome back 🎉',
+  
+  // Admin Review Modal (6th+ offense)
+  'adminReview.title': 'We value you 💙',
+  'adminReview.subtitle': 'Let\'s find a solution together',
+  'adminReview.explanation': 'Several pickups have been missed recently, and we know everyone can face difficult situations.\n\nOur admins will review your case and find the best solution for you.',
+  'adminReview.nextSteps': 'What happens next?',
+  'adminReview.step1.title': '📋 Admin reviews your case',
+  'adminReview.step1.description': 'Our team will review your reservation history',
+  'adminReview.step2.title': '💬 You\'ll receive a response',
+  'adminReview.step2.description': 'We\'ll contact you within 24 hours',
+  'adminReview.step3.title': '✅ Admin decision',
+  'adminReview.step3.description': 'After admin review, you can make reservations again',
+  'adminReview.understand': 'I understand',
+  'adminReview.contact': 'Contact Support',
   },
   ka: {
     // Header
@@ -1906,15 +1963,37 @@ const translations: Record<Language, Record<string, string>> = {
   'adminReview.step1.title': '📋 ადმინი განიხილავს თქვენს შემთხვევას',
   'adminReview.step1.description': 'ჩვენი გუნდი გადახედავს თქვენს რეზერვაციების ისტორიას',
   'adminReview.step2.title': '💬 თქვენ მიიღებთ პასუხს',
-  'adminReview.step2.description': 'ჩვენ დაგიკავშირდებით ტელეგრამით ან ელ-ფოსტით 24 საათში',
-  'adminReview.step3.title': '✨ თქვენ დაბრუნდებით',
-  'adminReview.step3.description': 'ადმინის გადაწყვეტილების შემდეგ, შეძლებთ კვლავ რეზერვაციების გაკეთებას',
+  'adminReview.step2.description': 'ჩვენ დაგიკავშირდებით 24 საათის განმავლობაში',
+  'adminReview.step3.title': '✨ ადმინის გადაწყვეტილება',
+  'adminReview.step3.description': 'გადაწყვეტილების შემდეგ, შეძლებთ კვლავ რეზერვაციების გაკეთებას',
   'adminReview.contact.title': 'გვჭირდება დახმარება ახლავე?',
   'adminReview.contact.description': 'დაგვიკავშირდით პირდაპირ:',
   'adminReview.contact.telegram': 'ტელეგრამი',
   'adminReview.contact.email': 'ელ-ფოსტა',
   'adminReview.footer': 'მადლობას გიხდით მოთმინებისთვის და გაგების გამო 💛',
   'adminReview.understood': 'გავიგე 🙏',
+
+  // Partner Onboarding Tour (Georgian)
+  'partner.onboarding.ariaLabel': 'პარტნიორის დაშბორდის გაცნობა',
+  'partner.onboarding.dontShowAgain': 'აღარ მაჩვენო ეს ინსტრუქცია',
+  'partner.onboarding.back': 'უკან',
+  'partner.onboarding.next': 'შემდეგი',
+  'partner.onboarding.getStarted': 'დავიწყოთ',
+  
+  // Step 1: Welcome
+  'partner.onboarding.step1.title': 'კეთილი იყოს თქვენი მობრძანება',
+  'partner.onboarding.step1.text': 'SmartPick გაძლევთ შესაძლებლობას განათავსოთ ფასდაკლებული შეთავაზებები და მართოთ მომხმარებელთა ფასის რეზერვაციები.',
+  
+  // Step 2: How it works
+  'partner.onboarding.step2.title': 'როგორ მუშაობს',
+  'partner.onboarding.step2.bullet1': 'თქვენ ქმნით შეთავაზებას',
+  'partner.onboarding.step2.bullet2': 'მომხმარებელი ახდენს შეთავაზებული ფასის რეზერვაციას',
+  'partner.onboarding.step2.bullet3': 'თქვენ ადასტურებთ მიღებას',
+  'partner.onboarding.step2.note': 'ფასი ფიქსირდება რეზერვაციის დადასტურების შემდეგ და მოქმედებს მითითებული დროის ფარგლებში.',
+  
+  // Step 3: Pickup & payment
+  'partner.onboarding.step3.title': 'მიღება და გადახდა',
+  'partner.onboarding.step3.text': 'მომხმარებელი მოდის თქვენს ლოკაციაზე, გაჩვენებთ QR კოდს და ადგილზე იხდის შეთავაზებულ ფასს.',
   },
 };
 

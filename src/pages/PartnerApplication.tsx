@@ -293,7 +293,7 @@ export default function PartnerApplication() {
         open24h,
         lastModified: new Date().toISOString(),
       };
-      localStorage.setItem(`partner_draft_${existingUserId}`, JSON.stringify(draftData));
+      await secureStorage.set(`partner_draft_${existingUserId}`, draftData);
       setLastSaved(new Date());
     } catch (error) {
       logger.error('Failed to save draft:', error);
@@ -321,25 +321,28 @@ export default function PartnerApplication() {
   // Check for existing draft on mount
   useEffect(() => {
     if (existingUserId && isUserLoggedIn) {
-      const savedDraft = localStorage.getItem(`partner_draft_${existingUserId}`);
-      if (savedDraft) {
-        try {
-          const draftData = JSON.parse(savedDraft);
-          const draftAge = Date.now() - new Date(draftData.lastModified).getTime();
-          // Only restore if draft is less than 7 days old
-          if (draftAge < 7 * 24 * 60 * 60 * 1000) {
-            setFormData(draftData);
-            setCurrentStep(draftData.currentStep || 2);
-            setAcceptedTerms(draftData.acceptedTerms || false);
-            setOpen24h(draftData.open24h || false);
-            toast.info('Previous draft restored', {
-              description: 'Your previous application has been restored.',
-            });
+      const loadDraft = async () => {
+        const draftData = await secureStorage.get(`partner_draft_${existingUserId}`);
+        if (draftData) {
+          try {
+            const draftAge = Date.now() - new Date(draftData.lastModified).getTime();
+            // Only restore if draft is less than 7 days old
+            if (draftAge < 7 * 24 * 60 * 60 * 1000) {
+              setFormData(draftData);
+              setCurrentStep(draftData.currentStep || 2);
+              setAcceptedTerms(draftData.acceptedTerms || false);
+              setOpen24h(draftData.open24h || false);
+              toast.info('Previous draft restored', {
+                description: 'Your previous application has been restored.',
+              });
+            }
+          } catch (error) {
+            logger.error('Failed to restore draft:', error);
           }
-        } catch (error) {
-          logger.error('Failed to restore draft:', error);
         }
-      }
+      };
+      
+      loadDraft();
     }
   }, [existingUserId, isUserLoggedIn]);
 
@@ -1386,8 +1389,8 @@ export default function PartnerApplication() {
                     value={formData.business_name}
                     onChange={(name) => handleChange('business_name', name)}
                     onPlaceSelected={(place) => {
-                      console.log('🎯 Place selected callback fired!');
-                      console.log('Full place data:', place);
+                      logger.debug('Place selected callback fired');
+                      logger.debug('Place data:', place);
                       
                       // Auto-fill ALL business information from Google Maps
                       handleChange('business_name', place.name);

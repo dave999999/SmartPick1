@@ -55,18 +55,13 @@ export function BuyPointsModal({
     if (isOpen && userId) {
       const fetchBalance = async () => {
         try {
-          logger.log('BuyPointsModal: Fetching balance for user', userId);
+          logger.log('BuyPointsModal: Fetching balance for user', userId, 'mode:', mode);
           
-          // Check if user is a partner first
-          const { data: partnerProfile } = await supabase
-            .from('partners')
-            .select('id')
-            .eq('user_id', userId)
-            .eq('status', 'APPROVED')
-            .maybeSingle();
-          
-          const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
-          logger.log('BuyPointsModal: Using table', tableName, 'isPartner:', !!partnerProfile?.id);
+          // CRITICAL: Use mode prop to determine table
+          // When mode="user", always use user_points (even if user has partner profile)
+          // When mode="partner", use partner_points
+          const tableName = mode === 'partner' ? 'partner_points' : 'user_points';
+          logger.log('BuyPointsModal: Using table', tableName, 'based on mode:', mode);
           
           const { data, error } = await supabase
             .from(tableName)
@@ -241,6 +236,7 @@ export function BuyPointsModal({
   };
 
   const calculateSlotCost = (slots: number): number => {
+    // Cost for NEXT slot: 11th=100, 12th=200, 13th=300
     return (slots - 9) * 100;
   };
 

@@ -133,12 +133,12 @@ serve(async (req) => {
       // Continue even if insert fails (fail open)
     }
 
-    // Clean up old records (keep last 30 days)
-    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+    // Clean up old records (keep last 48 hours = 2x longest window)
+    const twoDaysAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000))
     await supabaseAdmin
       .from('rate_limits')
       .delete()
-      .lt('created_at', thirtyDaysAgo.toISOString())
+      .lt('created_at', twoDaysAgo.toISOString())
 
     return new Response(
       JSON.stringify({

@@ -80,16 +80,8 @@ export function MissedPickupPopup({
     return "Next time: 1-hour break";
   };
 
-  // Keyboard handling
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+  // Keyboard handling - REMOVED (user must click button)
+  // Dialog now blocks ESC key and outside clicks
 
   // Compact mode adjustments
   const containerClass = compact ? "max-w-[360px]" : "max-w-[380px]";
@@ -98,11 +90,13 @@ export function MissedPickupPopup({
   const spacing = compact ? "px-4 pb-4" : "px-5 pb-5";
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={() => {/* Block dismissal - must click button */}}>
       <DialogContent 
         className={`${containerClass} p-0 border-none shadow-2xl rounded-[18px] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200`}
         aria-describedby="missed-pickup-description"
         role="dialog"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogTitle className="sr-only">
           {t('missedPickup.dialogTitle')}

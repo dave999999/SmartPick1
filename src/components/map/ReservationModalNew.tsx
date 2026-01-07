@@ -22,6 +22,7 @@ import { BuyPointsModal } from '@/components/wallet/BuyPointsModal';
 import { EarnPointsSheet } from '@/components/wallet/EarnPointsSheet';
 import { CancellationCooldownCard } from '@/components/reservation/CancellationCooldownCard';
 import { PaidCooldownLiftModal } from '@/components/reservation/PaidCooldownLiftModal';
+import FavoriteButton from '@/components/FavoriteButton';
 import { supabase } from '@/lib/supabase';
 
 interface ReservationModalProps {
@@ -80,18 +81,10 @@ export default function ReservationModalNew({
     try {
       const userId = (user as any).id || user.id;
       
-      // Check if user is a partner
-      const { data: partnerProfile } = await supabase
-        .from('partners')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('status', 'APPROVED')
-        .maybeSingle();
-      
-      // Use partner_points if partner, otherwise user_points
-      const tableName = partnerProfile?.id ? 'partner_points' : 'user_points';
+      // ALWAYS use user_points when reserving offers (not partner_points)
+      // User is acting as a customer, not a business owner
       const { data: points, error } = await supabase
-        .from(tableName)
+        .from('user_points')
         .select('balance')
         .eq('user_id', userId)
         .maybeSingle();
@@ -250,15 +243,7 @@ export default function ReservationModalNew({
   return (
     <>
       {/* Dark Backdrop - Map Visible */}
-      <div 
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" 
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          onClose();
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-      />
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px]" onClick={onClose} />
 
       {/* Modal Container */}
       <div className="fixed inset-0 z-[51] flex items-center justify-center p-3 pointer-events-none">
@@ -266,11 +251,7 @@ export default function ReservationModalNew({
 
           {/* Close Button */}
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onClose();
-            }}
+            onClick={onClose}
             className="absolute -top-2 -right-2 z-10 w-7 h-7 rounded-full bg-white flex items-center justify-center text-gray-900 shadow-lg hover:shadow-xl transition-all active:scale-95"
           >
             <X className="w-4 h-4" strokeWidth={2.5} />
@@ -278,8 +259,6 @@ export default function ReservationModalNew({
 
           {/* MAIN CARD - Transparent Glass */}
           <div
-            onClick={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
             className="relative overflow-hidden rounded-[32px] shadow-[0_10px_60px_rgba(0,0,0,0.25)] border border-white/20"
             style={{
               background: 'rgba(255,255,255,0.15)',
@@ -311,11 +290,26 @@ export default function ReservationModalNew({
 
                 {/* Title Stack */}
                 <div className="flex-1 min-w-0 pt-1">
-                  <h3 className="text-[17px] font-semibold text-gray-900 leading-tight mb-1">
+                  {/* Partner Name with Frame and Favorite */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white/90 border border-gray-200/60 shadow-sm backdrop-blur-sm">
+                      <h3 className="text-[16px] font-semibold text-gray-900 tracking-tight">
+                        {offer.partner?.business_name || offer.category}
+                      </h3>
+                    </div>
+                    {offer.partner?.id && (
+                      <div className="flex-shrink-0">
+                        <FavoriteButton 
+                          id={offer.partner.id} 
+                          type="partner"
+                          className="h-9 w-9 rounded-full bg-white/95 hover:bg-white shadow-md hover:shadow-lg p-0 border border-gray-100"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Product Name */}
+                  <p className="text-[15px] font-medium text-gray-700 leading-snug">
                     {offer.title}
-                  </h3>
-                  <p className="text-[13px] text-gray-700 font-medium">
-                    {offer.partner?.business_name || offer.category}
                   </p>
                 </div>
               </div>
@@ -375,11 +369,7 @@ export default function ReservationModalNew({
                         <span className="text-[11px] font-medium text-gray-500">points</span>
                       </div>
                       <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowBuyPointsModal(true);
-                        }}
+                        onClick={() => setShowBuyPointsModal(true)}
                         className="w-6 h-6 rounded-full bg-teal-500 hover:bg-teal-600 flex items-center justify-center transition-all active:scale-90"
                         title={t('reservation.addPoints')}
                       >
@@ -400,11 +390,7 @@ export default function ReservationModalNew({
                 }}
               >
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (quantity > 1) setQuantity(quantity - 1);
-                  }}
+                  onClick={() => quantity > 1 && setQuantity(quantity - 1)}
                   disabled={quantity <= 1}
                   className="w-9 h-9 rounded-full border-2 border-gray-400 flex items-center justify-center text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90"
                 >
@@ -417,11 +403,7 @@ export default function ReservationModalNew({
                 </div>
 
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (quantity < maxQuantity) setQuantity(quantity + 1);
-                  }}
+                  onClick={() => quantity < maxQuantity && setQuantity(quantity + 1)}
                   disabled={quantity >= maxQuantity}
                   className="w-9 h-9 rounded-full flex items-center justify-center text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-90 shadow-md"
                   style={{
@@ -479,11 +461,7 @@ export default function ReservationModalNew({
 
               {/* RESERVE BUTTON - Final Cosmic Orange */}
               <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleReserve();
-                }}
+                onClick={handleReserve}
                 disabled={isReserving || !isOnline || cooldown.isInCooldown}
                 className="w-full h-[56px] rounded-[28px] text-white text-[16px] font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 style={{

@@ -35,6 +35,7 @@ import { GalleryModal } from '@/components/partner/GalleryModal';
 import { PartnerSettingsModal } from '@/components/partner/PartnerSettingsModal';
 import { PartnerAnalyticsModal, PartnerAnalytics } from '@/components/partner/PartnerAnalyticsModal';
 import { PartnerNotificationSettings } from '@/components/partner/PartnerNotificationSettings';
+import PartnerOnboardingTour from '@/components/partner/PartnerOnboardingTour';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -83,6 +84,7 @@ export default function PartnerDashboardV3() {
   const [activeView, setActiveView] = useState<'offers' | 'active'>('offers');
   const [analytics, setAnalytics] = useState<PartnerAnalytics | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Handle URL parameters (e.g., /partner?tab=new)
   useEffect(() => {
@@ -93,6 +95,26 @@ export default function PartnerDashboardV3() {
       setActiveView('offers');
     }
   }, [searchParams]);
+
+  // Check if partner has seen onboarding tutorial
+  useEffect(() => {
+    if (partner?.id) {
+      const hasSeenOnboarding = localStorage.getItem(`partner_onboarding_${partner.id}`);
+      if (!hasSeenOnboarding) {
+        // Show onboarding after a short delay so dashboard loads first
+        const timer = setTimeout(() => setShowOnboarding(true), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [partner?.id]);
+
+  // Handle onboarding completion
+  const handleOnboardingComplete = (dontShowAgain: boolean) => {
+    if (partner?.id && dontShowAgain) {
+      localStorage.setItem(`partner_onboarding_${partner.id}`, 'true');
+    }
+    setShowOnboarding(false);
+  };
 
   // Initialize action hooks
   const offerActions = useOfferActions(partner, loadPartnerData);
@@ -759,6 +781,13 @@ export default function PartnerDashboardV3() {
         partnerId={partner?.id || ''}
         userId={partner?.user_id || ''}
         onDataRefresh={loadPartnerData}
+      />
+
+      {/* Onboarding Tutorial - Shows on first login */}
+      <PartnerOnboardingTour
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
+        partnerName={partner?.business_name}
       />
     </div>
   );

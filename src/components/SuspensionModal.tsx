@@ -72,17 +72,31 @@ export function SuspensionModal({
     if (countdown.isExpired && countdown.totalSeconds === 0) {
       // Only close if we've been counting and reached zero
       // Not if we just started with zero
-      const timer = setTimeout(() => {
+      const timer = setTimeout(async () => {
         if (countdown.isExpired) {
-          logger.info('[Suspension] Countdown expired, closing modal');
+          logger.info('[Suspension] Countdown expired, deactivating penalty and closing modal');
+          
+          // Deactivate the penalty in database
+          try {
+            const { supabase } = await import('@/lib/supabase');
+            await supabase
+              .from('user_penalties')
+              .update({ is_active: false })
+              .eq('id', penalty.id);
+            logger.info('[Suspension] Penalty deactivated automatically');
+          } catch (error) {
+            logger.error('[Suspension] Failed to deactivate penalty:', error);
+          }
+          
           toast.success(t('suspension.expired'));
+          await onPenaltyLifted(); // Refresh app state
           onClose();
         }
       }, 2000); // Wait 2 seconds for hook to initialize
       
       return () => clearTimeout(timer);
     }
-  }, [countdown.isExpired, countdown.totalSeconds, onClose, t]);
+  }, [countdown.isExpired, countdown.totalSeconds, onClose, t, penalty.id, onPenaltyLifted]);
 
   const handleLiftWithPoints = async () => {
     if (!hasEnoughPoints) {
@@ -121,8 +135,8 @@ export function SuspensionModal({
   const progress = countdown.totalSeconds > 0 ? ((totalDuration - countdown.totalSeconds) / totalDuration) * 100 : 100;
 
   return (
-    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[400px] border-none shadow-xl p-0 max-h-[85vh] overflow-y-auto">
+    <Dialog open={true} onOpenChange={() => {/* Prevent closing - must wait or lift */}}>
+      <DialogContent className="max-w-[400px] border-none shadow-xl p-0 max-h-[85vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
         <DialogTitle className="sr-only">{t('suspension.dialogTitle')}</DialogTitle>
         
         <div className="bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 rounded-2xl p-6">

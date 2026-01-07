@@ -77,6 +77,10 @@ export const createReservation = async (
     throw new Error(`Cannot create reservation: ${canReserve.reason}`);
   }
 
+  // 🔥 CRITICAL: Auto-expire old reservations BEFORE checking active count
+  const { expireUserReservations } = await import('./penalty');
+  await expireUserReservations(customerId);
+
   // Check active reservations limit (only 1 active reservation allowed)
   const { data: activeReservations, error: activeError } = await supabase
     .from('reservations')
@@ -113,9 +117,12 @@ export const createReservation = async (
     throw new Error('Offer has expired');
   }
 
-  // Check pickup window validity
+  // Check pickup window validity - business must be open
   if (offerData.pickup_start && new Date(offerData.pickup_start) > now) {
-    throw new Error('Pickup window has not started yet');
+    const pickupStart = new Date(offerData.pickup_start);
+    const hours = pickupStart.getHours();
+    const minutes = pickupStart.getMinutes();
+    throw new Error(`BUSINESS_CLOSED:${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
   }
   if (offerData.pickup_end && new Date(offerData.pickup_end) <= now) {
     throw new Error('Pickup window has ended');
@@ -375,6 +382,17 @@ export const getReservationById = async (reservationId: string, retryCount = 0):
 
   const offer = offerResult.status === 'fulfilled' ? offerResult.value.data : null;
   const partner = partnerResult.status === 'fulfilled' ? partnerResult.value.data : null;
+
+  // Log if partner data is missing (RLS issue or partner not found)
+  if (!partner) {
+    if (partnerResult.status === 'rejected') {
+      logger.error(`❌ Failed to fetch partner ${basicData.partner_id}:`, partnerResult.reason);
+    } else if (partnerResult.status === 'fulfilled' && partnerResult.value.error) {
+      logger.error(`❌ Partner fetch error:`, partnerResult.value.error);
+    } else {
+      logger.warn(`⚠️ Partner ${basicData.partner_id} not found (may be deleted or RLS restricted)`);
+    }
+  }
 
   const reservation = {
     ...basicData,
@@ -731,6 +749,7 @@ export const cancelReservation = async (reservationId: string): Promise<void> =>
   logger.log('Points NOT refunded - cancellation penalty applied');
 
   // Mark active reservation as cancelled
+  // Note: Cancellation tracking happens automatically via database trigger
   const { error } = await supabase
     .from('reservations')
     .update({ status: 'CANCELLED' })

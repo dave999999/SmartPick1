@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 
+        Network Security Configuration for SmartPick App
+        - Enforces HTTPS-only connections
+        - Blocks cleartext (HTTP) traffic to prevent MITM attacks
+        - Configures trusted domains for the app
+        
+        Learn more: https://developer.android.com/training/articles/security-config
+    -->
+    
+    <!-- Default configuration - applies to all domains -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system certificates (CA certificates installed on device) -->
+            <certificates src="system" />
+            <!-- Trust user-added certificates (for debugging with proxy tools) -->
+            <!-- Remove in production for maximum security -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Domain-specific configuration -->
+    <domain-config cleartextTrafficPermitted="false">
+        <!-- Supabase backend -->
+        <domain includeSubdomains="true">supabase.co</domain>
+        <domain includeSubdomains="true">ggzhtpaxnhwcilomswtm.supabase.co</domain>
+        
+        <!-- SmartPick website -->
+        <domain includeSubdomains="true">smartpick.ge</domain>
+        <domain includeSubdomains="true">www.smartpick.ge</domain>
+        
+        <!-- Google Services -->
+        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="true">google.com</domain>
+        <domain includeSubdomains="true">gstatic.com</domain>
+        
+        <!-- Firebase -->
+        <domain includeSubdomains="true">firebaseio.com</domain>
+        <domain includeSubdomains="true">firebase.googleapis.com</domain>
+        <domain includeSubdomains="true">fcm.googleapis.com</domain>
+        
+        <!-- CDN for map tiles and assets -->
+        <domain includeSubdomains="true">cdnjs.cloudflare.com</domain>
+        <domain includeSubdomains="true">cloudflare.com</domain>
+        <domain includeSubdomains="true">cartocdn.com</domain>
+        
+        <!-- Certificate Pinning (Optional - Uncomment to enable) -->
+        <!-- 
+        <pin-set expiration="2027-01-01">
+            Add your certificate pins here after obtaining them:
+            
+            To get certificate pins, run:
+            openssl s_client -connect supabase.co:443 | openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
+            
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
+        </pin-set>
+        -->
+    </domain-config>
+    
+    <!-- Debug overrides (ONLY for development builds) -->
+    <!-- 
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+    -->
+</network-security-config>

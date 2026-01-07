@@ -582,8 +582,12 @@ export function ActiveReservationCard({
       />
 
       {/* Apple-Style Cancel Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+      <Dialog open={showCancelDialog} onOpenChange={() => {/* Block dismissal - must choose action */}}>
+        <DialogContent 
+          className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
             Cancel Reservation?
           </DialogTitle>

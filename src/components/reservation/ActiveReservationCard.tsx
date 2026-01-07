@@ -68,7 +68,6 @@ import { supabase } from '@/lib/supabase';
 import { useI18n } from '@/lib/i18n';
 import { usePickupBroadcast } from '@/hooks/usePickupBroadcast';
 import { getUserCancellationWarning } from '@/lib/api/penalty';
-import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -481,14 +480,14 @@ export function ActiveReservationCard({
 
   // Debug QR modal state
   useEffect(() => {
-    logger.debug('[ActiveReservationCard] QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
+    console.log('🔍 QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
   }, [showQRModal, reservation?.id]);
 
   // Poll for pickup status when QR modal is open (lightweight fallback)
   useEffect(() => {
     if (!showQRModal || !reservation?.id) return;
     
-    logger.debug('[ActiveReservationCard] Starting pickup polling for reservation:', reservation.id);
+    console.log('🔄 Starting pickup polling for reservation:', reservation.id);
     
     const checkPickupStatus = async () => {
       try {
@@ -499,7 +498,7 @@ export function ActiveReservationCard({
           .single();
         
         if (!error && data?.status === 'PICKED_UP') {
-          logger.debug('[ActiveReservationCard] Pickup detected via polling');
+          console.log('✅ Pickup detected via polling!');
           
           // Check if already celebrated
           const celebrationKey = `pickup-celebrated-${reservation.id}`;
@@ -523,7 +522,7 @@ export function ActiveReservationCard({
           }
         }
       } catch (err) {
-        logger.error('[ActiveReservationCard] Error checking pickup status:', err);
+        console.error('Error checking pickup status:', err);
       }
     };
     
@@ -531,7 +530,7 @@ export function ActiveReservationCard({
     const interval = setInterval(checkPickupStatus, 2000);
     
     return () => {
-      logger.debug('[ActiveReservationCard] Stopping pickup polling');
+      console.log('🛑 Stopping pickup polling');
       clearInterval(interval);
     };
   }, [showQRModal, reservation?.id, onExpired]);
@@ -544,15 +543,15 @@ export function ActiveReservationCard({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      logger.debug('[ActiveReservationCard] Fetching cancellation count for user');
+      console.log('[ActiveReservationCard] Fetching cancellation count for user:', user.id);
       
       // Use the proper API function that calls get_user_daily_cancellation_count
       const warning = await getUserCancellationWarning(user.id);
       
-      logger.debug('[ActiveReservationCard] Cancellation warning:', warning);
+      console.log('[ActiveReservationCard] Cancellation warning:', warning);
       setCancelCount(warning.cancellationCount);
     } catch (error) {
-      logger.error('[ActiveReservationCard] Error fetching cancel count:', error);
+      console.error('[ActiveReservationCard] Error fetching cancel count:', error);
     } finally {
       setLoadingCancelCount(false);
     }
@@ -737,14 +736,12 @@ export function ActiveReservationCard({
       />
 
       {/* Apple-Style Cancel Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={(open) => {
-        if (open) {
-          logger.debug('[ActiveReservationCard] Opening cancel dialog with count:', cancelCount);
-        }
-        setShowCancelDialog(open);
-      }}>
-        <DialogContent className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-          <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
+      <Dialog open={showCancelDialog} onOpenChange={() => {/* Block dismissal - must choose */}}>
+        <DialogContent 
+          className="max-w-[320px] rounded-[16px] p-0 border-none bg-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >          <DialogTitle className="text-[17px] font-semibold text-gray-900 leading-tight text-center px-5 pt-5">
             {cancelCount >= 4 ? '⚠️ მე-5 გაუქმება' : 
              cancelCount >= 3 ? '⚠️ მე-4 გაუქმება' : 
              cancelCount >= 2 ? t('cancelDialog.critical.title') : 
