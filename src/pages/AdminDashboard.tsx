@@ -28,6 +28,7 @@ import { LiveMonitoring } from '@/components/admin/LiveMonitoring';
 import { AlertManagement } from '@/components/admin/AlertManagement';
 import ErrorMonitoring from '@/components/admin/ErrorMonitoring';
 import { PerformanceMonitoringPanel } from '@/components/admin/PerformanceMonitoringPanel';
+import { AdminActionsMenu } from '@/components/admin/AdminActionsMenu';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -363,12 +364,16 @@ export default function AdminDashboard() {
                   className="data-[state=checked]:bg-orange-500"
                 />
               </div>
+
+              {/* Quick Actions Menu */}
+              <AdminActionsMenu onRefresh={handleRefreshData} />
               
               <Button 
                 variant="ghost" 
                 size="sm" 
                 className="h-9 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 onClick={handleRefreshData}
+                title="Refresh Data (R)"
               >
                 <RefreshCw className="w-4 h-4" />
               </Button>
@@ -378,6 +383,7 @@ export default function AdminDashboard() {
                 size="sm" 
                 className="h-9 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
                 onClick={() => navigate('/')}
+                title="Go Home (H)"
               >
                 Home
               </Button>
