@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Package, UserCheck, AlertTriangle, Shield, Settings, AlertCircle } from 'lucide-react';
+import { Package, UserCheck, AlertTriangle, Shield, Settings, AlertCircle, RefreshCw } from 'lucide-react';
 import { getDashboardStats, testAdminConnection } from '@/lib/admin-api';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -299,50 +299,61 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Professional Header */}
-      <header className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50 shadow-xl">
-        <div className="container mx-auto px-4 lg:px-6">
+    <div className="min-h-screen bg-gradient-to-b from-white via-[#F0FFF9] to-[#E0F9F0]">
+      {/* Clean Professional Header */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Left: Title & Live Stats */}
-            <div className="flex items-center gap-5">
+            {/* Left: Title & Status */}
+            <div className="flex items-center gap-6">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 shadow-sm">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
-                <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
-              </div>
-              
-              {/* Live Stats Chips */}
-              <div className="hidden md:flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 rounded-lg text-xs shadow-lg backdrop-blur-sm">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm"></div>
-                  <span className="font-bold text-emerald-300">{stats?.totalPartners || 0}</span>
-                  <span className="text-emerald-200 font-medium">Partners</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 rounded-lg text-xs shadow-lg backdrop-blur-sm">
-                  <span className="font-bold text-blue-300">{stats?.totalUsers || 0}</span>
-                  <span className="text-blue-200 font-medium">Users</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-violet-500/20 border border-purple-500/30 rounded-lg text-xs shadow-lg backdrop-blur-sm">
-                  <span className="font-bold text-purple-300">{stats?.totalOffers || 0}</span>
-                  <span className="text-purple-200 font-medium">Offers</span>
-                </div>
-                {stats && stats.pendingPartners > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/30 rounded-lg text-xs shadow-lg backdrop-blur-sm">
-                    <AlertTriangle className="w-3.5 h-3.5 text-orange-300" />
-                    <span className="font-bold text-orange-300">{stats.pendingPartners}</span>
-                    <span className="text-orange-200 font-medium">Pending</span>
+                <div>
+                  <h1 className="text-lg font-bold text-gray-900">Admin Control</h1>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className={`w-1.5 h-1.5 rounded-full ${connectionStatus === 'Connected' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                    <span>{connectionStatus}</span>
+                    <span className="text-gray-300">•</span>
+                    <span>{new Date().toLocaleTimeString()}</span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="flex items-center gap-3">
-              {/* Maintenance Mode Toggle */}
-              <div className="flex items-center gap-3 px-4 py-2 bg-slate-700/50 rounded-xl border border-slate-600 shadow-lg backdrop-blur-sm">
-                <Label htmlFor="maintenance-toggle" className="text-xs font-semibold text-gray-200 cursor-pointer">
+            {/* Right: Key Stats & Actions */}
+            <div className="flex items-center gap-4">
+              {/* Compact Stats */}
+              <div className="hidden lg:flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-teal-600" />
+                  <span className="text-sm font-semibold text-gray-900">{stats?.totalPartners || 0}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="text-sm font-semibold text-gray-900">{stats?.totalUsers || 0}</span>
+                </div>
+                <div className="w-px h-4 bg-gray-300"></div>
+                <div className="flex items-center gap-1.5">
+                  <Package className="w-3.5 h-3.5 text-purple-600" />
+                  <span className="text-sm font-semibold text-gray-900">{stats?.totalOffers || 0}</span>
+                </div>
+                {stats && stats.pendingPartners > 0 && (
+                  <>
+                    <div className="w-px h-4 bg-gray-300"></div>
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+                      <span className="text-sm font-bold text-orange-600">{stats.pendingPartners}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Maintenance Toggle */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
+                <Label htmlFor="maintenance-toggle" className="text-xs font-medium text-gray-600 cursor-pointer">
                   Maintenance
                 </Label>
                 <Switch
@@ -354,9 +365,18 @@ export default function AdminDashboard() {
               </div>
               
               <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-9 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                onClick={handleRefreshData}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+              
+              <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9 px-4 text-xs font-semibold bg-slate-700/50 border-slate-600 text-gray-200 hover:bg-slate-600"
+                className="h-9 text-sm border-gray-300 text-gray-700 hover:bg-gray-50"
                 onClick={() => navigate('/')}
               >
                 Home
@@ -364,7 +384,7 @@ export default function AdminDashboard() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9 px-4 text-xs font-semibold bg-slate-700/50 border-slate-600 text-gray-200 hover:bg-red-600 hover:text-white hover:border-red-500"
+                className="h-9 text-sm border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300"
                 onClick={handleSignOut}
               >
                 Sign Out
@@ -374,172 +394,179 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 lg:px-6 py-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          {/* Modern Navigation */}
-          <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl border border-slate-700/50 p-1.5 shadow-xl">
-            <TabsList className="flex flex-wrap justify-start gap-1 h-auto bg-transparent p-0">
-              {/* Core Management */}
-              <div className="flex items-center gap-1">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
+      <div className="container mx-auto px-4 lg:px-8 py-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Clean, Professional Navigation */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <TabsList className="w-full justify-start gap-0 h-auto bg-transparent p-2">
+              {/* Primary Actions */}
+              <div className="flex items-center gap-1 pr-3 border-r border-gray-200">
+                <TabsTrigger 
+                  value="overview" 
+                  className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:border-teal-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="partners" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
+                <TabsTrigger 
+                  value="partners" 
+                  className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:border-teal-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
                   Partners
                 </TabsTrigger>
-                <TabsTrigger value="pending" className="relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
+                <TabsTrigger 
+                  value="pending" 
+                  className="relative data-[state=active]:bg-orange-50 data-[state=active]:text-orange-700 data-[state=active]:border-orange-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
                   Pending
                   {stats && stats.pendingPartners > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-white">
+                    <span className="ml-2 px-1.5 py-0.5 bg-orange-500 text-white text-xs font-bold rounded">
                       {stats.pendingPartners}
                     </span>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="users" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
+                <TabsTrigger 
+                  value="users" 
+                  className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-blue-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
                   Users
                 </TabsTrigger>
-                <TabsTrigger value="offers" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
+                <TabsTrigger 
+                  value="banned" 
+                  className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:border-red-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Banned
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="offers" 
+                  className="data-[state=active]:bg-purple-50 data-[state=active]:text-purple-700 data-[state=active]:border-purple-200 data-[state=active]:shadow-none text-sm font-medium px-4 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
                   Offers
                 </TabsTrigger>
               </div>
 
-              {/* Analytics & Monitoring */}
-              <div className="hidden lg:flex items-center gap-1 ml-1 pl-3 border-l-2 border-slate-600">
-                <TabsTrigger value="analytics" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:bg-slate-700/50 text-gray-300">
-                  📊 Analytics
+              {/* Analytics */}
+              <div className="flex items-center gap-1 px-3 border-r border-gray-200">
+                <TabsTrigger 
+                  value="analytics" 
+                  className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Analytics
                 </TabsTrigger>
-                <TabsTrigger value="moderation" className="data-[state=active]:bg-yellow-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  ⚖️ Moderation
-                </TabsTrigger>
-                <TabsTrigger value="financial" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  💰 Financial
-                </TabsTrigger>
-              </div>
-
-              {/* System Operations */}
-              <div className="hidden lg:flex items-center gap-0.5 ml-0.5 pl-2 border-l border-gray-300">
-                <TabsTrigger value="live" className="data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  🔴 Live
-                </TabsTrigger>
-                <TabsTrigger value="health" className="data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  ❤️ Health
-                </TabsTrigger>
-                <TabsTrigger value="performance" className="data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  ⚡ Performance
-                </TabsTrigger>
-                <TabsTrigger value="announce" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  📢 Announce
-                </TabsTrigger>
-                <TabsTrigger value="alerts" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  🔔 Alerts
+                <TabsTrigger 
+                  value="financial" 
+                  className="data-[state=active]:bg-emerald-50 data-[state=active]:text-emerald-700 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Financial
                 </TabsTrigger>
               </div>
 
-              {/* System Admin */}
-              <div className="hidden lg:flex items-center gap-0.5 ml-0.5 pl-2 border-l border-gray-300">
-                <TabsTrigger value="audit" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-3 py-1.5 rounded transition-all">
-                  📋 Audit
+              {/* Monitoring */}
+              <div className="flex items-center gap-1 px-3 border-r border-gray-200">
+                <TabsTrigger 
+                  value="live" 
+                  className="data-[state=active]:bg-red-50 data-[state=active]:text-red-700 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Live
                 </TabsTrigger>
-                <TabsTrigger value="errors" className="data-[state=active]:bg-red-700 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-2.5 py-1.5 rounded transition-all">
-                  <AlertCircle className="h-3.5 w-3.5" />
+                <TabsTrigger 
+                  value="health" 
+                  className="data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Health
                 </TabsTrigger>
-                <TabsTrigger value="config" className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:shadow-md text-xs font-medium px-2.5 py-1.5 rounded transition-all">
-                  <Settings className="h-3.5 w-3.5" />
+                <TabsTrigger 
+                  value="performance" 
+                  className="data-[state=active]:bg-indigo-50 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Performance
+                </TabsTrigger>
+              </div>
+
+              {/* System */}
+              <div className="flex items-center gap-1 px-3">
+                <TabsTrigger 
+                  value="audit" 
+                  className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  Audit
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="config" 
+                  className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900 data-[state=active]:shadow-none text-sm font-medium px-3 py-2 rounded-lg transition-all text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                >
+                  <Settings className="h-4 w-4" />
                 </TabsTrigger>
               </div>
             </TabsList>
           </div>
 
-          <TabsContent value="overview" className="space-y-4">
-            {/* System Status Bar */}
-            <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 px-5 py-3 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full shadow-sm ${connectionStatus === 'Connected' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
-                    <span className="text-gray-400 font-medium">DB:</span>
-                    <span className="font-bold text-gray-200">{connectionStatus}</span>
-                  </div>
-                  <div className="h-4 w-px bg-gray-300"></div>
-                  <div className="text-gray-500 font-medium">
-                    ⏱ {new Date().toLocaleTimeString()}
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-8 text-xs px-3 font-semibold bg-slate-700/50 border-slate-600 text-gray-300 hover:bg-slate-600"
-                  onClick={handleRefreshData}
-                  disabled={loading}
-                >
-                  🔄 Refresh
-                </Button>
-              </div>
-            </div>
-
+          <TabsContent value="overview" className="space-y-6">
             {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Partners Card */}
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-xl hover:bg-slate-800/80 transition-all duration-300 cursor-pointer">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-md">
-                    <Package className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2.5 bg-teal-50 rounded-lg">
+                    <Package className="w-5 h-5 text-teal-600" />
                   </div>
-                  <Badge variant="secondary" className="bg-emerald-500/20 text-emerald-300 text-[10px] px-2 py-0.5 font-semibold border border-emerald-500/30">Active</Badge>
+                  <Badge variant="secondary" className="bg-teal-50 text-teal-700 text-xs px-2 py-0.5 font-medium border border-teal-200">Active</Badge>
                 </div>
-                <div className="text-3xl font-bold text-gray-100">{stats?.totalPartners || 0}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1">Partners</div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats?.totalPartners || 0}</div>
+                <div className="text-sm text-gray-500 font-medium">Active Partners</div>
               </div>
 
               {/* Users Card */}
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-xl hover:bg-slate-800/80 transition-all duration-300 cursor-pointer">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg shadow-md">
-                    <UserCheck className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2.5 bg-blue-50 rounded-lg">
+                    <UserCheck className="w-5 h-5 text-blue-600" />
                   </div>
-                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 text-[10px] px-2 py-0.5 font-semibold border border-blue-500/30">Users</Badge>
+                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 font-medium border border-blue-200">Total</Badge>
                 </div>
-                <div className="text-3xl font-bold text-gray-100">{stats?.totalUsers || 0}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1">Customers</div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats?.totalUsers || 0}</div>
+                <div className="text-sm text-gray-500 font-medium">Registered Users</div>
               </div>
 
               {/* Offers Card */}
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-xl hover:bg-slate-800/80 transition-all duration-300 cursor-pointer">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-600 rounded-lg shadow-md">
-                    <Package className="w-5 h-5 text-white" />
+              <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2.5 bg-purple-50 rounded-lg">
+                    <Package className="w-5 h-5 text-purple-600" />
                   </div>
-                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-[10px] px-2 py-0.5 font-semibold border border-purple-500/30">Live</Badge>
+                  <Badge variant="secondary" className="bg-purple-50 text-purple-700 text-xs px-2 py-0.5 font-medium border border-purple-200">Live</Badge>
                 </div>
-                <div className="text-3xl font-bold text-gray-100">{stats?.totalOffers || 0}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1">Offers</div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats?.totalOffers || 0}</div>
+                <div className="text-sm text-gray-500 font-medium">Active Offers</div>
               </div>
 
               {/* Pending Card */}
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-xl hover:bg-slate-800/80 transition-all duration-300 cursor-pointer" onClick={() => setActiveTab('pending')}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg shadow-md">
-                    <AlertTriangle className="w-5 h-5 text-white" />
+              <div 
+                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200 cursor-pointer" 
+                onClick={() => setActiveTab('pending')}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="p-2.5 bg-orange-50 rounded-lg">
+                    <AlertTriangle className="w-5 h-5 text-orange-600" />
                   </div>
                   {stats && stats.pendingPartners > 0 && (
-                    <Badge variant="destructive" className="text-[10px] px-2 py-0.5 font-semibold shadow-sm">!</Badge>
+                    <Badge variant="destructive" className="text-xs px-2 py-0.5 font-medium">Action Required</Badge>
                   )}
                 </div>
-                <div className="text-3xl font-bold text-gray-100">{stats?.pendingPartners || 0}</div>
-                <div className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-1">Pending</div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">{stats?.pendingPartners || 0}</div>
+                <div className="text-sm text-gray-500 font-medium">Pending Approval</div>
               </div>
             </div>
 
             {/* Today's Activity */}
             {typeof stats?.reservationsToday === 'number' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-lg hover:bg-slate-800/80 transition-all duration-200">
-                  <div className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">📅 Reservations Today</div>
-                  <div className="text-3xl font-bold text-blue-400">{stats?.reservationsToday ?? 0}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                  <div className="text-sm text-gray-500 mb-2 font-medium">Reservations Today</div>
+                  <div className="text-3xl font-bold text-blue-600">{stats?.reservationsToday ?? 0}</div>
                 </div>
-                <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 hover:shadow-lg hover:bg-slate-800/80 transition-all duration-200">
-                  <div className="text-xs text-gray-400 mb-2 font-semibold uppercase tracking-wide">💵 Revenue Today</div>
-                  <div className="text-3xl font-bold text-emerald-400">
+                <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200">
+                  <div className="text-sm text-gray-500 mb-2 font-medium">Revenue Today</div>
+                  <div className="text-3xl font-bold text-emerald-600">
                     {(stats?.revenueToday ?? 0).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                   </div>
                 </div>
@@ -547,56 +574,62 @@ export default function AdminDashboard() {
             )}
 
             {/* Quick Actions */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <div className="lg:col-span-3 bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 shadow-lg">
-                <h3 className="text-sm font-bold text-gray-200 mb-3 uppercase tracking-wide">⚡ Quick Actions</h3>
-                <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Button
                   variant="outline"
-                  className="h-20 flex flex-col gap-2 bg-slate-700/50 border-slate-600 hover:bg-orange-500/20 hover:border-orange-500/50 transition-all hover:shadow-lg"
+                  className="h-20 flex flex-col gap-2 justify-center border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all"
+                  onClick={() => setActiveTab('partners')}
+                >
+                  <Package className="h-5 w-5 text-teal-600" />
+                  <span className="text-xs font-medium text-gray-700">Partners</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-20 flex flex-col gap-2 justify-center border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all"
                   onClick={() => setActiveTab('pending')}
                 >
-                  <AlertTriangle className="h-5 w-5 text-orange-400" />
-                  <span className="text-xs font-semibold text-gray-300">Pending</span>
+                  <AlertTriangle className="h-5 w-5 text-orange-600" />
+                  <span className="text-xs font-medium text-gray-700">Pending</span>
                   {stats && stats.pendingPartners > 0 && (
                     <Badge variant="destructive" className="h-4 px-1.5 text-[10px] font-bold">{stats.pendingPartners}</Badge>
                   )}
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-20 flex flex-col gap-2 bg-slate-700/50 border-slate-600 hover:bg-blue-500/20 hover:border-blue-500/50 transition-all hover:shadow-lg"
+                  className="h-20 flex flex-col gap-2 justify-center border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all"
                   onClick={() => setActiveTab('users')}
                 >
-                  <UserCheck className="h-5 w-5 text-blue-400" />
-                  <span className="text-xs font-semibold text-gray-300">Users</span>
+                  <UserCheck className="h-5 w-5 text-blue-600" />
+                  <span className="text-xs font-medium text-gray-700">Users</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-16 flex flex-col gap-1 hover:bg-purple-50 hover:border-purple-400 transition-all"
+                  className="h-20 flex flex-col gap-2 justify-center border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all"
                   onClick={() => setActiveTab('offers')}
                 >
-                  <Package className="h-4 w-4 text-purple-600" />
-                  <span className="text-[11px] font-medium">Offers</span>
+                  <Package className="h-5 w-5 text-purple-600" />
+                  <span className="text-xs font-medium text-gray-700">Offers</span>
                 </Button>
-                </div>
               </div>
+            </div>
 
-              {/* Keyboard Shortcuts */}
-              <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-slate-700/50 p-4 shadow-lg">
-                <h3 className="text-sm font-bold text-gray-200 mb-3 uppercase tracking-wide">⌨️ Shortcuts</h3>
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400 font-medium">Tabs</span>
-                    <kbd className="px-2 py-1 bg-slate-700/50 border border-slate-600 rounded-md text-gray-300 font-mono text-[11px] shadow-sm">1-9</kbd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400 font-medium">Refresh</span>
-                    <kbd className="px-2 py-1 bg-slate-700/50 border border-slate-600 rounded-md text-gray-300 font-mono text-[11px] shadow-sm">R</kbd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400 font-medium">Home</span>
-                    <kbd className="px-2 py-1 bg-slate-700/50 border border-slate-600 rounded-md text-gray-300 font-mono text-[11px] shadow-sm">H</kbd>
-                  </div>
+            {/* Keyboard Shortcuts */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-5">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Keyboard Shortcuts</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Switch Tabs</span>
+                  <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-gray-700 font-mono text-xs shadow-sm">1-9</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Refresh Data</span>
+                  <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-gray-700 font-mono text-xs shadow-sm">R</kbd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Go Home</span>
+                  <kbd className="px-2 py-1 bg-white border border-gray-300 rounded text-gray-700 font-mono text-xs shadow-sm">H</kbd>
                 </div>
               </div>
             </div>
@@ -627,7 +660,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="banned" className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <BannedUsersPanel onStatsUpdate={loadStats} />
             </div>
           </TabsContent>

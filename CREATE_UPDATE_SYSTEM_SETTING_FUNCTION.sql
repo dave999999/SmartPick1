@@ -23,7 +23,7 @@ DECLARE
   v_result JSONB;
 BEGIN
   -- Check if user is admin
-  SELECT is_admin INTO v_is_admin
+  SELECT role = 'ADMIN' INTO v_is_admin
   FROM users
   WHERE id = p_admin_user_id;
   
@@ -32,11 +32,12 @@ BEGIN
   END IF;
   
   -- Update or insert the setting
-  INSERT INTO system_settings (key, value, updated_at)
-  VALUES (p_setting_key, p_setting_value, NOW())
+  INSERT INTO system_settings (key, value, updated_by, created_at, updated_at)
+  VALUES (p_setting_key, p_setting_value, p_admin_user_id, NOW(), NOW())
   ON CONFLICT (key) 
   DO UPDATE SET 
     value = p_setting_value,
+    updated_by = p_admin_user_id,
     updated_at = NOW()
   RETURNING value INTO v_result;
   
