@@ -236,9 +236,9 @@ export default function AdminDashboard() {
       // This bypasses RLS and ensures admin users can update settings
       const { data, error } = await supabase
         .rpc('update_system_setting', {
-          setting_key: 'maintenance_mode',
-          setting_value: { enabled: checked },
-          admin_user_id: user.id
+          p_setting_key: 'maintenance_mode',
+          p_setting_value: { enabled: checked },
+          p_admin_user_id: user.id
         });
 
       logger.debug('Update result:', { data, error });
