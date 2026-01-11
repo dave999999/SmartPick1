@@ -129,6 +129,17 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
         }
         scannerRef.current.clear();
         scannerRef.current = null;
+        
+        // CRITICAL: Stop all camera tracks to release hardware
+        const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
+        if (videoElement && videoElement.srcObject) {
+          const stream = videoElement.srcObject as MediaStream;
+          stream.getTracks().forEach(track => {
+            track.stop();
+            logger.log('🎥 Camera track stopped:', track.label);
+          });
+          videoElement.srcObject = null;
+        }
       } catch (err) {
         logger.error('❌ Error stopping scanner:', err);
       }
