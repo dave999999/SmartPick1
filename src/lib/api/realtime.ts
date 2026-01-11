@@ -75,15 +75,26 @@ export const subscribeToPartnerReservations = (
     return { unsubscribe: () => {} } as RealtimeChannel;
   }
   
-  return supabase
+  logger.log('📡 [Realtime] Creating subscription channel for partner:', partnerId);
+  
+  const channel = supabase
     .channel(`public:reservations:partner:${partnerId}`)
     .on('postgres_changes', {
       event: '*',
       schema: 'public',
       table: 'reservations',
       filter: `partner_id=eq.${partnerId}`,
-    }, callback)
-    .subscribe();
+    }, (payload) => {
+      logger.log('📥 [Realtime] Postgres change received:', {
+        event: payload.eventType,
+        table: payload.table,
+        schema: payload.schema
+      });
+      callback(payload);
+    });
+  
+  // Don't auto-subscribe here - let caller handle it with status callback
+  return channel;
 };
 
 export const subscribeToReservations = (
