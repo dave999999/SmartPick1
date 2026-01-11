@@ -175,8 +175,7 @@ export default defineConfig({
             }
           }
         ],
-        navigateFallback: null, // Let app handle routing
-        cleanupOutdatedCaches: true
+        navigateFallback: null // Let app handle routing
       },
       devOptions: {
         enabled: false // Disable in development for faster reload
