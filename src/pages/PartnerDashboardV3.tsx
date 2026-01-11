@@ -151,8 +151,8 @@ export default function PartnerDashboardV3() {
     threshold: 80,
   });
 
-  // 🔔 Real-time subscription for active reservations tab
-  // Only subscribes when partner is viewing the "active" tab
+  // 🔔 Real-time subscription for active reservations
+  // Always active to ensure updates even when partner is on different tabs
   const refreshReservationsRef = useRef(refreshReservations);
   
   // Keep ref updated without triggering re-subscription
@@ -161,8 +161,8 @@ export default function PartnerDashboardV3() {
   }, [refreshReservations]);
 
   useEffect(() => {
-    if (!partner?.id || activeView !== 'active') {
-      logger.debug('⏸️ [PartnerDashboard] Not subscribing - tab not active or no partner');
+    if (!partner?.id) {
+      logger.debug('⏸️ [PartnerDashboard] Not subscribing - no partner');
       return;
     }
 
@@ -176,8 +176,8 @@ export default function PartnerDashboardV3() {
         logger.log('🔄 [PartnerDashboard] Refreshing reservations list');
         await refreshReservationsRef.current();
         
-        // Show notification for new reservations
-        if (payload.eventType === 'INSERT') {
+        // Show notification for new reservations (only when on active tab)
+        if (payload.eventType === 'INSERT' && activeView === 'active') {
           toast.success('🎉 New reservation received!', {
             description: 'A customer just reserved your offer',
             duration: 5000,
@@ -190,7 +190,7 @@ export default function PartnerDashboardV3() {
       logger.debug('🛑 [PartnerDashboard] Cleanup - unsubscribing from reservations');
       supabase.removeChannel(channel);
     };
-  }, [partner?.id, activeView]); // Removed refreshReservations from deps
+  }, [partner?.id]); // Always subscribe, only toast depends on activeView
 
   // Calculate revenue today
   const revenueToday = stats?.totalRevenue || 0; // Simplified for demo

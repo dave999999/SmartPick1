@@ -88,7 +88,7 @@ serve(async (req: Request) => {
     // Get reservation details (keep selection simple to avoid relationship errors)
     const { data: reservation, error: reservationError } = await supabaseAdmin
       .from('reservations')
-      .select('id, partner_id, customer_id, status, picked_up_at')
+      .select('id, partner_id, customer_id, status, picked_up_at, offer_id')
       .eq('id', reservation_id)
       .single()
 
@@ -179,14 +179,16 @@ serve(async (req: Request) => {
     try {
       // Calculate saved amount from offer
       const { data: offerData } = await supabaseAdmin
-        .from('reservations')
-        .select('offer:offers(original_price, discounted_price)')
-        .eq('id', reservation_id)
+        .from('offers')
+        .select('original_price, discounted_price')
+        .eq('id', reservation.offer_id)
         .single()
       
-      const savedAmount = offerData?.offer 
-        ? (offerData.offer.original_price - offerData.offer.discounted_price)
+      const savedAmount = offerData
+        ? (offerData.original_price - offerData.discounted_price)
         : 0
+      
+      console.log(`💰 Calculated saved amount: ${savedAmount} GEL from offer:`, offerData)
 
       // Broadcast to customer via realtime channel
       await supabaseAdmin
