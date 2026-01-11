@@ -89,21 +89,29 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,svg,woff,woff2}'],
         globIgnores: ['**/1.png', '**/grain.png'], // Exclude large images
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
+        cleanupOutdatedCaches: true, // Auto-remove old caches for security
+        skipWaiting: false, // Wait for user confirmation or smart auto-update
+        clientsClaim: true, // Take control immediately after activation
         runtimeCaching: [
           {
-            // Supabase API - Network First (fresh data priority)
+            // Critical API endpoints - ALWAYS FRESH (reservations, offers, user data)
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/(reservations|offers|users|partners)/i,
+            handler: 'NetworkOnly', // Never cache - always fresh
+          },
+          {
+            // Other Supabase API - Network First with short cache
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-api',
               expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 // 1 hour
+                maxEntries: 30,
+                maxAgeSeconds: 5 * 60 // 5 minutes only (reduced from 1 hour)
               },
               cacheableResponse: {
                 statuses: [0, 200]
               },
-              networkTimeoutSeconds: 10
+              networkTimeoutSeconds: 5 // Faster timeout
             }
           },
           {

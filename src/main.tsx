@@ -84,17 +84,31 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 			// Register Workbox service worker
 			const wb = new Workbox('/sw.js');
 			
+			// Check if user has active reservation
+			const hasActiveReservation = () => {
+				const path = window.location.pathname;
+				// Don't auto-update during active reservation or checkout
+				return path.includes('/reserve-offer') || 
+				       document.querySelector('[data-active-reservation="true"]') !== null;
+			};
+			
 			// Listen for update events
 			wb.addEventListener('waiting', () => {
 				logger.log('[SW] New version available');
 				
-				// Show update notification
-				const shouldUpdate = confirm(
-					'🎉 A new version of SmartPick is available! Click OK to update and get the latest features.'
-				);
-				
-				if (shouldUpdate) {
-					// Tell service worker to skip waiting
+				// Smart update strategy: auto-update if safe, otherwise prompt
+				if (hasActiveReservation()) {
+					// User is in critical flow - show prompt
+					const shouldUpdate = confirm(
+						'🎉 New version available! Update now? (Your current action will be saved)'
+					);
+					
+					if (shouldUpdate) {
+						wb.messageSkipWaiting();
+					}
+				} else {
+					// Safe to auto-update silently
+					logger.log('[SW] Auto-updating silently (no active reservation)');
 					wb.messageSkipWaiting();
 				}
 			});
@@ -109,10 +123,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
 			const registration = await wb.register();
 			logger.log('[SW] Workbox service worker registered:', registration.scope);
 			
-			// Check for updates periodically
+			// Check for updates every 4 hours (reduced from 1 hour for performance)
 			setInterval(() => {
 				registration?.update();
-			}, 60 * 60 * 1000); // Check every hour
+			}, 4 * 60 * 60 * 1000);
 			
 		} catch (error) {
 			logger.error('[SW] Error with service worker:', error);

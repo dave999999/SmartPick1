@@ -1,8 +1,7 @@
 -- ============================================
--- Partner Forgive Customer (Remove Penalty)
+-- Deploy Partner Forgive Customer Function
+-- Run this in Supabase SQL Editor to ensure the function is deployed
 -- ============================================
--- Partner decides to forgive the customer and remove the penalty
--- that was automatically applied by the system
 
 CREATE OR REPLACE FUNCTION public.partner_forgive_customer(
   p_reservation_id UUID
@@ -74,3 +73,17 @@ $$;
 COMMENT ON FUNCTION public.partner_forgive_customer IS 'Partner forgives customer (optional decrement of penalty_count) supporting ACTIVE, EXPIRED, FAILED_PICKUP statuses.';
 
 GRANT EXECUTE ON FUNCTION public.partner_forgive_customer(UUID) TO authenticated;
+
+-- ============================================
+-- TEST THE FUNCTION
+-- ============================================
+
+-- Check if function exists
+SELECT 
+  proname as function_name,
+  pg_get_functiondef(oid) as definition
+FROM pg_proc
+WHERE proname = 'partner_forgive_customer';
+
+-- Test query (replace with actual reservation_id to test)
+-- SELECT partner_forgive_customer('YOUR_RESERVATION_ID_HERE'::UUID);
