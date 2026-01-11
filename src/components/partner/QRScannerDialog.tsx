@@ -10,7 +10,7 @@
  * - Large touch targets for messy hands
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,38 @@ export function QRScannerDialog({ open, onOpenChange, partnerId, onSuccess }: QR
   const [scanSuccess, setScanSuccess] = useState(false);
   const [cooldownActive, setCooldownActive] = useState(false);
   const isProcessingRef = useRef(false);
+  const [key, setKey] = useState(0); // Force remount of QRScanner
+
+  // CRITICAL: Stop camera when dialog closes
+  useEffect(() => {
+    if (!open) {
+      // Force stop all camera tracks when dialog closes
+      const stopAllCameraTracks = () => {
+        const videoElements = document.querySelectorAll('video');
+        videoElements.forEach(video => {
+          if (video.srcObject) {
+            const stream = video.srcObject as MediaStream;
+            stream.getTracks().forEach(track => {
+              track.stop();
+              console.log('🎥 Force stopped camera track:', track.label);
+            });
+            video.srcObject = null;
+          }
+        });
+      };
+      
+      stopAllCameraTracks();
+      
+      // Reset states
+      setActiveTab('scanner');
+      setManualCode('');
+      setScanSuccess(false);
+      setCooldownActive(false);
+      
+      // Force remount QRScanner on next open
+      setKey(prev => prev + 1);
+    }
+  }, [open]);
 
   const handleValidateCode = async (code: string) => {
     // 🚀 OPTIMIZATION: Prevent overheating with cooldown between scans
@@ -155,6 +187,7 @@ export function QRScannerDialog({ open, onOpenChange, partnerId, onSuccess }: QR
                 {/* Camera Viewport with Frame Overlay */}
                 <div className="relative rounded-2xl overflow-hidden bg-black aspect-square max-h-[70vh]">
                   <QRScanner
+                    key={key}
                     onScan={(code) => handleValidateCode(code)}
                     onError={(error) => toast.error(`კამერა: ${error}`)}
                   />

@@ -174,6 +174,35 @@ serve(async (req: Request) => {
     // - Log partner_point_transactions with reason 'PICKUP_REWARD'
     // Any direct balance/transaction writes here would double-count.
 
+    // 🚀 BROADCAST: Notify customer's UI that pickup is confirmed
+    // This triggers the success dialog on customer's device immediately
+    try {
+      // Calculate saved amount from offer
+      const { data: offerData } = await supabaseAdmin
+        .from('reservations')
+        .select('offer:offers(original_price, discounted_price)')
+        .eq('id', reservation_id)
+        .single()
+      
+      const savedAmount = offerData?.offer 
+        ? (offerData.offer.original_price - offerData.offer.discounted_price)
+        : 0
+
+      // Broadcast to customer via realtime channel
+      await supabaseAdmin
+        .channel(`pickup-${reservation_id}`)
+        .send({
+          type: 'broadcast',
+          event: 'pickup_confirmed',
+          payload: { savedAmount }
+        })
+      
+      console.log(`📡 Broadcast sent to channel pickup-${reservation_id}`)
+    } catch (broadcastError) {
+      // Don't fail the entire operation if broadcast fails
+      console.error('⚠️ Failed to send pickup broadcast:', broadcastError)
+    }
+
     // Return success
     return new Response(
       JSON.stringify({

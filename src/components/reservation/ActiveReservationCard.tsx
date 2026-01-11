@@ -484,10 +484,11 @@ export function ActiveReservationCard({
   }, [showQRModal, reservation?.id]);
 
   // 🚀 OPTIMIZATION: Use WebSocket broadcast for instant pickup detection
-  // Falls back to polling if broadcast fails
+  // Always enabled when there's an active reservation (not just when QR modal is open)
+  // This ensures customer sees success dialog even if partner scans/validates manually
   usePickupBroadcast({
     reservationId: reservation?.id || null,
-    enabled: showQRModal,
+    enabled: !!reservation?.id, // Always listen when reservation exists
     onPickupConfirmed: (data) => {
       const celebrationKey = `pickup-celebrated-${reservation?.id}`;
       if (!localStorage.getItem(celebrationKey)) {

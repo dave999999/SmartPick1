@@ -2,7 +2,9 @@
  * usePickupBroadcast - Lightweight pickup confirmation listener
  * 
  * Listens for broadcast messages when partner confirms pickup.
- * Only active when QR modal is open - no polling, minimal resource usage.
+ * Active whenever customer has an active reservation - ensures
+ * success dialog shows whether partner scans QR, enters code manually,
+ * or uses partner dashboard button.
  */
 
 import { useEffect, useRef } from 'react';
