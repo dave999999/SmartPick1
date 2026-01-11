@@ -65,25 +65,61 @@ export function useTelegramStatus(userId?: string) {
   useEffect(() => {
     fetchTelegramStatus()
     if (!userId) return
-    const channel = supabase
-      .channel('telegram_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notification_preferences',
-          filter: `user_id=eq.${userId}`
-        },
-        () => fetchTelegramStatus()
-      )
-      .subscribe()
-    return () => {
+
+    // ✅ OPTIMIZED: Only subscribe to realtime when tab is visible
+    // Telegram settings change infrequently, so we don't need constant connection
+    let channel: any = null
+    let isSubscribed = false
+
+    const subscribe = () => {
+      if (isSubscribed || document.hidden) return
+      logger.debug('[useTelegramStatus] Subscribing to realtime (tab visible)')
+      channel = supabase
+        .channel('telegram_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notification_preferences',
+            filter: `user_id=eq.${userId}`
+          },
+          () => fetchTelegramStatus()
+        )
+        .subscribe()
+      isSubscribed = true
+    }
+
+    const unsubscribe = () => {
+      if (!isSubscribed || !channel) return
+      logger.debug('[useTelegramStatus] Unsubscribing from realtime (tab hidden)')
       try {
         supabase.removeChannel(channel)
       } catch (e) {
-        // Channel already removed or doesn't exist
+        // Channel already removed
       }
+      channel = null
+      isSubscribed = false
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        unsubscribe()
+      } else {
+        subscribe()
+      }
+    }
+
+    // Only subscribe if tab is visible
+    if (!document.hidden) {
+      subscribe()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      unsubscribe()
     }
   }, [userId])
 

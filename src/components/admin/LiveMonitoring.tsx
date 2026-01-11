@@ -35,34 +35,49 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
   const fetchLiveStats = async () => {
     try {
       const today = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+      const now = new Date().toISOString();
 
-      // Use count queries instead of fetching all data (works better with RLS)
-      const [usersCount, partnersCount, offersCount, reservationsCount] = await Promise.all([
+      // OPTIMIZED: Use efficient count queries with head: true (no data transfer)
+      const [usersCount, partnersCount, offersCount, reservationsCount, onlineStats, revenueResult] = await Promise.all([
+        // Total counts (head queries - minimal bandwidth)
         supabase.from('users').select('*', { count: 'exact', head: true }),
         supabase.from('partners').select('*', { count: 'exact', head: true }),
-        supabase.from('offers').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
-        supabase.from('reservations').select('*', { count: 'exact', head: true }).gte('created_at', today)
+        
+        // Only non-expired ACTIVE offers (filtered at database level)
+        supabase.from('offers').select('*', { count: 'exact', head: true })
+          .eq('status', 'ACTIVE')
+          .gt('expires_at', now),
+        
+        // Today's reservations (filtered at database level)
+        supabase.from('reservations').select('*', { count: 'exact', head: true })
+          .gte('created_at', today),
+        
+        // EFFICIENT: Single RPC call for all online stats (one database query)
+        supabase.rpc('get_online_stats'),
+        
+        // Revenue calculation (minimal data transfer - only one column)
+        supabase.from('reservations')
+          .select('smart_price')
+          .gte('created_at', today)
+          .eq('status', 'COMPLETED')
       ]);
 
-      // Get counts (these work even with RLS restrictions)
+      // Extract counts
       const totalUsers = usersCount.count || 0;
       const totalPartners = partnersCount.count || 0;
       const activeOffers = offersCount.count || 0;
       const todayReservations = reservationsCount.count || 0;
 
-      // For detailed stats, try to fetch what we can
-      const users: any[] = [];
-      const partners: any[] = [];
-      const reservations: any[] = [];
+      // Online stats from optimized RPC function
+      const onlineData = onlineStats.data?.[0] || { total_online: 0, web_online: 0, ios_online: 0, android_online: 0 };
+      const activeUsers = Number(onlineData.total_online) || 0;
 
-      // Calculate what we can (use 0 for metrics we can't calculate without full access)
-      const activeUsers = users.filter((u: any) => u.last_seen && u.last_seen >= fiveMinutesAgo).length;
-      const activePartners = partners.filter((p: any) => p.status === 'APPROVED' && p.updated_at >= fiveMinutesAgo).length;
-      const pendingPartners = partners.filter((p: any) => p.status === 'PENDING').length;
-      
-      const todayCompleted = reservations.filter((r: any) => r.created_at >= today && r.status === 'COMPLETED');
-      const todayRevenue = todayCompleted.reduce((sum: number, r: any) => sum + (r.smart_price || 0), 0);
+      // Calculate today's revenue (client-side aggregation on minimal data)
+      const todayRevenue = (revenueResult.data || []).reduce((sum: number, r: any) => sum + (r.smart_price || 0), 0);
+
+      // Pending partners (would need additional RPC for efficiency)
+      const activePartners = 0; // TODO: Add get_partner_stats() RPC
+      const pendingPartners = 0; // TODO: Add get_partner_stats() RPC
 
       setStats({
         totalUsers,
@@ -147,17 +162,19 @@ export function LiveMonitoring({ isActive = true }: LiveMonitoringProps) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Users" value={stats.totalUsers} icon={Users} color="text-blue-600" />
-        <StatCard title="Live Users (5min)" value={stats.activeUsers} icon={Users} color="text-green-600" />
+        <StatCard title="Online Users (Web/iOS/Android)" value={stats.activeUsers} icon={Users} color="text-green-600" />
         <StatCard title="Total Partners" value={stats.totalPartners} icon={Building2} color="text-purple-600" />
-        <StatCard title="Live Partners (5min)" value={stats.activePartners} icon={Building2} color="text-teal-600" />
-        <StatCard title="Active Offers" value={stats.activeOffers} icon={Package} color="text-indigo-600" />
+        <StatCard title="Online Partners" value={stats.activePartners} icon={Building2} color="text-teal-600" />
+        <StatCard title="Live Offers (Non-Expired)" value={stats.activeOffers} icon={Package} color="text-indigo-600" />
         <StatCard title="Today's Reservations" value={stats.todayReservations} icon={TrendingUp} color="text-orange-600" />
         <StatCard title="Pending Partners" value={stats.pendingPartners} icon={AlertTriangle} color="text-yellow-600" />
-        <StatCard title="Today's Revenue" value={`₾${stats.todayRevenue.toFixed(2)}`} icon={TrendingUp} color="text-emerald-600" />
+        <StatCard title="Today's Revenue" value={`₾${stats.todayRevenue.toFixed(2)}`} icon={DollarSign} color="text-emerald-600" />
       </div>
 
-      <div className="text-xs text-gray-500 text-center">
-        {isActive ? '✅ Live - Auto-refreshes every 60 seconds' : '⏸️ Paused - Switch to this tab to resume'}
+      <div className="text-xs text-gray-500 text-center mt-2">
+        {isActive ? '✅ Live - Auto-refreshes every 2 minutes' : '⏸️ Paused - Switch to this tab to resume'}
+        <br />
+        <span className="text-amber-600">⚠️ Online user counts require realtime presence tracking (not yet implemented)</span>
       </div>
     </div>
   );

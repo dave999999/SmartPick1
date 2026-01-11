@@ -33,10 +33,15 @@ export function QRScannerDialog({ open, onOpenChange, partnerId, onSuccess }: QR
   const [manualCode, setManualCode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false);
+  const [cooldownActive, setCooldownActive] = useState(false);
   const isProcessingRef = useRef(false);
 
   const handleValidateCode = async (code: string) => {
-    if (isProcessingRef.current) {
+    // 🚀 OPTIMIZATION: Prevent overheating with cooldown between scans
+    if (isProcessingRef.current || cooldownActive) {
+      if (cooldownActive) {
+        toast.info('⏱️ გთხოვთ დაელოდოთ...');
+      }
       return;
     }
 
@@ -56,13 +61,21 @@ export function QRScannerDialog({ open, onOpenChange, partnerId, onSuccess }: QR
         setScanSuccess(true);
         toast.success('✅ აღება დადასტურდა!');
         
-        // Close dialog faster to prevent phone overheating from camera
+        // Activate cooldown to prevent overheating
+        setCooldownActive(true);
+        
+        // Close dialog and reset after cooldown
         setTimeout(() => {
           setManualCode('');
           setScanSuccess(false);
           onOpenChange(false);
           onSuccess?.();
-        }, 800); // Reduced from 1200ms
+          
+          // Reset cooldown after dialog closes
+          setTimeout(() => {
+            setCooldownActive(false);
+          }, 2000); // 2 second cooldown after closing
+        }, 800);
       } else {
         toast.error(result.error || '❌ არასწორი კოდი');
       }

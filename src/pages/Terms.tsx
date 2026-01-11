@@ -304,7 +304,7 @@ export default function Terms() {
                   <Alert className="mt-3 border-orange-200 bg-orange-50">
                     <AlertCircle className="h-4 w-4 text-orange-600" />
                     <AlertDescription className="text-sm text-gray-900">
-                      <strong>Refund Policy:</strong> SmartPoints used for reservation are <strong className="text-red-600">generally non-refundable</strong> once the reservation is confirmed, <strong>except</strong> in the following specific cases:
+                      <strong>No Refund Policy:</strong> SmartPoints used for reservation are <strong className="text-red-600">NEVER refundable</strong> when YOU cancel. If you cancel your reservation, you lose all points as a penalty. Points may only be returned in these specific cases:
                       <ul className="list-disc pl-6 mt-2 space-y-1">
                         <li>The Partner cancels the reservation due to stock issues or operational problems</li>
                         <li>The Partner cannot provide the reserved product at pickup time</li>

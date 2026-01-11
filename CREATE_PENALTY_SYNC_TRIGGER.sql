@@ -16,6 +16,7 @@ CREATE OR REPLACE FUNCTION update_user_suspension_status()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_has_active_penalty BOOLEAN;

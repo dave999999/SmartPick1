@@ -62,6 +62,7 @@ CREATE OR REPLACE FUNCTION reset_user_cooldown(p_user_id UUID)
 RETURNS TABLE(success BOOLEAN, message TEXT)
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_has_active_cooldown BOOLEAN;
@@ -69,7 +70,7 @@ DECLARE
 BEGIN
   -- Check if user has active cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking u
+    SELECT 1 FROM public.user_cancellation_tracking u
     WHERE u.user_id = p_user_id
       AND u.reset_cooldown_used = FALSE
       AND u.cancelled_at > NOW() - (u.cooldown_duration_minutes || ' minutes')::INTERVAL
@@ -83,7 +84,7 @@ BEGIN
 
   -- Check if user already used reset for this cooldown
   SELECT EXISTS(
-    SELECT 1 FROM user_cancellation_tracking u
+    SELECT 1 FROM public.user_cancellation_tracking u
     WHERE u.user_id = p_user_id
       AND u.reset_cooldown_used = TRUE
       AND u.cancelled_at > NOW() - INTERVAL '45 minutes'
@@ -96,10 +97,10 @@ BEGIN
   END IF;
 
   -- Mark the reset as used on the oldest active cancellation record
-  UPDATE user_cancellation_tracking
+  UPDATE public.user_cancellation_tracking
   SET reset_cooldown_used = TRUE
   WHERE id = (
-    SELECT id FROM user_cancellation_tracking u
+    SELECT id FROM public.user_cancellation_tracking u
     WHERE u.user_id = p_user_id
       AND u.reset_cooldown_used = FALSE
       AND u.cancelled_at > NOW() - INTERVAL '45 minutes'

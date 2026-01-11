@@ -27,6 +27,7 @@ export interface PartnerDashboardData {
   partnerPoints: PartnerPoints | null;
   isLoading: boolean;
   loadPartnerData: () => Promise<void>;
+  refreshReservations: () => Promise<void>;
   setOffers: React.Dispatch<React.SetStateAction<Offer[]>>;
   setReservations: React.Dispatch<React.SetStateAction<Reservation[]>>;
 }
@@ -88,6 +89,23 @@ export function usePartnerDashboardData(): PartnerDashboardData {
     loadPartnerData();
   }, [loadPartnerData]);
 
+  // Refresh only reservations (lighter than full reload)
+  const refreshReservations = useCallback(async () => {
+    if (!partner?.id || !partner?.user_id) return;
+
+    try {
+      const { getPartnerDashboardData } = await import('@/lib/api/partners');
+      const dashboardData = await getPartnerDashboardData(partner.user_id);
+      
+      setReservations(dashboardData.activeReservations);
+      setStats(dashboardData.stats); // Update stats too (counts changed)
+      
+      logger.debug('[usePartnerDashboardData] Reservations refreshed via real-time update');
+    } catch (error) {
+      logger.error('[usePartnerDashboardData] Failed to refresh reservations:', error);
+    }
+  }, [partner?.id, partner?.user_id]);
+
   return {
     partner,
     offers,
@@ -96,6 +114,7 @@ export function usePartnerDashboardData(): PartnerDashboardData {
     partnerPoints,
     isLoading,
     loadPartnerData,
+    refreshReservations,
     setOffers,
     setReservations,
   };

@@ -477,7 +477,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                   <Input
                     id="pickup_start"
                     type="time"
-                    value={editingOffer.pickup_start || ''}
+                    value={editingOffer.pickup_start ? new Date(editingOffer.pickup_start).toTimeString().slice(0, 5) : ''}
                     onChange={(e) => setEditingOffer({
                       ...editingOffer,
                       pickup_start: e.target.value
@@ -490,7 +490,7 @@ export function OffersManagement({ onStatsUpdate }: OffersManagementProps) {
                 <Input
                   id="pickup_end"
                   type="time"
-                  value={editingOffer.pickup_end || ''}
+                  value={editingOffer.pickup_end ? new Date(editingOffer.pickup_end).toTimeString().slice(0, 5) : ''}
                   onChange={(e) => setEditingOffer({
                     ...editingOffer,
                     pickup_end: e.target.value

@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Package, UserCheck, AlertTriangle, Shield, Settings, AlertCircle, RefreshCw } from 'lucide-react';
+import { Package, UserCheck, AlertTriangle, Shield, Settings, AlertCircle, RefreshCw, Users } from 'lucide-react';
 import { getDashboardStats, testAdminConnection } from '@/lib/admin-api';
 import { PageShell } from '@/components/layout/PageShell';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -33,6 +33,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { RealtimeConnectionMonitor } from '@/components/admin/RealtimeConnectionMonitor';
 
 interface DashboardStats {
   totalPartners: number;
@@ -44,16 +45,17 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
+  // No presence tracking or realtime auto-refresh for admin screen; fetch only on demand
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [connectionStatus, setConnectionStatus] = useState<string>('');
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [onlineUsersCount, setOnlineUsersCount] = useState<number>(0);
   const navigate = useNavigate();
 
   useEffect(() => {
     checkAdminAccess();
-    loadMaintenanceMode();
   }, []);
 
   // Keyboard shortcuts for power users
@@ -135,8 +137,8 @@ export default function AdminDashboard() {
         return;
       }
 
-      // User is authenticated and authorized, load stats
-      await loadStats();
+      // User is authenticated and authorized; wait for manual refresh to load data
+      setLoading(false);
     } catch (error) {
       logger.error('Error checking admin access:', error);
       toast.error('Failed to verify admin access');
@@ -202,9 +204,37 @@ export default function AdminDashboard() {
 
 
 
+  const fetchOnlineUsers = async () => {
+    try {
+      // Query user_presence table for users active in last 2 minutes
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      const { data, error } = await supabase
+        .from('user_presence')
+        .select('user_id', { count: 'exact', head: true })
+        .gte('last_seen', twoMinutesAgo)
+        .eq('status', 'online');
+
+      if (error) {
+        logger.error('Error fetching online users:', error);
+        setOnlineUsersCount(0);
+      } else {
+        const count = data?.length || 0;
+        setOnlineUsersCount(count);
+        logger.log(`🟢 Online users: ${count}`);
+      }
+    } catch (error) {
+      logger.error('Failed to fetch online users:', error);
+      setOnlineUsersCount(0);
+    }
+  };
+
   const handleRefreshData = async () => {
     setLoading(true);
-    await loadStats();
+    await Promise.all([
+      loadStats(),
+      fetchOnlineUsers(),
+      loadMaintenanceMode()
+    ]);
   };
 
   const loadMaintenanceMode = async () => {
@@ -350,6 +380,15 @@ export default function AdminDashboard() {
                     </div>
                   </>
                 )}
+              </div>
+
+              {/* Online Users Count */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+                <Users className="w-3.5 h-3.5 text-green-600" />
+                <span className="text-xs font-medium text-gray-600">Online:</span>
+                <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                  {onlineUsersCount}
+                </Badge>
               </div>
 
               {/* Maintenance Toggle */}
@@ -507,6 +546,9 @@ export default function AdminDashboard() {
           </div>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Realtime Connection Monitor */}
+            <RealtimeConnectionMonitor />
+
             {/* Key Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Partners Card */}

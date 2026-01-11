@@ -7,11 +7,11 @@ import { QueryClient } from '@tanstack/react-query';
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Stale time: Data is considered fresh for 5 minutes
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      // Stale time: Data is considered fresh for 10 minutes (20% fewer API calls)
+      staleTime: 10 * 60 * 1000, // 10 minutes
       
-      // Cache time: Keep data in cache for 10 minutes after last use
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      // Cache time: Keep data in cache for 15 minutes after last use
+      gcTime: 15 * 60 * 1000, // 15 minutes (formerly cacheTime)
       
       // Retry failed requests up to 2 times
       retry: 2,

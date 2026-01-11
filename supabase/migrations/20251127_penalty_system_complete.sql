@@ -312,7 +312,7 @@ CREATE POLICY "Admins can view all penalties"
   USING (
     EXISTS (
       SELECT 1 FROM public.users 
-      WHERE id = auth.uid() AND UPPER(role) = 'ADMIN'
+      WHERE id = auth.uid() AND lower(role) = 'admin'
     )
   );
 
@@ -323,7 +323,7 @@ CREATE POLICY "Admins can update all penalties"
   USING (
     EXISTS (
       SELECT 1 FROM public.users 
-      WHERE id = auth.uid() AND UPPER(role) = 'ADMIN'
+      WHERE id = auth.uid() AND lower(role) = 'admin'
     )
   );
 
@@ -342,7 +342,7 @@ CREATE POLICY "Admins can view all offense history"
   USING (
     EXISTS (
       SELECT 1 FROM public.users 
-      WHERE id = auth.uid() AND UPPER(role) = 'ADMIN'
+      WHERE id = auth.uid() AND lower(role) = 'admin'
     )
   );
 

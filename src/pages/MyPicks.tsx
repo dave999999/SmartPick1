@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react';
+import { useState, useEffect, memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Clock, QrCode, Star, MapPin, Phone, Mail, XCircle, X, Bell, CheckCircle2 } from 'lucide-react';
-import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, subscribeToReservations, cancelReservation, cleanupOldHistory, clearAllHistory, userConfirmPickup, userCancelReservationWithSplit } from '@/lib/api';
+import { getCurrentUser, getCustomerReservations, generateQRCodeDataURL, cancelReservation, cleanupOldHistory, clearAllHistory, userConfirmPickup, userCancelReservationWithSplit } from '@/lib/api';
 import type { Reservation, User } from '@/lib/types';
 import { toast } from 'sonner';
 // jsPDF removed - receipt download feature removed
@@ -48,24 +48,9 @@ export default function MyPicks() {
     };
   }, []);
 
-  useEffect(() => {
-    if (user) {
-      logger.log('🔔 Setting up real-time subscription for user:', user.id);
-      // Set up real-time subscription for reservations
-      const subscription = subscribeToReservations(user.id, (payload) => {
-        logger.log('🔄 Real-time reservation update received:', payload);
-        // Reload reservations immediately when change is detected
-        loadReservations();
-      });
-
-      return () => {
-        logger.log('🔕 Unsubscribing from real-time updates');
-        if (subscription && typeof subscription.unsubscribe === 'function') {
-          subscription.unsubscribe();
-        }
-      };
-    }
-  }, [user]);
+  // ✅ OPTIMIZED: No real-time subscription needed for history page
+  // Data is fetched when page loads - no need for instant updates
+  // Supabase API calls are unlimited, WebSocket connections are limited to 200
 
   // ⚠️ DISABLED POLLING: Real-time subscription is sufficient
   // This polling was contributing to the 4.7M database calls issue
@@ -405,8 +390,17 @@ export default function MyPicks() {
 
   // 🛡️ SAFETY: Ensure reservations is always an array
   const safeReservations = Array.isArray(reservations) ? reservations : [];
-  const activeReservations = safeReservations.filter(r => r.status === 'ACTIVE');
-  const historyReservations = safeReservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED', 'FAILED_PICKUP'].includes(r.status));
+  
+  // ⚡ OPTIMIZATION: Memoize filters to prevent redundant calculations on re-renders
+  const activeReservations = useMemo(
+    () => safeReservations.filter(r => r.status === 'ACTIVE'),
+    [safeReservations]
+  );
+  
+  const historyReservations = useMemo(
+    () => safeReservations.filter(r => ['PICKED_UP', 'EXPIRED', 'CANCELLED', 'FAILED_PICKUP'].includes(r.status)),
+    [safeReservations]
+  );
 
   if (loading) {
     return (

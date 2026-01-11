@@ -4,162 +4,216 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, DollarSign, Mail, Flag, Wrench, Save, AlertTriangle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Settings, 
+  DollarSign, 
+  Clock, 
+  Shield, 
+  Wrench, 
+  Save, 
+  AlertTriangle,
+  CheckCircle2,
+  TrendingUp,
+  Calendar
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
-interface SystemConfig {
-  // Points & Economy
-  welcomePoints: number;
-  referralBonus: number;
-  minPointsToReserve: number;
-  pointsExpiryDays: number;
-  
-  // Commission & Fees
-  partnerCommissionRate: number;
-  platformFee: number;
-  cancellationFee: number;
-  
-  // Reservations
-  maxReservationsPerUser: number;
-  reservationExpiryHours: number;
-  minPickupTimeHours: number;
-  
-  // Partner Settings
-  autoApprovePartners: boolean;
-  requirePartnerVerification: boolean;
-  minPartnerRating: number;
-  
-  // Features
-  enableReferrals: boolean;
-  enableAchievements: boolean;
-  enablePushNotifications: boolean;
-  enableEmailNotifications: boolean;
-  maintenanceMode: boolean;
-  
-  // Email Templates
-  welcomeEmailSubject: string;
-  welcomeEmailBody: string;
-  partnerApprovalEmailSubject: string;
-  partnerApprovalEmailBody: string;
-  
-  // Limits & Security
-  maxLoginAttempts: number;
-  sessionTimeoutMinutes: number;
-  enableCaptcha: boolean;
-  enableRateLimiting: boolean;
+interface SettingGroup {
+  [key: string]: number | boolean | string;
 }
 
-const defaultConfig: SystemConfig = {
-  welcomePoints: 100,
-  referralBonus: 50,
-  minPointsToReserve: 10,
-  pointsExpiryDays: 365,
-  
-  partnerCommissionRate: 15,
-  platformFee: 5,
-  cancellationFee: 10,
-  
-  maxReservationsPerUser: 5,
-  reservationExpiryHours: 24,
-  minPickupTimeHours: 2,
-  
-  autoApprovePartners: false,
-  requirePartnerVerification: true,
-  minPartnerRating: 3.0,
-  
-  enableReferrals: true,
-  enableAchievements: true,
-  enablePushNotifications: true,
-  enableEmailNotifications: true,
-  maintenanceMode: false,
-  
-  welcomeEmailSubject: 'Welcome to SmartPick!',
-  welcomeEmailBody: 'Thank you for joining SmartPick. Start reserving surplus food today!',
-  partnerApprovalEmailSubject: 'Your Partner Application has been Approved',
-  partnerApprovalEmailBody: 'Congratulations! You can now start adding offers.',
-  
-  maxLoginAttempts: 5,
-  sessionTimeoutMinutes: 60,
-  enableCaptcha: true,
-  enableRateLimiting: true,
+interface SystemSettings {
+  points: SettingGroup;
+  fees: SettingGroup;
+  reservations: SettingGroup;
+  features: SettingGroup;
+  security: SettingGroup;
+}
+
+const DEFAULT_SETTINGS: SystemSettings = {
+  points: {
+    welcomePoints: 100,
+    referralBonus: 50,
+    minPointsToReserve: 10,
+    pointsExpiryDays: 365,
+  },
+  fees: {
+    partnerCommissionRate: 15,
+    platformFee: 5,
+    cancellationFee: 10,
+  },
+  reservations: {
+    maxReservationsPerUser: 5,
+    reservationExpiryHours: 24,
+    minPickupTimeHours: 2,
+  },
+  features: {
+    enableReferrals: true,
+    enableAchievements: true,
+    maintenanceMode: false,
+  },
+  security: {
+    maxLoginAttempts: 5,
+    sessionTimeoutMinutes: 60,
+    enableRateLimiting: true,
+  },
 };
 
 export default function SystemConfiguration() {
-  const [config, setConfig] = useState<SystemConfig>(defaultConfig);
+  const [settings, setSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+  const [originalSettings, setOriginalSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [adminUserId, setAdminUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadConfig();
+    loadSettings();
   }, []);
 
-  const loadConfig = async () => {
+  const loadSettings = async () => {
     try {
       setLoading(true);
       
-      // Try to load from database (system_config table)
-      const { data, error } = await supabase
-        .from('system_config')
-        .select('*')
-        .single();
-      
-      if (data && !error) {
-        setConfig({ ...defaultConfig, ...data });
-        toast.success('Configuration loaded');
-      } else {
-        // Use defaults
-        setConfig(defaultConfig);
-        toast.info('Using default configuration');
+      // Get current admin user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setAdminUserId(user.id);
       }
+      
+      // Load all settings from system_settings table (key-value store)
+      const { data, error } = await supabase
+        .from('system_settings')
+        .select('key, value');
+      
+      if (error) {
+        logger.error('Error loading settings:', error);
+        toast.error('Failed to load settings');
+        setLoading(false);
+        return;
+      }
+      
+      // Convert key-value pairs to nested structure
+      const loadedSettings: SystemSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+      
+      data?.forEach((setting: any) => {
+        const key = setting.key;
+        const value = setting.value;
+        
+        // Map keys to groups
+        if (key.includes('points') || key.includes('Points') || key.includes('referral')) {
+          const settingKey = key.charAt(0).toLowerCase() + key.slice(1);
+          loadedSettings.points[settingKey] = value;
+        } else if (key.includes('commission') || key.includes('fee') || key.includes('Fee')) {
+          const settingKey = key.charAt(0).toLowerCase() + key.slice(1);
+          loadedSettings.fees[settingKey] = value;
+        } else if (key.includes('reservation') || key.includes('Reservation') || key.includes('pickup')) {
+          const settingKey = key.charAt(0).toLowerCase() + key.slice(1);
+          loadedSettings.reservations[settingKey] = value;
+        } else if (key.includes('enable') || key === 'maintenanceMode') {
+          const settingKey = key.charAt(0).toLowerCase() + key.slice(1);
+          loadedSettings.features[settingKey] = value;
+        } else if (key.includes('Login') || key.includes('session') || key.includes('timeout') || key.includes('RateLimit')) {
+          const settingKey = key.charAt(0).toLowerCase() + key.slice(1);
+          loadedSettings.security[settingKey] = value;
+        }
+      });
+      
+      setSettings(loadedSettings);
+      setOriginalSettings(JSON.parse(JSON.stringify(loadedSettings)));
+      logger.info('Settings loaded successfully');
     } catch (error) {
-      logger.error('Error loading config:', error);
+      logger.error('Error loading settings:', error);
       toast.error('Failed to load configuration');
-      setConfig(defaultConfig);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
+    if (!adminUserId) {
+      toast.error('Admin user not found');
+      return;
+    }
+
     try {
       setSaving(true);
       
-      // Upsert configuration to database
-      const { error } = await supabase
-        .from('system_config')
-        .upsert({
-          id: 1,
-          ...config,
-          updated_at: new Date().toISOString()
+      // Collect all changed settings
+      const changedSettings: Array<{ key: string; value: any }> = [];
+      
+      // Compare and collect changes
+      Object.entries(settings).forEach(([group, groupSettings]) => {
+        Object.entries(groupSettings).forEach(([key, value]) => {
+          const originalGroup = originalSettings[group as keyof SystemSettings];
+          const originalValue = originalGroup[key];
+          
+          if (value !== originalValue) {
+            // Convert first letter to uppercase for key format
+            const settingKey = key.charAt(0).toUpperCase() + key.slice(1);
+            changedSettings.push({ key: settingKey, value });
+          }
         });
+      });
+
+      if (changedSettings.length === 0) {
+        toast.info('No changes to save');
+        setSaving(false);
+        return;
+      }
+
+      logger.info(`Saving ${changedSettings.length} settings...`);
+
+      // Use the secure RPC function with audit logging
+      for (const setting of changedSettings) {
+        const { error } = await supabase.rpc('update_system_setting', {
+          p_setting_key: setting.key,
+          p_setting_value: setting.value,
+          p_admin_user_id: adminUserId
+        });
+
+        if (error) {
+          logger.error(`Error saving ${setting.key}:`, error);
+          throw error;
+        }
+      }
+
+      // Reload to get fresh data
+      await loadSettings();
       
-      if (error) throw error;
-      
-      toast.success('Configuration saved successfully!');
-      setHasChanges(false);
+      toast.success(`Successfully saved ${changedSettings.length} setting(s)`);
+      logger.info('All settings saved with audit trail');
     } catch (error) {
-      logger.error('Error saving config:', error);
-      toast.error('Failed to save configuration. You may need to create the system_config table.');
+      logger.error('Error saving settings:', error);
+      toast.error('Failed to save some settings');
     } finally {
       setSaving(false);
     }
   };
 
-  const updateConfig = (updates: Partial<SystemConfig>) => {
-    setConfig(prev => ({ ...prev, ...updates }));
-    setHasChanges(true);
+  const hasChanges = () => {
+    return JSON.stringify(settings) !== JSON.stringify(originalSettings);
+  };
+
+  const updateSetting = (group: keyof SystemSettings, key: string, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [key]: value
+      }
+    }));
   };
 
   if (loading) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading configuration...</p>
         </CardContent>
       </Card>
@@ -171,403 +225,329 @@ export default function SystemConfiguration() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Settings className="h-6 w-6" />
+            <Settings className="h-6 w-6 text-teal-600" />
             System Configuration
           </h2>
-          <p className="text-muted-foreground">Configure platform-wide settings and behavior</p>
+          <p className="text-muted-foreground mt-1">Configure platform-wide settings and behavior</p>
         </div>
         <div className="flex items-center gap-3">
-          {hasChanges && (
-            <span className="text-sm text-orange-600 font-medium">● Unsaved changes</span>
+          {hasChanges() && (
+            <Badge variant="outline" className="text-orange-600 border-orange-300">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Unsaved changes
+            </Badge>
           )}
-          <Button onClick={loadConfig} variant="outline" disabled={saving}>
+          <Button onClick={loadSettings} variant="outline" disabled={saving} size="sm">
             Reset
           </Button>
-          <Button onClick={handleSave} disabled={!hasChanges || saving}>
+          <Button onClick={handleSave} disabled={!hasChanges() || saving} size="sm">
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
 
-      {config.maintenanceMode && (
-        <Card className="border-orange-300 bg-orange-50">
-          <CardHeader>
-            <CardTitle className="text-orange-800 flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5" />
-              Maintenance Mode Enabled
-            </CardTitle>
-            <CardDescription className="text-orange-700">
-              The platform is currently in maintenance mode. Only admins can access the system.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
 
       <Tabs defaultValue="points" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="points">
+        <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 bg-gray-100">
+          <TabsTrigger value="points" className="data-[state=active]:bg-white">
             <DollarSign className="h-4 w-4 mr-2" />
-            Points & Economy
+            <span className="hidden sm:inline">Points & Economy</span>
+            <span className="sm:hidden">Points</span>
           </TabsTrigger>
-          <TabsTrigger value="reservations">
-            <Settings className="h-4 w-4 mr-2" />
-            Reservations
+          <TabsTrigger value="reservations" className="data-[state=active]:bg-white">
+            <Clock className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Reservations</span>
+            <span className="sm:hidden">Time</span>
           </TabsTrigger>
-          <TabsTrigger value="features">
-            <Flag className="h-4 w-4 mr-2" />
-            Features
-          </TabsTrigger>
-          <TabsTrigger value="emails">
-            <Mail className="h-4 w-4 mr-2" />
-            Email Templates
-          </TabsTrigger>
-          <TabsTrigger value="security">
+          <TabsTrigger value="features" className="data-[state=active]:bg-white">
             <Wrench className="h-4 w-4 mr-2" />
-            Security
+            <span className="hidden sm:inline">Features</span>
+            <span className="sm:hidden">Features</span>
+          </TabsTrigger>
+          <TabsTrigger value="fees" className="data-[state=active]:bg-white">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Fees</span>
+            <span className="sm:hidden">Fees</span>
+          </TabsTrigger>
+          <TabsTrigger value="security" className="data-[state=active]:bg-white">
+            <Shield className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Security</span>
+            <span className="sm:hidden">Security</span>
           </TabsTrigger>
         </TabsList>
 
+        {/* Points & Economy Tab */}
         <TabsContent value="points" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Points System</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-teal-600" />
+                Points System
+              </CardTitle>
               <CardDescription>Configure point rewards and requirements</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Welcome Bonus Points</Label>
+                  <Label htmlFor="welcomePoints" className="text-base">Welcome Bonus Points</Label>
                   <Input
+                    id="welcomePoints"
                     type="number"
-                    value={config.welcomePoints}
-                    onChange={(e) => updateConfig({ welcomePoints: parseInt(e.target.value) })}
+                    value={settings.points.welcomePoints}
+                    onChange={(e) => updateSetting('points', 'welcomePoints', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Points new users receive on signup</p>
+                  <p className="text-sm text-muted-foreground">Points new users receive on signup</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Referral Bonus Points</Label>
+                  <Label htmlFor="referralBonus" className="text-base">Referral Bonus Points</Label>
                   <Input
+                    id="referralBonus"
                     type="number"
-                    value={config.referralBonus}
-                    onChange={(e) => updateConfig({ referralBonus: parseInt(e.target.value) })}
+                    value={settings.points.referralBonus}
+                    onChange={(e) => updateSetting('points', 'referralBonus', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Points for successful referrals</p>
+                  <p className="text-sm text-muted-foreground">Points for successful referrals</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Minimum Points to Reserve</Label>
+                  <Label htmlFor="minPointsToReserve" className="text-base">Minimum Points to Reserve</Label>
                   <Input
+                    id="minPointsToReserve"
                     type="number"
-                    value={config.minPointsToReserve}
-                    onChange={(e) => updateConfig({ minPointsToReserve: parseInt(e.target.value) })}
+                    value={settings.points.minPointsToReserve}
+                    onChange={(e) => updateSetting('points', 'minPointsToReserve', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Minimum balance required</p>
+                  <p className="text-sm text-muted-foreground">Minimum balance required</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Points Expiry (Days)</Label>
+                  <Label htmlFor="pointsExpiryDays" className="text-base">Points Expiry (Days)</Label>
                   <Input
+                    id="pointsExpiryDays"
                     type="number"
-                    value={config.pointsExpiryDays}
-                    onChange={(e) => updateConfig({ pointsExpiryDays: parseInt(e.target.value) })}
+                    value={settings.points.pointsExpiryDays}
+                    onChange={(e) => updateSetting('points', 'pointsExpiryDays', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">0 = never expire</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Commission & Fees</CardTitle>
-              <CardDescription>Platform revenue settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Partner Commission (%)</Label>
-                  <Input
-                    type="number"
-                    value={config.partnerCommissionRate}
-                    onChange={(e) => updateConfig({ partnerCommissionRate: parseFloat(e.target.value) })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Platform Fee (%)</Label>
-                  <Input
-                    type="number"
-                    value={config.platformFee}
-                    onChange={(e) => updateConfig({ platformFee: parseFloat(e.target.value) })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Cancellation Fee (₾)</Label>
-                  <Input
-                    type="number"
-                    value={config.cancellationFee}
-                    onChange={(e) => updateConfig({ cancellationFee: parseFloat(e.target.value) })}
-                  />
+                  <p className="text-sm text-muted-foreground">Set to 0 or 365 to never expire</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Reservations Tab */}
         <TabsContent value="reservations" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Reservation Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-teal-600" />
+                Reservation Settings
+              </CardTitle>
               <CardDescription>Configure reservation limits and timing</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label>Max Reservations Per User</Label>
+                  <Label htmlFor="maxReservationsPerUser" className="text-base">Max Reservations Per User</Label>
                   <Input
+                    id="maxReservationsPerUser"
                     type="number"
-                    value={config.maxReservationsPerUser}
-                    onChange={(e) => updateConfig({ maxReservationsPerUser: parseInt(e.target.value) })}
+                    value={settings.reservations.maxReservationsPerUser}
+                    onChange={(e) => updateSetting('reservations', 'maxReservationsPerUser', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Active reservations limit</p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Reservation Expiry (Hours)</Label>
-                  <Input
-                    type="number"
-                    value={config.reservationExpiryHours}
-                    onChange={(e) => updateConfig({ reservationExpiryHours: parseInt(e.target.value) })}
-                  />
-                  <p className="text-xs text-muted-foreground">Auto-cancel after this time</p>
+                  <p className="text-sm text-muted-foreground">Active reservations limit</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Min Pickup Time (Hours)</Label>
+                  <Label htmlFor="reservationExpiryHours" className="text-base">Reservation Expiry (Hours)</Label>
                   <Input
+                    id="reservationExpiryHours"
                     type="number"
-                    value={config.minPickupTimeHours}
-                    onChange={(e) => updateConfig({ minPickupTimeHours: parseInt(e.target.value) })}
+                    value={settings.reservations.reservationExpiryHours}
+                    onChange={(e) => updateSetting('reservations', 'reservationExpiryHours', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Advance notice required</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Partner Settings</CardTitle>
-              <CardDescription>Partner approval and requirements</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Auto-Approve Partners</Label>
-                    <p className="text-xs text-muted-foreground">Skip manual approval process</p>
-                  </div>
-                  <Switch
-                    checked={config.autoApprovePartners}
-                    onCheckedChange={(checked) => updateConfig({ autoApprovePartners: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Require Verification</Label>
-                    <p className="text-xs text-muted-foreground">Partners must verify their business</p>
-                  </div>
-                  <Switch
-                    checked={config.requirePartnerVerification}
-                    onCheckedChange={(checked) => updateConfig({ requirePartnerVerification: checked })}
-                  />
+                  <p className="text-sm text-muted-foreground">Auto-cancel after this time</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Minimum Partner Rating</Label>
+                  <Label htmlFor="minPickupTimeHours" className="text-base">Min Pickup Time (Hours)</Label>
                   <Input
+                    id="minPickupTimeHours"
                     type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={config.minPartnerRating}
-                    onChange={(e) => updateConfig({ minPartnerRating: parseFloat(e.target.value) })}
+                    value={settings.reservations.minPickupTimeHours}
+                    onChange={(e) => updateSetting('reservations', 'minPickupTimeHours', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Partners below this rating may be flagged</p>
+                  <p className="text-sm text-muted-foreground">Advance notice required</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Features Tab */}
         <TabsContent value="features" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Feature Flags</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5 text-teal-600" />
+                Feature Toggles
+              </CardTitle>
               <CardDescription>Enable or disable platform features</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Referral System</Label>
-                  <p className="text-xs text-muted-foreground">Allow users to refer friends</p>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Enable Referral System</Label>
+                    <p className="text-sm text-muted-foreground">Allow users to refer friends for bonus points</p>
+                  </div>
+                  <Switch
+                    checked={settings.features.enableReferrals as boolean}
+                    onCheckedChange={(checked) => updateSetting('features', 'enableReferrals', checked)}
+                  />
                 </div>
-                <Switch
-                  checked={config.enableReferrals}
-                  onCheckedChange={(checked) => updateConfig({ enableReferrals: checked })}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Achievements</Label>
-                  <p className="text-xs text-muted-foreground">Gamification and badges</p>
+                <div className="flex items-center justify-between p-4 rounded-lg border">
+                  <div className="space-y-0.5">
+                    <Label className="text-base">Enable Achievements</Label>
+                    <p className="text-sm text-muted-foreground">Gamification system with badges and rewards</p>
+                  </div>
+                  <Switch
+                    checked={settings.features.enableAchievements as boolean}
+                    onCheckedChange={(checked) => updateSetting('features', 'enableAchievements', checked)}
+                  />
                 </div>
-                <Switch
-                  checked={config.enableAchievements}
-                  onCheckedChange={(checked) => updateConfig({ enableAchievements: checked })}
-                />
-              </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Push Notifications</Label>
-                  <p className="text-xs text-muted-foreground">Browser push notifications</p>
-                </div>
-                <Switch
-                  checked={config.enablePushNotifications}
-                  onCheckedChange={(checked) => updateConfig({ enablePushNotifications: checked })}
-                />
-              </div>
+                <Separator />
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Email Notifications</Label>
-                  <p className="text-xs text-muted-foreground">Send transactional emails</p>
+                <div className="flex items-center justify-between p-4 rounded-lg border border-orange-200 bg-orange-50">
+                  <div className="space-y-0.5">
+                    <Label className="text-base text-orange-800 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Maintenance Mode
+                    </Label>
+                    <p className="text-sm text-orange-700">Disable platform access for all non-admin users</p>
+                  </div>
+                  <Switch
+                    checked={settings.features.maintenanceMode as boolean}
+                    onCheckedChange={(checked) => updateSetting('features', 'maintenanceMode', checked)}
+                  />
                 </div>
-                <Switch
-                  checked={config.enableEmailNotifications}
-                  onCheckedChange={(checked) => updateConfig({ enableEmailNotifications: checked })}
-                />
-              </div>
-
-              <div className="flex items-center justify-between border-t pt-4">
-                <div className="space-y-0.5">
-                  <Label className="text-orange-600">Maintenance Mode</Label>
-                  <p className="text-xs text-muted-foreground">Disable platform for non-admins</p>
-                </div>
-                <Switch
-                  checked={config.maintenanceMode}
-                  onCheckedChange={(checked) => updateConfig({ maintenanceMode: checked })}
-                />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="emails" className="space-y-4">
+        {/* Fees Tab */}
+        <TabsContent value="fees" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Welcome Email</CardTitle>
-              <CardDescription>Email sent to new users after signup</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-teal-600" />
+                Commission & Fees
+              </CardTitle>
+              <CardDescription>Platform revenue settings</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Subject</Label>
-                <Input
-                  value={config.welcomeEmailSubject}
-                  onChange={(e) => updateConfig({ welcomeEmailSubject: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Body</Label>
-                <Textarea
-                  rows={4}
-                  value={config.welcomeEmailBody}
-                  onChange={(e) => updateConfig({ welcomeEmailBody: e.target.value })}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="partnerCommissionRate" className="text-base">Partner Commission (%)</Label>
+                  <Input
+                    id="partnerCommissionRate"
+                    type="number"
+                    step="0.1"
+                    value={settings.fees.partnerCommissionRate}
+                    onChange={(e) => updateSetting('fees', 'partnerCommissionRate', parseFloat(e.target.value) || 0)}
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">Revenue share for partners</p>
+                </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Partner Approval Email</CardTitle>
-              <CardDescription>Email sent when partner is approved</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Subject</Label>
-                <Input
-                  value={config.partnerApprovalEmailSubject}
-                  onChange={(e) => updateConfig({ partnerApprovalEmailSubject: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Body</Label>
-                <Textarea
-                  rows={4}
-                  value={config.partnerApprovalEmailBody}
-                  onChange={(e) => updateConfig({ partnerApprovalEmailBody: e.target.value })}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="platformFee" className="text-base">Platform Fee (%)</Label>
+                  <Input
+                    id="platformFee"
+                    type="number"
+                    step="0.1"
+                    value={settings.fees.platformFee}
+                    onChange={(e) => updateSetting('fees', 'platformFee', parseFloat(e.target.value) || 0)}
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">Platform service fee</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cancellationFee" className="text-base">Cancellation Fee (₾)</Label>
+                  <Input
+                    id="cancellationFee"
+                    type="number"
+                    step="0.1"
+                    value={settings.fees.cancellationFee}
+                    onChange={(e) => updateSetting('fees', 'cancellationFee', parseFloat(e.target.value) || 0)}
+                    className="text-lg"
+                  />
+                  <p className="text-sm text-muted-foreground">Fee charged for cancellations</p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Security Tab */}
         <TabsContent value="security" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Authentication and rate limiting</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-teal-600" />
+                Security & Limits
+              </CardTitle>
+              <CardDescription>Configure security and rate limiting</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Max Login Attempts</Label>
+                  <Label htmlFor="maxLoginAttempts" className="text-base">Max Login Attempts</Label>
                   <Input
+                    id="maxLoginAttempts"
                     type="number"
-                    value={config.maxLoginAttempts}
-                    onChange={(e) => updateConfig({ maxLoginAttempts: parseInt(e.target.value) })}
+                    value={settings.security.maxLoginAttempts}
+                    onChange={(e) => updateSetting('security', 'maxLoginAttempts', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Before temporary lockout</p>
+                  <p className="text-sm text-muted-foreground">Lock account after this many failed attempts</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Session Timeout (Minutes)</Label>
+                  <Label htmlFor="sessionTimeoutMinutes" className="text-base">Session Timeout (Minutes)</Label>
                   <Input
+                    id="sessionTimeoutMinutes"
                     type="number"
-                    value={config.sessionTimeoutMinutes}
-                    onChange={(e) => updateConfig({ sessionTimeoutMinutes: parseInt(e.target.value) })}
+                    value={settings.security.sessionTimeoutMinutes}
+                    onChange={(e) => updateSetting('security', 'sessionTimeoutMinutes', parseInt(e.target.value) || 0)}
+                    className="text-lg"
                   />
-                  <p className="text-xs text-muted-foreground">Inactivity timeout</p>
+                  <p className="text-sm text-muted-foreground">Auto-logout after inactivity</p>
                 </div>
               </div>
 
-              <div className="space-y-4 border-t pt-4">
-                <div className="flex items-center justify-between">
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center justify-between p-4 rounded-lg border">
                   <div className="space-y-0.5">
-                    <Label>Enable CAPTCHA</Label>
-                    <p className="text-xs text-muted-foreground">Require CAPTCHA on signup/login</p>
+                    <Label className="text-base">Enable Rate Limiting</Label>
+                    <p className="text-sm text-muted-foreground">Protect API endpoints from abuse</p>
                   </div>
                   <Switch
-                    checked={config.enableCaptcha}
-                    onCheckedChange={(checked) => updateConfig({ enableCaptcha: checked })}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Enable Rate Limiting</Label>
-                    <p className="text-xs text-muted-foreground">Prevent API abuse</p>
-                  </div>
-                  <Switch
-                    checked={config.enableRateLimiting}
-                    onCheckedChange={(checked) => updateConfig({ enableRateLimiting: checked })}
+                    checked={settings.security.enableRateLimiting as boolean}
+                    onCheckedChange={(checked) => updateSetting('security', 'enableRateLimiting', checked)}
                   />
                 </div>
               </div>
@@ -575,7 +555,22 @@ export default function SystemConfiguration() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Save Status Footer */}
+      {hasChanges() && (
+        <Card className="border-teal-300 bg-teal-50">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-teal-800">
+              <CheckCircle2 className="h-5 w-5" />
+              <span className="font-medium">Changes detected. Remember to save your configuration!</span>
+            </div>
+            <Button onClick={handleSave} disabled={saving} size="sm">
+              <Save className="h-4 w-4 mr-2" />
+              {saving ? 'Saving...' : 'Save All Changes'}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
-

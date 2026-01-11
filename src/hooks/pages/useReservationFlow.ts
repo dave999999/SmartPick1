@@ -8,7 +8,6 @@
 
 import { useState, useEffect } from 'react';
 import { User, Reservation } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
 import { useLiveGPS } from '@/hooks/useLiveGPS';
 import { logger } from '@/lib/logger';
 
@@ -146,110 +145,11 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]); // 🔧 FIX: Only depend on user.id, not entire user object
 
-  // Set up real-time subscription when active reservation exists
-  useEffect(() => {
-    if (!activeReservation?.id) {
-      logger.log('🔌 No active reservation - skipping subscription setup');
-      return;
-    }
-
-    logger.log('🔗 Setting up minimal subscription for reservation:', activeReservation.id);
-    logger.debug('🔗 Setting up subscription for:', activeReservation.id);
-    
-    // ⚠️ REMOVED: Heavy polling (every 5 seconds) - now using broadcast instead
-    // Pickup detection now happens via broadcast in ActiveReservationCard when QR modal is open
-    
-    let isCleanedUp = false;
-
-    const channel = supabase
-      .channel(`reservation-${activeReservation.id}`, {
-        config: {
-          broadcast: { self: false },
-          presence: { key: '' },
-        },
-      })
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'reservations',
-          filter: `id=eq.${activeReservation.id}`
-        },
-        (payload) => {
-          if (isCleanedUp) return; // Ignore events after cleanup
-          
-          logger.log('🔔 Real-time reservation update received:', payload);
-          logger.debug('📨 Payload received:', payload.new);
-          
-          // Check if order was picked up
-          if (payload.new && payload.new.status === 'PICKED_UP') {
-            logger.log('✅ Order picked up detected via real-time!');
-            logger.debug('🎉 PICKUP DETECTED - Status changed to PICKED_UP', payload.new);
-            
-            // Check localStorage to prevent duplicate celebrations
-            const celebrationKey = `pickup-celebrated-${activeReservation.id}`;
-            const alreadyCelebrated = localStorage.getItem(celebrationKey);
-            logger.debug('🔍 Celebration check:', { celebrationKey, alreadyCelebrated });
-            
-            if (!alreadyCelebrated) {
-              localStorage.setItem(celebrationKey, 'true');
-              
-              // Calculate actual savings: (original price * quantity) - discounted price
-              const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
-              const discountedPrice = activeReservation.total_price || 0;
-              const savedAmount = originalTotal - discountedPrice;
-              const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
-              
-              logger.debug('💰 Celebration data:', { savedAmount, pointsEarned });
-              
-              // Show pickup success modal
-              setPickupModalData({ savedAmount, pointsEarned });
-              setShowPickupSuccessModal(true);
-              logger.debug('✅ Modal state updated - should show now');
-              
-              // Clear active reservation
-              setActiveReservation(null);
-            } else {
-              logger.debug('⚠️ Pickup already celebrated, skipping modal');
-            }
-          } else {
-            // Reload for other changes (but throttle this)
-            if (!isCleanedUp) {
-              loadActiveReservation();
-            }
-          }
-        }
-      )
-      .subscribe((status) => {
-        logger.log('📡 Subscription status:', status);
-        logger.debug('📡 Subscription status:', status);
-        
-        // If subscription fails, force a reload to catch the pickup via polling
-        if (status === 'SUBSCRIPTION_ERROR' || status === 'TIMED_OUT') {
-          logger.warn('⚠️ Subscription failed, relying on polling...');
-          // Trigger immediate polling
-          setTimeout(() => {
-            if (!isCleanedUp) {
-              loadActiveReservation();
-            }
-          }, 1000);
-        }
-      });
-
-    return () => {
-      isCleanedUp = true;
-      logger.log('🔌 Cleaning up reservation subscription');
-      logger.debug('🧹 Cleanup: removing subscription');
-      
-      // Remove the channel completely
-      channel.unsubscribe().then(() => {
-        supabase.removeChannel(channel);
-        logger.log('✅ Channel removed from Supabase client');
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeReservation?.id]);
+  // ✅ OPTIMIZED: No real-time subscription needed for active reservation tracker
+  // Pickup confirmation is handled by usePickupBroadcast in ActiveReservationCard when QR is shown
+  // This saves 20-30 WebSocket connections (limited to 200 total)
+  // Status refreshes automatically when user opens the reservation widget
+  // Supabase API calls are unlimited, WebSocket connections are not
 
   return {
     activeReservationId,

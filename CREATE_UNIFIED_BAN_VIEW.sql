@@ -10,7 +10,9 @@
 
 DROP VIEW IF EXISTS admin_all_banned_users CASCADE;
 
-CREATE VIEW admin_all_banned_users AS
+CREATE VIEW admin_all_banned_users 
+WITH (security_invoker = true)
+AS
 
 -- Manual Bans (admin imposed)
 SELECT 
@@ -22,12 +24,12 @@ SELECT
   'MANUAL' as ban_source,
   ub.ban_type as ban_type,
   ub.reason as ban_reason,
-  ub.banned_at as banned_at,
+  ub.created_at as banned_at,
   ub.expires_at as expires_at,
   ub.banned_by as banned_by_admin_id,
   admin.email as banned_by_admin_email,
   admin.name as banned_by_admin_name,
-  ub.notes as additional_notes,
+  ub.internal_notes as additional_notes,
   ub.is_active as ban_is_active,
   CASE 
     WHEN NOT ub.is_active THEN FALSE
@@ -92,10 +94,7 @@ ORDER BY banned_at DESC;
 -- Grant access to authenticated users (admins only via RLS)
 GRANT SELECT ON admin_all_banned_users TO authenticated;
 
--- Add RLS policy (admins only)
-ALTER VIEW admin_all_banned_users SET (security_barrier = true);
-
--- Add comments
+-- Add comment (removed security_barrier setting for better performance)
 COMMENT ON VIEW admin_all_banned_users IS 
   'Unified view showing both manual admin bans and automatic penalty bans. 
    Includes all relevant details: ban source, reason, duration, and admin who imposed it.

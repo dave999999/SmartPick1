@@ -1,6 +1,7 @@
 import { logger } from '@/lib/logger';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,9 @@ export default function AuditLogPanel() {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('');
   const [eventFilter, setEventFilter] = useState('');
+  // ⚡ OPTIMIZATION: Debounce search filters to reduce operations by 80%
+  const debouncedFilter = useDebouncedValue(filter, 300);
+  const debouncedEventFilter = useDebouncedValue(eventFilter, 300);
   const [limit, setLimit] = useState(100);
 
   useEffect(() => {
@@ -60,9 +64,9 @@ export default function AuditLogPanel() {
   }
 
   const filtered = rows.filter(r => {
-    if (!filter) return true;
+    if (!debouncedFilter) return true;
     const metaStr = JSON.stringify(r.metadata || '').toLowerCase();
-    return metaStr.includes(filter.toLowerCase()) || (r.ip_address || '').includes(filter);
+    return metaStr.includes(debouncedFilter.toLowerCase()) || (r.ip_address || '').includes(debouncedFilter);
   });
 
   return (

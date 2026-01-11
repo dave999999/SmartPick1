@@ -117,7 +117,7 @@ const translations: Record<Language, Record<string, string>> = {
   'toast.failedConfirmPickup': 'Failed to confirm pickup',
   'toast.reservationCancelledSplit': 'Reservation cancelled.',
   'toast.toPartner': 'pts to partner',
-  'toast.refunded': 'pts refunded',
+  'toast.pointsLostPenalty': 'pts lost as penalty',
 
   'receipt.title': 'SmartPick Receipt',
   'receipt.reservationId': 'Reservation ID',
@@ -136,7 +136,7 @@ const translations: Record<Language, Record<string, string>> = {
   'confirm.cancelReservation': 'Are you sure you want to cancel this reservation?',
   'confirm.removeReservation': 'Are you sure you want to remove this reservation?',
   'confirm.confirmPickup': 'Confirm that you have picked up this order? This will transfer points to the partner.',
-  'confirm.cancelReservationSplit': 'Cancel this reservation? WARNING: ALL points will be lost forever as penalty (no refund).',
+  'confirm.cancelReservationSplit': 'Cancel this reservation? ⚠️ ALL points will be LOST FOREVER as penalty. Points are NOT refunded when you cancel.',
   'status.ACTIVE': 'Active',
   'status.PICKED_UP': 'Picked Up',
   'status.EXPIRED': 'Expired',
@@ -721,7 +721,7 @@ const translations: Record<Language, Record<string, string>> = {
   'partner.dashboard.qr.tab.manual': 'Manual Entry',
   'partner.dashboard.qr.aria.camera': 'Camera QR scan',
   'partner.dashboard.qr.aria.manual': 'Manual QR entry',
-  'confirm.markNoShowNoPenalty': 'Mark this reservation as no-show WITHOUT penalty? Customer will get their points refunded.',
+  'confirm.markNoShowWithForgiveness': 'Forgive this customer for missing pickup? This removes any penalty applied.',
   'partner.dashboard.active.title': 'Active Reservations',
   'partner.dashboard.active.pending': 'This section will be available after approval',
   'partner.dashboard.active.pendingReservations': 'Reservations will appear here once your account is approved',
@@ -2000,8 +2000,8 @@ const translations: Record<Language, Record<string, string>> = {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('smartpick-language');
-    // Gracefully fall back if an old 'ru' value is still in localStorage
-    return saved === 'ka' ? 'ka' : 'en';
+    // Default to Georgian (ka) for new users
+    return saved === 'en' ? 'en' : 'ka';
   });
 
   const setLanguage = (lang: Language) => {

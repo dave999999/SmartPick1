@@ -5,6 +5,16 @@
 -- Run this after CREATE_AUDIT_LOG_FUNCTION.sql
 
 -- 1. Update update_system_setting to include audit logging
+-- Drop all possible signatures (TEXT and VARCHAR variants)
+DO $$ 
+BEGIN
+  EXECUTE 'DROP FUNCTION IF EXISTS update_system_setting(TEXT, JSONB, UUID) CASCADE';
+  EXECUTE 'DROP FUNCTION IF EXISTS update_system_setting(VARCHAR, JSONB, UUID) CASCADE';
+  EXECUTE 'DROP FUNCTION IF EXISTS update_system_setting(TEXT, TEXT) CASCADE';
+EXCEPTION WHEN OTHERS THEN 
+  NULL;
+END $$;
+
 CREATE OR REPLACE FUNCTION update_system_setting(
   p_setting_key TEXT,
   p_setting_value JSONB,
@@ -13,6 +23,7 @@ CREATE OR REPLACE FUNCTION update_system_setting(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_is_admin BOOLEAN;
@@ -55,6 +66,8 @@ END;
 $$;
 
 -- 2. Create admin_ban_user function with audit logging
+DROP FUNCTION IF EXISTS admin_ban_user(TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) CASCADE;
+
 CREATE OR REPLACE FUNCTION admin_ban_user(
   p_user_email TEXT,
   p_reason TEXT,
@@ -65,6 +78,7 @@ CREATE OR REPLACE FUNCTION admin_ban_user(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_user_id UUID;
@@ -138,6 +152,9 @@ END;
 $$;
 
 -- 3. Create admin_grant_points function with audit logging
+DROP FUNCTION IF EXISTS admin_grant_points(TEXT, INT, TEXT, TEXT) CASCADE;
+DROP FUNCTION IF EXISTS admin_grant_points(UUID, INT, TEXT, TEXT) CASCADE;
+
 CREATE OR REPLACE FUNCTION admin_grant_points(
   p_user_email TEXT,
   p_points INT,
@@ -147,6 +164,7 @@ CREATE OR REPLACE FUNCTION admin_grant_points(
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_user_id UUID;
@@ -220,12 +238,15 @@ END;
 $$;
 
 -- 4. Create admin_unban_user function with audit logging
+DROP FUNCTION IF EXISTS admin_unban_user(UUID) CASCADE;
+
 CREATE OR REPLACE FUNCTION admin_unban_user(
   p_user_id UUID
 )
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_is_admin BOOLEAN;
@@ -290,15 +311,14 @@ SELECT
 
 -- Show updated functions
 SELECT 
-  routine_name as function_name,
-  string_agg(parameter_name || ' ' || data_type, ', ' ORDER BY ordinal_position) as parameters
-FROM information_schema.parameters
-WHERE specific_schema = 'public'
-  AND routine_name IN ('update_system_setting', 'admin_ban_user', 'admin_grant_points', 'admin_unban_user')
-GROUP BY routine_name
-ORDER BY routine_name;
+  proname as function_name,
+  pg_get_function_arguments(oid) as arguments
+FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace
+  AND proname IN ('update_system_setting', 'admin_ban_user', 'admin_grant_points', 'admin_unban_user')
+ORDER BY proname;
 
-COMMENT ON FUNCTION update_system_setting IS 'Update system settings with audit logging';
-COMMENT ON FUNCTION admin_ban_user IS 'Ban a user by email with audit logging';
-COMMENT ON FUNCTION admin_grant_points IS 'Grant or deduct points with audit logging';
-COMMENT ON FUNCTION admin_unban_user IS 'Unban a user with audit logging';
+COMMENT ON FUNCTION update_system_setting(TEXT, JSONB, UUID) IS 'Update system settings with audit logging';
+COMMENT ON FUNCTION admin_ban_user(TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT) IS 'Ban a user by email with audit logging';
+COMMENT ON FUNCTION admin_grant_points(TEXT, INT, TEXT, TEXT) IS 'Grant or deduct points with audit logging';
+COMMENT ON FUNCTION admin_unban_user(UUID) IS 'Unban a user with audit logging';

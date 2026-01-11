@@ -127,7 +127,7 @@ CREATE POLICY "Admins can view all audit logs"
   USING (
     EXISTS (
       SELECT 1 FROM users 
-      WHERE users.id = auth.uid() 
+      WHERE users.id = (SELECT auth.uid()) 
         AND users.role = 'ADMIN'
     )
   );
@@ -139,7 +139,7 @@ CREATE POLICY "Admins can insert audit logs"
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM users 
-      WHERE users.id = auth.uid() 
+      WHERE users.id = (SELECT auth.uid()) 
         AND users.role = 'ADMIN'
     )
   );
@@ -162,25 +162,38 @@ COMMENT ON COLUMN audit_logs.severity IS 'Severity level: INFO, WARNING, ERROR, 
 COMMENT ON COLUMN audit_logs.search_vector IS 'Full-text search vector (auto-generated)';
 
 -- Create retention policy function (optional - keep 1 year by default)
-CREATE OR REPLACE FUNCTION cleanup_old_audit_logs()
-RETURNS void
+DROP FUNCTION IF EXISTS cleanup_old_audit_logs() CASCADE;
+DROP FUNCTION IF EXISTS cleanup_old_audit_logs(INTEGER) CASCADE;
+
+CREATE OR REPLACE FUNCTION cleanup_old_audit_logs(
+  p_days_to_keep INTEGER DEFAULT 90
+)
+RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_catalog
 AS $$
+DECLARE
+  v_deleted_count INTEGER;
 BEGIN
-  -- Delete audit logs older than 1 year
-  DELETE FROM audit_logs
-  WHERE created_at < NOW() - INTERVAL '1 year'
-    AND severity = 'INFO'; -- Keep warnings and errors longer
+  -- Delete audit logs older than specified days (INFO only)
+  DELETE FROM public.audit_logs
+  WHERE created_at < pg_catalog.now() - (p_days_to_keep || ' days')::INTERVAL
+    AND severity = 'INFO';
   
-  -- Log the cleanup
-  RAISE NOTICE 'Cleaned up audit logs older than 1 year';
+  GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+  
+  RETURN v_deleted_count;
 END;
 $$;
 
-COMMENT ON FUNCTION cleanup_old_audit_logs() IS 
-  'Cleanup audit logs older than 1 year (INFO only). 
-   Run periodically via cron or scheduled job.';
+-- Restrict execution to admins only
+REVOKE EXECUTE ON FUNCTION cleanup_old_audit_logs(INTEGER) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cleanup_old_audit_logs(INTEGER) TO authenticated;
+
+COMMENT ON FUNCTION cleanup_old_audit_logs(INTEGER) IS 
+  'Cleanup audit logs older than specified days (INFO only). 
+   Run periodically via cron or scheduled job. Requires admin role.';
 
 -- Verify table was created
 SELECT 

@@ -483,7 +483,24 @@ export function ActiveReservationCard({
     console.log('🔍 QR Modal state changed:', { showQRModal, reservationId: reservation?.id });
   }, [showQRModal, reservation?.id]);
 
-  // Poll for pickup status when QR modal is open (lightweight fallback)
+  // 🚀 OPTIMIZATION: Use WebSocket broadcast for instant pickup detection
+  // Falls back to polling if broadcast fails
+  usePickupBroadcast({
+    reservationId: reservation?.id || null,
+    enabled: showQRModal,
+    onPickupConfirmed: (data) => {
+      const celebrationKey = `pickup-celebrated-${reservation?.id}`;
+      if (!localStorage.getItem(celebrationKey)) {
+        localStorage.setItem(celebrationKey, 'true');
+        setShowQRModal(false);
+        if (onPickupConfirmed) {
+          onPickupConfirmed(data);
+        }
+      }
+    }
+  });
+
+  // Poll for pickup status when QR modal is open (fallback if broadcast doesn't work)
   useEffect(() => {
     if (!showQRModal || !reservation?.id) return;
     
@@ -526,8 +543,8 @@ export function ActiveReservationCard({
       }
     };
     
-    // Poll every 2 seconds while QR modal is open
-    const interval = setInterval(checkPickupStatus, 2000);
+    // Poll every 5 seconds while QR modal is open (slower since we have broadcast)
+    const interval = setInterval(checkPickupStatus, 5000);
     
     return () => {
       console.log('🛑 Stopping pickup polling');

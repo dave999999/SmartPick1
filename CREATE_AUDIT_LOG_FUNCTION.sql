@@ -4,6 +4,9 @@
 -- Purpose: Centralized function to log all admin actions
 -- Usage: PERFORM log_admin_action(...) at end of admin functions
 
+-- Drop existing function if it exists
+DROP FUNCTION IF EXISTS log_admin_action CASCADE;
+
 CREATE OR REPLACE FUNCTION log_admin_action(
   p_action_type TEXT,
   p_entity_type TEXT,
@@ -20,6 +23,7 @@ CREATE OR REPLACE FUNCTION log_admin_action(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_log_id UUID;
@@ -94,6 +98,7 @@ CREATE OR REPLACE FUNCTION log_system_setting_change(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   RETURN log_admin_action(
@@ -120,6 +125,7 @@ CREATE OR REPLACE FUNCTION log_user_ban(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   RETURN log_admin_action(
@@ -146,6 +152,7 @@ CREATE OR REPLACE FUNCTION log_points_transaction(
 RETURNS UUID
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_action_type TEXT;
@@ -177,15 +184,14 @@ SELECT
   '=== AUDIT LOGGING FUNCTIONS CREATED ===' as status,
   'Use log_admin_action() in admin functions' as usage;
 
--- Show function signatures
+-- Show created functions
 SELECT 
-  routine_name as function_name,
-  string_agg(parameter_name || ' ' || data_type, ', ' ORDER BY ordinal_position) as parameters
-FROM information_schema.parameters
-WHERE specific_schema = 'public'
-  AND routine_name LIKE 'log_%'
-GROUP BY routine_name
-ORDER BY routine_name;
+  proname as function_name,
+  pg_get_function_arguments(oid) as arguments
+FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace
+  AND proname IN ('log_admin_action', 'log_system_setting_change', 'log_user_ban', 'log_points_transaction')
+ORDER BY proname;
 
 -- Example usage:
 /*

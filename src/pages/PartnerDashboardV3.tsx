@@ -1,5 +1,5 @@
 import { logger } from '@/lib/logger';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Partner, Offer } from '@/lib/types';
 import { toast } from 'sonner';
@@ -59,6 +59,8 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 import { usePartnerDashboardData } from '@/hooks/pages/usePartnerDashboardData';
 import { usePartnerModals } from '@/hooks/pages/usePartnerModals';
+import { subscribeToPartnerReservations } from '@/lib/api/realtime';
+import { supabase } from '@/lib/supabase';
 
 export default function PartnerDashboardV3() {
   const navigate = useNavigate();
@@ -74,6 +76,7 @@ export default function PartnerDashboardV3() {
     partnerPoints,
     isLoading,
     loadPartnerData,
+    refreshReservations,
   } = usePartnerDashboardData();
   
   // 🚀 REFACTORED: Extract modal state to custom hook
@@ -147,6 +150,47 @@ export default function PartnerDashboardV3() {
     },
     threshold: 80,
   });
+
+  // 🔔 Real-time subscription for active reservations tab
+  // Only subscribes when partner is viewing the "active" tab
+  const refreshReservationsRef = useRef(refreshReservations);
+  
+  // Keep ref updated without triggering re-subscription
+  useEffect(() => {
+    refreshReservationsRef.current = refreshReservations;
+  }, [refreshReservations]);
+
+  useEffect(() => {
+    if (!partner?.id || activeView !== 'active') {
+      logger.debug('⏸️ [PartnerDashboard] Not subscribing - tab not active or no partner');
+      return;
+    }
+
+    logger.debug('🔔 [PartnerDashboard] Setting up real-time subscription for reservations');
+
+    const channel = subscribeToPartnerReservations(partner.id, async (payload: any) => {
+      logger.debug('📥 [PartnerDashboard] Reservation update received:', payload.eventType);
+      
+      // Only refresh on new reservations or status changes
+      if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+        logger.log('🔄 [PartnerDashboard] Refreshing reservations list');
+        await refreshReservationsRef.current();
+        
+        // Show notification for new reservations
+        if (payload.eventType === 'INSERT') {
+          toast.success('🎉 New reservation received!', {
+            description: 'A customer just reserved your offer',
+            duration: 5000,
+          });
+        }
+      }
+    });
+
+    return () => {
+      logger.debug('🛑 [PartnerDashboard] Cleanup - unsubscribing from reservations');
+      supabase.removeChannel(channel);
+    };
+  }, [partner?.id, activeView]); // Removed refreshReservations from deps
 
   // Calculate revenue today
   const revenueToday = stats?.totalRevenue || 0; // Simplified for demo

@@ -316,16 +316,14 @@ export function formatTransactionReason(reason: string): string {
     'registration': '🎉 Welcome Bonus',
     'reservation': '🛍️ Reservation',
     'purchase': '💳 Purchase',
-    'refund': '↩️ Refund',
     'admin_adjustment': '⚙️ Admin Adjustment',
     'referral': '👥 Referral Bonus',
     'streak_bonus': '🔥 Streak Bonus',
     // Escrow + partner-specific reasons
-    'RESERVATION_CREATED': '🛍️ Reservation Created',
+    'RESERVATION_CREATED': '🛒️ Reservation Created',
     'RESERVATION_HOLD': '🔒 Points Held for Reservation',
-    'RESERVATION_FAILED_REFUND': '↩️ Reservation Failed (Refunded)',
     'PICKUP_REWARD': '✅ Partner Pickup Reward',
-    'CANCELLATION_REFUND': '↩️ Cancellation Refund',
+    'CANCELLATION_PENALTY': '⚠️ Cancellation Penalty (No Refund)',
     'CANCELLATION_FEE': '⚠️ Cancellation Fee (Partner)'
   };
 

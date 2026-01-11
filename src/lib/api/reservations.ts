@@ -31,6 +31,25 @@ export interface QRValidationResult {
   error?: string;
 }
 
+/**
+ * Check if app is in maintenance mode
+ * Used before critical actions (reserve, cancel, payment)
+ */
+const checkMaintenanceMode = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'maintenance_mode')
+      .single();
+    
+    return data?.value?.enabled === true;
+  } catch (error) {
+    logger.error('Error checking maintenance mode:', error);
+    return false; // Allow action if check fails (fail-open)
+  }
+};
+
 export const createReservation = async (
   offerId: string,
   customerId: string,
@@ -38,6 +57,12 @@ export const createReservation = async (
 ): Promise<Reservation> => {
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase to create reservations');
+  }
+
+  // ✅ CHECK MAINTENANCE MODE: Block if app is in maintenance
+  const isInMaintenance = await checkMaintenanceMode();
+  if (isInMaintenance) {
+    throw new Error('App is currently in maintenance mode. Please try again later.');
   }
 
   // ✅ RATE LIMITING: Prevent spam and abuse (10 reservations per hour)
@@ -657,6 +682,12 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 export const cancelReservation = async (reservationId: string): Promise<void> => {
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase');
+  }
+
+  // ✅ CHECK MAINTENANCE MODE: Block if app is in maintenance
+  const isInMaintenance = await checkMaintenanceMode();
+  if (isInMaintenance) {
+    throw new Error('App is currently in maintenance mode. Please try again later.');
   }
 
   // CSRF Protection for cancellation (involves refunds)

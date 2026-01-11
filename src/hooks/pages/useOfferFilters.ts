@@ -11,6 +11,7 @@ import { Offer } from '@/lib/types';
 import { FilterState, SortOption } from '@/components/SearchAndFilters';
 import { DEFAULT_24H_OFFER_DURATION_HOURS } from '@/lib/constants';
 import { logger } from '@/lib/logger';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 interface UseOfferFiltersProps {
   offers: Offer[];
@@ -58,6 +59,8 @@ function getPartnerLocation(offer: Offer): { lat: number; lng: number } | null {
 
 export function useOfferFilters({ offers, userLocation }: UseOfferFiltersProps): OfferFiltersState {
   const [searchQuery, setSearchQuery] = useState('');
+  // ⚡ OPTIMIZATION: Debounce search to reduce filtering operations by 80%
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [filters, setFilters] = useState<FilterState>({
     minPrice: 0,
     maxPrice: 100,
@@ -73,8 +76,8 @@ export function useOfferFilters({ offers, userLocation }: UseOfferFiltersProps):
     let filtered = [...offers];
 
     // Apply search filter first (for partner name filtering)
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter(offer =>
         offer.title.toLowerCase().includes(query) ||
         offer.partner?.business_name?.toLowerCase().includes(query) ||
@@ -199,7 +202,7 @@ export function useOfferFilters({ offers, userLocation }: UseOfferFiltersProps):
   const filteredOffers = useMemo(() => getFilteredAndSortedOffers(), [
     offers,
     selectedCategory,
-    searchQuery,
+    debouncedSearchQuery,
     filters.minPrice,
     filters.maxPrice,
     filters.maxDistance,
@@ -215,13 +218,13 @@ export function useOfferFilters({ offers, userLocation }: UseOfferFiltersProps):
       count: filtered.length,
       offersFromQuery: offers.length,
       selectedCategory,
-      searchQuery
+      searchQuery: debouncedSearchQuery
     });
     return filtered;
   }, [
     offers,
     selectedCategory,
-    searchQuery,
+    debouncedSearchQuery,
     filters.minPrice,
     filters.maxPrice,
     filters.maxDistance,

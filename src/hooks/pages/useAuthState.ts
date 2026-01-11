@@ -40,6 +40,15 @@ export function useAuthState(): AuthState {
     
     // Check if user needs to see onboarding tutorial
     if (user) {
+      // 🚀 OPTIMIZATION: Check cache first to avoid API call
+      const cacheKey = `onboarding_completed_${user.id}`;
+      const cached = localStorage.getItem(cacheKey);
+      
+      if (cached === 'true') {
+        logger.info('✅ User has completed onboarding (cached)');
+        return;
+      }
+      
       logger.info('🔍 Checking onboarding status for user:', user.id);
       try {
         const { data: userData, error } = await supabase
@@ -53,12 +62,13 @@ export function useAuthState(): AuthState {
           return;
         }
 
-        // Show onboarding if not completed
-        if (!userData?.onboarding_completed) {
+        // Cache the result
+        if (userData?.onboarding_completed) {
+          localStorage.setItem(cacheKey, 'true');
+          logger.info('✅ User has completed onboarding');
+        } else {
           logger.info('🎓 User has not completed onboarding, showing dialog');
           setShowOnboarding(true);
-        } else {
-          logger.info('✅ User has completed onboarding');
         }
       } catch (error) {
         logger.error('❌ Exception checking onboarding status:', error);
@@ -73,6 +83,12 @@ export function useAuthState(): AuthState {
         checkUser();
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        // Clear onboarding cache on sign out
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('onboarding_completed_')) {
+            localStorage.removeItem(key);
+          }
+        });
       }
     });
 
