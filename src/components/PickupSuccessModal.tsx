@@ -46,6 +46,11 @@ export default function PickupSuccessModal({
     onClose();
     navigate('/');
   };
+  
+  // Prevent click propagation when clicking inside modal
+  const handleContentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
 
   // Fire confetti when modal opens
   useEffect(() => {
@@ -133,8 +138,12 @@ export default function PickupSuccessModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[340px] p-0 overflow-hidden bg-white/80 backdrop-blur-[28px] border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[20px]">
+    <Dialog open={open} onOpenChange={handleClose} modal>
+      <DialogContent 
+        className="max-w-[340px] p-0 overflow-hidden bg-white/80 backdrop-blur-[28px] border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[20px] z-[9999]"
+        onClick={handleContentClick}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         {/* Step 1: Success Celebration */}
         {step === 1 && (
           <div className="p-5 text-center space-y-4 animate-in fade-in zoom-in duration-500">
