@@ -202,22 +202,30 @@ serve(async (req: Request) => {
       // Broadcast to customer via realtime channel
       const channel = supabaseAdmin.channel(`pickup-${reservation_id}`)
       
+      console.log(`📡 Subscribing to channel: pickup-${reservation_id}`)
+      
       // Subscribe first, then send
-      await channel.subscribe((status) => {
+      await channel.subscribe(async (status) => {
+        console.log(`📡 Channel status: ${status}`)
         if (status === 'SUBSCRIBED') {
-          channel.send({
+          const sent = await channel.send({
             type: 'broadcast',
             event: 'pickup_confirmed',
             payload: { savedAmount }
           })
-          console.log(`📡 Broadcast sent to channel pickup-${reservation_id} with savedAmount: ${savedAmount}`)
+          console.log(`📡 Broadcast sent to channel pickup-${reservation_id}`, {
+            savedAmount,
+            sent,
+            timestamp: new Date().toISOString()
+          })
         }
       })
       
-      // Cleanup channel after a short delay
+      // Keep channel alive longer to ensure delivery
       setTimeout(() => {
+        console.log(`🧹 Cleaning up channel: pickup-${reservation_id}`)
         supabaseAdmin.removeChannel(channel)
-      }, 1000)
+      }, 5000) // Increased from 1s to 5s
     } catch (broadcastError) {
       // Don't fail the entire operation if broadcast fails
       console.error('⚠️ Failed to send pickup broadcast:', broadcastError)

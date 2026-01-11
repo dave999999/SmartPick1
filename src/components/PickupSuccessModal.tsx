@@ -141,7 +141,16 @@ export default function PickupSuccessModal({
     <Dialog open={open} onOpenChange={handleClose} modal>
       <DialogContent 
         className="max-w-[340px] p-0 overflow-hidden bg-white/80 backdrop-blur-[28px] border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.12)] rounded-[20px] z-[9999]"
-        onClick={handleContentClick}
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking outside
+          e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          // Allow ESC to close, but stop propagation
+          e.stopPropagation();
+          handleClose();
+        }}
+        onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
         {/* Step 1: Success Celebration */}
