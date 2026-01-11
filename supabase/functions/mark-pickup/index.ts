@@ -178,28 +178,46 @@ serve(async (req: Request) => {
     // This triggers the success dialog on customer's device immediately
     try {
       // Calculate saved amount from offer
-      const { data: offerData } = await supabaseAdmin
+      const { data: offerData, error: offerError } = await supabaseAdmin
         .from('offers')
         .select('original_price, discounted_price')
         .eq('id', reservation.offer_id)
         .single()
       
+      if (offerError) {
+        console.error('⚠️ Failed to fetch offer data for broadcast:', offerError)
+      }
+      
       const savedAmount = offerData
         ? (offerData.original_price - offerData.discounted_price)
         : 0
       
-      console.log(`💰 Calculated saved amount: ${savedAmount} GEL from offer:`, offerData)
+      console.log(`💰 Calculated saved amount: ${savedAmount} GEL`, {
+        offer_id: reservation.offer_id,
+        original_price: offerData?.original_price,
+        discounted_price: offerData?.discounted_price,
+        offerData
+      })
 
       // Broadcast to customer via realtime channel
-      await supabaseAdmin
-        .channel(`pickup-${reservation_id}`)
-        .send({
-          type: 'broadcast',
-          event: 'pickup_confirmed',
-          payload: { savedAmount }
-        })
+      const channel = supabaseAdmin.channel(`pickup-${reservation_id}`)
       
-      console.log(`📡 Broadcast sent to channel pickup-${reservation_id}`)
+      // Subscribe first, then send
+      await channel.subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          channel.send({
+            type: 'broadcast',
+            event: 'pickup_confirmed',
+            payload: { savedAmount }
+          })
+          console.log(`📡 Broadcast sent to channel pickup-${reservation_id} with savedAmount: ${savedAmount}`)
+        }
+      })
+      
+      // Cleanup channel after a short delay
+      setTimeout(() => {
+        supabaseAdmin.removeChannel(channel)
+      }, 1000)
     } catch (broadcastError) {
       // Don't fail the entire operation if broadcast fails
       console.error('⚠️ Failed to send pickup broadcast:', broadcastError)
