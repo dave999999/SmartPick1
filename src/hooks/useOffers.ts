@@ -126,9 +126,15 @@ export function useOffers() {
     };
   }, []);
 
-  const fetchOffers = async () => {
+  const fetchOffers = async (forceRefresh = false) => {
     try {
       setLoading(true);
+      setError(null);
+      
+      if (forceRefresh) {
+        logger.log('[useOffers] 🔄 Force refreshing offers...');
+      }
+      
       const now = new Date().toISOString();
       const { data, error: fetchError } = await supabase
         .from('offers')
@@ -171,5 +177,9 @@ export function useOffers() {
     }
   };
 
-  return { offers, loading, error, refetch: fetchOffers };
+  const refetch = async () => {
+    await fetchOffers(true);
+  };
+
+  return { offers, loading, error, refetch };
 }
