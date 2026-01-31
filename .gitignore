@@ -49,6 +49,9 @@ supabase/functions/telegram-webhook/secrets.json
 supabase/.temp
 .aider*
 
+# Archive folder (old SQL/docs - not needed in production)
+archive/
+
 # Android local properties (contains API keys)
 android/local.properties
 android/app/google-services.json

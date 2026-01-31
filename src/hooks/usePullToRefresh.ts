@@ -132,7 +132,7 @@ export function usePullToRefresh({
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [disabled, threshold]);
+  }, [disabled, threshold, onRefresh]);
 
   return {
     containerRef,
