@@ -132,12 +132,15 @@ export const signUpWithEmail = async (email: string, password: string, name: str
     };
   }
   
+  // ✅ SECURITY: Validate and sanitize inputs
+  const validated = validateData(signUpSchema, { email, password, name });
+  
   const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
+    email: validated.email,
+    password: validated.password,
     options: {
       data: {
-        name,
+        name: validated.name,
       },
       emailRedirectTo: undefined, // Don't use Supabase's built-in email verification
     },

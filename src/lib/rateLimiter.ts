@@ -37,6 +37,16 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
     maxAttempts: 10,
     windowMs: 60 * 60 * 1000, // 1 hour
     action: 'reservation'
+  },
+  createOffer: {
+    maxAttempts: 20,
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours (1 day)
+    action: 'createOffer'
+  },
+  updateProfile: {
+    maxAttempts: 10,
+    windowMs: 60 * 60 * 1000, // 1 hour
+    action: 'updateProfile'
   }
 };
 

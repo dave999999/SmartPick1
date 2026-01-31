@@ -5,6 +5,7 @@ import { mockOffers } from '../mockData';
 import { uploadImages } from './media';
 import { secureRequest } from '../secureRequest';
 import { notifyNewOffersNearby, notifyFavoritePartner } from '../pushNotifications';
+import { validateData, createOfferSchema } from '../validation/schemas';
 
 /**
  * Offers Module
@@ -333,12 +334,21 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
   if (isDemoMode) {
     throw new Error('Demo mode: Please configure Supabase to create offers');
   }
-  // Basic validation & normalization
+  
+  // ✅ SECURITY: Validate and sanitize all inputs with Zod
+  const validatedData = validateData(createOfferSchema, {
+    title: offerData.title,
+    description: offerData.description,
+    original_price: offerData.original_price,
+    smart_price: offerData.smart_price,
+    quantity_total: offerData.quantity_total,
+  });
+  
+  // Additional business validations
   if (!partnerId) throw new Error('partnerId required');
-  if (!offerData.title || offerData.title.trim().length < 3) throw new Error('Title too short');
-  if (offerData.smart_price <= 0 || offerData.original_price <= 0) throw new Error('Prices must be positive');
-  if (offerData.smart_price >= offerData.original_price) throw new Error('Smart price must be less than original price');
-  if (offerData.quantity_total <= 0) throw new Error('Quantity must be > 0');
+  if (validatedData.smart_price >= validatedData.original_price) {
+    throw new Error('Smart price must be less than original price');
+  }
 
   // Check if partner has available slots
   const { data: activeOffers } = await supabase
@@ -380,14 +390,14 @@ export const createOffer = async (offerData: CreateOfferDTO, partnerId: string):
 
   const insertData = {
     partner_id: partnerId,
-    title: offerData.title.trim(),
-    description: offerData.description.trim(),
+    title: validatedData.title,  // ✅ Using sanitized data
+    description: validatedData.description,  // ✅ Using sanitized data
     category: offerData.category,
     images: imageUrls,
-    original_price: Number(offerData.original_price),
-    smart_price: Number(offerData.smart_price),
-    quantity_available: Number(offerData.quantity_total),
-    quantity_total: Number(offerData.quantity_total),
+    original_price: validatedData.original_price,  // ✅ Using validated number
+    smart_price: validatedData.smart_price,  // ✅ Using validated number
+    quantity_available: validatedData.quantity_total,  // ✅ Using validated number
+    quantity_total: validatedData.quantity_total,  // ✅ Using validated number
     pickup_start: offerData.pickup_window.start.toISOString(),
     pickup_end: offerData.pickup_window.end.toISOString(),
     status: 'ACTIVE' as const,

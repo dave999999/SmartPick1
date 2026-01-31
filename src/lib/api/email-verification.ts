@@ -29,35 +29,6 @@ const checkRateLimit = async (email: string, actionType: 'verification' | 'passw
   return data === true;
 };
 
-// Env-configured Resend credentials
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-const RESEND_FROM_EMAIL = import.meta.env.VITE_RESEND_FROM_EMAIL || 'SmartPick <noreply@smartpick.ge>';
-
-// Send email via Resend API
-const sendEmailViaResend = async (to: string, subject: string, html: string): Promise<void> => {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: RESEND_FROM_EMAIL,
-      to: [to],
-      subject,
-      html,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Resend API error: ${JSON.stringify(errorData)}`);
-  }
-
-  const result = await response.json();
-  logger.debug('Email sent successfully:', result);
-};
-
 // Generate verification email HTML
 const generateVerificationEmailHTML = (verificationUrl: string, userName?: string): string => {
   return `
@@ -239,20 +210,22 @@ export const sendVerificationEmail = async (userId: string, email: string, userN
       throw new Error(`Failed to create verification token: ${insertError.message}`);
     }
 
-    // Generate verification URL
-    const verificationUrl = `${PUBLIC_BASE_URL}/verify-email?token=${token}`;
+    // Send verification email via Edge Function (server-side, secure)
+    const { error: emailError } = await supabase.functions.invoke('send-verification-email', {
+      body: {
+        email: email.toLowerCase(),
+        userId,
+        userName,
+        token
+      }
+    });
 
-    // Generate email HTML
-    const emailHTML = generateVerificationEmailHTML(verificationUrl, userName);
+    if (emailError) {
+      logger.error('Failed to send verification email:', emailError);
+      throw new Error('Failed to send verification email');
+    }
 
-    // Send email via Resend
-    await sendEmailViaResend(
-      email,
-      '🎉 Verify Your Email - SmartPick',
-      emailHTML
-    );
-
-    logger.log('Verification email sent successfully');
+    logger.log('Verification email sent successfully via Edge Function');
   } catch (error) {
     logger.error('Error sending verification email:', error);
     throw error;

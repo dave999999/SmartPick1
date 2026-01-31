@@ -1,50 +1,16 @@
-import { logger } from '@/lib/logger';
 /**
- * Bank of Georgia (BOG) Payments API Integration
+ * Bank of Georgia (BOG) Payments Configuration
  * 
- * This module handles integration with BOG's E-Commerce payment gateway using OAuth 2.0.
+ * ⚠️ SECURITY NOTE:
+ * This file now only exports BOG_CONFIG (public configuration constants).
+ * All payment logic with secrets (OAuth, API calls) has been moved to Edge Functions.
  * 
- * Environment Variables Required:
- * - BOG_CLIENT_ID: OAuth client ID (Public Key) from BOG E-Commerce panel (e.g., 10002951)
- * - BOG_CLIENT_SECRET: OAuth client secret (Secret Key) from BOG E-Commerce panel
- * - BOG_AUTH_URL: OAuth token endpoint (https://oauth2.bog.ge/auth/realms/bog/protocol/openid-connect/token)
- * - BOG_PAYMENTS_API_URL: BOG E-Commerce API endpoint (https://api.bog.ge/payments/v1/ecommerce/orders)
- * - BOG_CALLBACK_URL: Webhook callback URL
- * - PUBLIC_BASE_URL: Your application's base URL
+ * Edge Functions (server-side, secure):
+ * - bog-create-session: Creates payment sessions
+ * - bog-webhook: Handles payment webhooks
+ * 
+ * Client code should only use BOG_CONFIG and call Edge Functions via supabase.functions.invoke()
  */
-
-// Type declaration for Deno (available in Edge Functions, not in browser)
-declare const Deno: {
-  env: {
-    get(key: string): string | undefined;
-  };
-} | undefined;
-
-// Simple logger for Deno compatibility
-const log = {
-  log: (...args: unknown[]) => logger.debug('[BOG]', ...args),
-  error: (...args: unknown[]) => logger.error('[BOG ERROR]', ...args),
-  warn: (...args: unknown[]) => logger.warn('[BOG WARN]', ...args),
-};
-
-export interface BOGConfig {
-  clientId: string;
-  clientSecret: string;
-  authUrl: string;
-  paymentsApiUrl: string;
-  baseUrl: string;
-}
-
-interface TokenResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}
-
-interface CachedToken {
-  token: string;
-  expiresAt: number;
-}
 
 export interface PaymentSession {
   sessionId: string;
