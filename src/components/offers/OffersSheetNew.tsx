@@ -55,9 +55,10 @@ interface OffersSheetNewProps {
   isMinimized?: boolean;
   onCenteredOfferChange?: (offer: Offer | null) => void;
   filteredOffers?: Offer[]; // NEW: Accept filtered offers from parent (viewport-based)
+  onRefresh?: () => Promise<void>; // NEW: Parent-provided refresh function
 }
 
-export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange, filteredOffers: parentFilteredOffers }: OffersSheetNewProps) {
+export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartnerId, isMinimized = false, onCenteredOfferChange, filteredOffers: parentFilteredOffers, onRefresh: parentRefresh }: OffersSheetNewProps) {
   const { t } = useI18n();
   const { playTick, initializeAudio } = useAppleTick();
   const allCategories = getAllCategories();
@@ -78,7 +79,17 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
   // Pull-to-refresh functionality (only when pulling down at top)
   const pullToRefresh = usePullToRefresh({
     onRefresh: async () => {
-      await refetchOffers();
+      logger.log('[OffersSheetNew] Pull-to-refresh triggered');
+      // Use parent's refresh if provided (for viewport-based queries),
+      // otherwise use local refetch (for all-offers mode)
+      if (parentRefresh) {
+        logger.log('[OffersSheetNew] Using parent refresh');
+        await parentRefresh();
+      } else {
+        logger.log('[OffersSheetNew] Using local refetch');
+        await refetchOffers();
+      }
+      logger.log('[OffersSheetNew] Refresh complete, offers count:', offers.length);
     },
     threshold: 80,
   });

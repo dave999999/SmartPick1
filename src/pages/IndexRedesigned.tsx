@@ -110,7 +110,7 @@ export default function IndexRedesigned() {
   );
   
   // Fetch ALL offers for carousel/discovery mode
-  const { offers: allOffers } = useOffers();
+  const { offers: allOffers, refetch: refetchAllOffers } = useOffers();
   
   // Use viewport offers normally, but all offers when discover sheet is open
   const offers = offerMgmt.discoverSheetOpen ? allOffers : viewportOffers;
@@ -828,6 +828,7 @@ export default function IndexRedesigned() {
         isMinimized={offerMgmt.isSheetMinimized}
         selectedPartnerId={offerMgmt.selectedPartnerId}
         filteredOffers={mapFilteredOffers}
+        onRefresh={refetchAllOffers}
         onClose={() => {
           offerMgmt.setDiscoverSheetOpen(false);
           offerMgmt.setIsSheetMinimized(false);
