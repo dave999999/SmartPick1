@@ -20,6 +20,7 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   const [error, setError] = useState<string | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const stoppingPromiseRef = useRef<Promise<void> | null>(null);
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
   const hasScannedRef = useRef(false); // Prevent multiple scans
   const autoStartAttemptedRef = useRef(false); // Prevent multiple auto-start attempts
@@ -68,8 +69,17 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
           hasScannedRef.current = true;
           logger.log('✅ QR Code detected and scanned:', decodedText);
           
-          // Stop scanner IMMEDIATELY to prevent duplicate scans
-          stopScanning();
+          // Stop scanner IMMEDIATELY to prevent duplicate scans, then call onScan.
+          void (async () => {
+            await stopScanning();
+
+            try {
+              onScan(decodedText);
+              logger.log('📤 Sent QR code to onScan callback');
+            } catch (e) {
+              logger.error('❌ Error in onScan callback:', e);
+            }
+          })();
           
           // Haptic feedback on mobile - success pattern (double vibrate)
           if ('vibrate' in navigator) {
@@ -84,16 +94,6 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
               readerElement.style.border = '';
             }, 1000);
           }
-          
-          // Call the onScan callback after a brief delay to ensure scanner has stopped
-          setTimeout(() => {
-            try {
-              onScan(decodedText);
-              logger.log('📤 Sent QR code to onScan callback');
-            } catch (e) {
-              logger.error('❌ Error in onScan callback:', e);
-            }
-          }, 100);
         },
         (_errorMessage) => {
           // Error callback (called continuously while scanning)
@@ -121,20 +121,42 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
   };
 
   const stopScanning = async () => {
-    if (scannerRef.current) {
+    if (stoppingPromiseRef.current) return stoppingPromiseRef.current;
+
+    const stopPromise = (async () => {
+      const scanner = scannerRef.current;
+      // Clear ref immediately to avoid races/re-entrancy.
+      scannerRef.current = null;
+
+      // Update UI immediately.
+      setIsScanning(false);
+
+      // Grab video element BEFORE we clear DOM (clear() may remove it).
+      const reader = document.getElementById('qr-reader');
+      const videoElement = reader?.querySelector('video') as HTMLVideoElement | null;
+
       try {
-        if (isScanning) {
-          await scannerRef.current.stop();
-          logger.log('🛑 Scanner stopped');
+        // Always attempt to stop; relying on React state here can be stale.
+        if (scanner) {
+          try {
+            await scanner.stop();
+            logger.log('🛑 Scanner stopped');
+          } catch (err) {
+            // stop() can throw if not started; still continue cleanup.
+            logger.warn('⚠️ Scanner stop() failed (continuing cleanup):', err);
+          }
+
+          try {
+            scanner.clear();
+          } catch (err) {
+            logger.warn('⚠️ Scanner clear() failed (continuing cleanup):', err);
+          }
         }
-        scannerRef.current.clear();
-        scannerRef.current = null;
-        
-        // CRITICAL: Stop all camera tracks to release hardware
-        const videoElement = document.querySelector('#qr-reader video') as HTMLVideoElement;
-        if (videoElement && videoElement.srcObject) {
+
+        // CRITICAL: Stop all camera tracks to release hardware (iOS green indicator).
+        if (videoElement?.srcObject) {
           const stream = videoElement.srcObject as MediaStream;
-          stream.getTracks().forEach(track => {
+          stream.getTracks().forEach((track) => {
             track.stop();
             logger.log('🎥 Camera track stopped:', track.label);
           });
@@ -143,9 +165,15 @@ export default function QRScanner({ onScan, onError }: QRScannerProps) {
       } catch (err) {
         logger.error('❌ Error stopping scanner:', err);
       }
-      setIsScanning(false);
       // DON'T reset hasScannedRef here - keep it true to prevent rescans
       // It will be reset when dialog is closed and reopened
+    })();
+
+    stoppingPromiseRef.current = stopPromise;
+    try {
+      await stopPromise;
+    } finally {
+      stoppingPromiseRef.current = null;
     }
   };
 

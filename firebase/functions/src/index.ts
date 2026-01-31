@@ -17,6 +17,35 @@ const db = admin.firestore();
 const region = 'europe-west1';
 
 /**
+ * Helper to handle stale FCM tokens gracefully
+ * Returns true if error was handled (caller should return), false otherwise
+ */
+async function handleStaleTokenError(error: any, userId: string, res: functions.Response): Promise<boolean> {
+  const errorCode = error?.errorInfo?.code ?? error?.code;
+  
+  if (
+    errorCode === 'messaging/registration-token-not-registered' ||
+    errorCode === 'messaging/invalid-registration-token'
+  ) {
+    // Clean up stale token
+    try {
+      await db.collection('fcm_tokens').doc(userId).delete();
+    } catch {
+      // Best-effort cleanup only
+    }
+
+    res.status(200).json({
+      success: false,
+      code: errorCode,
+      message: 'FCM token not registered (stale). Token removed; client should re-register.'
+    });
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Save/update a user's FCM token
  * Open HTTPS endpoint (no Firebase Auth)
  * Purpose: Avoid Firestore Web SDK streaming issues in Capacitor (CapacitorHttp interceptor).
@@ -139,6 +168,9 @@ export const sendPushNotification = functions.region(region).https.onRequest(asy
 
   } catch (error: any) {
     console.error('Error sending notification:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -192,6 +224,9 @@ export const notifyPartnerNewReservation = functions.region(region).https.onRequ
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, partnerId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -209,10 +244,36 @@ export const notifyReservationConfirmed = functions.region(region).https.onReque
     return;
   }
 
-  const { userId, offerTitle, partnerName, pickupBy } = req.body;
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const { userId, offerTitle, partnerName, pickupBy } = req.body ?? {};
+
+  if (!userId || typeof userId !== 'string') {
+    res.status(400).json({ success: false, error: 'Missing required field: userId' });
+    return;
+  }
+
+  if (!offerTitle || typeof offerTitle !== 'string') {
+    res.status(400).json({ success: false, error: 'Missing required field: offerTitle' });
+    return;
+  }
+
+  if (!partnerName || typeof partnerName !== 'string') {
+    res.status(400).json({ success: false, error: 'Missing required field: partnerName' });
+    return;
+  }
+
+  if (!pickupBy || typeof pickupBy !== 'string') {
+    res.status(400).json({ success: false, error: 'Missing required field: pickupBy' });
+    return;
+  }
 
   try {
-    const tokenDoc = await db.collection('fcm_tokens').doc(userId).get();
+    const tokenRef = db.collection('fcm_tokens').doc(userId);
+    const tokenDoc = await tokenRef.get();
     
     if (!tokenDoc.exists) {
       res.status(404).json({ success: false, message: 'User token not found' });
@@ -220,6 +281,11 @@ export const notifyReservationConfirmed = functions.region(region).https.onReque
     }
 
     const fcmToken = tokenDoc.data()?.token;
+
+    if (!fcmToken || typeof fcmToken !== 'string') {
+      res.status(404).json({ success: false, message: 'Invalid FCM token' });
+      return;
+    }
 
     const message = {
       notification: {
@@ -244,8 +310,29 @@ export const notifyReservationConfirmed = functions.region(region).https.onReque
     const response = await admin.messaging().send(message);
     res.json({ success: true, messageId: response });
   } catch (error: any) {
+    const errorCode = error?.errorInfo?.code ?? error?.code;
     console.error('Error:', error);
-    res.status(500).json({ error: error.message });
+
+    // Stale/uninstalled app token: clean up and do not surface as 500.
+    if (
+      errorCode === 'messaging/registration-token-not-registered' ||
+      errorCode === 'messaging/invalid-registration-token'
+    ) {
+      try {
+        await db.collection('fcm_tokens').doc(userId).delete();
+      } catch {
+        // Best-effort cleanup only.
+      }
+
+      res.status(200).json({
+        success: false,
+        code: errorCode,
+        message: 'FCM token not registered (stale). Token removed; client should re-register.'
+      });
+      return;
+    }
+
+    res.status(500).json({ success: false, code: errorCode, error: error?.message ?? 'Unknown error' });
   }
 });
 
@@ -298,6 +385,9 @@ export const notifyReservationExpiring = functions.region(region).https.onReques
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -341,6 +431,9 @@ export const notifyReservationExpired = functions.region(region).https.onRequest
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -384,6 +477,9 @@ export const notifyNewOffersNearby = functions.region(region).https.onRequest(as
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -427,6 +523,9 @@ export const notifyFavoritePartner = functions.region(region).https.onRequest(as
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -470,6 +569,9 @@ export const notifyAchievement = functions.region(region).https.onRequest(async 
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -513,6 +615,9 @@ export const notifyReferralReward = functions.region(region).https.onRequest(asy
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, userId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });
@@ -567,6 +672,9 @@ export const notifyPartnerReservationCancelled = functions.region(region).https.
     res.json({ success: true, messageId: response });
   } catch (error: any) {
     console.error('Error:', error);
+    
+    if (await handleStaleTokenError(error, partnerId, res)) return;
+    
     res.status(500).json({ error: error.message });
   }
 });

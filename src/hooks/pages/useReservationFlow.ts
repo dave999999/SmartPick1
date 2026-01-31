@@ -70,11 +70,46 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
           
           if (!alreadyCelebrated) {
             localStorage.setItem(celebrationKey, 'true');
-            
-            // Calculate actual savings: (original price * quantity) - discounted price
-            const originalTotal = (activeReservation.offer?.original_price || 0) * activeReservation.quantity;
-            const discountedPrice = activeReservation.total_price || 0;
-            const savedAmount = originalTotal - discountedPrice;
+
+            // Calculate actual savings.
+            // `Reservation.offer` is not always hydrated by the API response, so fall back to fetching offer prices.
+            const quantity = activeReservation.quantity || 1;
+            const hydratedOriginal = (activeReservation.offer as any)?.original_price ?? (currentRes.offer as any)?.original_price;
+            const hydratedSmart = (activeReservation.offer as any)?.smart_price ?? (currentRes.offer as any)?.smart_price;
+
+            let originalPrice = Number(hydratedOriginal ?? NaN);
+            let smartPrice = Number(hydratedSmart ?? NaN);
+
+            if (!Number.isFinite(originalPrice) || !Number.isFinite(smartPrice)) {
+              try {
+                const { supabase } = await import('@/lib/supabase');
+                const offerId = (activeReservation as any).offer_id ?? (activeReservation.offer as any)?.id;
+
+                if (offerId) {
+                  const { data: offerData } = await supabase
+                    .from('offers')
+                    .select('original_price, smart_price')
+                    .eq('id', offerId)
+                    .maybeSingle();
+
+                  originalPrice = Number((offerData as any)?.original_price ?? originalPrice);
+                  smartPrice = Number((offerData as any)?.smart_price ?? smartPrice);
+                }
+              } catch (e) {
+                logger.debug('⚠️ Failed to fetch offer prices for savings calc (polling)', e);
+              }
+            }
+
+            let savedAmount = 0;
+            if (Number.isFinite(originalPrice) && Number.isFinite(smartPrice)) {
+              savedAmount = Math.max(0, (originalPrice - smartPrice) * quantity);
+            } else {
+              const totalPaid = Number(activeReservation.total_price ?? 0);
+              const originalTotal = Number.isFinite(originalPrice) ? originalPrice * quantity : 0;
+              const rawSaved = originalTotal - totalPaid;
+              savedAmount = Number.isFinite(rawSaved) ? Math.max(0, rawSaved) : 0;
+            }
+
             const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
             
             logger.debug('💰 Celebration data (polling):', { savedAmount, pointsEarned });

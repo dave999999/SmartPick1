@@ -599,6 +599,34 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
 
   const reservation = data[0] as Reservation;
   logger.debug('✅ Marked as picked up successfully');
+
+  // Compute savings for customer UI.
+  // RPC may not return hydrated `offer`, so fall back to fetching the offer prices.
+  const quantity = reservation.quantity || 1;
+  let originalPrice = Number((reservation.offer as any)?.original_price ?? NaN);
+  let smartPrice = Number((reservation.offer as any)?.smart_price ?? NaN);
+
+  if (!Number.isFinite(originalPrice) || !Number.isFinite(smartPrice)) {
+    try {
+      const { data: offerData, error: offerError } = await supabase
+        .from('offers')
+        .select('original_price, smart_price')
+        .eq('id', reservation.offer_id)
+        .maybeSingle();
+
+      if (offerError) {
+        logger.warn('⚠️ Failed to fetch offer prices for pickup savings:', offerError);
+      }
+
+      originalPrice = Number((offerData as any)?.original_price ?? originalPrice);
+      smartPrice = Number((offerData as any)?.smart_price ?? smartPrice);
+    } catch (e) {
+      logger.warn('⚠️ Error fetching offer prices for pickup savings:', e);
+    }
+  }
+
+  const rawSavedAmount = (originalPrice - smartPrice) * quantity;
+  const savedAmount = Number.isFinite(rawSavedAmount) ? Math.max(0, rawSavedAmount) : 0;
   
   // 🚀 BROADCAST pickup confirmation to customer (lightweight, real-time)
   // Customer listens to this channel when QR modal is open
@@ -618,7 +646,7 @@ export const markAsPickedUp = async (reservationId: string): Promise<Reservation
               event: 'pickup_confirmed',
               payload: {
                 reservationId,
-                savedAmount: reservation.total_price || 0,
+                savedAmount,
                 timestamp: new Date().toISOString()
               }
             });

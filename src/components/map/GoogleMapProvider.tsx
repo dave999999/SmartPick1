@@ -57,8 +57,8 @@ export function GoogleMapProvider({
     logger.debug('🎯 GoogleMapProvider RENDER');
     
     // FIRST: Check if Google Maps exists in window (regardless of loader state)
-    if (typeof window !== 'undefined' && window.google?.maps) {
-      logger.debug('✅ GoogleMapProvider - Found existing window.google.maps, using it immediately');
+    if (typeof window !== 'undefined' && window.google?.maps?.Map) {
+      logger.debug('✅ GoogleMapProvider - Found existing window.google.maps.Map, using it immediately');
       setIsLoaded(true);
       setGoogleInstance(window.google);
       setIsLoading(false);

@@ -35,16 +35,20 @@ export async function loadGoogleMaps(
   options: GoogleMapsLoaderOptions
 ): Promise<any> {
   // Check if already loaded
-  if (isLoaded && typeof window !== 'undefined' && window.google?.maps) {
+  if (isLoaded && typeof window !== 'undefined' && window.google?.maps?.Map) {
     logger.debug('✅ Google Maps already loaded, returning existing instance');
     return window.google;
   }
 
   // Check if window.google exists but isLoaded is false (e.g., after remount)
   if (typeof window !== 'undefined' && window.google?.maps) {
-    logger.debug('✅ Google Maps found in window, updating state');
-    isLoaded = true;
-    return window.google;
+    // With `loading=async`, Google can expose `google.maps` before constructors exist.
+    // Only treat it as loaded when `google.maps.Map` is actually available.
+    if (window.google?.maps?.Map) {
+      logger.debug('✅ Google Maps found in window, updating state');
+      isLoaded = true;
+      return window.google;
+    }
   }
 
   // Return existing promise if already loading
@@ -61,7 +65,7 @@ export async function loadGoogleMaps(
   // Create new loading promise
   googleMapsPromise = new Promise((resolve, reject) => {
     // Check if already loaded by another script
-    if (window.google?.maps) {
+    if (window.google?.maps?.Map) {
       isLoaded = true;
       resolve(window.google);
       return;
@@ -93,11 +97,36 @@ export async function loadGoogleMaps(
 
     // Define callback
     (window as any).__googleMapsCallback = () => {
-      logger.debug('✅ Google Maps loaded successfully');
-      clearTimeout(timeout);
-      isLoaded = true;
-      resolve(window.google);
-      delete (window as any).__googleMapsCallback;
+      // NOTE: With `loading=async`, the callback can fire before legacy constructors
+      // like google.maps.Map are present. Ensure the 'maps' library is fully imported.
+      void (async () => {
+        try {
+          if (!window.google?.maps?.Map && typeof window.google?.maps?.importLibrary === 'function') {
+            await window.google.maps.importLibrary('maps');
+          }
+
+          // Fallback: small poll to allow constructors to appear.
+          const start = Date.now();
+          while (!window.google?.maps?.Map && Date.now() - start < 2000) {
+            await new Promise(r => setTimeout(r, 50));
+          }
+
+          if (!window.google?.maps?.Map) {
+            throw new Error('Google Maps loaded but google.maps.Map is not available');
+          }
+
+          logger.debug('✅ Google Maps loaded successfully (Map constructor ready)');
+          clearTimeout(timeout);
+          isLoaded = true;
+          resolve(window.google);
+        } catch (e) {
+          logger.error('❌ Google Maps callback fired but Map constructor unavailable:', e);
+          googleMapsPromise = null;
+          reject(e instanceof Error ? e : new Error('Google Maps initialization failed'));
+        } finally {
+          delete (window as any).__googleMapsCallback;
+        }
+      })();
     };
 
     // Error handler
@@ -127,7 +156,7 @@ export async function loadGoogleMaps(
  * Check if Google Maps is already loaded
  */
 export function isGoogleMapsLoaded(): boolean {
-  return isLoaded && typeof window !== 'undefined' && !!window.google?.maps;
+  return isLoaded && typeof window !== 'undefined' && !!window.google?.maps?.Map;
 }
 
 /**

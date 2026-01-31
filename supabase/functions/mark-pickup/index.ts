@@ -178,9 +178,10 @@ serve(async (req: Request) => {
     // This triggers the success dialog on customer's device immediately
     try {
       // Calculate saved amount from offer
+      // Note: UI uses `smart_price` (discounted), some older schemas used `discounted_price`.
       const { data: offerData, error: offerError } = await supabaseAdmin
         .from('offers')
-        .select('original_price, discounted_price')
+        .select('original_price, smart_price, discounted_price')
         .eq('id', reservation.offer_id)
         .single()
       
@@ -188,14 +189,18 @@ serve(async (req: Request) => {
         console.error('⚠️ Failed to fetch offer data for broadcast:', offerError)
       }
       
-      const savedAmount = offerData
-        ? (offerData.original_price - offerData.discounted_price)
-        : 0
+      const originalPrice = Number((offerData as any)?.original_price ?? 0)
+      const discountedPrice = Number(
+        (offerData as any)?.smart_price ?? (offerData as any)?.discounted_price ?? 0
+      )
+      const rawSaved = originalPrice - discountedPrice
+      const savedAmount = Number.isFinite(rawSaved) ? Math.max(0, rawSaved) : 0
       
       console.log(`💰 Calculated saved amount: ${savedAmount} GEL`, {
         offer_id: reservation.offer_id,
-        original_price: offerData?.original_price,
-        discounted_price: offerData?.discounted_price,
+        original_price: (offerData as any)?.original_price,
+        smart_price: (offerData as any)?.smart_price,
+        discounted_price: (offerData as any)?.discounted_price,
         offerData
       })
 

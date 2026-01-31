@@ -67,8 +67,14 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
         <SheetTitle className="sr-only">
           {partner?.business_name || 'Partner Details'}
         </SheetTitle>
-        
-        <div className="h-full overflow-y-auto overflow-x-hidden">
+
+        <div className="flex flex-col h-full">
+          {/* iOS-style drag handle */}
+          <div className="flex items-center justify-center py-3 bg-white">
+            <div className="h-1.5 w-12 rounded-full bg-gray-300/80" />
+          </div>
+
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -76,9 +82,9 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
           ) : partner ? (
             <>
               {/* Partner Header with Cover Image */}
-              <div className="relative">
+              <div className="relative sticky top-0 z-20">
                 {/* Cover Image */}
-                <div className="w-full h-48 bg-gradient-to-br from-orange-400 to-orange-600 relative overflow-hidden">
+                <div className="w-full h-52 bg-gradient-to-br from-orange-400 to-orange-600 relative overflow-hidden">
                   {partner.cover_image_url || partner.images?.[0] ? (
                     <img 
                       src={partner.cover_image_url || partner.images?.[0]} 
@@ -107,22 +113,25 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
               </div>
 
               {/* Partner Details */}
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="px-4 py-3 bg-white/95 border-b border-gray-200">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-700">
                   {partner.phone && (
-                    <div className="flex items-center gap-1">
+                    <a
+                      href={`tel:${partner.phone}`}
+                      className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm"
+                    >
                       <Phone className="w-4 h-4" />
                       <span>{partner.phone}</span>
-                    </div>
+                    </a>
                   )}
                   {!partner.open_24h && partner.opening_time && partner.closing_time && (
-                    <div className="flex items-center gap-1">
+                    <div className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-3 py-1 shadow-sm">
                       <Clock className="w-4 h-4" />
                       <span>{partner.opening_time} - {partner.closing_time}</span>
                     </div>
                   )}
                   {partner.open_24h && (
-                    <div className="flex items-center gap-1">
+                    <div className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1">
                       <Clock className="w-4 h-4" />
                       <span className="text-green-600 font-medium">Open 24 Hours</span>
                     </div>
@@ -146,6 +155,8 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
                         key={offer.id}
                         title={offer.title}
                         imageUrl={offer.images?.[0] || '/images/Map.jpg'}
+                        partnerName={partner.business_name}
+                        partnerImageUrl={partner.cover_image_url || partner.images?.[0]}
                         priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                         priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
                         onClick={() => onOfferSelect(offer)}
@@ -164,6 +175,7 @@ export function PartnerSheet({ isOpen, onClose, partnerId, onOfferSelect }: Part
               <p>Partner not found</p>
             </div>
           )}
+          </div>
         </div>
       </SheetContent>
     </Sheet>

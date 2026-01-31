@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useLocation as useRouterLocation } from 'react-router-dom';
 import { Offer } from '@/lib/types';
 import { SEOHead, structuredDataSchemas } from '@/components/SEOHead';
 import { indexedDBManager } from '@/lib/indexedDB';
@@ -55,9 +56,18 @@ import { NearbyOffersSheet } from '@/components/notifications/NearbyOffersSheet'
 import { ReferralRewardsModal } from '@/components/notifications/ReferralRewardsModal';
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { getPartnerById } from '@/lib/api';
 
 export default function IndexRedesigned() {
+  const routerLocation = useRouterLocation();
   const { isLoaded: googleMapsLoaded, googleMap } = useGoogleMaps();
+
+  // If the user lands here via a Favorites deep-link, don't auto-open the offers sheet.
+  // They intentionally navigated to a specific partner/offer context.
+  const hasFavoritesDeepLink = useMemo(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    return params.has('partner') || params.has('offer');
+  }, [routerLocation.search]);
   
   // 🎯 REFACTORED: Custom hooks for clean state management
   const auth = useAuthState();
@@ -76,6 +86,15 @@ export default function IndexRedesigned() {
     googleMap,
     activeReservation: reservation.activeReservation,
   });
+
+  // If pickup success modal is showing, force-close any offers sheet behind it.
+  // This prevents the sheet from stealing the first click / closing first.
+  useEffect(() => {
+    if (!reservation.showPickupSuccessModal) return;
+    offerMgmt.setDiscoverSheetOpen(false);
+    offerMgmt.setIsSheetMinimized(false);
+    offerMgmt.setSelectedPartnerId(null);
+  }, [reservation.showPickupSuccessModal]);
   
   // 🚀 PERFORMANCE: Use React Query for automatic caching, deduplication, and cancellation
   // Only fetch when map is idle to prevent queries during active dragging
@@ -259,6 +278,12 @@ export default function IndexRedesigned() {
       return;
     }
 
+    // If we navigated here with ?partner=... or ?offer=..., keep the offers sheet closed.
+    if (hasFavoritesDeepLink) {
+      logger.debug('[IndexRedesigned] Skipping offers sheet auto-open (favorites deep-link)');
+      return;
+    }
+
     // Add a small delay for better UX (let user see homepage briefly)
     const timer = setTimeout(() => {
       if (!reservation.activeReservation && !offerMgmt.discoverSheetOpen) {
@@ -271,7 +296,7 @@ export default function IndexRedesigned() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [reservation.isReservationLoading, reservation.activeReservation]); // Depend on reservation loading state
+  }, [reservation.isReservationLoading, reservation.activeReservation, hasFavoritesDeepLink]); // Depend on reservation loading state
 
   // ⚠️ DUPLICATE LOGIC REMOVED - NOW IN useAuthState AND useUserLocation HOOKS:
   // - auth.checkUser() is called automatically in useAuthState hook on mount
@@ -573,6 +598,71 @@ export default function IndexRedesigned() {
     addRecentlyViewed(offer.id, 'offer');
   }, [auth.user, addRecentlyViewed]);
 
+  // Deep-link handling (?partner=... / ?offer=...) for Favorites → Map → Modal.
+  // NOTE: This must be declared AFTER handleOfferClick to avoid temporal-dead-zone errors.
+  const lastDeepLinkPartnerIdRef = useRef<string | null>(null);
+  const lastDeepLinkOfferIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(routerLocation.search);
+    const partnerId = params.get('partner');
+    const offerId = params.get('offer');
+
+    // Open partner sheet if requested.
+    if (
+      partnerId &&
+      partnerId !== lastDeepLinkPartnerIdRef.current &&
+      !reservation.activeReservation
+    ) {
+      lastDeepLinkPartnerIdRef.current = partnerId;
+      offerMgmt.setDiscoverSheetOpen(false);
+      offerMgmt.setIsSheetMinimized(false);
+      offerMgmt.setSelectedPartnerId(partnerId);
+      offerMgmt.setShowPartnerSheet(true);
+
+      // Best-effort map centering: use any loaded offer first, else fetch partner.
+      if (googleMap) {
+        const offerWithPartner = [...offers, ...allOffers].find(
+          (o) =>
+            o.partner_id === partnerId &&
+            (typeof (o.partner?.location?.latitude ?? o.partner?.latitude) === 'number') &&
+            (typeof (o.partner?.location?.longitude ?? o.partner?.longitude) === 'number')
+        );
+
+        const lat = offerWithPartner?.partner?.location?.latitude ?? offerWithPartner?.partner?.latitude;
+        const lng = offerWithPartner?.partner?.location?.longitude ?? offerWithPartner?.partner?.longitude;
+
+        if (typeof lat === 'number' && typeof lng === 'number' && isFinite(lat) && isFinite(lng)) {
+          googleMap.panTo({ lat, lng });
+          googleMap.setZoom(15);
+        } else {
+          void (async () => {
+            try {
+              const partner = await getPartnerById(partnerId);
+              const pLat = partner.location?.latitude ?? partner.latitude;
+              const pLng = partner.location?.longitude ?? partner.longitude;
+              if (typeof pLat === 'number' && typeof pLng === 'number' && isFinite(pLat) && isFinite(pLng)) {
+                googleMap.panTo({ lat: pLat, lng: pLng });
+                googleMap.setZoom(15);
+              }
+            } catch (e) {
+              logger.warn('[IndexRedesigned] Failed to center map for partner deep-link', e);
+            }
+          })();
+        }
+      }
+    }
+
+    // Open offer reservation modal if requested.
+    if (offerId && offerId !== lastDeepLinkOfferIdRef.current) {
+      const offer = [...offers, ...allOffers].find((o) => o.id === offerId);
+      if (offer) {
+        lastDeepLinkOfferIdRef.current = offerId;
+        handleOfferClick(offer);
+      }
+    }
+  }, [routerLocation.search, offers, allOffers, googleMap, reservation.activeReservation, offerMgmt, handleOfferClick]);
+
   const handleMarkerClick = useCallback((partnerName: string, partnerAddress: string | undefined, partnerOffers: Offer[]) => {
     // Skip if active reservation exists - no partner sheet during navigation
     if (reservation.activeReservation) {
@@ -720,7 +810,7 @@ export default function IndexRedesigned() {
 
       {/* PARTNER SHEET - Shows partner info and offers when clicking map pin */}
       <PartnerSheet
-        isOpen={offerMgmt.showPartnerSheet}
+        isOpen={offerMgmt.showPartnerSheet && !reservation.showPickupSuccessModal}
         partnerId={offerMgmt.selectedPartnerId}
         onClose={() => {
           offerMgmt.setShowPartnerSheet(false);
@@ -734,7 +824,7 @@ export default function IndexRedesigned() {
 
       {/* NEW OFFERS SHEET - Pixel-Perfect Redesign */}
       <OffersSheetNew
-        isOpen={offerMgmt.discoverSheetOpen}
+        isOpen={offerMgmt.discoverSheetOpen && !reservation.showPickupSuccessModal}
         isMinimized={offerMgmt.isSheetMinimized}
         selectedPartnerId={offerMgmt.selectedPartnerId}
         filteredOffers={mapFilteredOffers}
@@ -895,6 +985,8 @@ export default function IndexRedesigned() {
           reservation.setShowPickupSuccessModal(true);
           // Clear active reservation (pickup successful)
           reservation.setActiveReservation(null);
+          // Close offers sheet to prevent click-through
+          offerMgmt.setDiscoverSheetOpen(false);
         }}
           />
         )}

@@ -21,6 +21,7 @@ interface SubscriptionConfig {
   table: string;
   filter?: string;
   callback: (payload: RealtimePostgresChangesPayload<any>) => void;
+  enabled?: boolean;
 }
 
 /**
@@ -64,6 +65,17 @@ export function useVisibilityAwareSubscription(config: SubscriptionConfig) {
 
   // Manage subscription based on visibility
   useEffect(() => {
+    // Explicitly disabled by caller.
+    if (config.enabled === false) {
+      if (channelRef.current) {
+        logger.log(`[Realtime] Disconnecting ${config.channelName} (disabled)`);
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      setIsConnected(false);
+      return;
+    }
+
     // Don't subscribe if tab is hidden
     if (!isVisible) {
       if (channelRef.current) {
@@ -97,6 +109,9 @@ export function useVisibilityAwareSubscription(config: SubscriptionConfig) {
         } else if (status === 'CHANNEL_ERROR') {
           logger.error(`[Realtime] ❌ Failed to subscribe to ${config.channelName}`);
           setIsConnected(false);
+        } else if (status === 'TIMED_OUT') {
+          logger.warn(`[Realtime] ⏱️ Subscription timed out for ${config.channelName}`);
+          setIsConnected(false);
         }
       });
 
@@ -111,7 +126,7 @@ export function useVisibilityAwareSubscription(config: SubscriptionConfig) {
         setIsConnected(false);
       }
     };
-  }, [isVisible, config.channelName, config.event, config.schema, config.table, config.filter]);
+  }, [isVisible, config.enabled, config.channelName, config.event, config.schema, config.table, config.filter]);
 
   return { isConnected, isVisible };
 }

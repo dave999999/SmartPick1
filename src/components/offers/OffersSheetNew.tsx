@@ -297,6 +297,8 @@ export function OffersSheetNew({ isOpen, onClose, onOfferSelect, selectedPartner
                     <OfferListCard
                       title={offer.title}
                       imageUrl={offer.images?.[0] || '/images/Map.jpg'}
+                      partnerName={offer.partner?.business_name}
+                      partnerImageUrl={offer.partner?.cover_image_url || offer.partner?.images?.[0]}
                       priceNow={`₾${Math.round(offer.smart_price).toLocaleString()}`}
                       priceOld={offer.original_price ? `₾${Math.round(offer.original_price).toLocaleString()}` : undefined}
                       expiresAt={offer.expires_at}

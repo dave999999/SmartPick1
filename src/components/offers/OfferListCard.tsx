@@ -35,6 +35,8 @@ function formatTimeRemaining(expiresAt: string): string | null {
 export type OfferListCardProps = {
   title: string;
   imageUrl: string;
+  partnerName?: string;
+  partnerImageUrl?: string;
   priceNow: string;
   priceOld?: string;
   isFavorite?: boolean;
@@ -47,6 +49,8 @@ export type OfferListCardProps = {
 export function OfferListCard({
   title,
   imageUrl,
+  partnerName,
+  partnerImageUrl,
   priceNow,
   priceOld,
   isFavorite: initialFavorite = false,
@@ -129,7 +133,30 @@ export function OfferListCard({
       </div>
 
       {/* Text Section */}
-      <div className="px-2 py-1.5 text-center">
+      <div className="px-2 py-1.5">
+        {(partnerName || partnerImageUrl) && (
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {partnerImageUrl ? (
+              <img
+                src={partnerImageUrl}
+                alt={partnerName || 'Partner'}
+                className="w-4 h-4 rounded-full object-cover border border-white shadow-sm"
+                loading="lazy"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-4 h-4 rounded-full bg-gray-200" />
+            )}
+            {partnerName && (
+              <div className="text-[10px] font-semibold text-gray-700 line-clamp-1 leading-none">
+                {partnerName}
+              </div>
+            )}
+          </div>
+        )}
+
         <h4 className="text-[12px] font-medium text-[#111827] line-clamp-1 leading-tight">
           {title}
         </h4>

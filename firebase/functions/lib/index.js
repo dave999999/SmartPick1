@@ -48,6 +48,31 @@ const db = admin.firestore();
 // Use European region for lower latency to Georgia
 const region = 'europe-west1';
 /**
+ * Helper to handle stale FCM tokens gracefully
+ * Returns true if error was handled (caller should return), false otherwise
+ */
+async function handleStaleTokenError(error, userId, res) {
+    var _a, _b;
+    const errorCode = (_b = (_a = error === null || error === void 0 ? void 0 : error.errorInfo) === null || _a === void 0 ? void 0 : _a.code) !== null && _b !== void 0 ? _b : error === null || error === void 0 ? void 0 : error.code;
+    if (errorCode === 'messaging/registration-token-not-registered' ||
+        errorCode === 'messaging/invalid-registration-token') {
+        // Clean up stale token
+        try {
+            await db.collection('fcm_tokens').doc(userId).delete();
+        }
+        catch (_c) {
+            // Best-effort cleanup only
+        }
+        res.status(200).json({
+            success: false,
+            code: errorCode,
+            message: 'FCM token not registered (stale). Token removed; client should re-register.'
+        });
+        return true;
+    }
+    return false;
+}
+/**
  * Save/update a user's FCM token
  * Open HTTPS endpoint (no Firebase Auth)
  * Purpose: Avoid Firestore Web SDK streaming issues in Capacitor (CapacitorHttp interceptor).
@@ -151,6 +176,8 @@ exports.sendPushNotification = functions.region(region).https.onRequest(async (r
     }
     catch (error) {
         console.error('Error sending notification:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -198,6 +225,8 @@ exports.notifyPartnerNewReservation = functions.region(region).https.onRequest(a
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, partnerId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -205,7 +234,7 @@ exports.notifyPartnerNewReservation = functions.region(region).https.onRequest(a
  * Notify customer about confirmed reservation
  */
 exports.notifyReservationConfirmed = functions.region(region).https.onRequest(async (req, res) => {
-    var _a;
+    var _a, _b, _c, _d, _e;
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.set('Access-Control-Allow-Headers', 'Content-Type');
@@ -213,14 +242,39 @@ exports.notifyReservationConfirmed = functions.region(region).https.onRequest(as
         res.status(204).send('');
         return;
     }
-    const { userId, offerTitle, partnerName, pickupBy } = req.body;
+    if (req.method !== 'POST') {
+        res.status(405).json({ error: 'Method not allowed' });
+        return;
+    }
+    const { userId, offerTitle, partnerName, pickupBy } = (_a = req.body) !== null && _a !== void 0 ? _a : {};
+    if (!userId || typeof userId !== 'string') {
+        res.status(400).json({ success: false, error: 'Missing required field: userId' });
+        return;
+    }
+    if (!offerTitle || typeof offerTitle !== 'string') {
+        res.status(400).json({ success: false, error: 'Missing required field: offerTitle' });
+        return;
+    }
+    if (!partnerName || typeof partnerName !== 'string') {
+        res.status(400).json({ success: false, error: 'Missing required field: partnerName' });
+        return;
+    }
+    if (!pickupBy || typeof pickupBy !== 'string') {
+        res.status(400).json({ success: false, error: 'Missing required field: pickupBy' });
+        return;
+    }
     try {
-        const tokenDoc = await db.collection('fcm_tokens').doc(userId).get();
+        const tokenRef = db.collection('fcm_tokens').doc(userId);
+        const tokenDoc = await tokenRef.get();
         if (!tokenDoc.exists) {
             res.status(404).json({ success: false, message: 'User token not found' });
             return;
         }
-        const fcmToken = (_a = tokenDoc.data()) === null || _a === void 0 ? void 0 : _a.token;
+        const fcmToken = (_b = tokenDoc.data()) === null || _b === void 0 ? void 0 : _b.token;
+        if (!fcmToken || typeof fcmToken !== 'string') {
+            res.status(404).json({ success: false, message: 'Invalid FCM token' });
+            return;
+        }
         const message = {
             notification: {
                 title: '✅ Reservation Confirmed',
@@ -244,8 +298,25 @@ exports.notifyReservationConfirmed = functions.region(region).https.onRequest(as
         res.json({ success: true, messageId: response });
     }
     catch (error) {
+        const errorCode = (_d = (_c = error === null || error === void 0 ? void 0 : error.errorInfo) === null || _c === void 0 ? void 0 : _c.code) !== null && _d !== void 0 ? _d : error === null || error === void 0 ? void 0 : error.code;
         console.error('Error:', error);
-        res.status(500).json({ error: error.message });
+        // Stale/uninstalled app token: clean up and do not surface as 500.
+        if (errorCode === 'messaging/registration-token-not-registered' ||
+            errorCode === 'messaging/invalid-registration-token') {
+            try {
+                await db.collection('fcm_tokens').doc(userId).delete();
+            }
+            catch (_f) {
+                // Best-effort cleanup only.
+            }
+            res.status(200).json({
+                success: false,
+                code: errorCode,
+                message: 'FCM token not registered (stale). Token removed; client should re-register.'
+            });
+            return;
+        }
+        res.status(500).json({ success: false, code: errorCode, error: (_e = error === null || error === void 0 ? void 0 : error.message) !== null && _e !== void 0 ? _e : 'Unknown error' });
     }
 });
 /**
@@ -292,6 +363,8 @@ exports.notifyReservationExpiring = functions.region(region).https.onRequest(asy
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -329,6 +402,8 @@ exports.notifyReservationExpired = functions.region(region).https.onRequest(asyn
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -366,6 +441,8 @@ exports.notifyNewOffersNearby = functions.region(region).https.onRequest(async (
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -403,6 +480,8 @@ exports.notifyFavoritePartner = functions.region(region).https.onRequest(async (
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -440,6 +519,8 @@ exports.notifyAchievement = functions.region(region).https.onRequest(async (req,
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -477,6 +558,8 @@ exports.notifyReferralReward = functions.region(region).https.onRequest(async (r
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, userId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });
@@ -525,6 +608,8 @@ exports.notifyPartnerReservationCancelled = functions.region(region).https.onReq
     }
     catch (error) {
         console.error('Error:', error);
+        if (await handleStaleTokenError(error, partnerId, res))
+            return;
         res.status(500).json({ error: error.message });
     }
 });

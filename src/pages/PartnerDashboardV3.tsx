@@ -59,8 +59,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 import { usePartnerDashboardData } from '@/hooks/pages/usePartnerDashboardData';
 import { usePartnerModals } from '@/hooks/pages/usePartnerModals';
-import { subscribeToPartnerReservations } from '@/lib/api/realtime';
-import { supabase } from '@/lib/supabase';
+import { useVisibilityAwareSubscription } from '@/hooks/useVisibilityAwareSubscription';
 
 export default function PartnerDashboardV3() {
   const navigate = useNavigate();
@@ -160,31 +159,24 @@ export default function PartnerDashboardV3() {
     refreshReservationsRef.current = refreshReservations;
   }, [refreshReservations]);
 
-  useEffect(() => {
-    if (!partner?.id || activeView !== 'active') {
-      logger.debug('⏸️ [PartnerDashboard] Not subscribing - tab not active or no partner', { 
-        hasPartner: !!partner?.id, 
-        activeView 
-      });
-      return;
-    }
-
-    logger.log('🔔 [PartnerDashboard] Setting up real-time subscription for partner:', partner.id);
-
-    const channel = subscribeToPartnerReservations(partner.id, async (payload: any) => {
+  const partnerReservationsEnabled = !!partner?.id && activeView === 'active';
+  useVisibilityAwareSubscription({
+    enabled: partnerReservationsEnabled,
+    channelName: partner?.id ? `public:reservations:partner:${partner.id}` : 'public:reservations:partner:disabled',
+    event: '*',
+    schema: 'public',
+    table: 'reservations',
+    filter: partner?.id ? `partner_id=eq.${partner.id}` : undefined,
+    callback: async (payload: any) => {
       logger.log('📥 [PartnerDashboard] Reservation event received:', {
         eventType: payload.eventType,
         table: payload.table,
-        new: payload.new,
-        old: payload.old
       });
-      
-      // Refresh on any reservation changes
+
       if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
         logger.log('🔄 [PartnerDashboard] Triggering reservations refresh');
         await refreshReservationsRef.current();
-        
-        // Show notification for new reservations
+
         if (payload.eventType === 'INSERT') {
           toast.success('🎉 New reservation received!', {
             description: 'A customer just reserved your offer',
@@ -192,18 +184,8 @@ export default function PartnerDashboardV3() {
           });
         }
       }
-    });
-
-    // Log channel status
-    channel.subscribe((status) => {
-      logger.log('📡 [PartnerDashboard] Realtime channel status:', status);
-    });
-
-    return () => {
-      logger.log('🛑 [PartnerDashboard] Cleanup - unsubscribing from reservations');
-      supabase.removeChannel(channel);
-    };
-  }, [partner?.id, activeView]); // Re-subscribe when switching to active tab
+    },
+  });
 
   // Calculate revenue today
   const revenueToday = stats?.totalRevenue || 0; // Simplified for demo
