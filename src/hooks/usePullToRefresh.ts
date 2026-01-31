@@ -42,16 +42,23 @@ export function usePullToRefresh({
     if (!container) return;
 
     const handleTouchStart = (e: TouchEvent) => {
-      // Only trigger if scrolled to top
-      if (container.scrollTop === 0) {
+      // Only trigger if scrolled to top (with 5px tolerance for any sub-pixel rendering)
+      const scrollTop = container.scrollTop;
+      const isAtTop = scrollTop <= 5;
+      
+      if (isAtTop) {
         touchStartY.current = e.touches[0].clientY;
-        logger.debug('[PullToRefresh] Touch start at top');
+        logger.debug('[PullToRefresh] Touch start at top, scrollTop:', scrollTop);
+      } else {
+        logger.debug('[PullToRefresh] Not at top, scrollTop:', scrollTop);
       }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      // Only activate if we started at the top
-      if (container.scrollTop > 0 || touchStartY.current === 0) {
+      const scrollTop = container.scrollTop;
+      
+      // Only activate if we started at the top (with tolerance)
+      if (scrollTop > 5 || touchStartY.current === 0) {
         if (pullDistanceRef.current > 0) {
           setPullDistance(0);
           setIsPulling(false);
@@ -68,6 +75,8 @@ export function usePullToRefresh({
         const resistedDistance = Math.min(distance * 0.5, threshold * 1.5);
         setPullDistance(resistedDistance);
         setIsPulling(true);
+        
+        logger.debug('[PullToRefresh] Pulling:', resistedDistance, 'threshold:', threshold);
         
         // Prevent default scrolling when pulling down
         if (distance > 10) {
