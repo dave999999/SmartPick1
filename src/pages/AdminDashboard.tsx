@@ -22,7 +22,7 @@
 
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 import { DashboardHome } from '@/pages/admin/DashboardHome';
 import { logger } from '@/lib/logger';
 
