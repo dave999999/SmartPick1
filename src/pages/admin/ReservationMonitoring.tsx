@@ -73,7 +73,7 @@ export default function ReservationMonitoring() {
   const [filters, setFilters] = useState<ReservationFilters>({
     page: 1,
     limit: 50,
-    status: 'active', // Default to active reservations
+    // No default status filter - show all reservations
   });
   const [currentTime, setCurrentTime] = useState(new Date());
 

@@ -68,9 +68,9 @@ export function useReservations(filters: ReservationFilters = {}) {
           { count: 'exact' }
         );
 
-      // Status filter
+      // Status filter (case-insensitive)
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status.toUpperCase());
       }
 
       // Urgency filter (time-based)
