@@ -21,13 +21,29 @@ export interface ReservationFlowState {
   activeReservation: Reservation | null;
   isReservationLoading: boolean;
   showPickupSuccessModal: boolean;
-  pickupModalData: { savedAmount: number; pointsEarned: number } | null;
+  pickupModalData: { 
+    savedAmount: number; 
+    pointsEarned: number;
+    offerTitle?: string;
+    offerImage?: string;
+    originalPrice?: number;
+    paidPrice?: number;
+    quantity?: number;
+  } | null;
   gpsPosition: GeolocationPosition | null;
   setActiveReservationId: (id: string | null) => void;
   setActiveReservation: (reservation: Reservation | null) => void;
   setIsReservationLoading: (loading: boolean) => void;
   setShowPickupSuccessModal: (show: boolean) => void;
-  setPickupModalData: (data: { savedAmount: number; pointsEarned: number } | null) => void;
+  setPickupModalData: (data: { 
+    savedAmount: number; 
+    pointsEarned: number;
+    offerTitle?: string;
+    offerImage?: string;
+    originalPrice?: number;
+    paidPrice?: number;
+    quantity?: number;
+  } | null) => void;
   loadActiveReservation: () => Promise<void>;
 }
 
@@ -36,7 +52,15 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [isReservationLoading, setIsReservationLoading] = useState(true);
   const [showPickupSuccessModal, setShowPickupSuccessModal] = useState(false);
-  const [pickupModalData, setPickupModalData] = useState<{ savedAmount: number; pointsEarned: number } | null>(null);
+  const [pickupModalData, setPickupModalData] = useState<{ 
+    savedAmount: number; 
+    pointsEarned: number;
+    offerTitle?: string;
+    offerImage?: string;
+    originalPrice?: number;
+    paidPrice?: number;
+    quantity?: number;
+  } | null>(null);
 
   // Enable GPS tracking when navigating
   const { position: gpsPosition } = useLiveGPS({ 
@@ -88,7 +112,7 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
                 if (offerId) {
                   const { data: offerData } = await supabase
                     .from('offers')
-                    .select('original_price, smart_price')
+                    .select('original_price, smart_price, title, image_url')
                     .eq('id', offerId)
                     .maybeSingle();
 
@@ -112,10 +136,31 @@ export function useReservationFlow({ user, isPostResNavigating }: UseReservation
 
             const pointsEarned = Math.floor(savedAmount * 10); // 10 points per GEL
             
-            logger.debug('💰 Celebration data (polling):', { savedAmount, pointsEarned });
+            // Extract offer details for modal
+            const offerTitle = (activeReservation.offer as any)?.title || (currentRes.offer as any)?.title;
+            const offerImage = (activeReservation.offer as any)?.image_url || (currentRes.offer as any)?.image_url;
+            const paidPrice = Number(activeReservation.total_price ?? smartPrice * quantity);
             
-            // Show pickup success modal
-            setPickupModalData({ savedAmount, pointsEarned });
+            logger.debug('💰 Celebration data (polling):', { 
+              savedAmount, 
+              pointsEarned,
+              offerTitle,
+              offerImage,
+              originalPrice,
+              paidPrice,
+              quantity
+            });
+            
+            // Show pickup success modal with enhanced details
+            setPickupModalData({ 
+              savedAmount, 
+              pointsEarned,
+              offerTitle,
+              offerImage,
+              originalPrice: Number.isFinite(originalPrice) ? originalPrice : undefined,
+              paidPrice: Number.isFinite(paidPrice) ? paidPrice : undefined,
+              quantity
+            });
             setShowPickupSuccessModal(true);
             logger.debug('✅ Modal state updated (polling) - should show now');
             

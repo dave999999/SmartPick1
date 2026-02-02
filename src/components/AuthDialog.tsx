@@ -739,6 +739,15 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <Turnstile
                     ref={captchaRef}
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKnWhPNRi7fs'}
+                    options={{
+                      theme: 'light',
+                      size: 'normal',
+                      execution: 'render',
+                      refreshExpired: 'auto',
+                      retry: 'auto',
+                      'response-field': true,
+                      'response-field-name': 'cf-turnstile-response'
+                    }}
                     onSuccess={(token) => {
                       setCaptchaToken(token);
                       setError(null);
@@ -1100,6 +1109,15 @@ export default function AuthDialog({ open, onOpenChange, onSuccess, defaultTab =
                   <Turnstile
                     ref={captchaRef}
                     siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACABKnWhPNRi7fs'}
+                    options={{
+                      theme: 'light',
+                      size: 'normal',
+                      execution: 'render',
+                      refreshExpired: 'auto',
+                      retry: 'auto',
+                      'response-field': true,
+                      'response-field-name': 'cf-turnstile-response'
+                    }}
                     onSuccess={(token) => {
                       setCaptchaToken(token);
                       setError(null);

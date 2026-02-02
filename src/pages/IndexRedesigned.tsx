@@ -49,7 +49,7 @@ import { useOfferFilters } from '@/hooks/pages/useOfferFilters';
 import { useOfferManagement } from '@/hooks/pages/useOfferManagement';
 import { useMapControls } from '@/hooks/pages/useMapControls';
 import { useReservationFlow } from '@/hooks/pages/useReservationFlow';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { DeferredPushNotifications } from '@/components/DeferredPushNotifications';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { handleNotificationTap } from '@/lib/notificationHandlers';
 import { NearbyOffersSheet } from '@/components/notifications/NearbyOffersSheet';
@@ -125,9 +125,8 @@ export default function IndexRedesigned() {
   const { addRecentlyViewed } = useRecentlyViewed();
   
   // Initialize push notifications (registers FCM token on app startup)
-  logger.debug('BEFORE CALLING PUSH HOOK');
-  usePushNotifications();
-  logger.debug('AFTER CALLING PUSH HOOK');
+  // ⚡ ANR FIX: Moved to deferred initialization below to prevent blocking render
+  // Push notifications now initialize after 2 seconds to allow smooth app startup
   
   // Ref to track last highlighted offer (prevents duplicate highlights causing re-renders)
   const lastHighlightedOfferRef = useRef<string | null>(null);
@@ -753,6 +752,9 @@ export default function IndexRedesigned() {
       />
       <SplashScreen />
       <Suspense fallback={null}><AnnouncementPopup /></Suspense>
+      
+      {/* ⚡ ANR FIX: Deferred push notifications initialization */}
+      <DeferredPushNotifications />
 
       <main id="main-content" className="min-h-screen bg-sp-bg overflow-hidden fixed inset-0 safe-area" role="main" aria-label="Offers map and discovery">
         <div className="absolute inset-0 w-full h-full">
@@ -1003,6 +1005,11 @@ export default function IndexRedesigned() {
           }}
           savedAmount={reservation.pickupModalData.savedAmount}
           pointsEarned={reservation.pickupModalData.pointsEarned}
+          offerTitle={reservation.pickupModalData.offerTitle}
+          offerImage={reservation.pickupModalData.offerImage}
+          originalPrice={reservation.pickupModalData.originalPrice}
+          paidPrice={reservation.pickupModalData.paidPrice}
+          quantity={reservation.pickupModalData.quantity}
         />
       )}
       

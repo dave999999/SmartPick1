@@ -100,6 +100,9 @@ const AppContent = () => {
           return;
         }
 
+        // ⚡ ANR FIX: Delay heavy query to prevent blocking UI thread on cold start
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Dynamic import only in production path
         const { supabase } = await import('./lib/supabase');
 
@@ -162,8 +165,8 @@ const AppContent = () => {
       }
     };
 
-    // Defer to next tick to allow first paint before heavy import
-    const timer = setTimeout(checkMaintenanceAndUser, 0);
+    // ⚡ ANR FIX: Defer to allow first paint (increased from 0 to 300ms)
+    const timer = setTimeout(checkMaintenanceAndUser, 300);
     return () => {
       cancelled = true;
       clearTimeout(timer);
@@ -523,8 +526,11 @@ const AppContent = () => {
               </Suspense>
             } 
           />
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          {/* New Admin Dashboard with Nested Routes */}
+          <Route path="/admin/*" element={<AdminDashboard />} />
+          
+          {/* Legacy Admin Panel (keep for backward compatibility) */}
+          <Route path="/admin-panel" element={<AdminPanel />} />
           <Route path="/debug/notifications" element={<NotificationsDebug />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/privacy" element={<Privacy />} />

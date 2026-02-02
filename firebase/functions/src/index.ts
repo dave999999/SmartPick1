@@ -202,8 +202,8 @@ export const notifyPartnerNewReservation = functions.region(region).https.onRequ
 
     const message = {
       notification: {
-        title: '🔔 New Reservation',
-        body: `${customerName} reserved ${quantity}x ${offerTitle}`
+        title: '🎉 New Reservation!',
+        body: `${customerName} reserved ${quantity}x ${offerTitle} • Tap to view details`
       },
       data: {
         type: 'partner_alert',
@@ -215,7 +215,23 @@ export const notifyPartnerNewReservation = functions.region(region).https.onRequ
         priority: 'high' as const,
         notification: {
           sound: 'notification_sound',
-          channelId: 'reservations'
+          channelId: 'reservations',
+          // 🎨 Custom notification appearance
+          icon: 'ic_notification',
+          color: '#10b981', // Teal-500 (SmartPick brand color)
+          tag: 'reservation',
+          defaultSound: false,
+          defaultVibrateTimings: false,
+          vibrateTimingsMillis: [0, 250, 250, 250]
+        }
+      },
+      // iOS-specific styling
+      apns: {
+        payload: {
+          aps: {
+            sound: 'notification_sound.wav',
+            badge: 1
+          }
         }
       }
     };

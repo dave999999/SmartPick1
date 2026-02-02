@@ -640,50 +640,6 @@ export default function UserProfileApple() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            {/* Token Sync Section - Only on Native */}
-            {Capacitor.isNativePlatform() && (
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border-2 border-blue-200">
-                <div className="text-xs font-bold text-red-600 mb-2">
-                  🚀 BUILD: {buildVersion}
-                </div>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <p className="text-[13px] font-semibold text-gray-700">Token Status</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      {fcmToken ? `✅ Generated: ${fcmToken.substring(0, 15)}...` : '⚠️ Missing token'}
-                    </p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      User ID: {user?.id ?? 'Not logged in'}
-                    </p>
-                  </div>
-                  {fcmToken && (
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                  )}
-                </div>
-                {/* Admin-only manual sync button */}
-                {user?.role === 'ADMIN' && (
-                  <Button
-                    onClick={async () => {
-                      if (syncNotifications) {
-                        const success = await syncNotifications(user?.id ?? '');
-                        if (success) {
-                          toast.success('🔔 Notifications synced successfully!');
-                        } else {
-                          toast.error('Failed to sync. Please try again.');
-                        }
-                      }
-                    }}
-                    disabled={isSyncing}
-                    className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-[13px]"
-                  >
-                    {isSyncing ? '🔄 Syncing...' : '🔄 Sync Notifications (Admin)'}
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {Capacitor.isNativePlatform() && <div className="border-t border-[#E5E7EB]" />}
-
             {/* Reservation Alerts Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[#FF8A00] uppercase tracking-wide">
