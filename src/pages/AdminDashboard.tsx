@@ -98,65 +98,7 @@ export default function AdminDashboard() {
     </AdminLayout>
   );
 }
-      
-      if (!connectionTest.connected) {
-        logger.error('AdminDashboard: Connection failed:', connectionTest.error);
-        toast.error(`Database connection failed: ${connectionTest.error}`);
-      }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        toast.error('Please sign in to access admin dashboard');
-        navigate('/');
-        return;
-      }
-      
-      logger.log('AdminDashboard: User authenticated:', { userId: user.id });
-      
-      // Check if user is admin - check for both uppercase and lowercase
-      const { data: profile, error } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      logger.log('AdminDashboard: User profile check:', { profile, error });
-
-      if (error) {
-        logger.error('Error fetching user profile:', error);
-        toast.error('Unable to verify admin privileges');
-        navigate('/');
-        return;
-      }
-
-      // Verify admin role (case-insensitive)
-      if (!profile || profile.role?.toUpperCase() !== 'ADMIN') {
-        logger.error('AdminDashboard: Unauthorized access attempt:', { userId: user.id });
-        toast.error('Unauthorized: Admin access required');
-        navigate('/');
-        return;
-      }
-
-      // User is authenticated and authorized; wait for manual refresh to load data
-      setLoading(false);
-    } catch (error) {
-      logger.error('Error checking admin access:', error);
-      toast.error('Failed to verify admin access');
-      navigate('/');
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      logger.log('AdminDashboard: Loading dashboard stats...');
-      
-      // Prefer unified RPC for stats; gracefully fallback to legacy counts
-      let rpcStats: any = null;
-      try {
-        rpcStats = await getAdminDashboardStatsRpc();
-      } catch (e) {
-        logger.warn('AdminDashboard: RPC stats unavailable, falling back:', e);
-      }
 
       // Load legacy datasets in parallel (used for fallback)
       const [dashboardStats] = await Promise.all([
