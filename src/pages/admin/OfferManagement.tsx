@@ -70,7 +70,6 @@ import {
 } from 'lucide-react';
 import {
   useOffers,
-  useOfferStats,
   usePauseOffer,
   useResumeOffer,
   useDeleteOffer,
@@ -90,7 +89,6 @@ export default function OfferManagement() {
   });
 
   const { data, isLoading, refetch } = useOffers(filters);
-  const { data: stats } = useOfferStats();
   const pauseOffer = usePauseOffer();
   const resumeOffer = useResumeOffer();
   const deleteOffer = useDeleteOffer();
@@ -298,35 +296,45 @@ export default function OfferManagement() {
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Active Offers</div>
+            <div className="text-sm text-gray-600">Active Now</div>
             <div className="text-2xl font-bold text-green-600 mt-1">
-              {data?.offers.filter((o) => o.active && !o.flagged && new Date(o.expires_at) > new Date()).length || 0}
+              {data?.offers.filter((o) => o.status?.toUpperCase() === 'ACTIVE').length || 0}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Paused</div>
-            <div className="text-2xl font-bold text-gray-600 mt-1">
-              {data?.offers.filter((o) => !o.active).length || 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Flagged</div>
+            <div className="text-sm text-red-600">Critical (&lt;15m)</div>
             <div className="text-2xl font-bold text-red-600 mt-1">
-              {data?.offers.filter((o) => o.flagged).length || 0}
+              {data?.offers.filter((o) => {
+                if (o.status?.toUpperCase() !== 'ACTIVE') return false;
+                const minutesLeft = differenceInHours(new Date(o.expires_at), new Date()) * 60;
+                return minutesLeft > 0 && minutesLeft < 15;
+              }).length || 0}
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-orange-200 bg-orange-50">
           <CardContent className="p-4">
-            <div className="text-sm text-gray-600">Expiring Soon</div>
+            <div className="text-sm text-orange-600">Warning (&lt;1h)</div>
             <div className="text-2xl font-bold text-orange-600 mt-1">
               {data?.offers.filter((o) => {
+                if (o.status?.toUpperCase() !== 'ACTIVE') return false;
                 const hoursLeft = differenceInHours(new Date(o.expires_at), new Date());
-                return hoursLeft > 0 && hoursLeft < 24;
+                return hoursLeft > 0 && hoursLeft < 1;
+              }).length || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="text-sm text-blue-600">Completed Today</div>
+            <div className="text-2xl font-bold text-blue-600 mt-1">
+              {data?.offers.filter((o) => {
+                if (o.status?.toUpperCase() !== 'SOLD_OUT') return false;
+                const today = new Date();
+                const updated = new Date(o.updated_at);
+                return updated.toDateString() === today.toDateString();
               }).length || 0}
             </div>
           </CardContent>
@@ -335,7 +343,7 @@ export default function OfferManagement() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Expired</div>
             <div className="text-2xl font-bold text-gray-500 mt-1">
-              {data?.offers.filter((o) => new Date(o.expires_at) < new Date()).length || 0}
+              {data?.offers.filter((o) => o.status?.toUpperCase() === 'EXPIRED').length || 0}
             </div>
           </CardContent>
         </Card>
