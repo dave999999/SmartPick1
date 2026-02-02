@@ -22,33 +22,34 @@ export interface Partner {
   id: string;
   user_id: string;
   business_name: string;
-  business_email: string;
-  business_phone: string;
-  business_address: string;
-  business_description: string;
-  business_registration_number: string;
-  trust_score: number;
-  total_offers: number;
-  active_offers: number;
-  completed_reservations: number;
-  cancelled_reservations: number;
-  revenue_generated: number;
-  status: 'pending' | 'approved' | 'suspended' | 'rejected';
-  rejection_reason?: string;
-  approved_by?: string;
-  approved_at?: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  description: string;
+  business_type: string;
+  latitude: number;
+  longitude: number;
+  business_hours: any;
+  opening_time: string;
+  closing_time: string;
+  open_24h: boolean;
+  images: string[];
+  cover_image_url: string;
+  status: string; // 'PENDING' | 'APPROVED' | 'REJECTED'
+  approved_for_upload: boolean;
   created_at: string;
   updated_at: string;
+  // Calculated fields
+  total_offers?: number;
+  active_offers?: number;
+  completed_reservations?: number;
+  revenue_generated?: number;
   user?: {
     id: string;
     name: string;
     email: string;
     avatar_url?: string;
-  };
-  approver?: {
-    id: string;
-    name: string;
-    email: string;
   };
 }
 
@@ -62,61 +63,83 @@ export function usePartners(filters: PartnerFilters = {}) {
         .select(
           `
           *,
-          user:users!partners_user_id_fkey(id, name, email, avatar_url),
-          approver:users!partners_approved_by_fkey(id, name, email)
+          user:users!partners_user_id_fkey(id, name, email, avatar_url)
         `,
           { count: 'exact' }
         );
 
-      // Status filter
+      // Status filter (normalize to uppercase to match your database)
       if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-
-      // Trust score range
-      if (filters.trustScoreMin !== undefined) {
-        query = query.gte('trust_score', filters.trustScoreMin);
-      }
-      if (filters.trustScoreMax !== undefined) {
-        query = query.lte('trust_score', filters.trustScoreMax);
-      }
-
-      // Active offers filter
-      if (filters.hasActiveOffers) {
-        query = query.gt('active_offers', 0);
+        const statusMap: Record<string, string> = {
+          'pending': 'PENDING',
+          'approved': 'APPROVED',
+          'rejected': 'REJECTED',
+          'suspended': 'SUSPENDED'
+        };
+        query = query.eq('status', statusMap[filters.status] || filters.status.toUpperCase());
       }
 
       // Search by business name or email
       if (filters.search) {
         query = query.or(
-          `business_name.ilike.%${filters.search}%,business_email.ilike.%${filters.search}%`
+          `business_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
         );
       }
 
-      // Sorting: pending first, then by trust score desc
-      query = query.order('status', { ascending: false }).order('trust_score', {
-        ascending: false,
-      });
-
-      // Pagination
-      const page = filters.page || 1;
-      const limit = filters.limit || 50;
-      const from = (page - 1) * limit;
-      const to = from + limit - 1;
-      query = query.range(from, to);
+      // Sorting: pending first, then by created date
+      query = query.order('created_at', { ascending: false });
 
       const { data, error, count } = await query;
 
       if (error) {
-        logger.error('Failed to fetch partners', { error });
+        logger.error('Error fetching partners:', error);
         throw error;
       }
 
+      // Calculate stats for each partner
+      const partnersWithStats = await Promise.all(
+        (data || []).map(async (partner) => {
+          // Get offer counts
+          const { count: totalOffers } = await supabase
+            .from('offers')
+            .select('*', { count: 'exact', head: true })
+            .eq('partner_id', partner.id);
+
+          const { count: activeOffers } = await supabase
+            .from('offers')
+            .select('*', { count: 'exact', head: true })
+            .eq('partner_id', partner.id)
+            .eq('status', 'ACTIVE');
+
+          // Get reservation stats
+          const { count: completedReservations } = await supabase
+            .from('reservations')
+            .select('*', { count: 'exact', head: true })
+            .eq('partner_id', partner.id)
+            .in('status', ['PICKED_UP', 'COMPLETED']);
+
+          // Get revenue
+          const { data: revenueData } = await supabase
+            .from('reservations')
+            .select('total_price')
+            .eq('partner_id', partner.id)
+            .in('status', ['PICKED_UP', 'COMPLETED']);
+
+          const revenue_generated = revenueData?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
+
+          return {
+            ...partner,
+            total_offers: totalOffers || 0,
+            active_offers: activeOffers || 0,
+            completed_reservations: completedReservations || 0,
+            revenue_generated
+          };
+        })
+      );
+
       return {
-        partners: (data as Partner[]) || [],
+        partners: partnersWithStats,
         total: count || 0,
-        page,
-        pages: Math.ceil((count || 0) / limit),
       };
     },
     staleTime: 30000, // 30 seconds
@@ -133,8 +156,7 @@ export function usePartner(partnerId: string) {
         .select(
           `
           *,
-          user:users!partners_user_id_fkey(id, name, email, avatar_url, phone_number),
-          approver:users!partners_approved_by_fkey(id, name, email)
+          user:users!partners_user_id_fkey(id, name, email, avatar_url, phone)
         `
         )
         .eq('id', partnerId)
@@ -145,7 +167,39 @@ export function usePartner(partnerId: string) {
         throw error;
       }
 
-      return data as Partner;
+      // Get stats for this partner
+      const { count: totalOffers } = await supabase
+        .from('offers')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_id', partnerId);
+
+      const { count: activeOffers } = await supabase
+        .from('offers')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_id', partnerId)
+        .eq('status', 'ACTIVE');
+
+      const { count: completedReservations } = await supabase
+        .from('reservations')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_id', partnerId)
+        .in('status', ['PICKED_UP', 'COMPLETED']);
+
+      const { data: revenueData } = await supabase
+        .from('reservations')
+        .select('total_price')
+        .eq('partner_id', partnerId)
+        .in('status', ['PICKED_UP', 'COMPLETED']);
+
+      const revenue_generated = revenueData?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
+
+      return {
+        ...data,
+        total_offers: totalOffers || 0,
+        active_offers: activeOffers || 0,
+        completed_reservations: completedReservations || 0,
+        revenue_generated
+      } as Partner;
     },
     enabled: !!partnerId,
   });
@@ -201,18 +255,19 @@ export function useApprovePartner() {
   return useMutation({
     mutationFn: async ({
       partnerId,
-      adminId,
     }: {
       partnerId: string;
-      adminId: string;
+      adminId?: string;
     }) => {
-      const { data, error } = await supabase.rpc('approve_partner', {
-        p_partner_id: partnerId,
-        p_admin_id: adminId,
-      });
+      const { error } = await supabase
+        .from('partners')
+        .update({
+          status: 'APPROVED',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', partnerId);
 
       if (error) throw error;
-      return data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] });
@@ -239,13 +294,12 @@ export function useRejectPartner() {
       reason,
     }: {
       partnerId: string;
-      reason: string;
+      reason?: string;
     }) => {
       const { error } = await supabase
         .from('partners')
         .update({
-          status: 'rejected',
-          rejection_reason: reason,
+          status: 'REJECTED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', partnerId);
@@ -277,13 +331,12 @@ export function useSuspendPartner() {
       reason,
     }: {
       partnerId: string;
-      reason: string;
+      reason?: string;
     }) => {
       const { error } = await supabase
         .from('partners')
         .update({
-          status: 'suspended',
-          rejection_reason: reason, // Using same field for suspension reason
+          status: 'SUSPENDED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', partnerId);
@@ -314,8 +367,7 @@ export function useReactivatePartner() {
       const { error } = await supabase
         .from('partners')
         .update({
-          status: 'approved',
-          rejection_reason: null,
+          status: 'APPROVED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', partnerId);
@@ -333,62 +385,6 @@ export function useReactivatePartner() {
     onError: (error) => {
       toast.error('Failed to reactivate partner');
       logger.error('Partner reactivation failed', { error });
-    },
-  });
-}
-
-// Update trust score
-export function useUpdateTrustScore() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      partnerId,
-      trustScore,
-      reason,
-    }: {
-      partnerId: string;
-      trustScore: number;
-      reason: string;
-    }) => {
-      // Update trust score
-      const { error: updateError } = await supabase
-        .from('partners')
-        .update({
-          trust_score: trustScore,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', partnerId);
-
-      if (updateError) throw updateError;
-
-      // Log the change
-      const { error: logError } = await supabase.from('partner_trust_log').insert({
-        partner_id: partnerId,
-        old_score: 0, // Would need to fetch old score first
-        new_score: trustScore,
-        reason,
-        changed_by: (await supabase.auth.getUser()).data.user?.id,
-      });
-
-      if (logError) {
-        logger.warn('Failed to log trust score change', { logError });
-      }
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'partner', variables.partnerId],
-      });
-      toast.success('Trust score updated');
-      logger.info('Trust score updated', {
-        partnerId: variables.partnerId,
-        newScore: variables.trustScore,
-      });
-    },
-    onError: (error) => {
-      toast.error('Failed to update trust score');
-      logger.error('Trust score update failed', { error });
     },
   });
 }

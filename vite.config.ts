@@ -280,13 +280,13 @@ export default defineConfig({
         }
       }
     },
-    // Keep console logs for debugging (temporarily enabled)
+    // Remove console.log from production builds
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false,  // Keep console.* calls for debugging
+        drop_console: true,  // Remove all console.* calls
         drop_debugger: true,  // Remove debugger statements
-        // pure_funcs: ['console.log', 'console.debug', 'console.info']  // Disabled
+        pure_funcs: ['console.log', 'console.debug', 'console.info']  // Specific removal
       }
     }
   }
