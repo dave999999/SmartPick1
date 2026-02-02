@@ -41,8 +41,8 @@ export interface Offer {
   partner?: {
     id: string;
     business_name: string;
-    business_email: string;
-    trust_score: number;
+    email: string;
+    phone: string;
   };
 }
 
@@ -136,12 +136,11 @@ export function useOffer(offerId: string) {
         .select(
           `
           *,
-          partner:partners!offers_partner_id_fkey(
+          partner:partners!inner(
             id,
             business_name,
-            business_email,
-            business_phone,
-            trust_score
+            email,
+            phone
           )
         `
         )
@@ -352,6 +351,54 @@ export function useExtendOffer() {
     onError: (error) => {
       toast.error('Failed to extend offer');
       logger.error('Offer extension failed', { error });
+    },
+  });
+}
+
+// Update offer (admin edit)
+export function useUpdateOffer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      offerId,
+      updates,
+    }: {
+      offerId: string;
+      updates: {
+        title?: string;
+        description?: string;
+        category?: string;
+        original_price?: number;
+        smart_price?: number;
+        quantity_available?: number;
+        quantity_total?: number;
+        pickup_start?: string;
+        pickup_end?: string;
+        expires_at?: string;
+      };
+    }) => {
+      const { error } = await supabase
+        .from('offers')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', offerId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'offers'] });
+      queryClient.invalidateQueries({
+        queryKey: ['admin', 'offer', variables.offerId],
+      });
+      toast.success('Offer updated successfully');
+      logger.info('Offer updated by admin', { offerId: variables.offerId });
+    },
+    onError: (error) => {
+      toast.error('Failed to update offer');
+      logger.error('Offer update failed', { error });
     },
   });
 }

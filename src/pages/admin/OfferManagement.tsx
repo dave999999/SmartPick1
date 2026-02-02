@@ -66,6 +66,7 @@ import {
   Eye,
   TrendingUp,
   XCircle,
+  Edit,
 } from 'lucide-react';
 import {
   useOffers,
@@ -75,6 +76,7 @@ import {
   useDeleteOffer,
   usePauseAllOffers,
   useExtendOffer,
+  useUpdateOffer,
   OfferFilters,
 } from '@/hooks/admin/useOffers';
 import { cn } from '@/lib/utils';
@@ -94,6 +96,7 @@ export default function OfferManagement() {
   const deleteOffer = useDeleteOffer();
   const pauseAllOffers = usePauseAllOffers();
   const extendOffer = useExtendOffer();
+  const updateOffer = useUpdateOffer();
 
   // Dialog states
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -106,6 +109,10 @@ export default function OfferManagement() {
     offerId?: string;
     hours: number;
   }>({ open: false, hours: 24 });
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    offer?: any;
+  }>({ open: false });
 
   const handleDelete = () => {
     if (!deleteDialog.offerId) return;
@@ -136,34 +143,68 @@ export default function OfferManagement() {
     );
   };
 
+  const handleEdit = () => {
+    if (!editDialog.offer) return;
+    
+    const formData = new FormData(document.getElementById('edit-offer-form') as HTMLFormElement);
+    const updates = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      category: formData.get('category') as string,
+      original_price: parseFloat(formData.get('original_price') as string),
+      smart_price: parseFloat(formData.get('smart_price') as string),
+      quantity_available: parseInt(formData.get('quantity_available') as string),
+      quantity_total: parseInt(formData.get('quantity_total') as string),
+      pickup_start: formData.get('pickup_start') as string,
+      pickup_end: formData.get('pickup_end') as string,
+      expires_at: formData.get('expires_at') as string,
+    };
+
+    updateOffer.mutate(
+      { offerId: editDialog.offer.id, updates },
+      {
+        onSuccess: () => setEditDialog({ open: false }),
+      }
+    );
+  };
+
   const getStatusBadge = (offer: any) => {
-    if (offer.flagged) {
-      return (
-        <Badge variant="destructive">
-          <Flag className="h-3 w-3 mr-1" />
-          Flagged
-        </Badge>
-      );
-    }
-    if (new Date(offer.expires_at) < new Date()) {
+    const status = offer.status?.toUpperCase();
+    
+    // Check actual status from database
+    if (status === 'EXPIRED') {
       return (
         <Badge variant="outline" className="text-gray-500">
           Expired
         </Badge>
       );
     }
-    if (!offer.active) {
+    if (status === 'CANCELLED') {
       return (
         <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-          <Pause className="h-3 w-3 mr-1" />
-          Paused
+          <XCircle className="h-3 w-3 mr-1" />
+          Cancelled
+        </Badge>
+      );
+    }
+    if (status === 'SOLD_OUT') {
+      return (
+        <Badge variant="outline" className="text-orange-600">
+          Sold Out
+        </Badge>
+      );
+    }
+    if (status === 'ACTIVE') {
+      return (
+        <Badge variant="secondary" className="bg-green-100 text-green-700">
+          <Play className="h-3 w-3 mr-1" />
+          Active
         </Badge>
       );
     }
     return (
-      <Badge variant="secondary" className="bg-green-100 text-green-700">
-        <Play className="h-3 w-3 mr-1" />
-        Active
+      <Badge variant="outline">
+        {status || 'Unknown'}
       </Badge>
     );
   };
@@ -410,7 +451,7 @@ export default function OfferManagement() {
                       {offer.partner?.business_name}
                     </div>
                     <div className="text-xs text-gray-500">
-                      Trust: {offer.partner?.trust_score}
+                      {offer.partner?.email || offer.partner?.phone}
                     </div>
                   </div>
                 </TableCell>
@@ -461,10 +502,22 @@ export default function OfferManagement() {
                           View Details
                         </DropdownMenuItem>
 
+                        {/* Edit */}
+                        <PermissionGuard permission="offers:edit">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditDialog({ open: true, offer });
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Offer
+                          </DropdownMenuItem>
+                        </PermissionGuard>
+
                         {/* Pause/Resume */}
                         <PermissionGuard permission="offers:pause">
                           <DropdownMenuSeparator />
-                          {offer.active ? (
+                          {offer.status?.toUpperCase() === 'ACTIVE' ? (
                             <DropdownMenuItem
                               onClick={() => pauseOffer.mutate({ offerId: offer.id })}
                             >
@@ -649,6 +702,168 @@ export default function OfferManagement() {
             >
               <Clock className="h-4 w-4 mr-2" />
               Extend Offer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog({ ...editDialog, open })}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Offer</DialogTitle>
+            <DialogDescription>
+              Update offer details. Changes will be immediately visible to users.
+            </DialogDescription>
+          </DialogHeader>
+          <form id="edit-offer-form" className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  name="title"
+                  defaultValue={editDialog.offer?.title}
+                  required
+                />
+              </div>
+
+              <div className="col-span-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  defaultValue={editDialog.offer?.description}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select name="category" defaultValue={editDialog.offer?.category}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="food">Food</SelectItem>
+                    <SelectItem value="cafe">Cafe</SelectItem>
+                    <SelectItem value="restaurant">Restaurant</SelectItem>
+                    <SelectItem value="entertainment">Entertainment</SelectItem>
+                    <SelectItem value="shopping">Shopping</SelectItem>
+                    <SelectItem value="services">Services</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="original_price">Original Price (₾)</Label>
+                <Input
+                  id="original_price"
+                  name="original_price"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editDialog.offer?.original_price}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="smart_price">Smart Price (Points)</Label>
+                <Input
+                  id="smart_price"
+                  name="smart_price"
+                  type="number"
+                  step="0.01"
+                  defaultValue={editDialog.offer?.smart_price}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="quantity_available">Quantity Available</Label>
+                <Input
+                  id="quantity_available"
+                  name="quantity_available"
+                  type="number"
+                  defaultValue={editDialog.offer?.quantity_available}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="quantity_total">Total Quantity</Label>
+                <Input
+                  id="quantity_total"
+                  name="quantity_total"
+                  type="number"
+                  defaultValue={editDialog.offer?.quantity_total}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="pickup_start">Pickup Start</Label>
+                <Input
+                  id="pickup_start"
+                  name="pickup_start"
+                  type="datetime-local"
+                  defaultValue={
+                    editDialog.offer?.pickup_start
+                      ? new Date(editDialog.offer.pickup_start)
+                          .toISOString()
+                          .slice(0, 16)
+                      : ''
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="pickup_end">Pickup End</Label>
+                <Input
+                  id="pickup_end"
+                  name="pickup_end"
+                  type="datetime-local"
+                  defaultValue={
+                    editDialog.offer?.pickup_end
+                      ? new Date(editDialog.offer.pickup_end).toISOString().slice(0, 16)
+                      : ''
+                  }
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="expires_at">Expires At</Label>
+                <Input
+                  id="expires_at"
+                  name="expires_at"
+                  type="datetime-local"
+                  defaultValue={
+                    editDialog.offer?.expires_at
+                      ? new Date(editDialog.offer.expires_at).toISOString().slice(0, 16)
+                      : ''
+                  }
+                  required
+                />
+              </div>
+            </div>
+          </form>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialog({ open: false })}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleEdit} disabled={updateOffer.isPending}>
+              <Edit className="h-4 w-4 mr-2" />
+              {updateOffer.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
