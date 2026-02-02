@@ -100,7 +100,6 @@ export default function SupportTickets() {
   const handleResolve = (ticketId: string) => {
     resolveTicket.mutate({ ticketId });
   };
-  };
 
   const getSLABadge = (ticket: any) => {
     if (!ticket.sla_due_at || ticket.status === 'resolved' || ticket.status === 'closed') {
