@@ -88,7 +88,8 @@ export default function SupportTickets() {
       ...filters,
       priority: priority === 'all' ? undefined : (priority as any),
       page: 1,
-    
+    });
+  };
 
   const handleAssignToMe = (ticketId: string) => {
     if (!user) return;
@@ -97,7 +98,7 @@ export default function SupportTickets() {
 
   const handleResolve = (ticketId: string) => {
     resolveTicket.mutate({ ticketId });
-  };});
+  };
   };
 
   const getSLABadge = (ticket: any) => {
