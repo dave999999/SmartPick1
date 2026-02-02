@@ -555,7 +555,7 @@ export default function Analytics() {
               <div className="text-3xl font-bold text-orange-600">
                 {behavioralData?.repeatUserRate.toFixed(1)}%
               </div>
-              <p className="text-xs text-gray-500 mt-1">Users with >1 reservation</p>
+              <p className="text-xs text-gray-500 mt-1">Users with &gt;1 reservation</p>
             </CardContent>
           </Card>
         </div>
