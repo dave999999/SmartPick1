@@ -42,6 +42,7 @@ import {
   UserPlus,
   RefreshCw,
   AlertCircle,
+  Eye,
 } from 'lucide-react';
 import {
   useTickets,
@@ -418,44 +419,48 @@ export default function SupportTickets() {
 
                 {/* Actions */}
                 <TableCell>
-                  <PermissionGuard permission="tickets:view_details">
-                    <DropdownMenu> onClick={() => setSelectedTicketId(ticket.id)}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      
+                      <PermissionGuard permission="tickets:view_details">
+                        <DropdownMenuItem onClick={() => setSelectedTicketId(ticket.id)}>
+                          <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <PermissionGuard permission="tickets:assign">
-                          {!ticket.assigned_to && (
-                            <DropdownMenuItem onClick={() => handleAssignToMe(ticket.id)}>
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              Assign to Me
-                            </DropdownMenuItem>
-                          )}
-                        </PermissionGuard>
-                        <PermissionGuard permission="tickets:resolve">
-                          {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleResolve(ticket.id)}
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Mark Resolved
-                              </DropdownMenuItem>
-                            </>
-                          )}me="h-4 w-4 mr-2" />
+                      </PermissionGuard>
+
+                      <PermissionGuard permission="tickets:assign">
+                        {!ticket.assigned_to && (
+                          <DropdownMenuItem onClick={() => handleAssignToMe(ticket.id)}>
+                            <UserPlus className="h-4 w-4 mr-2" />
                             Assign to Me
                           </DropdownMenuItem>
-                        </PermissionGuard>
-                        <PermissionGuard permission="tickets:resolve">
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-green-600">
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Mark Resolved
-                          </DropdownMenuItem>
-                        </PermissionGuard>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </PermissionGuard>
+                        )}
+                      </PermissionGuard>
+
+                      <PermissionGuard permission="tickets:resolve">
+                        {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleResolve(ticket.id)}
+                              className="text-green-600"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Mark Resolved
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </PermissionGuard>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
