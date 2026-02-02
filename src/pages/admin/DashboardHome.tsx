@@ -25,7 +25,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 
 interface DashboardHomeProps {}
