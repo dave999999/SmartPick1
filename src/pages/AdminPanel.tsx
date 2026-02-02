@@ -25,7 +25,7 @@ export default function AdminPanel() {
       .single();
       
     if (profile?.role === 'admin') {
-      navigate('/admin-dashboard');
+      navigate('/admin');
     } else {
       navigate('/');
     }

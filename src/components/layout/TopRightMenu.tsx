@@ -99,7 +99,7 @@ export function TopRightMenu() {
                 </DropdownMenuItem>
               )}
               {user?.role === 'ADMIN' && (
-                <DropdownMenuItem onClick={() => navigate('/admin-dashboard')}>
+                <DropdownMenuItem onClick={() => navigate('/admin')}>
                   <ShieldCheck className="mr-2 h-4 w-4" /> {t('header.admin')}
                 </DropdownMenuItem>
               )}

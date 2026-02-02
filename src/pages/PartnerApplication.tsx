@@ -234,7 +234,7 @@ export default function PartnerApplication() {
                 duration: 8000,
               }
             );
-            navigate('/admin-dashboard');
+            navigate('/admin');
             return;
           }
           

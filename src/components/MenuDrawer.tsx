@@ -247,7 +247,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                       <GlassMenuItem
                         icon={ShieldCheck}
                         label={t('menu.adminPanel')}
-                        onClick={() => handleNavigation('/admin-dashboard')}
+                        onClick={() => handleNavigation('/admin')}
                       />
                     )}
                   </div>

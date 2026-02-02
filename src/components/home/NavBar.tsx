@@ -92,7 +92,7 @@ export function NavBar({ user, isPartner, onSignOut, onAuthClick, onFilterClick 
                   size="sm"
                   variant="outline"
                   className="rounded-xl bg-white/95 text-gray-900 border-gray-200 hover:bg-white"
-                  onClick={() => navigate('/admin-dashboard')}
+                  onClick={() => navigate('/admin')}
                 >
                   <Shield className="w-4 h-4 mr-1" />
                   {t('header.admin')}
@@ -202,7 +202,7 @@ export function NavBar({ user, isPartner, onSignOut, onAuthClick, onFilterClick 
                         variant="outline"
                         className="w-full justify-start"
                         onClick={() => {
-                          navigate('/admin-dashboard');
+                          navigate('/admin');
                           setMobileMenuOpen(false);
                         }}
                       >
