@@ -1,103 +1,103 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Package, UserCheck, AlertTriangle, Shield, Settings, AlertCircle, RefreshCw, Users } from 'lucide-react';
-import { getDashboardStats, testAdminConnection } from '@/lib/admin-api';
-import { PageShell } from '@/components/layout/PageShell';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { SectionCard } from '@/components/layout/SectionCard';
-import { PartnersManagement } from '@/components/admin/PartnersManagement';
-import { EnhancedUsersManagement } from '@/components/admin/EnhancedUsersManagement';
-import { OffersManagement } from '@/components/admin/OffersManagement';
-import PartnersVerification from '@/components/admin/PartnersVerification';
-import { NewUsersPanel } from '@/components/admin/NewUsersPanel';
-import { BannedUsersPanel } from '@/components/admin/BannedUsersPanel';
-import { ModerationPanel } from '@/components/admin/ModerationPanel';
-import { logger } from '@/lib/logger';
-import FinancialDashboardPanel from '@/components/admin/FinancialDashboardPanel';
-const AdvancedAnalyticsDashboard = lazy(() => import('@/components/admin/AdvancedAnalyticsDashboard'));
-import { getAdminDashboardStatsRpc } from '@/lib/api/admin-advanced';
-import AdminHealthPanel from '@/components/admin/AdminHealthPanel';
-import AuditLogPanel from '@/components/admin/AuditLogPanel';
-import SystemConfiguration from '@/components/admin/SystemConfiguration';
-import { CommunicationPanel } from '@/components/admin/CommunicationPanel';
-import { LiveMonitoring } from '@/components/admin/LiveMonitoring';
-import { AlertManagement } from '@/components/admin/AlertManagement';
-import ErrorMonitoring from '@/components/admin/ErrorMonitoring';
-import { PerformanceMonitoringPanel } from '@/components/admin/PerformanceMonitoringPanel';
-import { AdminActionsMenu } from '@/components/admin/AdminActionsMenu';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
-import { RealtimeConnectionMonitor } from '@/components/admin/RealtimeConnectionMonitor';
+/**
+ * New Admin Dashboard with Modern Architecture
+ * Uses AdminLayout with nested routes instead of tabs
+ * 
+ * Routes:
+ * /admin - Dashboard home
+ * /admin/users - User management
+ * /admin/partners - Partner management
+ * /admin/offers - Offer management
+ * /admin/reservations - Reservation monitoring
+ * /admin/support - Support tickets ★NEW★
+ * /admin/fraud - Fraud prevention
+ * /admin/moderation - Content moderation
+ * /admin/analytics - Analytics dashboard
+ * /admin/revenue - Revenue tracking
+ * /admin/notifications - Push notifications
+ * /admin/messages - Messaging
+ * /admin/live - Live activity
+ * /admin/health - System health
+ * /admin/settings - System settings
+ * /admin/audit - Audit log
+ */
 
-interface DashboardStats {
-  totalPartners: number;
-  totalUsers: number;
-  totalOffers: number;
-  pendingPartners: number;
-  reservationsToday?: number;
-  revenueToday?: number;
-}
+import { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin/layout/AdminLayout';
+import { DashboardHome } from '@/pages/admin/DashboardHome';
+import { logger } from '@/lib/logger';
+
+// Lazy load all admin pages for code splitting
+const UserManagement = lazy(() => import('@/pages/admin/UserManagement'));
+const PartnerManagement = lazy(() => import('@/pages/admin/PartnerManagement'));
+const OfferManagement = lazy(() => import('@/pages/admin/OfferManagement'));
+const ReservationMonitoring = lazy(() => import('@/pages/admin/ReservationMonitoring'));
+const SupportTickets = lazy(() => import('@/pages/admin/SupportTickets'));
+const FraudPrevention = lazy(() => import('@/pages/admin/FraudPrevention'));
+const ModerationPanel = lazy(() => import('@/pages/admin/ModerationPanel'));
+const AnalyticsDashboard = lazy(() => import('@/pages/admin/AnalyticsDashboard'));
+const RevenueDashboard = lazy(() => import('@/pages/admin/RevenueDashboard'));
+const NotificationsPanel = lazy(() => import('@/pages/admin/NotificationsPanel'));
+const MessagesPanel = lazy(() => import('@/pages/admin/MessagesPanel'));
+const LiveActivity = lazy(() => import('@/pages/admin/LiveActivity'));
+const SystemHealth = lazy(() => import('@/pages/admin/SystemHealth'));
+const SystemSettings = lazy(() => import('@/pages/admin/SystemSettings'));
+const AuditLog = lazy(() => import('@/pages/admin/AuditLog'));
+
+// Loading fallback
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+      <p className="text-gray-600 font-medium">Loading...</p>
+    </div>
+  </div>
+);
 
 export default function AdminDashboard() {
-  // No presence tracking or realtime auto-refresh for admin screen; fetch only on demand
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [connectionStatus, setConnectionStatus] = useState<string>('');
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [onlineUsersCount, setOnlineUsersCount] = useState<number>(0);
-  const navigate = useNavigate();
+  logger.log('AdminDashboard: Rendering new architecture');
 
-  useEffect(() => {
-    checkAdminAccess();
-  }, []);
-
-  // Keyboard shortcuts for power users
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Ignore if typing in input/textarea
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      // Number keys 1-9 for quick tab switching
-      if (e.key >= '1' && e.key <= '9') {
-        const tabs = ['overview', 'partners', 'pending', 'users', 'offers', 'moderation', 'financial', 'analytics', 'realtime'];
-        const index = parseInt(e.key) - 1;
-        if (tabs[index]) {
-          setActiveTab(tabs[index]);
-        }
-      }
-
-      // R for refresh
-      if (e.key === 'r' && !e.ctrlKey && !e.metaKey) {
-        handleRefreshData();
-      }
-
-      // H for home
-      if (e.key === 'h' && !e.ctrlKey && !e.metaKey) {
-        navigate('/');
-      }
-    };
-
-    window.addEventListener('keypress', handleKeyPress);
-    return () => window.removeEventListener('keypress', handleKeyPress);
-  }, []);
-
-  const checkAdminAccess = async () => {
-    try {
-      logger.log('AdminDashboard: Starting admin access check...');
-      
-      // Test connection first
-      const connectionTest = await testAdminConnection();
-      logger.log('AdminDashboard: Connection test result:', connectionTest);
-      setConnectionStatus(connectionTest.connected ? 'Connected' : 'Failed');
+  return (
+    <AdminLayout>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Dashboard Home */}
+          <Route index element={<DashboardHome />} />
+          
+          {/* Business Operations */}
+          <Route path="users" element={<UserManagement />} />
+          <Route path="partners" element={<PartnerManagement />} />
+          <Route path="offers" element={<OfferManagement />} />
+          <Route path="reservations" element={<ReservationMonitoring />} />
+          
+          {/* Safety & Support */}
+          <Route path="support" element={<SupportTickets />} />
+          <Route path="fraud" element={<FraudPrevention />} />
+          <Route path="moderation" element={<ModerationPanel />} />
+          
+          {/* Finance */}
+          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route path="revenue" element={<RevenueDashboard />} />
+          
+          {/* Communication */}
+          <Route path="notifications" element={<NotificationsPanel />} />
+          <Route path="messages" element={<MessagesPanel />} />
+          
+          {/* Monitoring */}
+          <Route path="live" element={<LiveActivity />} />
+          <Route path="health" element={<SystemHealth />} />
+          
+          {/* System */}
+          <Route path="settings" element={<SystemSettings />} />
+          <Route path="audit" element={<AuditLog />} />
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </Routes>
+      </Suspense>
+    </AdminLayout>
+  );
+}
       
       if (!connectionTest.connected) {
         logger.error('AdminDashboard: Connection failed:', connectionTest.error);
