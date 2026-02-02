@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export interface OfferFilters {
-  status?: 'active' | 'paused' | 'flagged' | 'expired';
+  status?: 'ACTIVE' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
   partnerId?: string;
   category?: string;
   minPrice?: number;
@@ -26,16 +26,16 @@ export interface Offer {
   title: string;
   description: string;
   category: string;
-  points_cost: number;
+  images: string[];
   original_price: number;
-  discount_percentage: number;
+  smart_price: number;
   quantity_available: number;
-  quantity_redeemed: number;
-  reservation_duration_minutes: number;
-  active: boolean;
-  flagged: boolean;
-  flag_reason?: string;
+  quantity_total: number;
+  pickup_start: string;
+  pickup_end: string;
   expires_at: string;
+  auto_expire_in: number | null;
+  status: 'ACTIVE' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
   created_at: string;
   updated_at: string;
   partner?: {
@@ -67,14 +67,8 @@ export function useOffers(filters: OfferFilters = {}) {
         );
 
       // Status filter
-      if (filters.status === 'active') {
-        query = query.eq('active', true).eq('flagged', false).gt('expires_at', new Date().toISOString());
-      } else if (filters.status === 'paused') {
-        query = query.eq('active', false);
-      } else if (filters.status === 'flagged') {
-        query = query.eq('flagged', true);
-      } else if (filters.status === 'expired') {
-        query = query.lte('expires_at', new Date().toISOString());
+      if (filters.status) {
+        query = query.eq('status', filters.status);
       }
 
       // Partner filter
@@ -89,10 +83,10 @@ export function useOffers(filters: OfferFilters = {}) {
 
       // Price range
       if (filters.minPrice !== undefined) {
-        query = query.gte('points_cost', filters.minPrice);
+        query = query.gte('smart_price', filters.minPrice);
       }
       if (filters.maxPrice !== undefined) {
-        query = query.lte('points_cost', filters.maxPrice);
+        query = query.lte('smart_price', filters.maxPrice);
       }
 
       // Search by title
@@ -109,10 +103,8 @@ export function useOffers(filters: OfferFilters = {}) {
           .gt('expires_at', new Date().toISOString());
       }
 
-      // Sorting: flagged first, then by created_at desc
-      query = query.order('flagged', { ascending: false }).order('created_at', {
-        ascending: false,
-      });
+      // Sorting: by created_at desc
+      query = query.order('created_at', { ascending: false });
 
       // Pagination
       const page = filters.page || 1;
@@ -199,7 +191,7 @@ export function usePauseOffer() {
       const { error } = await supabase
         .from('offers')
         .update({
-          active: false,
+          status: 'CANCELLED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', offerId);
@@ -230,7 +222,7 @@ export function useResumeOffer() {
       const { error } = await supabase
         .from('offers')
         .update({
-          active: true,
+          status: 'ACTIVE',
           updated_at: new Date().toISOString(),
         })
         .eq('id', offerId);
@@ -248,70 +240,6 @@ export function useResumeOffer() {
     onError: (error) => {
       toast.error('Failed to resume offer');
       logger.error('Offer resume failed', { error });
-    },
-  });
-}
-
-// Flag offer
-export function useFlagOffer() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ offerId, reason }: { offerId: string; reason: string }) => {
-      const { error } = await supabase
-        .from('offers')
-        .update({
-          flagged: true,
-          flag_reason: reason,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', offerId);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'offers'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'offer', variables.offerId],
-      });
-      toast.success('Offer flagged');
-      logger.info('Offer flagged', { offerId: variables.offerId });
-    },
-    onError: (error) => {
-      toast.error('Failed to flag offer');
-      logger.error('Offer flag failed', { error });
-    },
-  });
-}
-
-// Unflag offer
-export function useUnflagOffer() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ offerId }: { offerId: string }) => {
-      const { error } = await supabase
-        .from('offers')
-        .update({
-          flagged: false,
-          flag_reason: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', offerId);
-
-      if (error) throw error;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['admin', 'offers'] });
-      queryClient.invalidateQueries({
-        queryKey: ['admin', 'offer', variables.offerId],
-      });
-      toast.success('Offer unflagged');
-      logger.info('Offer unflagged', { offerId: variables.offerId });
-    },
-    onError: (error) => {
-      toast.error('Failed to unflag offer');
-      logger.error('Offer unflag failed', { error });
     },
   });
 }
@@ -348,14 +276,14 @@ export function usePauseAllOffers() {
       let query = supabase
         .from('offers')
         .update({
-          active: false,
+          status: 'CANCELLED',
           updated_at: new Date().toISOString(),
         });
 
       if (partnerId) {
         query = query.eq('partner_id', partnerId);
       } else {
-        query = query.eq('active', true);
+        query = query.eq('status', 'ACTIVE');
       }
 
       const { error } = await query;

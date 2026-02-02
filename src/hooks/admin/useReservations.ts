@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export interface ReservationFilters {
-  status?: 'active' | 'completed' | 'cancelled' | 'expired';
+  status?: 'ACTIVE' | 'RESERVED' | 'READY_FOR_PICKUP' | 'IN_PROGRESS' | 'PICKED_UP' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED' | 'NO_SHOW';
   urgency?: 'critical' | 'warning' | 'normal';
   userId?: string;
   partnerId?: string;
@@ -20,15 +20,17 @@ export interface ReservationFilters {
 
 export interface Reservation {
   id: string;
-  user_id: string;
+  customer_id: string;
   offer_id: string;
-  status: 'active' | 'completed' | 'cancelled' | 'expired';
-  reservation_code: string;
+  partner_id: string;
+  status: 'ACTIVE' | 'RESERVED' | 'READY_FOR_PICKUP' | 'IN_PROGRESS' | 'PICKED_UP' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED' | 'NO_SHOW';
+  qr_code: string;
+  quantity: number;
+  total_price: number;
   points_spent: number;
+  no_show: boolean;
   expires_at: string;
-  completed_at?: string;
-  cancelled_at?: string;
-  cancellation_reason?: string;
+  picked_up_at: string | null;
   created_at: string;
   updated_at: string;
   user?: {
@@ -59,9 +61,9 @@ export function useReservations(filters: ReservationFilters = {}) {
         .select(
           `
           *,
-          user:users!reservations_user_id_fkey(id, name, email, avatar_url),
+          user:users!reservations_customer_id_fkey(id, name, email, avatar_url),
           offer:offers!reservations_offer_id_fkey(id, title, category, partner_id),
-          partner:partners!offers_partner_id_fkey(id, business_name)
+          partner:partners!reservations_partner_id_fkey(id, business_name)
         `,
           { count: 'exact' }
         );
@@ -76,7 +78,7 @@ export function useReservations(filters: ReservationFilters = {}) {
         const now = new Date();
         const criticalTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 minutes
         query = query
-          .eq('status', 'active')
+          .in('status', ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP'])
           .lte('expires_at', criticalTime.toISOString())
           .gt('expires_at', now.toISOString());
       } else if (filters.urgency === 'warning') {
@@ -84,20 +86,20 @@ export function useReservations(filters: ReservationFilters = {}) {
         const warningTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour
         const criticalTime = new Date(now.getTime() + 15 * 60 * 1000);
         query = query
-          .eq('status', 'active')
+          .in('status', ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP'])
           .lte('expires_at', warningTime.toISOString())
           .gt('expires_at', criticalTime.toISOString());
       } else if (filters.urgency === 'normal') {
         const now = new Date();
         const warningTime = new Date(now.getTime() + 60 * 60 * 1000);
         query = query
-          .eq('status', 'active')
+          .in('status', ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP'])
           .gt('expires_at', warningTime.toISOString());
       }
 
       // User filter
       if (filters.userId) {
-        query = query.eq('user_id', filters.userId);
+        query = query.eq('customer_id', filters.userId);
       }
 
       // Partner filter
@@ -105,15 +107,13 @@ export function useReservations(filters: ReservationFilters = {}) {
         query = query.eq('offer.partner_id', filters.partnerId);
       }
 
-      // Search by reservation code
+      // Search by QR code
       if (filters.search) {
-        query = query.ilike('reservation_code', `%${filters.search}%`);
+        query = query.ilike('qr_code', `%${filters.search}%`);
       }
 
-      // Sorting: active first, then by expires_at asc (most urgent first)
-      query = query.order('status', { ascending: false }).order('expires_at', {
-        ascending: true,
-      });
+      // Sorting: by expires_at asc (most urgent first)
+      query = query.order('expires_at', { ascending: true });
 
       // Pagination
       const page = filters.page || 1;
@@ -151,7 +151,7 @@ export function useReservation(reservationId: string) {
         .select(
           `
           *,
-          user:users!reservations_user_id_fkey(id, name, email, avatar_url, phone_number),
+          user:users!reservations_customer_id_fkey(id, name, email, avatar_url, phone_number),
           offer:offers!reservations_offer_id_fkey(
             id,
             title,
@@ -159,7 +159,7 @@ export function useReservation(reservationId: string) {
             category,
             partner_id
           ),
-          partner:partners!offers_partner_id_fkey(
+          partner:partners!reservations_partner_id_fkey(
             id,
             business_name,
             business_email,
@@ -279,8 +279,8 @@ export function useForceCompleteReservation() {
       const { error } = await supabase
         .from('reservations')
         .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
+          status: 'COMPLETED',
+          picked_up_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', reservationId);
@@ -332,7 +332,7 @@ export function useCancelReservation() {
       // Fetch reservation for refund
       const { data: reservation, error: fetchError } = await supabase
         .from('reservations')
-        .select('user_id, points_spent')
+        .select('customer_id, points_spent')
         .eq('id', reservationId)
         .single();
 
@@ -342,9 +342,7 @@ export function useCancelReservation() {
       const { error: updateError } = await supabase
         .from('reservations')
         .update({
-          status: 'cancelled',
-          cancelled_at: new Date().toISOString(),
-          cancellation_reason: reason,
+          status: 'CANCELLED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', reservationId);
@@ -354,7 +352,7 @@ export function useCancelReservation() {
       // Refund points if requested
       if (refundPoints) {
         await supabase.rpc('add_user_points', {
-          p_user_id: reservation.user_id,
+          p_user_id: reservation.customer_id,
           p_points: reservation.points_spent,
           p_reason: `Refund for cancelled reservation - Admin: ${reason}`,
         });
@@ -401,18 +399,15 @@ export function useUpdateReservationStatus() {
       status,
     }: {
       reservationId: string;
-      status: 'active' | 'completed' | 'cancelled' | 'expired';
+      status: 'ACTIVE' | 'RESERVED' | 'READY_FOR_PICKUP' | 'IN_PROGRESS' | 'PICKED_UP' | 'COMPLETED' | 'CANCELLED' | 'EXPIRED' | 'NO_SHOW';
     }) => {
       const updates: any = {
         status,
         updated_at: new Date().toISOString(),
       };
 
-      if (status === 'completed' && !updates.completed_at) {
-        updates.completed_at = new Date().toISOString();
-      }
-      if (status === 'cancelled' && !updates.cancelled_at) {
-        updates.cancelled_at = new Date().toISOString();
+      if ((status === 'COMPLETED' || status === 'PICKED_UP') && !updates.picked_up_at) {
+        updates.picked_up_at = new Date().toISOString();
       }
 
       const { error } = await supabase
