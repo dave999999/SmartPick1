@@ -1,5 +1,5 @@
 /** Fraud Prevention - Integrate existing ReferralFraudDashboard */
-import { ReferralFraudDashboard } from '@/components/admin/ReferralFraudDashboard';
+import ReferralFraudDashboard from '@/components/admin/ReferralFraudDashboard';
 
 export default function FraudPrevention() {
   return (
