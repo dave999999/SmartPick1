@@ -160,13 +160,6 @@ export default function PartnerManagement() {
         return null;
     }
   };
-        <Badge className="bg-red-100 text-red-700 border-red-200">
-          <AlertCircle className="h-3 w-3 mr-1" />
-          Poor
-        </Badge>
-      );
-    }
-  };
 
   if (isLoading) {
     return (
