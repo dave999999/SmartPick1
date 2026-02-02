@@ -25,127 +25,187 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabaseClient';
+import { useQuery } from '@tanstack/react-query';
 
 interface DashboardHomeProps {}
 
 export function DashboardHome({}: DashboardHomeProps) {
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // KPI Data (TODO: Fetch from API)
+  // Fetch real dashboard stats
+  const { data: stats, isLoading: loading, refetch } = useQuery({
+    queryKey: ['admin', 'dashboard-stats'],
+    queryFn: async () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayISO = today.toISOString();
+
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoISO = sevenDaysAgo.toISOString();
+
+      // GMV and Revenue (Today)
+      const { data: todayReservations } = await supabase
+        .from('reservations')
+        .select('total_price')
+        .in('status', ['PICKED_UP', 'COMPLETED'])
+        .gte('created_at', todayISO);
+
+      const gmvToday = todayReservations?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
+      const revenueToday = gmvToday * 0.15; // 15% commission
+
+      // Active Users (Last 7 days)
+      const { count: activeUsersCount } = await supabase
+        .from('reservations')
+        .select('customer_id', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgoISO);
+
+      // Pickup Rate
+      const { count: totalReservations } = await supabase
+        .from('reservations')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: pickedUpReservations } = await supabase
+        .from('reservations')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['PICKED_UP', 'COMPLETED']);
+
+      const pickupRate = totalReservations ? (pickedUpReservations! / totalReservations!) * 100 : 0;
+
+      // Quick Stats
+      const { count: newUsersToday } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', todayISO);
+
+      const { count: activePartners } = await supabase
+        .from('partners')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'APPROVED');
+
+      const { count: pendingTickets } = await supabase
+        .from('contact_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Expiring soon (next 6 hours)
+      const sixHoursFromNow = new Date();
+      sixHoursFromNow.setHours(sixHoursFromNow.getHours() + 6);
+      const { count: expiringSoon } = await supabase
+        .from('offers')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ACTIVE')
+        .lt('expires_at', sixHoursFromNow.toISOString())
+        .gt('expires_at', new Date().toISOString());
+
+      return {
+        gmvToday,
+        revenueToday,
+        activeUsersCount: activeUsersCount || 0,
+        pickupRate,
+        newUsersToday: newUsersToday || 0,
+        activePartners: activePartners || 0,
+        pendingTickets: pendingTickets || 0,
+        expiringSoon: expiringSoon || 0,
+      };
+    },
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Fetch recent activity
+  const { data: activities = [] } = useQuery({
+    queryKey: ['admin', 'recent-activity'],
+    queryFn: async () => {
+      const { data: recentReservations } = await supabase
+        .from('reservations')
+        .select(`
+          id,
+          created_at,
+          status,
+          users!reservations_customer_id_fkey(name),
+          offers!inner(title),
+          partners!inner(business_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      return recentReservations?.map(r => ({
+        id: r.id,
+        type: r.status === 'PICKED_UP' ? 'pickup' : 'reservation',
+        user: r.users?.name || 'User',
+        action: r.status === 'PICKED_UP' 
+          ? `picked up ${r.offers?.title} from ${r.partners?.business_name}`
+          : `reserved ${r.offers?.title} from ${r.partners?.business_name}`,
+        time: formatTimeAgo(r.created_at),
+        color: r.status === 'PICKED_UP' ? 'text-teal-600' : 'text-blue-600',
+        icon: r.status === 'PICKED_UP' ? <CheckCircle className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />
+      })) || [];
+    },
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
+
   const kpis = [
     {
       title: 'GMV (Today)',
-      value: '₾12,450',
-      change: +15.2,
+      value: `₾${stats?.gmvToday.toFixed(2) || '0.00'}`,
+      change: 0, // TODO: Calculate vs yesterday
       trend: 'up' as const,
       icon: <DollarSign className="h-4 w-4" />,
       description: 'Total reservation value'
     },
     {
       title: 'Revenue (Today)',
-      value: '₾1,867',
-      change: +12.8,
+      value: `₾${stats?.revenueToday.toFixed(2) || '0.00'}`,
+      change: 0,
       trend: 'up' as const,
       icon: <DollarSign className="h-4 w-4" />,
       description: '15% commission on pickups'
     },
     {
       title: 'Active Users',
-      value: '2,453',
-      change: -2.3,
-      trend: 'down' as const,
+      value: stats?.activeUsersCount.toString() || '0',
+      change: 0,
+      trend: 'up' as const,
       icon: <Users className="h-4 w-4" />,
       description: 'Users active in last 7 days'
     },
     {
       title: 'Pickup Rate',
-      value: '87.5%',
-      change: +3.1,
-      trend: 'up' as const,
+      value: `${stats?.pickupRate.toFixed(1) || '0'}%`,
+      change: 0,
+      trend: stats?.pickupRate > 80 ? 'up' : 'down',
       icon: <CheckCircle className="h-4 w-4" />,
       description: 'Successful pickups vs reservations'
     },
   ];
 
-  // Quick Stats (TODO: Fetch from API)
   const quickStats = [
-    { label: 'New Users Today', value: 47, color: 'text-green-600' },
-    { label: 'Active Partners', value: 123, color: 'text-blue-600' },
-    { label: 'Pending Tickets', value: 3, color: 'text-orange-600' },
-    { label: 'Expiring Soon', value: 12, color: 'text-red-600' },
+    { label: 'New Users Today', value: stats?.newUsersToday || 0, color: 'text-green-600' },
+    { label: 'Active Partners', value: stats?.activePartners || 0, color: 'text-blue-600' },
+    { label: 'Pending Tickets', value: stats?.pendingTickets || 0, color: 'text-orange-600' },
+    { label: 'Expiring Soon', value: stats?.expiringSoon || 0, color: 'text-red-600' },
   ];
-
-  // Activity Feed (TODO: Fetch from real-time subscription)
-  const activities = [
-    {
-      id: 1,
-      type: 'signup',
-      user: 'Giorgi B.',
-      action: 'signed up',
-      time: '2 minutes ago',
-      color: 'text-green-600',
-      icon: <Users className="h-4 w-4" />
-    },
-    {
-      id: 2,
-      type: 'reservation',
-      user: 'Ana K.',
-      action: 'reserved bread from Bakery Fresh',
-      time: '5 minutes ago',
-      color: 'text-blue-600',
-      icon: <ShoppingCart className="h-4 w-4" />
-    },
-    {
-      id: 3,
-      type: 'pickup',
-      user: 'Levan M.',
-      action: 'picked up order #4523',
-      time: '8 minutes ago',
-      color: 'text-teal-600',
-      icon: <CheckCircle className="h-4 w-4" />
-    },
-    {
-      id: 4,
-      type: 'partner',
-      user: 'Café Central',
-      action: 'posted new offer: Croissants',
-      time: '12 minutes ago',
-      color: 'text-purple-600',
-      icon: <ShoppingCart className="h-4 w-4" />
-    },
-    {
-      id: 5,
-      type: 'dispute',
-      user: 'Nino T.',
-      action: 'opened support ticket #SP4567',
-      time: '15 minutes ago',
-      color: 'text-orange-600',
-      icon: <AlertCircle className="h-4 w-4" />
-    },
-  ];
-
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    setLoading(true);
-    try {
-      // TODO: Fetch real data from API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadDashboardData();
+    await refetch();
     setRefreshing(false);
   };
+
+  function formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  }
 
   if (loading) {
     return (
