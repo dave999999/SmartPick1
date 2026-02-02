@@ -70,6 +70,9 @@ export function useUsers(filters: UserFilters = {}) {
         .from('users')
         .select('*, user_points(balance), user_stats(*)', { count: 'exact' });
 
+      // IMPORTANT: Only show regular users (customers), NOT partners
+      query = query.neq('role', 'partner');
+
       // Apply filters
       if (filters.search) {
         query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
@@ -430,6 +433,69 @@ export function useDeleteUser() {
     onError: (error) => {
       logger.error('Failed to delete user:', error);
       toast.error('Failed to delete user');
+    },
+  });
+}
+
+/**
+ * Grant or deduct points from a user
+ */
+export function useAdjustPoints() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ 
+      userId, 
+      amount, 
+      reason 
+    }: { 
+      userId: string; 
+      amount: number; // Positive to grant, negative to deduct
+      reason: string;
+    }) => {
+      // Get current balance
+      const { data: userData, error: fetchError } = await supabase
+        .from('users')
+        .select('points_balance')
+        .eq('id', userId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const currentBalance = userData?.points_balance || 0;
+      const newBalance = currentBalance + amount;
+
+      if (newBalance < 0) {
+        throw new Error('Cannot deduct more points than user has');
+      }
+
+      // Update balance
+      const { error } = await supabase
+        .from('users')
+        .update({ points_balance: newBalance })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      logger.info('Admin adjusted user points', {
+        userId,
+        amount,
+        oldBalance: currentBalance,
+        newBalance,
+        reason,
+      });
+
+      return { success: true, newBalance };
+    },
+    onSuccess: (data, variables) => {
+      const action = variables.amount > 0 ? 'granted' : 'deducted';
+      toast.success(`Successfully ${action} ${Math.abs(variables.amount)} points`);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'user', variables.userId] });
+    },
+    onError: (error: any) => {
+      logger.error('Failed to adjust points:', error);
+      toast.error(error.message || 'Failed to adjust points');
     },
   });
 }

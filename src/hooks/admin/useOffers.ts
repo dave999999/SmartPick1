@@ -56,19 +56,14 @@ export function useOffers(filters: OfferFilters = {}) {
         .select(
           `
           *,
-          partner:partners!offers_partner_id_fkey(
-            id,
-            business_name,
-            business_email,
-            trust_score
-          )
+          partner:partners!inner(id, business_name, email, phone)
         `,
           { count: 'exact' }
         );
 
       // Status filter
       if (filters.status) {
-        query = query.eq('status', filters.status);
+        query = query.eq('status', filters.status.toUpperCase());
       }
 
       // Partner filter
