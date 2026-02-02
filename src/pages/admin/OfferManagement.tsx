@@ -72,8 +72,6 @@ import {
   useOfferStats,
   usePauseOffer,
   useResumeOffer,
-  useFlagOffer,
-  useUnflagOffer,
   useDeleteOffer,
   usePauseAllOffers,
   useExtendOffer,
@@ -93,18 +91,11 @@ export default function OfferManagement() {
   const { data: stats } = useOfferStats();
   const pauseOffer = usePauseOffer();
   const resumeOffer = useResumeOffer();
-  const flagOffer = useFlagOffer();
-  const unflagOffer = useUnflagOffer();
   const deleteOffer = useDeleteOffer();
   const pauseAllOffers = usePauseAllOffers();
   const extendOffer = useExtendOffer();
 
   // Dialog states
-  const [flagDialog, setFlagDialog] = useState<{
-    open: boolean;
-    offerId?: string;
-    reason: string;
-  }>({ open: false, reason: '' });
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     offerId?: string;
@@ -115,16 +106,6 @@ export default function OfferManagement() {
     offerId?: string;
     hours: number;
   }>({ open: false, hours: 24 });
-
-  const handleFlag = () => {
-    if (!flagDialog.offerId || !flagDialog.reason.trim()) return;
-    flagOffer.mutate(
-      { offerId: flagDialog.offerId, reason: flagDialog.reason },
-      {
-        onSuccess: () => setFlagDialog({ open: false, reason: '' }),
-      }
-    );
-  };
 
   const handleDelete = () => {
     if (!deleteDialog.offerId) return;
@@ -501,29 +482,6 @@ export default function OfferManagement() {
                           )}
                         </PermissionGuard>
 
-                        {/* Flag/Unflag */}
-                        <PermissionGuard permission="offers:flag">
-                          {offer.flagged ? (
-                            <DropdownMenuItem
-                              onClick={() => unflagOffer.mutate({ offerId: offer.id })}
-                              className="text-green-600"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Remove Flag
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setFlagDialog({ open: true, offerId: offer.id, reason: '' })
-                              }
-                              className="text-orange-600"
-                            >
-                              <Flag className="h-4 w-4 mr-2" />
-                              Flag Offer
-                            </DropdownMenuItem>
-                          )}
-                        </PermissionGuard>
-
                         {/* Extend */}
                         <PermissionGuard permission="offers:extend">
                           <DropdownMenuItem
@@ -598,51 +556,6 @@ export default function OfferManagement() {
           </div>
         )}
       </Card>
-
-      {/* Flag Dialog */}
-      <Dialog
-        open={flagDialog.open}
-        onOpenChange={(open) => setFlagDialog({ open, reason: '' })}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Flag Offer</DialogTitle>
-            <DialogDescription>
-              This will mark the offer for review and notify the partner.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="flag-reason">Flag Reason</Label>
-              <Textarea
-                id="flag-reason"
-                value={flagDialog.reason}
-                onChange={(e) =>
-                  setFlagDialog({ ...flagDialog, reason: e.target.value })
-                }
-                placeholder="Explain why this offer is being flagged..."
-                rows={4}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setFlagDialog({ open: false, reason: '' })}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleFlag}
-              disabled={!flagDialog.reason.trim() || flagOffer.isPending}
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              <Flag className="h-4 w-4 mr-2" />
-              Flag Offer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Dialog */}
       <AlertDialog
