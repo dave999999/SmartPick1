@@ -62,7 +62,6 @@ import {
   useRejectPartner,
   useSuspendPartner,
   useReactivatePartner,
-  useUpdateTrustScore,
   PartnerFilters,
 } from '@/hooks/admin/usePartners';
 import { useAuthState } from '@/hooks/pages/useAuthState';
@@ -82,7 +81,6 @@ export default function PartnerManagement() {
   const rejectPartner = useRejectPartner();
   const suspendPartner = useSuspendPartner();
   const reactivatePartner = useReactivatePartner();
-  const updateTrustScore = useUpdateTrustScore();
 
   // Dialog states
   const [approveDialog, setApproveDialog] = useState<{ open: boolean; partnerId?: string }>({
@@ -98,13 +96,6 @@ export default function PartnerManagement() {
     partnerId?: string;
     reason: string;
   }>({ open: false, reason: '' });
-  const [trustScoreDialog, setTrustScoreDialog] = useState<{
-    open: boolean;
-    partnerId?: string;
-    currentScore?: number;
-    newScore: number;
-    reason: string;
-  }>({ open: false, newScore: 0, reason: '' });
 
   const handleApprove = () => {
     if (!approveDialog.partnerId || !user) return;
@@ -136,44 +127,29 @@ export default function PartnerManagement() {
     );
   };
 
-  const handleUpdateTrustScore = () => {
-    if (!trustScoreDialog.partnerId || !trustScoreDialog.reason.trim()) return;
-    updateTrustScore.mutate(
-      {
-        partnerId: trustScoreDialog.partnerId,
-        trustScore: trustScoreDialog.newScore,
-        reason: trustScoreDialog.reason,
-      },
-      {
-        onSuccess: () =>
-          setTrustScoreDialog({ open: false, newScore: 0, reason: '' }),
-      }
-    );
-  };
-
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
+    switch (status.toUpperCase()) {
+      case 'PENDING':
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
             Pending Review
           </Badge>
         );
-      case 'approved':
+      case 'APPROVED':
         return (
           <Badge variant="secondary" className="bg-green-100 text-green-700">
             <CheckCircle className="h-3 w-3 mr-1" />
             Approved
           </Badge>
         );
-      case 'suspended':
+      case 'SUSPENDED':
         return (
           <Badge variant="destructive">
             <Ban className="h-3 w-3 mr-1" />
             Suspended
           </Badge>
         );
-      case 'rejected':
+      case 'REJECTED':
         return (
           <Badge variant="outline" className="text-red-600 border-red-200">
             <XCircle className="h-3 w-3 mr-1" />
@@ -184,29 +160,6 @@ export default function PartnerManagement() {
         return null;
     }
   };
-
-  const getTrustScoreBadge = (score: number) => {
-    if (score >= 90) {
-      return (
-        <Badge className="bg-green-100 text-green-700 border-green-200">
-          <Star className="h-3 w-3 mr-1" />
-          Excellent
-        </Badge>
-      );
-    } else if (score >= 70) {
-      return (
-        <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-          Good
-        </Badge>
-      );
-    } else if (score >= 50) {
-      return (
-        <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
-          Average
-        </Badge>
-      );
-    } else {
-      return (
         <Badge className="bg-red-100 text-red-700 border-red-200">
           <AlertCircle className="h-3 w-3 mr-1" />
           Poor
@@ -340,7 +293,6 @@ export default function PartnerManagement() {
               <TableHead>Business</TableHead>
               <TableHead>Owner</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Trust Score</TableHead>
               <TableHead>Active Offers</TableHead>
               <TableHead>Revenue</TableHead>
               <TableHead>Joined</TableHead>
@@ -378,17 +330,6 @@ export default function PartnerManagement() {
 
                 {/* Status */}
                 <TableCell>{getStatusBadge(partner.status)}</TableCell>
-
-                {/* Trust Score */}
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Shield className="h-4 w-4 text-gray-400" />
-                      <span className="font-medium">{partner.trust_score}</span>
-                    </div>
-                    {getTrustScoreBadge(partner.trust_score)}
-                  </div>
-                </TableCell>
 
                 {/* Active Offers */}
                 <TableCell>
@@ -496,27 +437,6 @@ export default function PartnerManagement() {
                             </>
                           </PermissionGuard>
                         )}
-
-                        {/* Trust Score */}
-                        <PermissionGuard permission="partners:update_trust_score">
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setTrustScoreDialog({
-                                  open: true,
-                                  partnerId: partner.id,
-                                  currentScore: partner.trust_score,
-                                  newScore: partner.trust_score,
-                                  reason: '',
-                                })
-                              }
-                            >
-                              <Shield className="h-4 w-4 mr-2" />
-                              Update Trust Score
-                            </DropdownMenuItem>
-                          </>
-                        </PermissionGuard>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </PermissionGuard>
@@ -675,73 +595,6 @@ export default function PartnerManagement() {
             >
               <Ban className="h-4 w-4 mr-2" />
               Suspend Partner
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Trust Score Dialog */}
-      <Dialog
-        open={trustScoreDialog.open}
-        onOpenChange={(open) => setTrustScoreDialog({ ...trustScoreDialog, open })}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update Trust Score</DialogTitle>
-            <DialogDescription>
-              Current score: {trustScoreDialog.currentScore}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="new-score">New Trust Score (0-100)</Label>
-              <Input
-                id="new-score"
-                type="number"
-                min="0"
-                max="100"
-                value={trustScoreDialog.newScore}
-                onChange={(e) =>
-                  setTrustScoreDialog({
-                    ...trustScoreDialog,
-                    newScore: parseInt(e.target.value) || 0,
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="score-reason">Reason for Change</Label>
-              <Textarea
-                id="score-reason"
-                value={trustScoreDialog.reason}
-                onChange={(e) =>
-                  setTrustScoreDialog({ ...trustScoreDialog, reason: e.target.value })
-                }
-                placeholder="Explain why the trust score is changing..."
-                rows={3}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() =>
-                setTrustScoreDialog({ open: false, newScore: 0, reason: '' })
-              }
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdateTrustScore}
-              disabled={
-                !trustScoreDialog.reason.trim() ||
-                trustScoreDialog.newScore < 0 ||
-                trustScoreDialog.newScore > 100 ||
-                updateTrustScore.isPending
-              }
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Update Score
             </Button>
           </DialogFooter>
         </DialogContent>
