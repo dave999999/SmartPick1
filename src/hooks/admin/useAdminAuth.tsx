@@ -70,13 +70,20 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', authUser.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
+      }
 
-      // Check if user is admin
-      if (userData.role !== 'ADMIN') {
+      console.log('User data loaded:', { email: userData.email, role: userData.role });
+
+      // Check if user is admin (case-insensitive check)
+      const userRole = userData.role?.toUpperCase();
+      if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') {
+        console.warn('User does not have admin role:', userRole);
         toast.error('Access denied: Admin privileges required');
         await supabase.auth.signOut();
-        navigate('/login');
+        navigate('/');
         return;
       }
 
