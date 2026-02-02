@@ -53,6 +53,11 @@ const ReservationMonitoring = lazy(() => import('@/pages/admin/ReservationMonito
   return { default: () => <div>Failed to load Reservation Monitoring</div> };
 }));
 
+const Analytics = lazy(() => import('@/pages/admin/Analytics').catch(err => {
+  logger.error('Failed to load Analytics', err);
+  return { default: () => <div>Failed to load Analytics</div> };
+}));
+
 // Loading component with spinner
 const PageLoader = () => (
   <div className="flex items-center justify-center h-full">
@@ -72,6 +77,7 @@ export function AdminDashboard() {
             <Route path="partners" element={<PartnerManagement />} />
             <Route path="offers" element={<OfferManagement />} />
             <Route path="reservations" element={<ReservationMonitoring />} />
+            <Route path="analytics" element={<Analytics />} />
             
             {/* Redirect any unknown routes to dashboard home */}
             <Route path="*" element={<Navigate to="/admin" replace />} />
