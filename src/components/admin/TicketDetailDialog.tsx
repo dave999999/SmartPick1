@@ -64,7 +64,7 @@ export function TicketDetailDialog({
   open,
   onOpenChange,
 }: TicketDetailDialogProps) {
-  const { user } = useAuth();
+  const { user } = useAuthState();
   const { data: ticket, isLoading } = useTicket(ticketId);
   const { data: messages } = useTicketMessages(ticketId);
   const [replyMessage, setReplyMessage] = useState('');

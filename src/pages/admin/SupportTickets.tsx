@@ -56,10 +56,10 @@ import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow } from 'date-fns';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 import { TicketDetailDialog } from '@/components/admin/TicketDetailDialog';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthState } from '@/hooks/pages/useAuthState';
 
 export default function SupportTickets() {
-  const { user } = useAuth();
+  const { user } = useAuthState();
   const [filters, setFilters] = useState<TicketFilters>({
     page: 1,
     limit: 50,

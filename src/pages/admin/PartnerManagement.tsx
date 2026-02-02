@@ -65,13 +65,13 @@ import {
   useUpdateTrustScore,
   PartnerFilters,
 } from '@/hooks/admin/usePartners';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthState } from '@/hooks/pages/useAuthState';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { PermissionGuard } from '@/components/admin/PermissionGuard';
 
 export default function PartnerManagement() {
-  const { user } = useAuth();
+  const { user } = useAuthState();
   const [filters, setFilters] = useState<PartnerFilters>({
     page: 1,
     limit: 50,
