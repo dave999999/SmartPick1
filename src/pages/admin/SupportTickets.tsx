@@ -489,15 +489,6 @@ export default function SupportTickets() {
               <Button
                 variant="outline"
                 size="sm"
-
-      {/* Ticket Detail Dialog */}
-      {selectedTicketId && (
-        <TicketDetailDialog
-          ticketId={selectedTicketId}
-          open={!!selectedTicketId}
-          onOpenChange={(open) => !open && setSelectedTicketId(null)}
-        />
-      )}
                 disabled={filters.page === 1}
                 onClick={() => setFilters({ ...filters, page: filters.page! - 1 })}
               >
@@ -518,6 +509,15 @@ export default function SupportTickets() {
           </div>
         )}
       </Card>
+
+      {/* Ticket Detail Dialog */}
+      {selectedTicketId && (
+        <TicketDetailDialog
+          ticketId={selectedTicketId}
+          open={!!selectedTicketId}
+          onOpenChange={(open) => !open && setSelectedTicketId(null)}
+        />
+      )}
     </div>
   );
 }
