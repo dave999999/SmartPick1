@@ -30,7 +30,7 @@ const PartnerApplication = lazy(() => import('./pages/PartnerApplication'));
 const ReservationHistory = lazy(() => import('./pages/ReservationHistory'));
 const Favorites = lazy(() => import('./pages/Favorites'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const ReserveOffer = lazy(() => import('./pages/ReserveOffer'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const NotificationsDebug = lazy(() => import('./pages/NotificationsDebug'));
