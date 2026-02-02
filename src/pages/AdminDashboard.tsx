@@ -25,6 +25,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/layout/AdminLayout';
 import { DashboardHome } from '@/pages/admin/DashboardHome';
 import { logger } from '@/lib/logger';
+import { AdminAuthProvider } from '@/hooks/admin/useAdminAuth';
 
 // Lazy load admin pages for code splitting
 const UserManagement = lazy(() => import('@/pages/admin/UserManagement').catch(err => {
@@ -61,21 +62,23 @@ const PageLoader = () => (
 
 export function AdminDashboard() {
   return (
-    <AdminLayout>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route index element={<DashboardHome />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="support" element={<SupportTickets />} />
-          <Route path="partners" element={<PartnerManagement />} />
-          <Route path="offers" element={<OfferManagement />} />
-          <Route path="reservations" element={<ReservationMonitoring />} />
-          
-          {/* Redirect any unknown routes to dashboard home */}
-          <Route path="*" element={<Navigate to="/admin" replace />} />
-        </Routes>
-      </Suspense>
-    </AdminLayout>
+    <AdminAuthProvider>
+      <AdminLayout>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route index element={<DashboardHome />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="support" element={<SupportTickets />} />
+            <Route path="partners" element={<PartnerManagement />} />
+            <Route path="offers" element={<OfferManagement />} />
+            <Route path="reservations" element={<ReservationMonitoring />} />
+            
+            {/* Redirect any unknown routes to dashboard home */}
+            <Route path="*" element={<Navigate to="/admin" replace />} />
+          </Routes>
+        </Suspense>
+      </AdminLayout>
+    </AdminAuthProvider>
   );
 }
 

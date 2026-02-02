@@ -23,7 +23,6 @@ import { InstallPWA } from './components/InstallPWA';
 import { IOSInstallPrompt } from './components/IOSInstallPrompt';
 import TopRightMenu from './components/layout/TopRightMenu';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { AdminAuthProvider } from './hooks/admin/useAdminAuth';
 
 // Lazy load: All other routes for code splitting (~300 KB savings on initial load)
 const PartnerDashboard = lazy(() => import('./pages/PartnerDashboardV3'));
@@ -528,11 +527,7 @@ const AppContent = () => {
             } 
           />
           {/* New Admin Dashboard with Nested Routes */}
-          <Route path="/admin/*" element={
-            <AdminAuthProvider>
-              <AdminDashboard />
-            </AdminAuthProvider>
-          } />
+          <Route path="/admin/*" element={<AdminDashboard />} />
           
           {/* Legacy Admin Panel (keep for backward compatibility) */}
           <Route path="/admin-panel" element={<AdminPanel />} />
