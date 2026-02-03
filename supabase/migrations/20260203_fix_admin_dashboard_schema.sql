@@ -20,25 +20,22 @@ ON CONFLICT (user_id) DO NOTHING;
 -- 2. Create index if not exists (for admin queries performance)
 CREATE INDEX IF NOT EXISTS idx_user_points_balance ON user_points(balance);
 
--- 3. Update admin users (REPLACE WITH YOUR ACTUAL ADMIN EMAIL!)
--- Find users who should be admins and update their role
+-- 3. Update admin users - Set davitbatumashvili@gmail.com as admin
 DO $$
 DECLARE
-  admin_email TEXT;
   admin_count INTEGER;
 BEGIN
   -- Check if any admins exist
   SELECT COUNT(*) INTO admin_count FROM users WHERE role = 'ADMIN';
   
   IF admin_count = 0 THEN
-    -- Try to find the first user (likely the app owner)
-    SELECT email INTO admin_email FROM users ORDER BY created_at ASC LIMIT 1;
+    -- Make davitbatumashvili@gmail.com an admin
+    UPDATE users SET role = 'ADMIN' WHERE email = 'davitbatumashvili@gmail.com';
     
-    IF admin_email IS NOT NULL THEN
-      UPDATE users SET role = 'ADMIN' WHERE email = admin_email;
-      RAISE NOTICE 'Made % an admin', admin_email;
+    IF FOUND THEN
+      RAISE NOTICE 'Made davitbatumashvili@gmail.com an admin';
     ELSE
-      RAISE NOTICE 'No users found to make admin. Create a user first.';
+      RAISE WARNING 'User davitbatumashvili@gmail.com not found. Please sign up first.';
     END IF;
   ELSE
     RAISE NOTICE '% admin(s) already exist', admin_count;
