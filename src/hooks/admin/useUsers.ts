@@ -70,7 +70,7 @@ export function useUsers(filters: UserFilters = {}) {
         .from('users')
         .select(`
           *,
-          user_points!inner(balance)
+          user_points(balance)
         `, { count: 'exact' });
 
       // IMPORTANT: Only show regular users (customers), NOT partners or admins
