@@ -1,34 +1,24 @@
 -- ========================================
 -- EMERGENCY FIX: Admin Dashboard Database Issues
 -- ========================================
--- This migration fixes critical schema mismatches
--- Run this in Supabase SQL Editor
+-- This migration ensures all users have entries in user_points table
+-- and creates admin user if needed
 
 BEGIN;
 
--- 1. Add points_balance column to users table
--- This is the PRIMARY points storage (app uses this, not user_points)
-ALTER TABLE users ADD COLUMN IF NOT EXISTS points_balance INTEGER DEFAULT 0 NOT NULL;
+-- 1. Ensure ALL existing users have a user_points entry
+-- (user_points.balance is the ACTUAL points storage, not users.points_balance)
+INSERT INTO user_points (user_id, balance, updated_at)
+SELECT 
+  id as user_id,
+  100 as balance, -- Default 100 points for existing users
+  now() as updated_at
+FROM users
+WHERE id NOT IN (SELECT user_id FROM user_points)
+ON CONFLICT (user_id) DO NOTHING;
 
--- Create index for performance
-CREATE INDEX IF NOT EXISTS idx_users_points_balance ON users(points_balance);
-
--- 2. If user_points table has data, migrate it to users.points_balance
--- (Currently user_points is empty, but this handles future case)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM user_points LIMIT 1) THEN
-    UPDATE users u 
-    SET points_balance = COALESCE(
-      (SELECT balance FROM user_points WHERE user_id = u.id),
-      0
-    );
-    
-    RAISE NOTICE 'Migrated points from user_points to users.points_balance';
-  ELSE
-    RAISE NOTICE 'user_points table is empty, no migration needed';
-  END IF;
-END $$;
+-- 2. Create index if not exists (for admin queries performance)
+CREATE INDEX IF NOT EXISTS idx_user_points_balance ON user_points(balance);
 
 -- 3. Update admin users (REPLACE WITH YOUR ACTUAL ADMIN EMAIL!)
 -- Find users who should be admins and update their role
@@ -58,19 +48,18 @@ END $$;
 -- 4. Verify the fixes
 DO $$
 DECLARE
-  points_col_exists BOOLEAN;
+  points_entries INTEGER;
   admin_count INTEGER;
+  users_count INTEGER;
 BEGIN
-  -- Check if points_balance column exists
-  SELECT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'users' AND column_name = 'points_balance'
-  ) INTO points_col_exists;
+  -- Check user_points entries
+  SELECT COUNT(*) INTO users_count FROM users;
+  SELECT COUNT(*) INTO points_entries FROM user_points;
   
-  IF points_col_exists THEN
-    RAISE NOTICE '✅ users.points_balance column exists';
+  IF points_entries >= users_count THEN
+    RAISE NOTICE '✅ All % users have user_points entries', users_count;
   ELSE
-    RAISE WARNING '❌ users.points_balance column missing!';
+    RAISE WARNING '⚠️  Only %/% users have user_points entries', points_entries, users_count;
   END IF;
   
   -- Check admin users
@@ -86,21 +75,24 @@ COMMIT;
 
 -- 5. Display current state
 SELECT 
-  'Users with points_balance' as check_type,
-  COUNT(*) as count,
-  SUM(points_balance) as total_points
-FROM users;
+  'User points coverage' as check_type,
+  COUNT(DISTINCT u.id) as total_users,
+  COUNT(DISTINCT up.user_id) as users_with_points,
+  COALESCE(SUM(up.balance), 0) as total_points_in_system
+FROM users u
+LEFT JOIN user_points up ON u.id = up.user_id;
 
 SELECT 
   'Admin users' as check_type,
-  COUNT(*) as count
+  COUNT(*) as count,
+  string_agg(email, ', ') as admin_emails
 FROM users 
 WHERE role = 'ADMIN';
 
 SELECT 
-  'Offers by status' as check_type,
-  status,
-  COUNT(*) as count
-FROM offers
-GROUP BY status
-ORDER BY count DESC;
+  'Points distribution' as check_type,
+  MIN(balance) as min_balance,
+  MAX(balance) as max_balance,
+  AVG(balance)::INTEGER as avg_balance,
+  COUNT(*) as total_users
+FROM user_points;

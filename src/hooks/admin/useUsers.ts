@@ -68,12 +68,14 @@ export function useUsers(filters: UserFilters = {}) {
     queryFn: async () => {
       let query = supabase
         .from('users')
-        .select('*', { count: 'exact' });
+        .select(`
+          *,
+          user_points!inner(balance)
+        `, { count: 'exact' });
 
       // IMPORTANT: Only show regular users (customers), NOT partners or admins
       query = query.neq('role', 'partner');
       query = query.neq('role', 'ADMIN');
-      query = query.neq('role', 'ADMIN'); // Also exclude admin users from customer list
 
       // Apply filters
       if (filters.search) {
@@ -107,10 +109,10 @@ export function useUsers(filters: UserFilters = {}) {
         throw error;
       }
 
-      // points_balance is now a column in users table (added by migration)
+      // Map user_points.balance to points_balance for UI consistency
       const users: UserData[] = (data || []).map((user: any) => ({
         ...user,
-        points_balance: user.points_balance || 0,
+        points_balance: user.user_points?.balance || 0,
       }));
 
       return {
@@ -481,29 +483,50 @@ export function useAdjustPoints() {
       amount: number; // Positive to grant, negative to deduct
       reason: string;
     }) => {
-      // Get current balance
-      const { data: userData, error: fetchError } = await supabase
-        .from('users')
-        .select('points_balance')
-        .eq('id', userId)
+      // Get current balance from user_points table (NOT users table!)
+      const { data: pointsData, error: fetchError } = await supabase
+        .from('user_points')
+        .select('balance')
+        .eq('user_id', userId)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        logger.error('Failed to fetch user points', { userId, error: fetchError });
+        throw new Error('Could not fetch user points. Make sure user has a user_points entry.');
+      }
 
-      const currentBalance = userData?.points_balance || 0;
+      const currentBalance = pointsData?.balance || 0;
       const newBalance = currentBalance + amount;
 
       if (newBalance < 0) {
-        throw new Error('Cannot deduct more points than user has');
+        throw new Error(`Cannot deduct ${Math.abs(amount)} points. User only has ${currentBalance} points.`);
       }
 
-      // Update balance
-      const { error } = await supabase
-        .from('users')
-        .update({ points_balance: newBalance })
-        .eq('id', userId);
+      // Update balance in user_points table
+      const { error: updateError } = await supabase
+        .from('user_points')
+        .update({ 
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
 
-      if (error) throw error;
+      if (updateError) {
+        logger.error('Failed to update user points', { userId, error: updateError });
+        throw new Error('Could not update points');
+      }
+
+      // Log transaction in point_transactions table
+      await supabase
+        .from('point_transactions')
+        .insert({
+          user_id: userId,
+          change: amount,
+          reason: reason || 'admin_adjustment',
+          balance_before: currentBalance,
+          balance_after: newBalance,
+          metadata: { adjusted_by: 'admin', timestamp: new Date().toISOString() }
+        });
 
       logger.info('Admin adjusted user points', {
         userId,
@@ -513,7 +536,7 @@ export function useAdjustPoints() {
         reason,
       });
 
-      return { success: true, newBalance };
+      return { success: true, newBalance, oldBalance: currentBalance };
     },
     onSuccess: (data, variables) => {
       const action = variables.amount > 0 ? 'granted' : 'deducted';
