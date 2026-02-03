@@ -70,8 +70,10 @@ export function useUsers(filters: UserFilters = {}) {
         .from('users')
         .select('*', { count: 'exact' });
 
-      // IMPORTANT: Only show regular users (customers), NOT partners
+      // IMPORTANT: Only show regular users (customers), NOT partners or admins
       query = query.neq('role', 'partner');
+      query = query.neq('role', 'ADMIN');
+      query = query.neq('role', 'ADMIN'); // Also exclude admin users from customer list
 
       // Apply filters
       if (filters.search) {
@@ -100,9 +102,12 @@ export function useUsers(filters: UserFilters = {}) {
 
       const { data, error, count } = await query;
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Failed to fetch users', { error });
+        throw error;
+      }
 
-      // Users already have points_balance in the table
+      // points_balance is now a column in users table (added by migration)
       const users: UserData[] = (data || []).map((user: any) => ({
         ...user,
         points_balance: user.points_balance || 0,
