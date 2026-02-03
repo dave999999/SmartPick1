@@ -110,9 +110,10 @@ export function useUsers(filters: UserFilters = {}) {
       }
 
       // Map user_points.balance to points_balance for UI consistency
+      // Note: user_points is returned as an array by Supabase, so we access [0]
       const users: UserData[] = (data || []).map((user: any) => ({
         ...user,
-        points_balance: user.user_points?.balance || 0,
+        points_balance: user.user_points?.[0]?.balance || 0,
       }));
 
       return {
