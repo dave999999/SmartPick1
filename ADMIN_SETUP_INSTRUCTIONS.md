@@ -1,6 +1,13 @@
-# 🚀 CRITICAL FIX: Admin Dashboard Setup Instructions
+# 🚀 CORRECT FIX: Admin Dashboard Setup Instructions
 
-## ⚠️ IMPORTANT: Run These Steps IN ORDER
+## ✅ WHAT I DISCOVERED
+
+Your app **DOES** store points correctly in the `user_points` table:
+- `user_points.balance` = actual points storage
+- `point_transactions` = audit log of all changes
+- App uses this via `smartpoints-api.ts`
+
+**The issue:** Admin dashboard wasn't joining the `user_points` table!
 
 ---
 
@@ -11,24 +18,29 @@
 Copy and paste this SQL:
 
 ```sql
--- Add points_balance column to users table
-ALTER TABLE users ADD COLUMN IF NOT EXISTS points_balance INTEGER DEFAULT 0 NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_users_points_balance ON users(points_balance);
+-- Ensure ALL users have a user_points entry
+INSERT INTO user_points (user_id, balance, updated_at)
+SELECT 
+  id as user_id,
+  100 as balance,
+  now() as updated_at
+FROM users
+WHERE id NOT IN (SELECT user_id FROM user_points)
+ON CONFLICT (user_id) DO NOTHING;
 
 -- Make your user an admin (REPLACE with your actual email!)
 UPDATE users 
 SET role = 'ADMIN' 
 WHERE email = 'YOUR_EMAIL_HERE@gmail.com';
 
--- Verify it worked
-SELECT id, name, email, role, points_balance 
-FROM users 
-WHERE role = 'ADMIN';
+-- Verify
+SELECT u.name, u.email, u.role, up.balance as points
+FROM users u
+LEFT JOIN user_points up ON u.id = up.user_id
+WHERE u.role = 'ADMIN';
 ```
 
 **IMPORTANT:** Replace `YOUR_EMAIL_HERE@gmail.com` with your actual email!
-
-Click "Run" button.
 
 ---
 
@@ -37,29 +49,16 @@ Click "Run" button.
 Run this query:
 
 ```sql
--- Check if everything is set up correctly
+-- Check coverage
 SELECT 
-  'users.points_balance column' as check,
-  CASE 
-    WHEN EXISTS (
-      SELECT 1 FROM information_schema.columns 
-      WHERE table_name = 'users' AND column_name = 'points_balance'
-    ) THEN '✅ EXISTS'
-    ELSE '❌ MISSING'
-  END as status;
-
-SELECT 
-  'Admin users' as check,
-  CASE 
-    WHEN COUNT(*) > 0 THEN '✅ ' || COUNT(*) || ' admin(s) found'
-    ELSE '❌ No admins'
-  END as status
-FROM users WHERE role = 'ADMIN';
+  COUNT(DISTINCT u.id) as total_users,
+  COUNT(DISTINCT up.user_id) as users_with_points,
+  COALESCE(SUM(up.balance), 0) as total_points
+FROM users u
+LEFT JOIN user_points up ON u.id = up.user_id;
 ```
 
-You should see:
-- ✅ EXISTS for points_balance column
-- ✅ 1 admin(s) found
+You should see users_with_points = total_users (all users have points entries).
 
 ---
 
@@ -106,14 +105,42 @@ Vercel will auto-deploy (or you can deploy manually).
 ## What Was Fixed?
 
 ### Database Issues:
-- ❌ `points_balance` column didn't exist → ✅ Added
-- ❌ No admin users → ✅ Created admin user
-- ❌ RLS blocking queries → ✅ Fixed by adding admin role
+- ✅ `user_points` table exists with balance column
+- ❌ Some users missing entries → ✅ Migration ensures all users have entries
+- ❌ No admin users → ✅ Migration creates admin user
 
 ### Code Issues:
-- ❌ Querying wrong tables/columns → ✅ Fixed all hooks
-- ❌ Non-existent RPC calls → ✅ Removed/replaced
-- ❌ Status calculations wrong → ✅ Fixed to use actual DB status
+- ❌ Admin hooks didn't join `user_points` table → ✅ Fixed to join properly
+- ❌ useAdjustPoints updated wrong table → ✅ Now updates `user_points.balance`
+- ✅ Now logs all changes to `point_transactions` table
+
+---
+
+## How Points Work in Your App
+
+**Source of Truth:** `user_points.balance`
+```sql
+user_points:
+- user_id (FK to users)
+- balance (INT) ← ACTUAL points
+- updated_at
+```
+
+**Audit Trail:** `point_transactions`
+```sql
+point_transactions:
+- user_id
+- change (+100, -50, etc.)
+- reason (reservation, purchase, refund, admin_adjustment)
+- balance_before, balance_after
+- metadata (JSON)
+- created_at
+```
+
+**Admin Dashboard Now:**
+- Joins `user_points` to show actual balance
+- Updates `user_points.balance` when adjusting points
+- Logs changes to `point_transactions` for audit trail
 
 ---
 
