@@ -68,7 +68,7 @@ export function useUsers(filters: UserFilters = {}) {
     queryFn: async () => {
       let query = supabase
         .from('users')
-        .select('*, user_points(balance), user_stats(*)', { count: 'exact' });
+        .select('*', { count: 'exact' });
 
       // IMPORTANT: Only show regular users (customers), NOT partners
       query = query.neq('role', 'partner');
@@ -102,11 +102,10 @@ export function useUsers(filters: UserFilters = {}) {
 
       if (error) throw error;
 
-      // Transform data to include computed fields
+      // Users already have points_balance in the table
       const users: UserData[] = (data || []).map((user: any) => ({
         ...user,
-        points_balance: user.user_points?.[0]?.balance || 0,
-        total_reservations: user.user_stats?.[0]?.total_reservations || 0,
+        points_balance: user.points_balance || 0,
       }));
 
       return {
@@ -132,18 +131,42 @@ export function useUser(userId: string | null) {
       const { data, error } = await supabase
         .from('users')
         .select(`
-          *,
-          user_points(balance),
-          user_stats(*),
-          user_penalties(
-            id,
-            offense_number,
-            offense_type,
-            penalty_type,
-            suspended_until,
-            is_active,
-            created_at
-          )
+          *
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      // Fetch user's reservations for statistics
+      const { data: reservations } = await supabase
+        .from('reservations')
+        .select('id, status, picked_up_at, no_show')
+        .eq('customer_id', userId);
+
+      return {
+        ...data,
+        points_balance: data.points_balance || 0,
+        total_reservations: reservations?.length || 0,
+        successful_pickups: reservations?.filter(r => r.picked_up_at).length || 0,
+        no_shows: reservations?.filter(r => r.no_show).length || 0
+      };
+    },
+    enabled: !!userId,
+  });
+}
+
+// Fetch user statistics
+export function useUserStats(userId: string | null) {
+  return useQuery({
+    queryKey: ['admin', 'user-stats', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          *
         `)
         .eq('id', userId)
         .single();

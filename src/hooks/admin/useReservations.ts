@@ -181,19 +181,36 @@ export function useReservation(reservationId: string) {
   });
 }
 
-// Fetch reservation stats
+// Fetch reservation stats (calculated from actual data)
 export function useReservationStats() {
   return useQuery({
     queryKey: ['admin', 'reservation-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_reservation_stats');
+      // Get all reservations with their status
+      const { data: reservations, error } = await supabase
+        .from('reservations')
+        .select('id, status, created_at, picked_up_at, no_show');
 
       if (error) {
-        logger.error('Failed to fetch reservation stats', { error });
+        logger.error('Failed to fetch reservations for stats', { error });
         throw error;
       }
 
-      return data;
+      // Calculate stats from actual data
+      const now = new Date();
+      const today = new Date(now.setHours(0, 0, 0, 0));
+      
+      return {
+        total: reservations?.length || 0,
+        active: reservations?.filter(r => r.status?.toUpperCase() === 'ACTIVE' || r.status?.toUpperCase() === 'RESERVED').length || 0,
+        picked_up: reservations?.filter(r => r.picked_up_at).length || 0,
+        no_shows: reservations?.filter(r => r.no_show).length || 0,
+        completed_today: reservations?.filter(r => {
+          if (!r.picked_up_at) return false;
+          const pickedUpDate = new Date(r.picked_up_at);
+          return pickedUpDate >= today;
+        }).length || 0,
+      };
     },
     staleTime: 30000, // 30 seconds
     refetchInterval: 30000,

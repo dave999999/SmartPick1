@@ -31,6 +31,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Users,
@@ -46,7 +56,7 @@ import {
   Download,
   AlertCircle,
 } from 'lucide-react';
-import { useUsers, useBanUser, useUnbanUser } from '@/hooks/admin/useUsers';
+import { useUsers, useBanUser, useUnbanUser, useAdjustPoints } from '@/hooks/admin/useUsers';
 import { UserFilters } from '@/hooks/admin/useUsers';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -60,9 +70,17 @@ export default function UserManagement() {
     sortOrder: 'desc',
   });
 
+  const [pointsDialog, setPointsDialog] = useState<{
+    open: boolean;
+    user?: any;
+    amount: number;
+    reason: string;
+  }>({ open: false, amount: 0, reason: '' });
+
   const { data, isLoading, refetch } = useUsers(filters);
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
+  const adjustPoints = useAdjustPoints();
 
   const handleSearch = (search: string) => {
     setFilters({ ...filters, search, page: 1 });
@@ -336,7 +354,16 @@ export default function UserManagement() {
                         </PermissionGuard>
 
                         <PermissionGuard permission="users:points_add">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setPointsDialog({
+                                open: true,
+                                user,
+                                amount: 0,
+                                reason: '',
+                              })
+                            }
+                          >
                             <Coins className="h-4 w-4 mr-2" />
                             Manage Points
                           </DropdownMenuItem>
@@ -435,6 +462,111 @@ export default function UserManagement() {
           </div>
         )}
       </Card>
+
+      {/* Manage Points Dialog */}
+      <Dialog
+        open={pointsDialog.open}
+        onOpenChange={(open) =>
+          setPointsDialog({ ...pointsDialog, open })
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage User Points</DialogTitle>
+            <DialogDescription>
+              Grant or deduct points for {pointsDialog.user?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Current Balance</Label>
+                <span className="text-2xl font-bold text-green-600">
+                  {pointsDialog.user?.points_balance || 0} points
+                </span>
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="points-amount">
+                Amount (use negative to deduct)
+              </Label>
+              <Input
+                id="points-amount"
+                type="number"
+                placeholder="e.g., 100 or -50"
+                value={pointsDialog.amount}
+                onChange={(e) =>
+                  setPointsDialog({
+                    ...pointsDialog,
+                    amount: parseInt(e.target.value) || 0,
+                  })
+                }
+              />
+              {pointsDialog.amount !== 0 && (
+                <p className="text-sm text-gray-500 mt-1">
+                  New balance will be:{' '}
+                  <span className="font-semibold">
+                    {(pointsDialog.user?.points_balance || 0) + pointsDialog.amount}{' '}
+                    points
+                  </span>
+                </p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="points-reason">Reason</Label>
+              <Textarea
+                id="points-reason"
+                placeholder="e.g., Customer compensation, Referral bonus"
+                value={pointsDialog.reason}
+                onChange={(e) =>
+                  setPointsDialog({
+                    ...pointsDialog,
+                    reason: e.target.value,
+                  })
+                }
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setPointsDialog({ open: false, amount: 0, reason: '' })
+              }
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!pointsDialog.user || pointsDialog.amount === 0) return;
+                adjustPoints.mutate(
+                  {
+                    userId: pointsDialog.user.id,
+                    amount: pointsDialog.amount,
+                    reason: pointsDialog.reason || 'Admin adjustment',
+                  },
+                  {
+                    onSuccess: () => {
+                      setPointsDialog({ open: false, amount: 0, reason: '' });
+                    },
+                  }
+                );
+              }}
+              disabled={
+                pointsDialog.amount === 0 || adjustPoints.isPending
+              }
+            >
+              <Coins className="h-4 w-4 mr-2" />
+              {adjustPoints.isPending
+                ? 'Processing...'
+                : pointsDialog.amount > 0
+                ? 'Grant Points'
+                : 'Deduct Points'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
