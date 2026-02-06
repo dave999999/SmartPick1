@@ -60,6 +60,7 @@ import {
 import {
   useReservations,
   useReservationStats,
+  useReservation,
   useExtendReservation,
   useForceCompleteReservation,
   useCancelReservation,
@@ -82,6 +83,11 @@ export default function ReservationMonitoring() {
   const extendReservation = useExtendReservation();
   const forceComplete = useForceCompleteReservation();
   const cancelReservation = useCancelReservation();
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    reservationId?: string;
+  }>({ open: false });
+  const { data: selectedReservation } = useReservation(detailsDialog.reservationId || '');
 
   // Update current time every second for countdown
   useEffect(() => {
@@ -194,29 +200,35 @@ export default function ReservationMonitoring() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
+    const normalized = status?.toUpperCase();
+    switch (normalized) {
+      case 'ACTIVE':
+      case 'RESERVED':
+      case 'READY_FOR_PICKUP':
+      case 'IN_PROGRESS':
         return (
           <Badge variant="secondary" className="bg-green-100 text-green-700">
             <Play className="h-3 w-3 mr-1" />
             Active
           </Badge>
         );
-      case 'completed':
+      case 'COMPLETED':
+      case 'PICKED_UP':
         return (
           <Badge variant="secondary" className="bg-blue-100 text-blue-700">
             <CheckCircle className="h-3 w-3 mr-1" />
             Completed
           </Badge>
         );
-      case 'cancelled':
+      case 'CANCELLED':
+      case 'NO_SHOW':
         return (
           <Badge variant="outline" className="text-gray-500">
             <XCircle className="h-3 w-3 mr-1" />
             Cancelled
           </Badge>
         );
-      case 'expired':
+      case 'EXPIRED':
         return (
           <Badge variant="destructive">
             <AlertTriangle className="h-3 w-3 mr-1" />
@@ -276,7 +288,11 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Active Now</div>
             <div className="text-2xl font-bold text-green-600 mt-1">
-              {data?.reservations.filter((r) => r.status === 'active').length || 0}
+              {data?.reservations.filter((r) =>
+                ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                  (r.status || '').toUpperCase()
+                )
+              ).length || 0}
             </div>
           </CardContent>
         </Card>
@@ -285,7 +301,12 @@ export default function ReservationMonitoring() {
             <div className="text-sm text-red-700">Critical (&lt;15m)</div>
             <div className="text-2xl font-bold text-red-600 mt-1">
               {data?.reservations.filter((r) => {
-                if (r.status !== 'active') return false;
+                if (
+                  !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                    (r.status || '').toUpperCase()
+                  )
+                )
+                  return false;
                 const minutesLeft = differenceInMinutes(
                   new Date(r.expires_at),
                   currentTime
@@ -300,7 +321,12 @@ export default function ReservationMonitoring() {
             <div className="text-sm text-gray-600">Warning (&lt;1h)</div>
             <div className="text-2xl font-bold text-orange-600 mt-1">
               {data?.reservations.filter((r) => {
-                if (r.status !== 'active') return false;
+                if (
+                  !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                    (r.status || '').toUpperCase()
+                  )
+                )
+                  return false;
                 const minutesLeft = differenceInMinutes(
                   new Date(r.expires_at),
                   currentTime
@@ -322,7 +348,9 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Expired</div>
             <div className="text-2xl font-bold text-gray-500 mt-1">
-              {data?.reservations.filter((r) => r.status === 'expired').length || 0}
+              {data?.reservations.filter((r) =>
+                ['EXPIRED', 'NO_SHOW'].includes((r.status || '').toUpperCase())
+              ).length || 0}
             </div>
           </CardContent>
         </Card>
@@ -384,10 +412,15 @@ export default function ReservationMonitoring() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="RESERVED">Reserved</SelectItem>
+                <SelectItem value="READY_FOR_PICKUP">Ready for Pickup</SelectItem>
+                <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                <SelectItem value="COMPLETED">Completed</SelectItem>
+                <SelectItem value="PICKED_UP">Picked Up</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                <SelectItem value="EXPIRED">Expired</SelectItem>
+                <SelectItem value="NO_SHOW">No Show</SelectItem>
               </SelectContent>
             </Select>
 
@@ -425,7 +458,11 @@ export default function ReservationMonitoring() {
                 currentTime
               );
               const isCritical =
-                reservation.status === 'active' && minutesLeft < 15 && minutesLeft >= 0;
+                ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                  (reservation.status || '').toUpperCase()
+                ) &&
+                minutesLeft < 15 &&
+                minutesLeft >= 0;
 
               return (
                 <TableRow
@@ -438,7 +475,7 @@ export default function ReservationMonitoring() {
                   {/* Code */}
                   <TableCell>
                     <div className="font-mono text-sm font-medium">
-                      {reservation.reservation_code}
+                      {reservation.qr_code}
                     </div>
                   </TableCell>
 
@@ -479,7 +516,9 @@ export default function ReservationMonitoring() {
 
                   {/* Time Left */}
                   <TableCell>
-                    {reservation.status === 'active'
+                    {['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                      (reservation.status || '').toUpperCase()
+                    )
                       ? getCountdownBadge(reservation.expires_at)
                       : '-'}
                   </TableCell>
@@ -506,15 +545,24 @@ export default function ReservationMonitoring() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              setDetailsDialog({
+                                open: true,
+                                reservationId: reservation.id,
+                              })
+                            }
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
 
                           {/* Active Reservation Actions */}
-                          {reservation.status === 'active' && (
+                          {['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                            (reservation.status || '').toUpperCase()
+                          ) && (
                             <>
-                              <PermissionGuard permission="reservations:extend_time">
+                              <PermissionGuard permission="reservations:extend">
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() =>
@@ -675,6 +723,100 @@ export default function ReservationMonitoring() {
             >
               <Clock className="h-4 w-4 mr-2" />
               Extend Time
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reservation Details Dialog */}
+      <Dialog
+        open={detailsDialog.open}
+        onOpenChange={(open) =>
+          setDetailsDialog({ open, reservationId: detailsDialog.reservationId })
+        }
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reservation Details</DialogTitle>
+            <DialogDescription>Full reservation context and status</DialogDescription>
+          </DialogHeader>
+          {selectedReservation && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Reservation Code</Label>
+                  <div className="text-sm text-gray-700 font-mono">
+                    {selectedReservation.qr_code}
+                  </div>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.status}
+                  </div>
+                </div>
+                <div>
+                  <Label>User</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.user?.name} ({selectedReservation.user?.email})
+                  </div>
+                </div>
+                <div>
+                  <Label>Partner</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.partner?.business_name}
+                  </div>
+                </div>
+                <div>
+                  <Label>Offer</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.offer?.title}
+                  </div>
+                </div>
+                <div>
+                  <Label>Points</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.points_spent}
+                  </div>
+                </div>
+                <div>
+                  <Label>Created</Label>
+                  <div className="text-sm text-gray-700">
+                    {format(
+                      new Date(selectedReservation.created_at),
+                      'MMM d, yyyy h:mm a'
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label>Expires</Label>
+                  <div className="text-sm text-gray-700">
+                    {format(
+                      new Date(selectedReservation.expires_at),
+                      'MMM d, yyyy h:mm a'
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label>Picked Up At</Label>
+                  <div className="text-sm text-gray-700">
+                    {selectedReservation.picked_up_at
+                      ? format(
+                          new Date(selectedReservation.picked_up_at),
+                          'MMM d, yyyy h:mm a'
+                        )
+                      : 'Not picked up'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDetailsDialog({ open: false })}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
