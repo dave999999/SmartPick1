@@ -172,6 +172,19 @@ export function useUser(userId: string | null) {
 
       if (error) throw error;
 
+      // Fetch points balance via admin RPC
+      let pointsBalance = 0;
+      try {
+        const { data: pointsData, error: pointsError } = await supabase.rpc(
+          'admin_get_user_points',
+          { p_user_ids: [userId] }
+        );
+        if (pointsError) throw pointsError;
+        pointsBalance = pointsData?.[0]?.balance || 0;
+      } catch (err) {
+        logger.warn('admin_get_user_points failed for single user', { error: err });
+      }
+
       // Fetch user's reservations for statistics
       const { data: reservations } = await supabase
         .from('reservations')
@@ -180,7 +193,7 @@ export function useUser(userId: string | null) {
 
       return {
         ...data,
-        points_balance: data.points_balance || 0,
+        points_balance: pointsBalance,
         total_reservations: reservations?.length || 0,
         successful_pickups: reservations?.filter(r => r.picked_up_at).length || 0,
         no_shows: reservations?.filter(r => r.no_show).length || 0

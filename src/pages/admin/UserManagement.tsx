@@ -56,7 +56,15 @@ import {
   Download,
   AlertCircle,
 } from 'lucide-react';
-import { useUsers, useBanUser, useUnbanUser, useAdjustPoints } from '@/hooks/admin/useUsers';
+import {
+  useUsers,
+  useBanUser,
+  useUnbanUser,
+  useAdjustPoints,
+  useUser,
+  useUserReservations,
+  useUserPointTransactions,
+} from '@/hooks/admin/useUsers';
 import { UserFilters } from '@/hooks/admin/useUsers';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -85,6 +93,10 @@ export default function UserManagement() {
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
   const adjustPoints = useAdjustPoints();
+  const selectedUserId = detailsDialog.user?.id || null;
+  const { data: selectedUser } = useUser(selectedUserId);
+  const { data: selectedReservations } = useUserReservations(selectedUserId, 200);
+  const { data: selectedTransactions } = useUserPointTransactions(selectedUserId, 200);
 
   const handleSearch = (search: string) => {
     setFilters({ ...filters, search, page: 1 });
@@ -131,6 +143,44 @@ export default function UserManagement() {
         </Badge>
       );
     return null;
+  };
+
+  const computeReservationMetrics = (reservations: any[] | undefined) => {
+    const list = reservations || [];
+    const total = list.length;
+    const completed = list.filter((r) =>
+      ['PICKED_UP', 'COMPLETED'].includes((r.status || '').toUpperCase())
+    ).length;
+    const active = list.filter((r) =>
+      ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+        (r.status || '').toUpperCase()
+      )
+    ).length;
+    const cancelled = list.filter((r) =>
+      ['CANCELLED', 'EXPIRED', 'NO_SHOW'].includes((r.status || '').toUpperCase())
+    ).length;
+    return { total, completed, active, cancelled };
+  };
+
+  const computePenaltyMetrics = (user: any) => {
+    const hasActivePenalty =
+      user?.penalty_until && new Date(user.penalty_until) > new Date();
+    return {
+      penaltyCount: user?.penalty_count || 0,
+      hasActivePenalty,
+      penaltyUntil: user?.penalty_until || null,
+    };
+  };
+
+  const computePointsMetrics = (transactions: any[] | undefined) => {
+    const list = transactions || [];
+    const earned = list
+      .filter((t) => (t.change || 0) > 0)
+      .reduce((sum, t) => sum + (t.change || 0), 0);
+    const spent = list
+      .filter((t) => (t.change || 0) < 0)
+      .reduce((sum, t) => sum + Math.abs(t.change || 0), 0);
+    return { earned, spent };
   };
 
   if (isLoading) {
@@ -591,50 +641,101 @@ export default function UserManagement() {
           </DialogHeader>
           {detailsDialog.user && (
             <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Name</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.name || 'N/A'}</div>
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.email}</div>
-                </div>
-                <div>
-                  <Label>Role</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.role}</div>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.status || 'ACTIVE'}</div>
-                </div>
-                <div>
-                  <Label>Points</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.points_balance || 0}</div>
-                </div>
-                <div>
-                  <Label>Reservations</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.total_reservations || 0}</div>
-                </div>
-                <div>
-                  <Label>Penalties</Label>
-                  <div className="text-sm text-gray-700">{detailsDialog.user.penalty_count || 0}</div>
-                </div>
-                <div>
-                  <Label>Joined</Label>
-                  <div className="text-sm text-gray-700">
-                    {format(new Date(detailsDialog.user.created_at), 'MMM d, yyyy')}
-                  </div>
-                </div>
-                <div>
-                  <Label>Last Login</Label>
-                  <div className="text-sm text-gray-700">
-                    {detailsDialog.user.last_login
-                      ? format(new Date(detailsDialog.user.last_login), 'MMM d, yyyy')
-                      : 'Never'}
-                  </div>
-                </div>
-              </div>
+              {(() => {
+                const metrics = computeReservationMetrics(selectedReservations);
+                const penalties = computePenaltyMetrics(selectedUser || detailsDialog.user);
+                const points = computePointsMetrics(selectedTransactions);
+                const userData = selectedUser || detailsDialog.user;
+
+                return (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Name</Label>
+                        <div className="text-sm text-gray-700">
+                          {userData.name || 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <div className="text-sm text-gray-700">{userData.email}</div>
+                      </div>
+                      <div>
+                        <Label>Role</Label>
+                        <div className="text-sm text-gray-700">{userData.role}</div>
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <div className="text-sm text-gray-700">
+                          {userData.status || 'ACTIVE'}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Points Balance</Label>
+                        <div className="text-sm text-gray-700">
+                          {userData.points_balance || 0}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Points Earned</Label>
+                        <div className="text-sm text-gray-700">{points.earned}</div>
+                      </div>
+                      <div>
+                        <Label>Points Spent</Label>
+                        <div className="text-sm text-gray-700">{points.spent}</div>
+                      </div>
+                      <div>
+                        <Label>Reservations (Total)</Label>
+                        <div className="text-sm text-gray-700">{metrics.total}</div>
+                      </div>
+                      <div>
+                        <Label>Reservations (Active)</Label>
+                        <div className="text-sm text-gray-700">{metrics.active}</div>
+                      </div>
+                      <div>
+                        <Label>Reservations (Completed)</Label>
+                        <div className="text-sm text-gray-700">{metrics.completed}</div>
+                      </div>
+                      <div>
+                        <Label>Reservations (Cancelled/Expired)</Label>
+                        <div className="text-sm text-gray-700">{metrics.cancelled}</div>
+                      </div>
+                      <div>
+                        <Label>Penalties</Label>
+                        <div className="text-sm text-gray-700">{penalties.penaltyCount}</div>
+                      </div>
+                      <div>
+                        <Label>Penalty Active</Label>
+                        <div className="text-sm text-gray-700">
+                          {penalties.hasActivePenalty ? 'Yes' : 'No'}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Penalty Until</Label>
+                        <div className="text-sm text-gray-700">
+                          {penalties.penaltyUntil
+                            ? format(new Date(penalties.penaltyUntil), 'MMM d, yyyy')
+                            : 'N/A'}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Joined</Label>
+                        <div className="text-sm text-gray-700">
+                          {format(new Date(userData.created_at), 'MMM d, yyyy')}
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Last Login</Label>
+                        <div className="text-sm text-gray-700">
+                          {userData.last_login
+                            ? format(new Date(userData.last_login), 'MMM d, yyyy')
+                            : 'Never'}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
           <DialogFooter>
