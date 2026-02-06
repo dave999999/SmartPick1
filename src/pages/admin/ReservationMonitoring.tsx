@@ -157,6 +157,9 @@ export default function ReservationMonitoring() {
     );
   };
 
+  const normalizeStatus = (status?: string) =>
+    (status || '').toUpperCase().trim();
+
   const getCountdownBadge = (expiresAt: string) => {
     const now = currentTime;
     const expiry = new Date(expiresAt);
@@ -200,7 +203,7 @@ export default function ReservationMonitoring() {
   };
 
   const getStatusBadge = (status: string) => {
-    const normalized = status?.toUpperCase();
+    const normalized = normalizeStatus(status);
     switch (normalized) {
       case 'ACTIVE':
       case 'RESERVED':
@@ -288,11 +291,13 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Active Now</div>
             <div className="text-2xl font-bold text-green-600 mt-1">
-              {data?.reservations.filter((r) =>
-                ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                  (r.status || '').toUpperCase()
-                )
-              ).length || 0}
+              {stats?.active ??
+                data?.reservations.filter((r) =>
+                  ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                    normalizeStatus(r.status)
+                  )
+                ).length ||
+                0}
             </div>
           </CardContent>
         </Card>
@@ -303,7 +308,7 @@ export default function ReservationMonitoring() {
               {data?.reservations.filter((r) => {
                 if (
                   !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                    (r.status || '').toUpperCase()
+                    normalizeStatus(r.status)
                   )
                 )
                   return false;
@@ -323,7 +328,7 @@ export default function ReservationMonitoring() {
               {data?.reservations.filter((r) => {
                 if (
                   !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                    (r.status || '').toUpperCase()
+                    normalizeStatus(r.status)
                   )
                 )
                   return false;
@@ -349,7 +354,7 @@ export default function ReservationMonitoring() {
             <div className="text-sm text-gray-600">Expired</div>
             <div className="text-2xl font-bold text-gray-500 mt-1">
               {data?.reservations.filter((r) =>
-                ['EXPIRED', 'NO_SHOW'].includes((r.status || '').toUpperCase())
+                ['EXPIRED', 'NO_SHOW'].includes(normalizeStatus(r.status))
               ).length || 0}
             </div>
           </CardContent>
@@ -459,7 +464,7 @@ export default function ReservationMonitoring() {
               );
               const isCritical =
                 ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                  (reservation.status || '').toUpperCase()
+                  normalizeStatus(reservation.status)
                 ) &&
                 minutesLeft < 15 &&
                 minutesLeft >= 0;
@@ -517,7 +522,7 @@ export default function ReservationMonitoring() {
                   {/* Time Left */}
                   <TableCell>
                     {['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                      (reservation.status || '').toUpperCase()
+                      normalizeStatus(reservation.status)
                     )
                       ? getCountdownBadge(reservation.expires_at)
                       : '-'}
@@ -559,7 +564,7 @@ export default function ReservationMonitoring() {
 
                           {/* Active Reservation Actions */}
                           {['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                            (reservation.status || '').toUpperCase()
+                            normalizeStatus(reservation.status)
                           ) && (
                             <>
                               <PermissionGuard permission="reservations:extend">
