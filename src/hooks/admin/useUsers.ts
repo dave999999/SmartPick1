@@ -111,11 +111,33 @@ export function useUsers(filters: UserFilters = {}) {
 
       const rawUsers = data || [];
 
+      // Prefer a secure, admin-only RPC to fetch balances in bulk.
+      let pointsByUserId = new Map<string, number>();
+      if (rawUsers.length > 0) {
+        try {
+          const { data: pointsData, error: pointsError } = await supabase.rpc(
+            'admin_get_user_points',
+            { p_user_ids: rawUsers.map((u: any) => u.id) }
+          );
+          if (pointsError) throw pointsError;
+          (pointsData || []).forEach((row: any) => {
+            pointsByUserId.set(row.user_id, row.balance || 0);
+          });
+        } catch (err) {
+          logger.warn('admin_get_user_points failed, falling back to join', {
+            error: err,
+          });
+        }
+      }
+
       // Map user_points.balance to points_balance for UI consistency
       // Note: user_points is returned as an array by Supabase, so we access [0]
       const users: UserData[] = rawUsers.map((user: any) => ({
         ...user,
-        points_balance: user.user_points?.[0]?.balance || 0,
+        points_balance:
+          pointsByUserId.get(user.id) ??
+          user.user_points?.[0]?.balance ??
+          0,
       }));
 
       return {
