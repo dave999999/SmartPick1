@@ -74,8 +74,8 @@ export function useUsers(filters: UserFilters = {}) {
         `, { count: 'exact' });
 
       // Match legacy admin behavior: exclude only admins, include partners + customers
-      query = query.neq('role', 'ADMIN');
-      query = query.neq('role', 'SUPER_ADMIN');
+      query = query.not('role', 'ilike', 'ADMIN');
+      query = query.not('role', 'ilike', 'SUPER_ADMIN');
 
       // Apply filters
       if (filters.search) {
@@ -83,7 +83,7 @@ export function useUsers(filters: UserFilters = {}) {
       }
 
       if (filters.role) {
-        query = query.eq('role', filters.role.toUpperCase());
+        query = query.ilike('role', filters.role);
       }
 
       if (filters.hasPenalty) {
