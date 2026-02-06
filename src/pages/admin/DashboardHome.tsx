@@ -45,15 +45,18 @@ export function DashboardHome({}: DashboardHomeProps) {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const sevenDaysAgoISO = sevenDaysAgo.toISOString();
 
-      // GMV and Revenue (Today)
-      const { data: todayReservations } = await supabase
-        .from('reservations')
-        .select('total_price')
-        .in('status', ['PICKED_UP', 'COMPLETED'])
+      // Revenue (Today) based on point purchases
+      const { data: pointPurchases } = await supabase
+        .from('point_transactions')
+        .select('change')
+        .in('reason', ['POINTS_PURCHASED', 'purchase', 'PURCHASE'])
+        .gt('change', 0)
         .gte('created_at', todayISO);
 
-      const gmvToday = todayReservations?.reduce((sum, r) => sum + (r.total_price || 0), 0) || 0;
-      const revenueToday = gmvToday * 0.15; // 15% commission
+      const pointsSoldToday =
+        pointPurchases?.reduce((sum, r) => sum + (r.change || 0), 0) || 0;
+      const gmvToday = pointsSoldToday / 100; // 100 points = 1 GEL
+      const revenueToday = gmvToday;
 
       // Active Users (Last 7 days)
       const { count: activeUsersCount } = await supabase
@@ -69,7 +72,7 @@ export function DashboardHome({}: DashboardHomeProps) {
       const { count: pickedUpReservations } = await supabase
         .from('reservations')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['PICKED_UP', 'COMPLETED']);
+        .in('status', ['PICKED_UP']);
 
       const pickupRate = totalReservations ? (pickedUpReservations! / totalReservations!) * 100 : 0;
 

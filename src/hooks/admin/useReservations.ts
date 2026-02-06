@@ -104,7 +104,7 @@ export function useReservations(filters: ReservationFilters = {}) {
 
       // Partner filter
       if (filters.partnerId) {
-        query = query.eq('offer.partner_id', filters.partnerId);
+        query = query.eq('partner_id', filters.partnerId);
       }
 
       // Search by QR code
@@ -368,11 +368,13 @@ export function useCancelReservation() {
 
       // Refund points if requested
       if (refundPoints) {
-        await supabase.rpc('add_user_points', {
+        const { error: refundError } = await supabase.rpc('admin_adjust_user_points', {
           p_user_id: reservation.customer_id,
-          p_points: reservation.points_spent,
+          p_amount: reservation.points_spent,
           p_reason: `Refund for cancelled reservation - Admin: ${reason}`,
+          p_metadata: { reservation_id: reservationId, admin_action: 'refund' },
         });
+        if (refundError) throw refundError;
       }
 
       // Log the cancellation

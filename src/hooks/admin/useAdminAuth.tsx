@@ -90,9 +90,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log('Admin access granted for role:', userRole);
 
-      // TODO: Get actual admin role from admin_users table
-      // For now, default to ops_admin
-      const adminRole = AdminRole.OPS_ADMIN;
+      // Map platform role to admin role (kept simple for current structure)
+      const adminRole =
+        userRole === 'SUPER_ADMIN'
+          ? AdminRole.SUPER_ADMIN
+          : AdminRole.OPS_ADMIN;
 
       setUser({
         id: userData.id,

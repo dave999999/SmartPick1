@@ -43,7 +43,7 @@ export default function AuditLogPanel() {
     try {
       setLoading(true);
       let query = supabase
-        .from('audit_log')
+        .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limit);
