@@ -292,12 +292,11 @@ export default function ReservationMonitoring() {
             <div className="text-sm text-gray-600">Active Now</div>
             <div className="text-2xl font-bold text-green-600 mt-1">
               {stats?.active ??
-                data?.reservations.filter((r) =>
+                (data?.reservations.filter((r) =>
                   ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
                     normalizeStatus(r.status)
                   )
-                ).length ||
-                0}
+                ).length ?? 0)}
             </div>
           </CardContent>
         </Card>

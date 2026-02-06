@@ -112,8 +112,8 @@ export function useReservations(filters: ReservationFilters = {}) {
         query = query.ilike('qr_code', `%${filters.search}%`);
       }
 
-      // Sorting: by expires_at asc (most urgent first)
-      query = query.order('expires_at', { ascending: true });
+      // Sorting: show newest reservations first
+      query = query.order('created_at', { ascending: false });
 
       // Pagination
       const page = filters.page || 1;
