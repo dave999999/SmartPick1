@@ -202,7 +202,7 @@ export function useReservationStats() {
       
       const normalizeStatus = (status?: string) => (status || '').toUpperCase().trim();
       const activeStatuses = ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'];
-      const expiredStatuses = ['EXPIRED', 'NO_SHOW'];
+      const expiredStatuses = ['EXPIRED', 'NO_SHOW', 'FAILED_PICKUP'];
 
       const activeNow = reservations?.filter((r) =>
         activeStatuses.includes(normalizeStatus(r.status))
