@@ -189,7 +189,7 @@ export function useReservationStats() {
       // Get all reservations with their status
       const { data: reservations, error } = await supabase
         .from('reservations')
-        .select('id, status, created_at, picked_up_at, no_show');
+        .select('id, status, created_at, updated_at, picked_up_at, no_show, expires_at');
 
       if (error) {
         logger.error('Failed to fetch reservations for stats', { error });
@@ -200,16 +200,57 @@ export function useReservationStats() {
       const now = new Date();
       const today = new Date(now.setHours(0, 0, 0, 0));
       
-      return {
-        total: reservations?.length || 0,
-        active: reservations?.filter(r => r.status?.toUpperCase() === 'ACTIVE' || r.status?.toUpperCase() === 'RESERVED').length || 0,
-        picked_up: reservations?.filter(r => r.picked_up_at).length || 0,
-        no_shows: reservations?.filter(r => r.no_show).length || 0,
-        completed_today: reservations?.filter(r => {
-          if (!r.picked_up_at) return false;
+      const normalizeStatus = (status?: string) => (status || '').toUpperCase().trim();
+      const activeStatuses = ['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'];
+      const expiredStatuses = ['EXPIRED', 'NO_SHOW'];
+
+      const activeNow = reservations?.filter((r) =>
+        activeStatuses.includes(normalizeStatus(r.status))
+      ) || [];
+
+      const critical = activeNow.filter((r) => {
+        if (!r.expires_at) return false;
+        const minutesLeft = (new Date(r.expires_at).getTime() - now.getTime()) / 60000;
+        return minutesLeft >= 0 && minutesLeft < 15;
+      }).length;
+
+      const warning = activeNow.filter((r) => {
+        if (!r.expires_at) return false;
+        const minutesLeft = (new Date(r.expires_at).getTime() - now.getTime()) / 60000;
+        return minutesLeft >= 15 && minutesLeft < 60;
+      }).length;
+
+      const expiredCount = reservations?.filter((r) => {
+        const status = normalizeStatus(r.status);
+        if (expiredStatuses.includes(status)) return true;
+        if (activeStatuses.includes(status) && r.expires_at) {
+          return new Date(r.expires_at) < now;
+        }
+        return false;
+      }).length || 0;
+
+      const completedToday = reservations?.filter((r) => {
+        if (r.picked_up_at) {
           const pickedUpDate = new Date(r.picked_up_at);
           return pickedUpDate >= today;
-        }).length || 0,
+        }
+        const status = normalizeStatus(r.status);
+        if (status === 'COMPLETED' || status === 'PICKED_UP') {
+          const updated = r.updated_at ? new Date(r.updated_at) : null;
+          return updated ? updated >= today : false;
+        }
+        return false;
+      }).length || 0;
+
+      return {
+        total: reservations?.length || 0,
+        active: activeNow.length,
+        picked_up: reservations?.filter(r => r.picked_up_at).length || 0,
+        no_shows: reservations?.filter(r => r.no_show).length || 0,
+        completed_today: completedToday,
+        critical,
+        warning,
+        expired: expiredCount,
       };
     },
     staleTime: 30000, // 30 seconds

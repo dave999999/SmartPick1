@@ -304,19 +304,21 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-red-700">Critical (&lt;15m)</div>
             <div className="text-2xl font-bold text-red-600 mt-1">
-              {data?.reservations.filter((r) => {
-                if (
-                  !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                    normalizeStatus(r.status)
+              {stats?.critical ??
+                data?.reservations.filter((r) => {
+                  if (
+                    !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                      normalizeStatus(r.status)
+                    )
                   )
-                )
-                  return false;
-                const minutesLeft = differenceInMinutes(
-                  new Date(r.expires_at),
-                  currentTime
-                );
-                return minutesLeft < 15 && minutesLeft >= 0;
-              }).length || 0}
+                    return false;
+                  const minutesLeft = differenceInMinutes(
+                    new Date(r.expires_at),
+                    currentTime
+                  );
+                  return minutesLeft < 15 && minutesLeft >= 0;
+                }).length ||
+                0}
             </div>
           </CardContent>
         </Card>
@@ -324,19 +326,21 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Warning (&lt;1h)</div>
             <div className="text-2xl font-bold text-orange-600 mt-1">
-              {data?.reservations.filter((r) => {
-                if (
-                  !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
-                    normalizeStatus(r.status)
+              {stats?.warning ??
+                data?.reservations.filter((r) => {
+                  if (
+                    !['ACTIVE', 'RESERVED', 'READY_FOR_PICKUP', 'IN_PROGRESS'].includes(
+                      normalizeStatus(r.status)
+                    )
                   )
-                )
-                  return false;
-                const minutesLeft = differenceInMinutes(
-                  new Date(r.expires_at),
-                  currentTime
-                );
-                return minutesLeft < 60 && minutesLeft >= 15;
-              }).length || 0}
+                    return false;
+                  const minutesLeft = differenceInMinutes(
+                    new Date(r.expires_at),
+                    currentTime
+                  );
+                  return minutesLeft < 60 && minutesLeft >= 15;
+                }).length ||
+                0}
             </div>
           </CardContent>
         </Card>
@@ -352,9 +356,11 @@ export default function ReservationMonitoring() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Expired</div>
             <div className="text-2xl font-bold text-gray-500 mt-1">
-              {data?.reservations.filter((r) =>
-                ['EXPIRED', 'NO_SHOW'].includes(normalizeStatus(r.status))
-              ).length || 0}
+              {stats?.expired ??
+                data?.reservations.filter((r) =>
+                  ['EXPIRED', 'NO_SHOW'].includes(normalizeStatus(r.status))
+                ).length ||
+                0}
             </div>
           </CardContent>
         </Card>
