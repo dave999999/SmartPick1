@@ -76,6 +76,10 @@ export default function UserManagement() {
     amount: number;
     reason: string;
   }>({ open: false, amount: 0, reason: '' });
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    user?: any;
+  }>({ open: false });
 
   const { data, isLoading, refetch } = useUsers(filters);
   const banUser = useBanUser();
@@ -254,7 +258,10 @@ export default function UserManagement() {
           </TableHeader>
           <TableBody>
             {data?.users.map((user) => {
-              const isBanned = user.penalty_until && new Date(user.penalty_until) > new Date();
+              const isBanned =
+                user.is_banned === true ||
+                user.status?.toUpperCase() === 'BANNED' ||
+                (user.penalty_until && new Date(user.penalty_until) > new Date());
 
               return (
                 <TableRow key={user.id} className="hover:bg-gray-50">
@@ -347,7 +354,9 @@ export default function UserManagement() {
                         <DropdownMenuSeparator />
                         
                         <PermissionGuard permission="users:view_details">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDetailsDialog({ open: true, user })}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
@@ -563,6 +572,74 @@ export default function UserManagement() {
                 : pointsDialog.amount > 0
                 ? 'Grant Points'
                 : 'Deduct Points'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User Details Dialog */}
+      <Dialog
+        open={detailsDialog.open}
+        onOpenChange={(open) => setDetailsDialog({ ...detailsDialog, open })}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>User Details</DialogTitle>
+            <DialogDescription>
+              Full profile and account status
+            </DialogDescription>
+          </DialogHeader>
+          {detailsDialog.user && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Name</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.name || 'N/A'}</div>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.email}</div>
+                </div>
+                <div>
+                  <Label>Role</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.role}</div>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.status || 'ACTIVE'}</div>
+                </div>
+                <div>
+                  <Label>Points</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.points_balance || 0}</div>
+                </div>
+                <div>
+                  <Label>Reservations</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.total_reservations || 0}</div>
+                </div>
+                <div>
+                  <Label>Penalties</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.user.penalty_count || 0}</div>
+                </div>
+                <div>
+                  <Label>Joined</Label>
+                  <div className="text-sm text-gray-700">
+                    {format(new Date(detailsDialog.user.created_at), 'MMM d, yyyy')}
+                  </div>
+                </div>
+                <div>
+                  <Label>Last Login</Label>
+                  <div className="text-sm text-gray-700">
+                    {detailsDialog.user.last_login
+                      ? format(new Date(detailsDialog.user.last_login), 'MMM d, yyyy')
+                      : 'Never'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialog({ open: false })}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

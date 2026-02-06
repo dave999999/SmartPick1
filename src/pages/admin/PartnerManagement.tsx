@@ -96,6 +96,10 @@ export default function PartnerManagement() {
     partnerId?: string;
     reason: string;
   }>({ open: false, reason: '' });
+  const [detailsDialog, setDetailsDialog] = useState<{
+    open: boolean;
+    partner?: any;
+  }>({ open: false });
 
   const handleApprove = () => {
     if (!approveDialog.partnerId || !user) return;
@@ -207,7 +211,7 @@ export default function PartnerManagement() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Total Partners</div>
             <div className="text-2xl font-bold text-gray-900 mt-1">
-              {data?.partners.filter((p) => p.status === 'approved').length || 0}
+              {data?.partners.filter((p) => p.status?.toUpperCase() === 'APPROVED').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -215,7 +219,7 @@ export default function PartnerManagement() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Pending Review</div>
             <div className="text-2xl font-bold text-yellow-600 mt-1">
-              {data?.partners.filter((p) => p.status === 'pending').length || 0}
+              {data?.partners.filter((p) => p.status?.toUpperCase() === 'PENDING').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -231,7 +235,7 @@ export default function PartnerManagement() {
           <CardContent className="p-4">
             <div className="text-sm text-gray-600">Suspended</div>
             <div className="text-2xl font-bold text-red-600 mt-1">
-              {data?.partners.filter((p) => p.status === 'suspended').length || 0}
+              {data?.partners.filter((p) => p.status?.toUpperCase() === 'SUSPENDED').length || 0}
             </div>
           </CardContent>
         </Card>
@@ -357,13 +361,15 @@ export default function PartnerManagement() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setDetailsDialog({ open: true, partner })}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
 
                         {/* Approval Actions */}
-                        {partner.status === 'pending' && (
+                        {partner.status?.toUpperCase() === 'PENDING' && (
                           <PermissionGuard permission="partners:approve">
                             <>
                               <DropdownMenuSeparator />
@@ -394,8 +400,8 @@ export default function PartnerManagement() {
                         )}
 
                         {/* Suspend/Reactivate */}
-                        {partner.status === 'approved' && (
-                          <PermissionGuard permission="partners:suspend">
+                        {partner.status?.toUpperCase() === 'APPROVED' && (
+                          <PermissionGuard permission="partners:ban">
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -409,13 +415,13 @@ export default function PartnerManagement() {
                                 className="text-red-600"
                               >
                                 <Ban className="h-4 w-4 mr-2" />
-                                Suspend
+                                Ban Partner
                               </DropdownMenuItem>
                             </>
                           </PermissionGuard>
                         )}
-                        {partner.status === 'suspended' && (
-                          <PermissionGuard permission="partners:reactivate">
+                        {partner.status?.toUpperCase() === 'SUSPENDED' && (
+                          <PermissionGuard permission="partners:unban">
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -425,7 +431,7 @@ export default function PartnerManagement() {
                                 className="text-green-600"
                               >
                                 <RefreshCw className="h-4 w-4 mr-2" />
-                                Reactivate
+                                Unban Partner
                               </DropdownMenuItem>
                             </>
                           </PermissionGuard>
@@ -555,14 +561,14 @@ export default function PartnerManagement() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Suspend Partner</DialogTitle>
+            <DialogTitle>Ban Partner</DialogTitle>
             <DialogDescription>
               This will suspend the partner and deactivate all their offers.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="suspend-reason">Suspension Reason</Label>
+            <Label htmlFor="suspend-reason">Ban Reason</Label>
               <Textarea
                 id="suspend-reason"
                 value={suspendDialog.reason}
@@ -587,7 +593,67 @@ export default function PartnerManagement() {
               variant="destructive"
             >
               <Ban className="h-4 w-4 mr-2" />
-              Suspend Partner
+              Ban Partner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Partner Details Dialog */}
+      <Dialog
+        open={detailsDialog.open}
+        onOpenChange={(open) => setDetailsDialog({ ...detailsDialog, open })}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Partner Details</DialogTitle>
+            <DialogDescription>Business profile and owner information</DialogDescription>
+          </DialogHeader>
+          {detailsDialog.partner && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Business Name</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.business_name}</div>
+                </div>
+                <div>
+                  <Label>Status</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.status}</div>
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.business_email}</div>
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.business_phone || detailsDialog.partner.phone}</div>
+                </div>
+                <div className="col-span-2">
+                  <Label>Address</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.address}</div>
+                </div>
+                <div>
+                  <Label>Owner</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.user?.name}</div>
+                </div>
+                <div>
+                  <Label>Owner Email</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.user?.email}</div>
+                </div>
+                <div>
+                  <Label>Active Offers</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.active_offers || 0}</div>
+                </div>
+                <div>
+                  <Label>Total Offers</Label>
+                  <div className="text-sm text-gray-700">{detailsDialog.partner.total_offers || 0}</div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsDialog({ open: false })}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

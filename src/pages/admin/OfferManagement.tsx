@@ -145,12 +145,18 @@ export default function OfferManagement() {
     if (!editDialog.offer) return;
     
     const formData = new FormData(document.getElementById('edit-offer-form') as HTMLFormElement);
+    const imagesRaw = (formData.get('images') as string) || '';
+    const images = imagesRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
     const updates = {
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       category: formData.get('category') as string,
       original_price: parseFloat(formData.get('original_price') as string),
       smart_price: parseFloat(formData.get('smart_price') as string),
+      images,
       quantity_available: parseInt(formData.get('quantity_available') as string),
       quantity_total: parseInt(formData.get('quantity_total') as string),
       pickup_start: formData.get('pickup_start') as string,
@@ -197,6 +203,14 @@ export default function OfferManagement() {
         <Badge variant="secondary" className="bg-green-100 text-green-700">
           <Play className="h-3 w-3 mr-1" />
           Active
+        </Badge>
+      );
+    }
+    if (status === 'PAUSED') {
+      return (
+        <Badge variant="secondary" className="bg-yellow-100 text-yellow-700">
+          <Pause className="h-3 w-3 mr-1" />
+          Paused
         </Badge>
       );
     }
@@ -505,7 +519,9 @@ export default function OfferManagement() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => setEditDialog({ open: true, offer })}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
@@ -747,6 +763,15 @@ export default function OfferManagement() {
                   defaultValue={editDialog.offer?.description}
                   rows={3}
                   required
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="images">Images (comma-separated URLs)</Label>
+                <Textarea
+                  id="images"
+                  name="images"
+                  defaultValue={(editDialog.offer?.images || []).join(', ')}
+                  rows={2}
                 />
               </div>
 

@@ -28,6 +28,8 @@ export interface UserData {
   phone?: string;
   avatar_url?: string;
   role: string;
+  status?: string;
+  is_banned?: boolean;
   penalty_until?: string;
   penalty_count: number;
   penalty_warning_shown: boolean;
@@ -280,46 +282,27 @@ export function useBanUser() {
       notifyUser?: boolean;
     }) => {
       logger.log('Admin: Banning user', { userId, reason, duration });
-
-      // Calculate suspension end time
-      let suspendedUntil: string | null = null;
       const now = new Date();
+      let expiresAt: string | null = null;
+      let banType: 'PERMANENT' | 'TEMPORARY' = 'PERMANENT';
 
-      switch (duration) {
-        case '1hour':
-          suspendedUntil = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
-          break;
-        case '24hour':
-          suspendedUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-          break;
-        case 'permanent':
-          suspendedUntil = new Date('2099-12-31').toISOString();
-          break;
+      if (duration === '1hour') {
+        expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+        banType = 'TEMPORARY';
+      } else if (duration === '24hour') {
+        expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+        banType = 'TEMPORARY';
       }
 
-      // Update user penalty
-      const { error: penaltyError } = await supabase.from('user_penalties').insert({
-        user_id: userId,
-        offense_type: 'admin_action',
-        penalty_type: duration,
-        suspended_until: suspendedUntil,
-        is_active: true,
-        admin_notes: reason,
+      const { error: banError } = await supabase.rpc('ban_user', {
+        p_user_id: userId,
+        p_reason: reason,
+        p_ban_type: banType,
+        p_expires_at: expiresAt,
+        p_internal_notes: notifyUser ? null : 'Do not notify user',
       });
 
-      if (penaltyError) throw penaltyError;
-
-      // Update user record
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
-          penalty_until: suspendedUntil,
-          penalty_count: supabase.rpc('increment_penalty_count', { user_id: userId }),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      if (userError) throw userError;
+      if (banError) throw banError;
 
       // TODO: Send notification to user if notifyUser is true
 
@@ -345,26 +328,11 @@ export function useUnbanUser() {
   return useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
       logger.log('Admin: Unbanning user', { userId, reason });
+      const { error } = await supabase.rpc('unban_user', {
+        p_user_id: userId,
+      });
 
-      // Deactivate all active penalties
-      const { error: penaltyError } = await supabase
-        .from('user_penalties')
-        .update({ is_active: false, admin_notes: reason })
-        .eq('user_id', userId)
-        .eq('is_active', true);
-
-      if (penaltyError) throw penaltyError;
-
-      // Update user record
-      const { error: userError } = await supabase
-        .from('users')
-        .update({
-          penalty_until: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', userId);
-
-      if (userError) throw userError;
+      if (error) throw error;
 
       return { success: true };
     },

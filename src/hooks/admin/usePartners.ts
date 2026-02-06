@@ -342,6 +342,20 @@ export function useSuspendPartner() {
         .eq('id', partnerId);
 
       if (error) throw error;
+
+      // Also block partner's user account
+      const { data: partnerRow } = await supabase
+        .from('partners')
+        .select('user_id')
+        .eq('id', partnerId)
+        .maybeSingle();
+
+      if (partnerRow?.user_id) {
+        await supabase
+          .from('users')
+          .update({ is_banned: true, updated_at: new Date().toISOString() })
+          .eq('id', partnerRow.user_id);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] });
@@ -373,6 +387,19 @@ export function useReactivatePartner() {
         .eq('id', partnerId);
 
       if (error) throw error;
+
+      const { data: partnerRow } = await supabase
+        .from('partners')
+        .select('user_id')
+        .eq('id', partnerId)
+        .maybeSingle();
+
+      if (partnerRow?.user_id) {
+        await supabase
+          .from('users')
+          .update({ is_banned: false, updated_at: new Date().toISOString() })
+          .eq('id', partnerRow.user_id);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'partners'] });

@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
 
 export interface OfferFilters {
-  status?: 'ACTIVE' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
+  status?: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
   partnerId?: string;
   category?: string;
   minPrice?: number;
@@ -35,7 +35,7 @@ export interface Offer {
   pickup_end: string;
   expires_at: string;
   auto_expire_in: number | null;
-  status: 'ACTIVE' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
+  status: 'ACTIVE' | 'PAUSED' | 'EXPIRED' | 'SOLD_OUT' | 'CANCELLED';
   created_at: string;
   updated_at: string;
   partner?: {
@@ -185,7 +185,7 @@ export function usePauseOffer() {
       const { error } = await supabase
         .from('offers')
         .update({
-          status: 'CANCELLED',
+          status: 'PAUSED',
           updated_at: new Date().toISOString(),
         })
         .eq('id', offerId);
@@ -270,7 +270,7 @@ export function usePauseAllOffers() {
       let query = supabase
         .from('offers')
         .update({
-          status: 'CANCELLED',
+          status: 'PAUSED',
           updated_at: new Date().toISOString(),
         });
 
@@ -365,17 +365,18 @@ export function useUpdateOffer() {
       updates,
     }: {
       offerId: string;
-      updates: {
-        title?: string;
-        description?: string;
-        category?: string;
-        original_price?: number;
-        smart_price?: number;
-        quantity_available?: number;
-        quantity_total?: number;
-        pickup_start?: string;
-        pickup_end?: string;
-        expires_at?: string;
+        updates: {
+          title?: string;
+          description?: string;
+          category?: string;
+          original_price?: number;
+          smart_price?: number;
+          images?: string[];
+          quantity_available?: number;
+          quantity_total?: number;
+          pickup_start?: string;
+          pickup_end?: string;
+          expires_at?: string;
       };
     }) => {
       const { error } = await supabase
