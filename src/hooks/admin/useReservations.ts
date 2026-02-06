@@ -151,7 +151,7 @@ export function useReservation(reservationId: string) {
         .select(
           `
           *,
-          user:users!reservations_customer_id_fkey(id, name, email, avatar_url, phone_number),
+          user:users!reservations_customer_id_fkey(id, name, email, avatar_url, phone),
           offer:offers!reservations_offer_id_fkey(
             id,
             title,
@@ -162,8 +162,8 @@ export function useReservation(reservationId: string) {
           partner:partners!reservations_partner_id_fkey(
             id,
             business_name,
-            business_email,
-            business_phone
+            email,
+            phone
           )
         `
         )
@@ -337,7 +337,7 @@ export function useForceCompleteReservation() {
       const { error } = await supabase
         .from('reservations')
         .update({
-          status: 'COMPLETED',
+          status: 'PICKED_UP',
           picked_up_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
