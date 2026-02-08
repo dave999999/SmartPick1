@@ -1928,7 +1928,7 @@ const translations: Record<Language, Record<string, string>> = {
   'missedPickup.tip.cancelIfPlansChange': 'გააუქმეთ ადრე, თუ გეგმები შეიცვლება',
   'missedPickup.tip.cancelEarly': 'თუ საჭიროა, გააუქმეთ ადრე',
   'missedPickup.tip.message': 'თუ იგვიანებთ, შეგვატყობინეთ',
-  'missedPickup.footer': 'შევინარჩუნოთ კარგი ვიბები 💛',
+  'missedPickup.footer': 'შევინარჩუნოთ კარგი ვაიბი 💛',
   'missedPickup.gotItButton': 'გასაგებია 🙌',
   'missedPickup.ariaLabel.used': 'გამოყენებული',
   'missedPickup.ariaLabel.remaining': 'დარჩენილი',
@@ -2027,4 +2027,3 @@ export function useI18n() {
   }
   return context;
 }
-
