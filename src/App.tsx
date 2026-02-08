@@ -419,10 +419,32 @@ const AppContent = () => {
             }
           }
         } else if (missedPickupStatus && missedPickupStatus.needs_warning) {
-          // 1-3 missed pickups: show friendly warning
-          logger.debug('💛 Missed pickup warning:', missedPickupStatus);
-          setMissedPickupWarning(missedPickupStatus);
-          setShowMissedPickupDialog(true);
+          // 1-3 missed pickups: show friendly warning (only once per warning level)
+          try {
+            const { user } = await getCurrentUser();
+            const userId = user ? (user as any).id : 'anonymous';
+            const storageKey = `missed_pickup_warning_dismissed:${userId}`;
+            const raw = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null;
+            const dismissed = raw ? JSON.parse(raw) : null;
+            const warningLevel = missedPickupStatus.warning_level;
+            const totalMissed = missedPickupStatus.total_missed;
+            const alreadyDismissed =
+              dismissed &&
+              dismissed.warning_level === warningLevel &&
+              dismissed.total_missed === totalMissed;
+
+            if (alreadyDismissed) {
+              logger.debug('💛 Missed pickup warning already dismissed for this level');
+            } else {
+              logger.debug('💛 Missed pickup warning:', missedPickupStatus);
+              setMissedPickupWarning(missedPickupStatus);
+              setShowMissedPickupDialog(true);
+            }
+          } catch (e) {
+            logger.debug('💛 Missed pickup warning:', missedPickupStatus);
+            setMissedPickupWarning(missedPickupStatus);
+            setShowMissedPickupDialog(true);
+          }
         }
       } catch (error) {
         logger.error('Error checking penalty on load:', error);
@@ -573,6 +595,20 @@ const AppContent = () => {
                 .update({ warning_shown: true })
                 .eq('user_id', (user as any).id)
                 .eq('warning_shown', false);
+
+              try {
+                const storageKey = `missed_pickup_warning_dismissed:${(user as any).id}`;
+                localStorage.setItem(
+                  storageKey,
+                  JSON.stringify({
+                    warning_level: missedPickupWarning.warning_level,
+                    total_missed: missedPickupWarning.total_missed,
+                    dismissed_at: new Date().toISOString(),
+                  })
+                );
+              } catch (e) {
+                // ignore localStorage errors
+              }
             }
           }
           setShowMissedPickupDialog(false);
@@ -609,4 +645,3 @@ const App = () => (
 );
 
 export default App;
-
